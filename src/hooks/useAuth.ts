@@ -23,6 +23,10 @@ export interface AuthUser {
   website?: string;
   twitter?: string;
   skills?: string[];
+  mustChangePassword?: boolean;
+  tempPasswordSet?: boolean;
+  passwordResetForcedAt?: any;
+  passwordResetForcedBy?: string;
 }
 
 export interface ProfileData {

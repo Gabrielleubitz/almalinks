@@ -19,7 +19,11 @@ import {
   Linkedin,
   Eye,
   UserPlus,
-  UserMinus
+  UserMinus,
+  Upload,
+  Activity,
+  Key,
+  Download
 } from 'lucide-react';
 import { collection, getDocs, doc, updateDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase/config';
@@ -27,6 +31,10 @@ import { useAuth } from '../../hooks/useAuth';
 import AdminHeader from '../../components/admin/AdminHeader';
 import UserConnectionModal from '../../components/admin/UserConnectionModal';
 import ConnectionManagementModal from '../../components/admin/ConnectionManagementModal';
+import UserCreationForm from '../../components/admin/UserCreationForm';
+import BulkUserImport from '../../components/admin/BulkUserImport';
+import AuditLogViewer from '../../components/admin/AuditLogViewer';
+import { TempPasswordService } from '../../services/tempPasswordService';
 
 interface UserData {
   uid: string;
@@ -76,6 +84,11 @@ const UserManagement: React.FC = () => {
   const [userToConnect, setUserToConnect] = useState<UserData | null>(null);
   const [showConnectionManagement, setShowConnectionManagement] = useState(false);
   const [userToManage, setUserToManage] = useState<UserData | null>(null);
+  
+  // New modals for user management
+  const [showUserCreation, setShowUserCreation] = useState(false);
+  const [showBulkImport, setShowBulkImport] = useState(false);
+  const [showAuditLogs, setShowAuditLogs] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -179,6 +192,36 @@ const UserManagement: React.FC = () => {
   const handleCloseConnectionModal = () => {
     setUserToConnect(null);
     setShowConnectionModal(false);
+  };
+
+  const handleUserCreated = (newUser: any) => {
+    console.log('✅ New user created:', newUser);
+    // Refresh the users list
+    loadUsers();
+    showToast(`User ${newUser.name} created successfully`, 'success');
+  };
+
+  const handleBulkImportSuccess = (results: any) => {
+    console.log('✅ Bulk import completed:', results);
+    // Refresh the users list
+    loadUsers();
+    showToast(`Bulk import completed: ${results.successful.length} users created`, 'success');
+  };
+
+  const handleForcePasswordReset = async (userData: UserData) => {
+    if (!user?.uid) return;
+    
+    setUpdatingUser(userData.uid);
+    
+    try {
+      await TempPasswordService.forcePasswordChange(userData.uid, user.uid);
+      showToast(`Password reset forced for ${userData.name}`, 'success');
+    } catch (error: any) {
+      console.error('❌ Error forcing password reset:', error);
+      showToast(error.message || 'Failed to force password reset', 'error');
+    } finally {
+      setUpdatingUser(null);
+    }
   };
 
   const formatPosition = (position: string) => {
@@ -383,8 +426,36 @@ const UserManagement: React.FC = () => {
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">User Management</h2>
-            <div className="text-sm text-gray-500">
-              {filteredUsers.length} of {users.length} users
+            <div className="flex items-center space-x-3">
+              <div className="text-sm text-gray-500">
+                {filteredUsers.length} of {users.length} users
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setShowUserCreation(true)}
+                  className="inline-flex items-center px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                  title="Create new user"
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Create User
+                </button>
+                <button
+                  onClick={() => setShowBulkImport(true)}
+                  className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  title="Bulk import users from CSV"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Bulk Import
+                </button>
+                <button
+                  onClick={() => setShowAuditLogs(true)}
+                  className="inline-flex items-center px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+                  title="View audit logs"
+                >
+                  <Activity className="h-4 w-4 mr-2" />
+                  Audit Logs
+                </button>
+              </div>
             </div>
           </div>
 
@@ -531,6 +602,23 @@ const UserManagement: React.FC = () => {
                             <UserMinus className="h-5 w-5" />
                           </button>
 
+                          {/* Force Password Reset Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleForcePasswordReset(userData);
+                            }}
+                            disabled={userData.uid === user?.uid || updatingUser === userData.uid}
+                            className="bg-orange-100 text-orange-700 p-2 rounded-lg hover:bg-orange-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={userData.uid === user?.uid ? "You cannot reset your own password" : "Force password reset"}
+                          >
+                            {updatingUser === userData.uid ? (
+                              <div className="w-5 h-5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              <Key className="h-5 w-5" />
+                            )}
+                          </button>
+
                           {/* Delete Button */}
                           <button
                             onClick={(e) => {
@@ -560,7 +648,7 @@ const UserManagement: React.FC = () => {
         {/* Information Box */}
         <div className="mt-8 bg-gray-50 rounded-2xl p-6">
           <h3 className="font-semibold text-gray-900 mb-3">👥 User Management Information:</h3>
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
             <div>
               <h4 className="font-medium text-gray-900 mb-2">User Roles:</h4>
               <ul className="text-sm text-gray-600 space-y-1">
@@ -570,21 +658,46 @@ const UserManagement: React.FC = () => {
               </ul>
             </div>
             <div>
-              <h4 className="font-medium text-gray-900 mb-2">Available Actions:</h4>
+              <h4 className="font-medium text-gray-900 mb-2">User Actions:</h4>
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• <strong>👁 View Profile:</strong> Click on any user row to view detailed profile information</li>
                 <li>• <strong>👥 Connect Users:</strong> Use the blue connect button to manually connect any user with another user</li>
                 <li>• <strong>🔗 Manage Connections:</strong> Use the purple connections button to view and delete user's existing connections</li>
+                <li>• <strong>🔑 Force Password Reset:</strong> Use the orange key button to require a user to change their password</li>
                 <li>• <strong>🗑 Delete User:</strong> Permanently remove user from both Firebase Authentication and Firestore</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">Admin Tools:</h4>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• <strong>➕ Create User:</strong> Add new users with temporary passwords (no email invitation required)</li>
+                <li>• <strong>📤 Bulk Import:</strong> Import multiple users from CSV file with automatic credential generation</li>
+                <li>• <strong>📋 Audit Logs:</strong> View comprehensive logs of all administrative actions for compliance</li>
+                <li>• <strong>🔐 Password Management:</strong> Users with temporary passwords must change them on first login</li>
               </ul>
             </div>
           </div>
           <div className="mt-4 pt-4 border-t border-gray-200">
-            <ul className="text-sm text-gray-600 space-y-1">
-              <li>• <strong>Note:</strong> Role changes take effect immediately</li>
-              <li>• <strong>Security:</strong> Admins cannot change their own role or delete their own account</li>
-              <li>• <strong>Connections:</strong> Admin-created connections bypass user privacy settings and are logged for audit purposes</li>
-            </ul>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Security Notes:</h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Role changes take effect immediately and are logged</li>
+                  <li>• Admins cannot change their own role or delete their own account</li>
+                  <li>• All user creation and modification actions are audited</li>
+                  <li>• Temporary passwords must be changed on first login</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Bulk Import Requirements:</h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• CSV format with email and name columns required</li>
+                  <li>• Optional: role, phone, company, work, position, linkedinUsername</li>
+                  <li>• All users get same temporary password (admin-specified)</li>
+                  <li>• Duplicate email addresses are automatically skipped</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -836,6 +949,29 @@ const UserManagement: React.FC = () => {
           email: userToConnect.email,
           work: userToConnect.work || userToConnect.company || 'Not specified'
         } : null}
+      />
+
+      {/* User Creation Form */}
+      <UserCreationForm
+        isOpen={showUserCreation}
+        onClose={() => setShowUserCreation(false)}
+        onSuccess={handleUserCreated}
+        adminId={user?.uid || ''}
+      />
+
+      {/* Bulk User Import */}
+      <BulkUserImport
+        isOpen={showBulkImport}
+        onClose={() => setShowBulkImport(false)}
+        onSuccess={handleBulkImportSuccess}
+        adminId={user?.uid || ''}
+      />
+
+      {/* Audit Log Viewer */}
+      <AuditLogViewer
+        isOpen={showAuditLogs}
+        onClose={() => setShowAuditLogs(false)}
+        adminId={user?.uid || ''}
       />
     </div>
   );

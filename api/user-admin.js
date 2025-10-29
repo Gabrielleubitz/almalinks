@@ -1,0 +1,460 @@
+// User Admin API - Create, manage, and import users with temporary passwords
+import admin from 'firebase-admin';
+
+// Initialize Firebase Admin (reuse existing instance if available)
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
+  });
+}
+
+const db = admin.firestore();
+const auth = admin.auth();
+
+export default async function handler(req, res) {
+  // Handle CORS
+  if (req.method === 'OPTIONS') {
+    return res.status(200).json({ success: true });
+  }
+
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).json({ 
+      success: false, 
+      error: 'Method not allowed' 
+    });
+  }
+
+  const { action, adminId } = req.body;
+
+  // Verify admin permissions
+  if (!adminId) {
+    return res.status(401).json({ 
+      success: false, 
+      error: 'Admin ID required' 
+    });
+  }
+
+  try {
+    // Verify admin role
+    const adminUser = await db.collection('users').doc(adminId).get();
+    if (!adminUser.exists || adminUser.data()?.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Admin permissions required' 
+      });
+    }
+
+    switch (action) {
+      case 'create-user':
+        return await createUser(req, res, adminId);
+      case 'bulk-import':
+        return await bulkImport(req, res, adminId);
+      case 'force-password-reset':
+        return await forcePasswordReset(req, res, adminId);
+      case 'get-audit-logs':
+        return await getAuditLogs(req, res, adminId);
+      default:
+        return res.status(400).json({ 
+          success: false, 
+          error: `Unknown action: ${action}. Available actions: create-user, bulk-import, force-password-reset, get-audit-logs` 
+        });
+    }
+  } catch (error) {
+    console.error(`❌ User Admin Error (${action}):`, error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+};
+
+// Create a new user with temporary password
+async function createUser(req, res, adminId) {
+  const { 
+    email, 
+    name, 
+    role = 'member',
+    tempPassword,
+    phone,
+    company,
+    work,
+    position,
+    linkedinUsername 
+  } = req.body;
+
+  if (!email || !name || !tempPassword) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Missing required fields: email, name, and tempPassword are required' 
+    });
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Invalid email format' 
+    });
+  }
+
+  // Validate role
+  if (!['member', 'admin', 'speaker'].includes(role)) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Invalid role. Must be: member, admin, or speaker' 
+    });
+  }
+
+  // Validate password strength
+  if (tempPassword.length < 8) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Temporary password must be at least 8 characters long' 
+    });
+  }
+
+  try {
+    console.log(`👤 Creating new user: ${email} with role: ${role}`);
+
+    // Create user in Firebase Auth
+    const userRecord = await auth.createUser({
+      email: email.toLowerCase().trim(),
+      password: tempPassword,
+      displayName: name.trim(),
+      emailVerified: true // Admin-created users are automatically verified
+    });
+
+    console.log(`✅ Firebase Auth user created: ${userRecord.uid}`);
+
+    // Create user profile in Firestore
+    const userProfile = {
+      email: email.toLowerCase().trim(),
+      name: name.trim(),
+      role,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdBy: adminId,
+      tempPasswordSet: true,
+      mustChangePassword: true,
+      status: 'active',
+      ...(phone && { phone: phone.trim() }),
+      ...(company && { company: company.trim() }),
+      ...(work && { work: work.trim() }),
+      ...(position && { position: position.trim() }),
+      ...(linkedinUsername && { linkedinUsername: linkedinUsername.trim() })
+    };
+
+    await db.collection('users').doc(userRecord.uid).set(userProfile);
+    console.log(`✅ User profile created in Firestore`);
+
+    // Log audit trail
+    await logAuditAction(adminId, 'USER_CREATED', {
+      targetUserId: userRecord.uid,
+      targetEmail: email,
+      targetName: name,
+      targetRole: role,
+      tempPasswordSet: true
+    });
+
+    // Send credentials via email (using existing email service)
+    try {
+      // Import the email service directly instead of making HTTP request
+      const emailServiceHandler = await import('./email-service.js');
+      
+      // Create a mock request object for the email service
+      const emailReq = {
+        method: 'POST',
+        body: {
+          type: 'user-credentials',
+          email: email,
+          name: name,
+          tempPassword: tempPassword,
+          loginUrl: `${process.env.VERCEL_URL || 'http://localhost:3000'}/login`
+        }
+      };
+      
+      const emailRes = {
+        status: (code) => ({
+          json: (data) => console.log('Email service response:', code, data)
+        })
+      };
+      
+      await emailServiceHandler.default(emailReq, emailRes);
+      console.log('✅ Credentials email sent');
+    } catch (emailError) {
+      console.warn('⚠️ Failed to send credentials email:', emailError.message);
+      // Don't fail the user creation if email fails
+    }
+
+    return res.status(200).json({ 
+      success: true,
+      user: {
+        uid: userRecord.uid,
+        email: userProfile.email,
+        name: userProfile.name,
+        role: userProfile.role,
+        createdAt: new Date().toISOString(),
+        mustChangePassword: true
+      },
+      message: 'User created successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ Error creating user:', error);
+    
+    // Handle specific Firebase Auth errors
+    if (error.code === 'auth/email-already-exists') {
+      return res.status(409).json({ 
+        success: false, 
+        error: 'A user with this email already exists' 
+      });
+    }
+    
+    if (error.code === 'auth/invalid-email') {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid email address' 
+      });
+    }
+
+    throw error;
+  }
+}
+
+// Bulk import users from CSV data
+async function bulkImport(req, res, adminId) {
+  const { users, defaultTempPassword } = req.body;
+
+  if (!users || !Array.isArray(users) || users.length === 0) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Users array is required and cannot be empty' 
+    });
+  }
+
+  if (!defaultTempPassword || defaultTempPassword.length < 8) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Default temporary password must be at least 8 characters long' 
+    });
+  }
+
+  const results = {
+    total: users.length,
+    successful: [],
+    failed: [],
+    duplicates: []
+  };
+
+  console.log(`📦 Starting bulk import of ${users.length} users`);
+
+  // Process users in batches to avoid timeout
+  const batchSize = 10;
+  for (let i = 0; i < users.length; i += batchSize) {
+    const batch = users.slice(i, i + batchSize);
+    
+    await Promise.allSettled(batch.map(async (userData, index) => {
+      try {
+        const { email, name, role = 'member', phone, company, work, position, linkedinUsername } = userData;
+
+        if (!email || !name) {
+          throw new Error('Missing required fields: email and name');
+        }
+
+        const emailNormalized = email.toLowerCase().trim();
+        const actualIndex = i + index + 1; // 1-based index for user reference
+
+        console.log(`👤 Processing user ${actualIndex}/${users.length}: ${emailNormalized}`);
+
+        // Check for existing user
+        try {
+          await auth.getUserByEmail(emailNormalized);
+          results.duplicates.push({
+            rowIndex: actualIndex,
+            email: emailNormalized,
+            name: name.trim(),
+            error: 'User already exists'
+          });
+          return;
+        } catch (notFoundError) {
+          // User doesn't exist, continue with creation
+        }
+
+        // Create user in Firebase Auth
+        const userRecord = await auth.createUser({
+          email: emailNormalized,
+          password: defaultTempPassword,
+          displayName: name.trim(),
+          emailVerified: true
+        });
+
+        // Create user profile in Firestore
+        const userProfile = {
+          email: emailNormalized,
+          name: name.trim(),
+          role,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdBy: adminId,
+          tempPasswordSet: true,
+          mustChangePassword: true,
+          status: 'active',
+          importedAt: admin.firestore.FieldValue.serverTimestamp(),
+          ...(phone && { phone: phone.trim() }),
+          ...(company && { company: company.trim() }),
+          ...(work && { work: work.trim() }),
+          ...(position && { position: position.trim() }),
+          ...(linkedinUsername && { linkedinUsername: linkedinUsername.trim() })
+        };
+
+        await db.collection('users').doc(userRecord.uid).set(userProfile);
+
+        results.successful.push({
+          rowIndex: actualIndex,
+          uid: userRecord.uid,
+          email: emailNormalized,
+          name: name.trim(),
+          role
+        });
+
+        console.log(`✅ User ${actualIndex} created successfully`);
+
+      } catch (error) {
+        console.error(`❌ Failed to create user ${i + index + 1}:`, error);
+        results.failed.push({
+          rowIndex: i + index + 1,
+          email: userData.email,
+          name: userData.name,
+          error: error.message
+        });
+      }
+    }));
+  }
+
+  // Log bulk import audit trail
+  await logAuditAction(adminId, 'BULK_IMPORT', {
+    totalUsers: results.total,
+    successful: results.successful.length,
+    failed: results.failed.length,
+    duplicates: results.duplicates.length
+  });
+
+  console.log(`📦 Bulk import completed:`, {
+    total: results.total,
+    successful: results.successful.length,
+    failed: results.failed.length,
+    duplicates: results.duplicates.length
+  });
+
+  return res.status(200).json({ 
+    success: true,
+    results,
+    message: `Bulk import completed. ${results.successful.length}/${results.total} users created successfully.`
+  });
+}
+
+// Force password reset for a user
+async function forcePasswordReset(req, res, adminId) {
+  const { targetUserId } = req.body;
+
+  if (!targetUserId) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Target user ID is required' 
+    });
+  }
+
+  try {
+    // Update user profile to require password change
+    await db.collection('users').doc(targetUserId).update({
+      mustChangePassword: true,
+      passwordResetForcedAt: admin.firestore.FieldValue.serverTimestamp(),
+      passwordResetForcedBy: adminId
+    });
+
+    // Get user info for audit log
+    const userDoc = await db.collection('users').doc(targetUserId).get();
+    const userData = userDoc.data();
+
+    // Log audit trail
+    await logAuditAction(adminId, 'FORCE_PASSWORD_RESET', {
+      targetUserId: targetUserId,
+      targetEmail: userData?.email,
+      targetName: userData?.name
+    });
+
+    console.log(`🔐 Forced password reset for user: ${targetUserId}`);
+
+    return res.status(200).json({ 
+      success: true,
+      message: 'User will be required to change password on next login'
+    });
+
+  } catch (error) {
+    console.error('❌ Error forcing password reset:', error);
+    throw error;
+  }
+}
+
+// Get audit logs for admin actions
+async function getAuditLogs(req, res, adminId) {
+  const { limit = 100, startAfter } = req.body;
+
+  try {
+    let query = db.collection('audit_logs')
+      .orderBy('timestamp', 'desc')
+      .limit(parseInt(limit));
+
+    if (startAfter) {
+      const startAfterDoc = await db.collection('audit_logs').doc(startAfter).get();
+      query = query.startAfter(startAfterDoc);
+    }
+
+    const snapshot = await query.get();
+    const logs = [];
+
+    snapshot.forEach(doc => {
+      logs.push({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate?.()?.toISOString() || doc.data().timestamp
+      });
+    });
+
+    return res.status(200).json({ 
+      success: true,
+      logs,
+      hasMore: snapshot.size === parseInt(limit),
+      lastDoc: snapshot.size > 0 ? snapshot.docs[snapshot.size - 1].id : null
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching audit logs:', error);
+    throw error;
+  }
+}
+
+// Helper function to log audit actions
+async function logAuditAction(adminId, action, details = {}) {
+  try {
+    const logEntry = {
+      adminId,
+      action,
+      details,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      userAgent: details.userAgent || 'API',
+      ipAddress: details.ipAddress || 'unknown'
+    };
+
+    await db.collection('audit_logs').add(logEntry);
+    console.log(`📝 Audit log created: ${action}`);
+  } catch (error) {
+    console.error('❌ Failed to create audit log:', error);
+    // Don't throw error to avoid blocking main operation
+  }
+}

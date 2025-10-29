@@ -1,6 +1,6 @@
-const Mailjet = require('node-mailjet');
+import Mailjet from 'node-mailjet';
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return res.status(200).json({ success: true });
@@ -74,6 +74,17 @@ module.exports = async function handler(req, res) {
         subject = additionalData.subject || 'Admin Notification - Wine & Grind';
         variables = {
           ...additionalData
+        };
+        break;
+
+      case 'user-credentials':
+        templateId = process.env.MAILJET_USER_CREDENTIALS_TEMPLATE_ID;
+        subject = 'Your New Account Credentials - AlmaLinks';
+        variables = {
+          name: name || 'User',
+          email: email,
+          tempPassword: additionalData.tempPassword,
+          loginUrl: additionalData.loginUrl || `${process.env.VERCEL_URL || 'http://localhost:3000'}/login`
         };
         break;
 

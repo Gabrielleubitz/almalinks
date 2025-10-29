@@ -1,0 +1,239 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             resource != null && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isSelfOrAdmin(userId) {
+      return isOwner(userId) || isAdmin();
+    }
+
+    function hasRole(role) {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    // Users collection - Enhanced for admin user management
+    match /users/{userId} {
+      // Allow read if authenticated and (owner, admin, or approved user)
+      allow read: if isAuthenticated() && (
+        isOwner(userId) || 
+        isAdmin() ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved'
+      );
+      
+      // Allow create for new signups (self-registration) or admin creation
+      allow create: if (
+        // Self-registration
+        (isOwner(userId) && 
+         request.resource.data.email == request.auth.token.email &&
+         !request.resource.data.keys().hasAny(['role']) // Regular users can't set role on creation
+        ) ||
+        // Admin creation (via server-side API only)
+        (isAdmin() && 
+         request.resource.data.createdBy == request.auth.uid &&
+         request.resource.data.keys().hasAll(['role', 'createdBy']) // Admin-created users have these fields
+        )
+      );
+      
+      // Allow update if owner (for profile) or admin (for all fields)
+      allow update: if (
+        // User updating their own profile (but not role/admin fields)
+        (isOwner(userId) && 
+         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'createdBy', 'tempPasswordSet', 'passwordResetForcedBy']) &&
+         request.resource.data.email == resource.data.email // Can't change email
+        ) ||
+        // Admin updating any user
+        isAdmin()
+      );
+      
+      // Only admins can delete users
+      allow delete: if isAdmin();
+    }
+
+    // Audit logs collection - Admin only
+    match /audit_logs/{logId} {
+      // Only admins can read audit logs
+      allow read: if isAdmin();
+      
+      // Only server-side functions can create audit logs (no client-side writes)
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // Password reset tokens collection - Server-side only
+    match /password_resets/{token} {
+      // No direct client access - handled by server-side functions
+      allow read, write: if false;
+    }
+
+    // Registrations collection (for events)
+    match /registrations/{registrationId} {
+      allow read: if isAuthenticated() && (
+        isOwner(registrationId) || 
+        isAdmin()
+      );
+      
+      allow create: if isAuthenticated() && 
+                      isOwner(registrationId) &&
+                      request.resource.data.uid == request.auth.uid;
+      
+      allow update: if isAuthenticated() && (
+        isOwner(registrationId) || 
+        isAdmin()
+      );
+      
+      allow delete: if isAuthenticated() && (
+        isOwner(registrationId) || 
+        isAdmin()
+      );
+    }
+
+    // Events collection
+    match /events/{eventId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+      
+      // Event registrations subcollection
+      match /registrations/{userId} {
+        allow read: if isAuthenticated() && (
+          isOwner(userId) || 
+          isAdmin()
+        );
+        
+        allow create: if isAuthenticated() && 
+                        isOwner(userId);
+        
+        allow update: if isAuthenticated() && (
+          isOwner(userId) || 
+          isAdmin()
+        );
+        
+        allow delete: if isAuthenticated() && (
+          isOwner(userId) || 
+          isAdmin()
+        );
+      }
+    }
+
+    // Speakers collection
+    match /speakers/{speakerId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || hasRole('speaker');
+    }
+
+    // Connections collection (for networking)
+    match /connections/{connectionId} {
+      allow read: if isAuthenticated();
+      
+      // Users can create connections for themselves, admins can create any
+      allow create: if isAuthenticated() && (
+        (resource == null && 
+         (request.resource.data.user1 == request.auth.uid || 
+          request.resource.data.user2 == request.auth.uid)) ||
+        isAdmin()
+      );
+      
+      // Users can update their own connections, admins can update any
+      allow update: if isAuthenticated() && (
+        (resource.data.user1 == request.auth.uid || 
+         resource.data.user2 == request.auth.uid) ||
+        isAdmin()
+      );
+      
+      // Users can delete their own connections, admins can delete any
+      allow delete: if isAuthenticated() && (
+        (resource.data.user1 == request.auth.uid || 
+         resource.data.user2 == request.auth.uid) ||
+        isAdmin()
+      );
+    }
+
+    // Chat messages collection
+    match /chats/{chatId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+      
+      match /messages/{messageId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() && 
+                        request.resource.data.senderId == request.auth.uid;
+        allow update: if isAuthenticated() && 
+                        resource.data.senderId == request.auth.uid;
+        allow delete: if isAuthenticated() && (
+          resource.data.senderId == request.auth.uid ||
+          isAdmin()
+        );
+      }
+    }
+
+    // Announcements collection
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // System configuration and settings
+    match /config/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Privacy settings
+    match /privacy/{userId} {
+      allow read, write: if isAuthenticated() && (
+        isOwner(userId) || 
+        isAdmin()
+      );
+    }
+
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      
+      allow create: if isAuthenticated();
+      
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      
+      allow delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+    }
+
+    // Directory and profile discovery
+    match /directory/{userId} {
+      allow read: if isAuthenticated() && (
+        // Users can read directory entries if they're approved
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved' ||
+        isAdmin()
+      );
+      allow write: if isAdmin();
+    }
+
+    // Default rule - deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

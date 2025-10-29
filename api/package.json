@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "dependencies": {
     "node-mailjet": "^6.0.5",
     "twilio": "^4.19.0",
