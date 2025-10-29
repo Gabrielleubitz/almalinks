@@ -111,14 +111,14 @@ export class PasswordResetService {
       // Build the reset URL
       const resetUrl = `${window.location.origin}/reset-password?token=${token}`;
       
-      // Call the Netlify function
-      // TODO: Convert to Vercel API
-      const response = await fetch('/api/send-reset-email', {
+      // Call the Vercel API
+      const response = await fetch('/api/email-service', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          type: 'reset',
           email,
           resetUrl
         })

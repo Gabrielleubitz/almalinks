@@ -158,10 +158,11 @@ export const useRegistration = () => {
         };
 
         // Send confirmation email to user
-        await fetch('/api/send-registration-email', {
+        await fetch('/api/email-service', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            type: 'registration',
             email: finalData.email,
             name: finalData.name,
             eventDetails: eventDetails
@@ -169,12 +170,15 @@ export const useRegistration = () => {
         });
 
         // Send admin notification
-        await fetch('/api/send-admin-notification', {
+        await fetch('/api/email-service', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            type: 'admin-notification',
+            email: process.env.REACT_APP_ADMIN_EMAIL || 'admin@wineandgrind.com',
+            subject: 'New Event Registration',
             name: finalData.name,
-            email: finalData.email,
+            userEmail: finalData.email,
             phone: finalData.phone,
             work: finalData.work,
             eventDetails: eventDetails

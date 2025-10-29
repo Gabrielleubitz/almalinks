@@ -156,10 +156,11 @@ export const useAuth = () => {
         
         // Send signup confirmation email to user
         try {
-          await fetch('/api/send-signup-email', {
+          await fetch('/api/email-service', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+              type: 'signup',
               email: newUserData.email,
               name: newUserData.name
             })
@@ -187,12 +188,15 @@ export const useAuth = () => {
         
         // Send email notification to admin
         try {
-          await fetch('/api/send-admin-notification', {
+          await fetch('/api/email-service', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+              type: 'admin-notification',
+              email: process.env.REACT_APP_ADMIN_EMAIL || 'admin@wineandgrind.com',
+              subject: 'New User Registration - Pending Approval',
               name: newUserData.name,
-              email: newUserData.email,
+              userEmail: newUserData.email,
               phone: newUserData.phone || 'Not provided',
               work: `${newUserData.work || 'Not provided'} at ${newUserData.company || 'Not provided'}`
             })

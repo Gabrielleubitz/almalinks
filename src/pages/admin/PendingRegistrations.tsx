@@ -232,12 +232,13 @@ const PendingRegistrations: React.FC = () => {
       }
       
       // Send email via Vercel Function
-      const response = await fetch('/api/send-acceptance-email', {
+      const response = await fetch('/api/email-service', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          type: 'acceptance',
           email: userToApprove.email,
           name: userToApprove.name
         })
