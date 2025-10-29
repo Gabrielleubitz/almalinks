@@ -16,7 +16,19 @@
       ]
     },
     {
-      "source": "/(.*\\.(js|css|html))",
+      "source": "/(.*\\.js)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public,max-age=3600,must-revalidate" }
+      ]
+    },
+    {
+      "source": "/(.*\\.css)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public,max-age=3600,must-revalidate" }
+      ]
+    },
+    {
+      "source": "/(.*\\.html)",
       "headers": [
         { "key": "Cache-Control", "value": "public,max-age=3600,must-revalidate" }
       ]

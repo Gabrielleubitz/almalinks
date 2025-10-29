@@ -1,0 +1,47 @@
+# Dependencies
+node_modules
+
+# Development files
+.env.local
+.env.development.local
+.env.test.local
+
+# Build artifacts
+dist
+.vite
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Firebase
+firebase-debug.log
+firebase-debug.*.log
+.firebase/
+*-firebase-adminsdk-*.json
+
+# Documentation
+*.md
+!README.md
+
+# Git
+.git
+
+# Temporary files
+*.tmp
+*.temp
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Local development
+.netlify/
+dev-server.js
