@@ -173,7 +173,7 @@ const LoginPage: React.FC = () => {
         <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
           <img 
             src={logoSvg}
-            alt="Wine & Grind Logo" 
+            alt="AlmaLinks Logo" 
             className="h-8 md:h-10 w-auto"
           />
         </Link>
@@ -284,7 +284,7 @@ const LoginPage: React.FC = () => {
                   Welcome Back
                 </h2>
                 <p className="text-gray-600">
-                  Sign in to your Wine & Grind account
+                  Sign in to your AlmaLinks account
                 </p>
               </div>
 
@@ -404,10 +404,10 @@ const LoginPage: React.FC = () => {
                 <p className="text-sm text-gray-500">
                   Having trouble? Contact us at{' '}
                   <a 
-                    href="mailto:info@winengrind.com" 
+                    href="mailto:info@almalinks.org" 
                     className="text-red-600 hover:text-red-700 font-medium"
                   >
-                    info@winengrind.com
+                    info@almalinks.org
                   </a>
                 </p>
               </div>

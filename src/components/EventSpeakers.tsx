@@ -4,15 +4,16 @@ import { Link } from 'react-router-dom';
 
 interface EventSpeakersProps {
   speakers: Array<{
-    userId: string;
+    id: string;
     name: string;
-    email: string;
+    title?: string;
     bio?: string;
+    email?: string;
     company?: string;
-    role?: string;
-    position?: string;
-    linkedinUsername?: string;
-    profileImage?: string | null;
+    imageUrl?: string;
+    linkedIn?: string;
+    twitter?: string;
+    website?: string;
   }>;
   className?: string;
   showViewAll?: boolean;
@@ -50,39 +51,6 @@ const EventSpeakers: React.FC<EventSpeakersProps> = ({
     return colors[index];
   };
 
-  // Format position for display
-  const formatPosition = (position: string | undefined): string => {
-    if (!position) return '';
-    
-    const positionMap: Record<string, string> = {
-      'investor': 'Investor',
-      'c_level': 'C-Level Executive',
-      'vp_level': 'VP Level',
-      'director': 'Director',
-      'senior_manager': 'Senior Manager',
-      'manager': 'Manager',
-      'senior_contributor': 'Senior Contributor',
-      'individual_contributor': 'Individual Contributor',
-      'junior_level': 'Junior Level',
-      'founder': 'Founder',
-      'consultant': 'Consultant',
-      'student': 'Student',
-      'other': 'Other'
-    };
-    
-    return positionMap[position] || position;
-  };
-
-  // Format LinkedIn username for display
-  const formatLinkedinUrl = (username: string | undefined) => {
-    if (!username) return '';
-    
-    // Remove any linkedin.com prefix if present
-    const cleanUsername = username.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '');
-    
-    // Remove trailing slash if present
-    return cleanUsername.replace(/\/$/, '');
-  };
 
   return (
     <div className={`rounded-2xl p-6 ${className}`}>
@@ -94,14 +62,14 @@ const EventSpeakers: React.FC<EventSpeakersProps> = ({
       <div className="space-y-4">
         {speakers.slice(0, 4).map((speaker) => (
           <div 
-            key={speaker.userId}
+            key={speaker.id}
             className="flex flex-col p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300"
           >
             <div className="flex items-center space-x-4 mb-2">
               <div className="w-12 h-12 rounded-full overflow-hidden">
-                {speaker.profileImage ? (
+                {speaker.imageUrl ? (
                   <img 
-                    src={speaker.profileImage} 
+                    src={speaker.imageUrl} 
                     alt={speaker.name} 
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -118,31 +86,31 @@ const EventSpeakers: React.FC<EventSpeakersProps> = ({
               <div>
                 <h4 className="font-semibold text-gray-900">{speaker.name}</h4>
                 <p className="text-sm text-gray-600 mt-1">
-                  {speaker.role || speaker.company || 'Speaker'}
+                  {speaker.title || speaker.company || 'Speaker'}
                 </p>
               </div>
             </div>
             
-            {/* Position and LinkedIn - New section */}
+            {/* Company and LinkedIn */}
             <div className="mt-2 pl-16">
-              {speaker.position && (
+              {speaker.company && (
                 <div className="flex items-center text-sm text-gray-600 mb-1">
                   <Briefcase className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
-                  <span>{formatPosition(speaker.position)}</span>
+                  <span>{speaker.company}</span>
                 </div>
               )}
               
-              {speaker.linkedinUsername && (
+              {speaker.linkedIn && (
                 <div className="flex items-center text-sm">
                   <Linkedin className="h-3.5 w-3.5 mr-1.5 text-blue-600" />
                   <a 
-                    href={`https://linkedin.com/in/${formatLinkedinUrl(speaker.linkedinUsername)}`}
+                    href={speaker.linkedIn.startsWith('http') ? speaker.linkedIn : `https://linkedin.com/in/${speaker.linkedIn}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800 hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {formatLinkedinUrl(speaker.linkedinUsername)}
+                    LinkedIn Profile
                   </a>
                 </div>
               )}

@@ -67,7 +67,7 @@ const PWAInstallPrompt: React.FC = () => {
       <div className="bg-black/80 text-white px-4 py-3 rounded-xl shadow-lg max-w-sm flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <Download className="h-5 w-5 text-white" />
-          <p className="text-sm">Install Wine & Grind for quick access</p>
+          <p className="text-sm">Install AlmaLinks for quick access</p>
         </div>
         <div className="flex items-center space-x-2">
           <button

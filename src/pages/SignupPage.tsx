@@ -283,7 +283,7 @@ const SignupPage: React.FC = () => {
         <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
           <img 
             src={logoSvg}
-            alt="Wine & Grind Logo" 
+            alt="AlmaLinks Logo" 
             className="h-8 md:h-10 w-auto"
           />
         </Link>
@@ -307,7 +307,7 @@ const SignupPage: React.FC = () => {
               <User className="h-8 w-8 text-white" />
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Join Wine & Grind
+              Join AlmaLinks
             </h2>
             <p className="text-gray-600">
               Create your account to access exclusive events

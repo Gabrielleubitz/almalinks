@@ -165,7 +165,7 @@ const EditEvent: React.FC = () => {
 
       // Redirect after 2 seconds
       setTimeout(() => {
-        navigate('/admin/events');
+        navigate('/admin');
       }, 2000);
 
     } catch (err: any) {
@@ -220,7 +220,7 @@ const EditEvent: React.FC = () => {
             <h1 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Event</h1>
             <p className="text-red-600 mb-4">{error}</p>
             <button
-              onClick={() => navigate('/admin/events')}
+              onClick={() => navigate('/admin')}
               className="bg-gray-100 text-gray-700 px-6 py-2 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium"
             >
               Back to Events
@@ -242,7 +242,7 @@ const EditEvent: React.FC = () => {
         {/* Back Button */}
         <div className="mb-8">
           <button
-            onClick={() => navigate('/admin/events')}
+            onClick={() => navigate('/admin')}
             className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -434,7 +434,7 @@ const EditEvent: React.FC = () => {
             <div className="flex justify-center space-x-4 pt-6">
               <button
                 type="button"
-                onClick={() => navigate('/admin/events')}
+                onClick={() => navigate('/admin')}
                 className="bg-gray-100 text-gray-700 px-8 py-3 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-semibold"
               >
                 Cancel

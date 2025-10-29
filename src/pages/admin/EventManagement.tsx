@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, ArrowLeft } from 'lucide-react';
+import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, ArrowLeft, UserCheck, CheckCircle, Clock } from 'lucide-react';
 import { EventService, EventData } from '../../services/eventService';
 import AdminHeader from '../../components/admin/AdminHeader';
 import EventPositionChart from '../../components/analytics/EventPositionChart';
@@ -20,6 +20,7 @@ const EventManagement: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [loadingRegistrations, setLoadingRegistrations] = useState(false);
+  const [checkingInUsers, setCheckingInUsers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadEvents();
@@ -128,6 +129,41 @@ const EventManagement: React.FC = () => {
     setShowRegistrations(false);
     setSelectedEvent(null);
     setRegistrations([]);
+  };
+
+  // Function to handle manual check-in
+  const handleManualCheckIn = async (userId: string, userName: string) => {
+    if (!selectedEvent || checkingInUsers.has(userId)) return;
+
+    setCheckingInUsers(prev => new Set(prev).add(userId));
+
+    try {
+      console.log('🔄 Manually checking in user:', userId, 'for event:', selectedEvent.id);
+      
+      // Update check-in status in Firebase (this will trigger auto-connect)
+      await EventService.updateCheckInStatus(selectedEvent.id, userId, true);
+      
+      // Update local state to reflect the change
+      setRegistrations(prevRegistrations => 
+        prevRegistrations.map(reg => 
+          reg.userId === userId 
+            ? { ...reg, checkedIn: true, checkedInAt: new Date() }
+            : reg
+        )
+      );
+
+      console.log('✅ User checked in successfully:', userName);
+      
+    } catch (error) {
+      console.error('❌ Error checking in user:', error);
+      alert('Failed to check in user. Please try again.');
+    } finally {
+      setCheckingInUsers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(userId);
+        return newSet;
+      });
+    }
   };
 
   // Function to export registrations to CSV
@@ -287,7 +323,7 @@ const EventManagement: React.FC = () => {
         {/* Back Button */}
         <div className="mb-8">
           <Link
-            to="/admin-tools"
+            to="/admin"
             className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -398,7 +434,7 @@ const EventManagement: React.FC = () => {
                       <span>View</span>
                     </Link>
                     <Link
-                      to={`/admin/events/${event.id}/edit`}
+                      to={`/admin/${event.id}/edit`}
                       className="flex-1 bg-green-100 text-green-700 px-3 py-2 rounded-lg hover:bg-green-200 transition-colors duration-200 font-medium text-center flex items-center justify-center space-x-2 text-sm"
                     >
                       <Edit className="h-4 w-4" />
@@ -596,6 +632,9 @@ const EventManagement: React.FC = () => {
                           <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Registered
                           </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -679,6 +718,38 @@ const EventManagement: React.FC = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {formatDateForExport(registration.registeredAt)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {!registration.checkedIn ? (
+                                <button
+                                  onClick={() => handleManualCheckIn(registration.userId, registration.name)}
+                                  disabled={checkingInUsers.has(registration.userId)}
+                                  className="bg-gradient-to-r from-green-600 to-green-700 text-white px-3 py-1.5 rounded-lg hover:shadow-lg transition-all duration-300 font-medium text-sm flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title={`Check in ${registration.name}`}
+                                >
+                                  {checkingInUsers.has(registration.userId) ? (
+                                    <>
+                                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                      <span>Checking In...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <UserCheck className="h-3 w-3" />
+                                      <span>Check In</span>
+                                    </>
+                                  )}
+                                </button>
+                              ) : (
+                                <div className="flex items-center space-x-1.5 text-green-600">
+                                  <CheckCircle className="h-4 w-4" />
+                                  <span className="text-sm font-medium">Checked In</span>
+                                  {registration.checkedInAt && (
+                                    <div className="text-xs text-gray-500 ml-2">
+                                      {formatDateForExport(registration.checkedInAt)}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </td>
                           </tr>
                         ))}

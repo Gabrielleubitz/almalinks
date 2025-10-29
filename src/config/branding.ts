@@ -1,12 +1,12 @@
 /**
- * Wine & Grind Badge Branding Configuration
+ * AlmaLinks Badge Branding Configuration
  * Centralized styling for lanyard badges and other branded materials
  */
 
 export const BADGE_BRANDING = {
-  // Colors (using Wine & Grind theme)
+  // Colors (using AlmaLinks theme)
   colors: {
-    // Primary wine color (deep red)
+    // Primary brand color
     primary: '#8B0000',
     // Secondary blue from gradient
     secondary: '#1E40AF',

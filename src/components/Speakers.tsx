@@ -6,19 +6,19 @@ const Speakers = () => {
 
   const testimonials = [
     {
-      quote: "Wine Grind creates the perfect balance of meaningful networking and relaxed, genuine conversations. The event I attended was filled with high-level connections, great energy, and a real openness to share ideas. It's rare to find a community like this where business and personal growth happen so naturally.",
+      quote: "AlmaLinks creates the perfect balance of meaningful networking and genuine business conversations. The events I attended were filled with high-level connections, great energy, and a real openness to share ideas. It's rare to find a professional community like this where business growth happens so naturally.",
       author: "Mati Greenspan",
       title: "Managing Partner, TechVentures",
       company: "Leading VC Firm"
     },
     {
-      quote: "I had the pleasure of presenting SleepAI at a recent Wine & Grind event in Netanya. It was a fantastic experience — well-organized, great energy, and full of valuable networking. I connected with several professionals who are already becoming meaningful contacts. Grateful to the Wine & Grind team for building such a supportive platform for startups.",
+      quote: "I had the pleasure of presenting SleepAI at a recent AlmaLinks event. It was a fantastic experience — well-organized, great energy, and full of valuable networking. I connected with several professionals who are already becoming meaningful contacts. Grateful to the AlmaLinks team for building such a supportive platform for business leaders.",
       author: "Shirel Attia",
       title: "Co-Founder & CEO",
       company: "SleepAI"
     },
     {
-      quote: "Wine & Grind has become the must-attend event for anyone serious about the future of technology and business. The connections made here are invaluable.",
+      quote: "AlmaLinks has become the must-attend network for anyone serious about the future of technology and business. The connections made here are invaluable.",
       author: "Dr. Emily Watson",
       title: "Chief Innovation Officer",
       company: "Fortune 500 Tech Company"
@@ -39,7 +39,7 @@ const Speakers = () => {
           <h2 className="text-4xl md:text-5xl font-bold mb-6 slide-up">
             These are just a few of the{' '}
             <span className="gradient-text">bold thinkers</span>{' '}
-            who bring Wine & Grind to life.
+            who bring AlmaLinks to life.
           </h2>
         </div>
 

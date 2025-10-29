@@ -192,7 +192,7 @@ const SpeakersPage: React.FC = () => {
               Our <span className="gradient-text">Speakers</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-4xl mx-auto leading-relaxed fade-in-delay">
-              Meet the industry leaders and innovators who share their insights at Wine & Grind events.
+              Meet the industry leaders and innovators who share their insights at AlmaLinks network events.
             </p>
           </div>
         </div>

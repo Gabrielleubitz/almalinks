@@ -83,7 +83,7 @@ const UpcomingEvent = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 slide-up">
-              Next <span className="gradient-text">Wine & Grind</span>
+              Next <span className="gradient-text">AlmaLinks Event</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto slide-up-delay">
               We're working on our next amazing event. Stay tuned for updates!
@@ -121,7 +121,7 @@ const UpcomingEvent = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 slide-up">
-            Next <span className="gradient-text">Wine & Grind</span>
+            Next <span className="gradient-text">AlmaLinks Event</span>
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto slide-up-delay">
             Join us for our most ambitious gathering yet. Limited spots available.

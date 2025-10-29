@@ -3,9 +3,9 @@ import { Users, Calendar, Trophy } from 'lucide-react';
 
 const About = () => {
   const stats = [
-    { icon: Calendar, number: '4', label: 'Events Hosted' },
-    { icon: Users, number: '700+', label: 'CEOs & Leaders' },
-    { icon: Trophy, number: '100%', label: 'Invite-Only' },
+    { icon: Calendar, number: '300+', label: 'Events to Date' },
+    { icon: Users, number: '500+', label: 'Members' },
+    { icon: Trophy, number: '45+', label: 'Cities Worldwide' },
   ];
 
   return (
@@ -13,13 +13,13 @@ const About = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12 sm:mb-16">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6 slide-up px-2">
-            What is <span className="gradient-text">Wine & Grind</span>?
+            What is <span className="gradient-text">AlmaLinks</span>?
           </h2>
           <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed slide-up-delay px-4">
-            We've hosted 4 events with over 700 CEOs, investors, and high-tech leaders. 
-            Our next one is just around the corner. Wine & Grind is where the future 
-            of business and technology takes shape through meaningful connections and 
-            bold conversations.
+            AlmaLinks is a global professional network that fosters meaningful relationships between 
+            altruistic CEOs, founders, financiers, and seasoned executives. We nurture our members' 
+            professional success and personal development by connecting them to each other — outstanding 
+            business leaders in Israel and the Jewish communities worldwide.
           </p>
         </div>
 
@@ -45,10 +45,10 @@ const About = () => {
         <div className="bg-gradient-to-r from-red-50 to-blue-50 rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 slide-up">
           <div className="max-w-4xl mx-auto text-center">
             <p className="text-base sm:text-lg md:text-xl text-gray-700 leading-relaxed">
-              "Wine & Grind isn't just another networking event. It's a carefully curated 
-              experience where industry leaders come together to share insights, challenge 
-              assumptions, and forge the partnerships that will define tomorrow's business landscape. 
-              Every conversation matters, every connection counts."
+              "AlmaLinks embodies our core values of intellectual generosity, a culture of curiosity, 
+              mutual respect, and openness. We build genuine connections without expectations, fostering 
+              an environment where every member seeks to learn and share. While all members are of Jewish 
+              heritage, AlmaLinks is not religiously or politically affiliated."
             </p>
           </div>
         </div>

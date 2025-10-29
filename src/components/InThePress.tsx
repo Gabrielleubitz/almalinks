@@ -50,8 +50,8 @@ const InThePress = () => {
             Featured <span className="gradient-text">In the Press</span>
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed slide-up-delay">
-            See what industry leaders and top publications are saying about Wine & Grind's 
-            impact on the future of business networking.
+            See what industry leaders and top publications are saying about AlmaLinks' 
+            impact on professional networking and business connections.
           </p>
         </div>
 
@@ -144,11 +144,11 @@ const InThePress = () => {
               Media Inquiries
             </h3>
             <p className="text-gray-600 mb-6">
-              Interested in covering Wine & Grind or interviewing our community members? 
+              Interested in covering AlmaLinks or interviewing our community members? 
               We'd love to hear from you.
             </p>
             <a 
-              href="mailto:press@winengrind.com"
+              href="mailto:press@almalinks.org"
               className="inline-flex items-center justify-center bg-gradient-to-r from-red-700 to-blue-600 text-white px-8 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
             >
               Contact Press Team

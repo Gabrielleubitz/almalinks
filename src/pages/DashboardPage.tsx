@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, ArrowRight, Clock, Users, RotateCcw, User, Mail, Phone, Briefcase, Ticket, Download, Edit, Save, X, Check, AlertCircle, ChevronDown, Linkedin } from 'lucide-react';
+import { Calendar, MapPin, ArrowRight, Clock, Users, RotateCcw, User, Mail, Phone, Briefcase, Ticket, Download, Edit, Save, X, Check, AlertCircle, ChevronDown, Linkedin, Globe, Twitter } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { EventService, EventData } from '../services/eventService';
 import { useAuth } from '../hooks/useAuth';
@@ -78,9 +78,19 @@ const EventsPage: React.FC = () => {
     email: '',
     phoneNumber: '',
     work: '',
+    company: '',
     linkedinUsername: '',
-    position: ''
+    position: '',
+    bioTitle: '',
+    bio: '',
+    city: '',
+    country: '',
+    timezone: '',
+    website: '',
+    twitter: '',
+    skills: [] as string[]
   });
+  const [skillsInputValue, setSkillsInputValue] = useState('');
   const [selectedCountryCode, setSelectedCountryCode] = useState('+972');
   const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
   const [profileUpdateError, setProfileUpdateError] = useState<string | null>(null);
@@ -107,9 +117,19 @@ const EventsPage: React.FC = () => {
         email: user.email || '',
         phoneNumber: phoneNumber,
         work: user.work || '',
+        company: user.company || '',
         linkedinUsername: user.linkedinUsername || '',
-        position: user.position || ''
+        position: user.position || '',
+        bioTitle: user.bioTitle || '',
+        bio: user.bio || '',
+        city: user.city || '',
+        country: user.country || '',
+        timezone: user.timezone || '',
+        website: user.website || '',
+        twitter: user.twitter || '',
+        skills: user.skills || []
       });
+      setSkillsInputValue((user.skills || []).join(', '));
       setSelectedCountryCode(countryCode);
       setProfileImageUrl(user.profileImage || null);
     }
@@ -206,7 +226,7 @@ const EventsPage: React.FC = () => {
   }, [events, user?.uid]);
 
   // Handle edit profile form changes
-  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
     // For phone number, only allow digits
@@ -222,6 +242,23 @@ const EventsPage: React.FC = () => {
         [name]: value
       }));
     }
+  };
+
+  // Handle skills input with real-time parsing
+  const handleSkillsInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setSkillsInputValue(value);
+    
+    // Parse skills in real-time
+    const skillsArray = value
+      .split(/[,;\n]/) // Split on comma, semicolon, or newline
+      .map(skill => skill.trim())
+      .filter(skill => skill);
+    
+    setEditFormData(prev => ({
+      ...prev,
+      skills: skillsArray
+    }));
   };
 
   // Start editing profile
@@ -244,9 +281,19 @@ const EventsPage: React.FC = () => {
         email: user.email || '',
         phoneNumber: phoneNumber,
         work: user.work || '',
+        company: user.company || '',
         linkedinUsername: user.linkedinUsername || '',
-        position: user.position || ''
+        position: user.position || '',
+        bioTitle: user.bioTitle || '',
+        bio: user.bio || '',
+        city: user.city || '',
+        country: user.country || '',
+        timezone: user.timezone || '',
+        website: user.website || '',
+        twitter: user.twitter || '',
+        skills: user.skills || []
       });
+      setSkillsInputValue((user.skills || []).join(', '));
       setSelectedCountryCode(countryCode);
       setProfileImageUrl(user.profileImage || null);
     }
@@ -310,14 +357,29 @@ const EventsPage: React.FC = () => {
       // Format LinkedIn username (remove any linkedin.com prefix)
       const formattedLinkedin = editFormData.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '');
 
+      // Format social media usernames
+      const formattedTwitter = editFormData.twitter.replace(/^(https?:\/\/)?(www\.)?(twitter\.com\/|x\.com\/)@?/i, '').replace(/^@/, '');
+      const formattedWebsite = editFormData.website && !editFormData.website.startsWith('http') 
+        ? `https://${editFormData.website}` 
+        : editFormData.website;
+
       // Update profile using the auth hook
       await updateProfile({
         name: editFormData.name.trim(),
         phone: formattedPhone,
         work: editFormData.work.trim(),
+        company: editFormData.company.trim(),
         linkedinUsername: formattedLinkedin,
         position: editFormData.position,
-        profileImage: profileImageUrl
+        profileImage: profileImageUrl,
+        bioTitle: editFormData.bioTitle.trim(),
+        bio: editFormData.bio.trim(),
+        city: editFormData.city.trim(),
+        country: editFormData.country.trim(),
+        timezone: editFormData.timezone,
+        website: formattedWebsite,
+        twitter: formattedTwitter.trim(),
+        skills: editFormData.skills
       });
 
       setProfileUpdateSuccess('Profile updated successfully!');
@@ -498,25 +560,77 @@ const EventsPage: React.FC = () => {
         </div>
       </section>
 
-      {/* User Profile Section - Only show if logged in */}
+      {/* Main Dashboard Content - Only show if logged in */}
       {user && (
-        <section className="py-16 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-3 gap-8">
-              {/* Profile Section - Takes 2/3 of the space */}
-              <div className="lg:col-span-2">
-                <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+        <section className="py-12 bg-gradient-to-br from-gray-50 to-white">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            {/* Dashboard Header */}
+            <div className="mb-8">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+                  <p className="text-gray-600">Manage your profile, tickets, and connections</p>
+                </div>
+                {!isEditingProfile && (
+                  <button
+                    onClick={handleEditProfile}
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-2xl hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2 w-fit"
+                  >
+                    <Edit className="h-5 w-5" />
+                    <span>Edit Profile</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Stats Cards */}
+            <div className="grid md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <User className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Profile Status</p>
+                    <p className="font-semibold text-gray-900">Active Member</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                    <Ticket className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Event Tickets</p>
+                    <p className="font-semibold text-gray-900">{userRegistrations.length} Active</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <Users className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Network</p>
+                    <p className="font-semibold text-gray-900">Growing</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content Grid */}
+            <div className="grid lg:grid-cols-4 gap-8">
+              
+              {/* Profile Section - Takes 3/4 of the space */}
+              <div className="lg:col-span-3 space-y-6">
+                <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">Your Profile</h2>
-                    {!isEditingProfile && (
-                      <button
-                        onClick={handleEditProfile}
-                        className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2"
-                      >
-                        <Edit className="h-4 w-4" />
-                        <span>Edit Profile</span>
-                      </button>
-                    )}
+                    <h2 className="text-xl font-semibold text-gray-900">Your Profile</h2>
                   </div>
 
                   {/* Success Message */}
@@ -537,26 +651,35 @@ const EventsPage: React.FC = () => {
 
                   {isEditingProfile ? (
                     /* Edit Mode */
-                    <div className="space-y-6">
+                    <div className="space-y-8">
                       {/* Profile Picture Section */}
-                      <div className="flex flex-col items-center mb-6">
-                        <ProfilePictureUploader
-                          currentImageUrl={user?.profileImage || null}
-                          onUploadSuccess={handleProfilePictureSuccess}
-                          onUploadError={handleProfilePictureError}
-                          size="lg"
-                        />
-                        
-                        {imageUploadError && (
-                          <p className="text-red-600 text-sm mt-2">{imageUploadError}</p>
-                        )}
-                        
-                        <p className="text-sm text-gray-500 mt-2">
-                          Click on the image to upload a new profile picture
-                        </p>
+                      <div className="bg-gray-50 rounded-2xl p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h3>
+                        <div className="flex flex-col items-center">
+                          <ProfilePictureUploader
+                            currentImageUrl={user?.profileImage || null}
+                            onUploadSuccess={handleProfilePictureSuccess}
+                            onUploadError={handleProfilePictureError}
+                            size="lg"
+                          />
+                          
+                          {imageUploadError && (
+                            <p className="text-red-600 text-sm mt-2">{imageUploadError}</p>
+                          )}
+                          
+                          <p className="text-sm text-gray-500 mt-2">
+                            Click on the image to upload a new profile picture
+                          </p>
+                        </div>
                       </div>
-                      
-                      <div className="grid md:grid-cols-2 gap-6">
+
+                      {/* Basic Information Section */}
+                      <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                          <User className="h-5 w-5 mr-2 text-gray-500" />
+                          Basic Information
+                        </h3>
+                        <div className="grid md:grid-cols-2 gap-6">
                         {/* Name */}
                         <div>
                           <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -653,10 +776,10 @@ const EventsPage: React.FC = () => {
                           )}
                         </div>
 
-                        {/* Work */}
+                        {/* Job Title */}
                         <div>
                           <label htmlFor="work" className="block text-sm font-medium text-gray-700 mb-2">
-                            Work / What do you do? *
+                            Job Title *
                           </label>
                           <div className="relative">
                             <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -668,7 +791,27 @@ const EventsPage: React.FC = () => {
                               value={editFormData.work}
                               onChange={handleEditFormChange}
                               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                              placeholder="e.g., CEO at TechCorp, Software Engineer, Investor"
+                              placeholder="e.g., CEO, Software Engineer, Investor, Product Manager"
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Company */}
+                        <div>
+                          <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
+                            Company
+                          </label>
+                          <div className="relative">
+                            <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                            <input
+                              id="company"
+                              name="company"
+                              type="text"
+                              value={editFormData.company || ''}
+                              onChange={handleEditFormChange}
+                              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                              placeholder="e.g., TechCorp, Microsoft, Startup Inc."
+                              disabled={profileUpdateLoading}
                             />
                           </div>
                         </div>
@@ -722,165 +865,631 @@ const EventsPage: React.FC = () => {
                             <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
                           </div>
                         </div>
+                        </div>
+                      </div>
+
+                      {/* Professional Information Section */}
+                      <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                          <Briefcase className="h-5 w-5 mr-2 text-gray-500" />
+                          Professional Information
+                        </h3>
+                        <div className="grid md:grid-cols-2 gap-6">
+
+                        {/* Bio Title */}
+                        <div className="md:col-span-2">
+                          <label htmlFor="bioTitle" className="block text-sm font-medium text-gray-700 mb-2">
+                            Professional Bio Title
+                          </label>
+                          <input
+                            id="bioTitle"
+                            name="bioTitle"
+                            type="text"
+                            value={editFormData.bioTitle}
+                            onChange={handleEditFormChange}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                            placeholder="e.g., Passionate about AI and startups"
+                            disabled={profileUpdateLoading}
+                          />
+                        </div>
+                        </div>
+                      </div>
+
+                      {/* Location & Contact Information Section */}
+                      <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                          <MapPin className="h-5 w-5 mr-2 text-gray-500" />
+                          Location & Contact
+                        </h3>
+                        <div className="grid md:grid-cols-2 gap-6">
+                          {/* City */}
+                          <div>
+                            <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
+                              City
+                            </label>
+                            <input
+                              id="city"
+                              name="city"
+                              type="text"
+                              value={editFormData.city}
+                              onChange={handleEditFormChange}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                              placeholder="e.g., New York, London, Tel Aviv"
+                              disabled={profileUpdateLoading}
+                            />
+                          </div>
+
+                          {/* Country */}
+                          <div>
+                            <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
+                              Country
+                            </label>
+                            <input
+                              id="country"
+                              name="country"
+                              type="text"
+                              value={editFormData.country}
+                              onChange={handleEditFormChange}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                              placeholder="e.g., United States, Israel, United Kingdom"
+                              disabled={profileUpdateLoading}
+                            />
+                          </div>
+
+                          {/* Timezone */}
+                          <div>
+                            <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-2">
+                              Timezone
+                            </label>
+                            <select
+                              id="timezone"
+                              name="timezone"
+                              value={editFormData.timezone}
+                              onChange={handleEditFormChange}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                              disabled={profileUpdateLoading}
+                            >
+                              <option value="">Select timezone...</option>
+                              <option value="America/New_York">Eastern Time (ET)</option>
+                              <option value="America/Chicago">Central Time (CT)</option>
+                              <option value="America/Denver">Mountain Time (MT)</option>
+                              <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                              <option value="Europe/London">GMT (London)</option>
+                              <option value="Europe/Paris">CET (Paris/Berlin)</option>
+                              <option value="Asia/Jerusalem">Israel Time</option>
+                              <option value="Asia/Dubai">Gulf Time</option>
+                              <option value="Asia/Singapore">Singapore Time</option>
+                              <option value="Asia/Tokyo">Japan Time</option>
+                              <option value="Australia/Sydney">Australia Eastern</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Social Media & Online Presence Section */}
+                      <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                          <Globe className="h-5 w-5 mr-2 text-gray-500" />
+                          Social Media & Online Presence
+                        </h3>
+                        <div className="grid md:grid-cols-2 gap-6">
+                          {/* Website */}
+                          <div>
+                            <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">
+                              Website
+                            </label>
+                            <div className="relative">
+                              <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                              <input
+                                id="website"
+                                name="website"
+                                type="url"
+                                value={editFormData.website}
+                                onChange={handleEditFormChange}
+                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                placeholder="e.g., mycompany.com or https://myportfolio.com"
+                                disabled={profileUpdateLoading}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Twitter */}
+                          <div>
+                            <label htmlFor="twitter" className="block text-sm font-medium text-gray-700 mb-2">
+                              Twitter/X Username
+                            </label>
+                            <div className="relative">
+                              <Twitter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                              <input
+                                id="twitter"
+                                name="twitter"
+                                type="text"
+                                value={editFormData.twitter}
+                                onChange={handleEditFormChange}
+                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                placeholder="e.g., johndoe (without @ or twitter.com)"
+                                disabled={profileUpdateLoading}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* About You Section */}
+                      <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-6">About You</h3>
+                        <div className="space-y-6">
+                          {/* Bio */}
+                          <div>
+                            <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
+                              Personal Bio
+                            </label>
+                            <textarea
+                              id="bio"
+                              name="bio"
+                              rows={4}
+                              value={editFormData.bio}
+                              onChange={handleEditFormChange}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                              placeholder="Tell us about yourself, your background, interests, and what you're passionate about..."
+                              disabled={profileUpdateLoading}
+                            />
+                            <div className="flex justify-between items-center mt-1">
+                              <p className="text-xs text-gray-500">
+                                Share your story, interests, and what drives you professionally.
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {editFormData.bio.length}/500 characters
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Skills */}
+                          <div>
+                            <label htmlFor="skills" className="block text-sm font-medium text-gray-700 mb-2">
+                              Skills & Expertise
+                            </label>
+                            <textarea
+                              id="skills"
+                              name="skills"
+                              rows={3}
+                              value={skillsInputValue}
+                              onChange={handleSkillsInputChange}
+                              onKeyDown={(e) => {
+                                // Allow Enter to add skills
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  const currentValue = e.currentTarget.value;
+                                  if (!currentValue.endsWith(',') && !currentValue.endsWith(';')) {
+                                    const newValue = currentValue + ', ';
+                                    setSkillsInputValue(newValue);
+                                    // Trigger parsing
+                                    const mockEvent = { target: { value: newValue } } as React.ChangeEvent<HTMLTextAreaElement>;
+                                    handleSkillsInputChange(mockEvent);
+                                  }
+                                }
+                              }}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                              placeholder="Type your skills and press Enter or use commas, semicolons to separate them&#10;e.g., JavaScript&#10;Product Management&#10;Data Analysis&#10;Machine Learning"
+                              disabled={profileUpdateLoading}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Separate skills with commas (,) semicolons (;) or press Enter. If comma key doesn't work, try semicolon (;) or Enter.
+                            </p>
+                            {editFormData.skills.length > 0 && (
+                              <div className="mt-3 p-3 bg-gray-50 rounded-xl">
+                                <p className="text-xs font-medium text-gray-700 mb-2">Your Skills:</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {editFormData.skills.map((skill, index) => (
+                                    <span
+                                      key={index}
+                                      className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm flex items-center font-medium"
+                                    >
+                                      {skill}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newSkills = editFormData.skills.filter((_, i) => i !== index);
+                                          setEditFormData(prev => ({
+                                            ...prev,
+                                            skills: newSkills
+                                          }));
+                                          setSkillsInputValue(newSkills.join(', '));
+                                        }}
+                                        className="ml-2 text-blue-600 hover:text-blue-800 text-sm"
+                                        disabled={profileUpdateLoading}
+                                        title="Remove skill"
+                                      >
+                                        ×
+                                      </button>
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-                        <button
-                          onClick={handleCancelEdit}
-                          disabled={profileUpdateLoading}
-                          className="px-6 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium disabled:opacity-50"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <X className="h-4 w-4" />
-                            <span>Cancel</span>
+                      <div className="bg-gray-50 rounded-2xl p-6">
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm text-gray-600">
+                            Make sure all required fields (*) are filled out correctly before saving.
+                          </p>
+                          <div className="flex space-x-4">
+                            <button
+                              onClick={handleCancelEdit}
+                              disabled={profileUpdateLoading}
+                              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-white hover:shadow-sm transition-all duration-200 font-medium disabled:opacity-50"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <X className="h-4 w-4" />
+                                <span>Cancel</span>
+                              </div>
+                            </button>
+                            <button
+                              onClick={handleSaveProfile}
+                              disabled={profileUpdateLoading}
+                              className="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2 disabled:opacity-50"
+                            >
+                              {profileUpdateLoading ? (
+                                <>
+                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                  <span>Saving...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Save className="h-4 w-4" />
+                                  <span>Save All Changes</span>
+                                </>
+                              )}
+                            </button>
                           </div>
-                        </button>
-                        <button
-                          onClick={handleSaveProfile}
-                          disabled={profileUpdateLoading}
-                          className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-2 rounded-xl hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2 disabled:opacity-50"
-                        >
-                          {profileUpdateLoading ? (
-                            <>
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              <span>Saving...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Save className="h-4 w-4" />
-                              <span>Save Changes</span>
-                            </>
-                          )}
-                        </button>
+                        </div>
                       </div>
                     </div>
                   ) : (
                     /* View Mode */
-                    <div className="flex flex-col md:flex-row md:items-start gap-8">
-                      {/* Profile Picture */}
-                      <div className="flex flex-col items-center">
-                        <ProfilePictureUploader
-                          currentImageUrl={user?.profileImage || null}
-                          onUploadSuccess={handleProfilePictureSuccess}
-                          onUploadError={handleProfilePictureError}
-                          size="lg"
-                        />
-                        
-                        {imageUploadError && (
-                          <p className="text-red-600 text-sm mt-2">{imageUploadError}</p>
-                        )}
-                      </div>
-                      
-                      {/* Profile Details */}
-                      <div className="flex-1">
-                        <div className="grid md:grid-cols-2 gap-6">
-                          <div className="space-y-4">
-                            <div className="flex items-center space-x-3">
-                              <User className="h-5 w-5 text-gray-400" />
-                              <div>
-                                <div className="text-sm text-gray-500">Name</div>
-                                <div className="font-medium">{user?.displayName || 'Not provided'}</div>
-                              </div>
-                            </div>
+                    <div className="space-y-8">
+                      {/* Profile Picture & Bio Title */}
+                      <div className="bg-gray-50 rounded-2xl p-6">
+                        <div className="flex flex-col md:flex-row md:items-center gap-6">
+                          <div className="flex flex-col items-center md:items-start">
+                            <ProfilePictureUploader
+                              currentImageUrl={user?.profileImage || null}
+                              onUploadSuccess={handleProfilePictureSuccess}
+                              onUploadError={handleProfilePictureError}
+                              size="lg"
+                            />
                             
-                            <div className="flex items-center space-x-3">
-                              <Mail className="h-5 w-5 text-gray-400" />
-                              <div>
-                                <div className="text-sm text-gray-500">Email</div>
-                                <div className="font-medium">{user?.email}</div>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center space-x-3">
-                              <Linkedin className="h-5 w-5 text-gray-400" />
-                              <div>
-                                <div className="text-sm text-gray-500">LinkedIn</div>
-                                <div className="font-medium">
-                                  {user?.linkedinUsername ? (
-                                    <a 
-                                      href={`https://linkedin.com/in/${formatLinkedinUrl(user.linkedinUsername)}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:text-blue-800 hover:underline"
-                                    >
-                                      {formatLinkedinUrl(user.linkedinUsername)}
-                                    </a>
-                                  ) : (
-                                    'Not provided'
-                                  )}
-                                </div>
-                              </div>
-                            </div>
+                            {imageUploadError && (
+                              <p className="text-red-600 text-sm mt-2">{imageUploadError}</p>
+                            )}
                           </div>
                           
-                          <div className="space-y-4">
-                            <div className="flex items-center space-x-3">
-                              <Phone className="h-5 w-5 text-gray-400" />
-                              <div>
-                                <div className="text-sm text-gray-500">Phone</div>
-                                <div className="font-medium">{user?.phone || 'Not provided'}</div>
+                          <div className="flex-1 text-center md:text-left">
+                            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                              {user?.displayName || 'Your Name'}
+                            </h3>
+                            {/* Bio Title */}
+                            {user?.bioTitle && (
+                              <div className="bg-blue-50 rounded-lg p-3 mb-4">
+                                <p className="text-blue-800 font-medium">
+                                  {user.bioTitle}
+                                </p>
                               </div>
-                            </div>
+                            )}
                             
-                            <div className="flex items-center space-x-3">
-                              <Briefcase className="h-5 w-5 text-gray-400" />
-                              <div>
-                                <div className="text-sm text-gray-500">Work</div>
-                                <div className="font-medium">{user?.work || 'Not provided'}</div>
-                              </div>
+                            {/* Basic contact info */}
+                            <div className="text-gray-600 space-y-1">
+                              {user?.email && (
+                                <div className="flex items-center justify-center md:justify-start space-x-2">
+                                  <Mail className="h-4 w-4" />
+                                  <span>{user.email}</span>
+                                </div>
+                              )}
+                              {user?.phone && (
+                                <div className="flex items-center justify-center md:justify-start space-x-2">
+                                  <Phone className="h-4 w-4" />
+                                  <span>{user.phone}</span>
+                                </div>
+                              )}
                             </div>
-                            
-                            <div className="flex items-center space-x-3">
-                              <ChevronDown className="h-5 w-5 text-gray-400" />
-                              <div>
-                                <div className="text-sm text-gray-500">Position</div>
-                                <div className="font-medium">{formatPosition(user?.position) || 'Not provided'}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Basic Information Section */}
+                      <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                          <User className="h-5 w-5 mr-2 text-gray-500" />
+                          Basic Information
+                        </h3>
+
+                        <div className="grid md:grid-cols-3 gap-4">
+                          <div className="flex items-center space-x-3">
+                            <Linkedin className="h-5 w-5 text-gray-400" />
+                            <div>
+                              <div className="text-sm text-gray-500">LinkedIn</div>
+                              <div className="font-medium">
+                                {user?.linkedinUsername ? (
+                                  <a 
+                                    href={`https://linkedin.com/in/${formatLinkedinUrl(user.linkedinUsername)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                                  >
+                                    {formatLinkedinUrl(user.linkedinUsername)}
+                                  </a>
+                                ) : (
+                                  'Not provided'
+                                )}
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
+
+                      {/* Professional Information Section */}
+                      <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                          <Briefcase className="h-5 w-5 mr-2 text-gray-500" />
+                          Professional Information
+                        </h3>
+                        <div className="grid md:grid-cols-2 gap-6">
+                          <div className="flex items-center space-x-3">
+                            <Briefcase className="h-5 w-5 text-gray-400" />
+                            <div>
+                              <div className="text-sm text-gray-500">Job Title</div>
+                              <div className="font-medium">{user?.work || 'Not provided'}</div>
+                            </div>
+                          </div>
+                          
+                          {user?.company && (
+                            <div className="flex items-center space-x-3">
+                              <Briefcase className="h-5 w-5 text-gray-400" />
+                              <div>
+                                <div className="text-sm text-gray-500">Company</div>
+                                <div className="font-medium">{user.company}</div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center space-x-3">
+                            <User className="h-5 w-5 text-gray-400" />
+                            <div>
+                              <div className="text-sm text-gray-500">Position</div>
+                              <div className="font-medium">{formatPosition(user?.position) || 'Not provided'}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Location & Contact Section */}
+                      {((user?.city || user?.country) || user?.timezone) && (
+                        <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                            <MapPin className="h-5 w-5 mr-2 text-gray-500" />
+                            Location & Contact
+                          </h3>
+                          <div className="grid md:grid-cols-2 gap-6">
+                            {(user?.city || user?.country) && (
+                              <div className="flex items-center space-x-3">
+                                <MapPin className="h-5 w-5 text-gray-400" />
+                                <div>
+                                  <div className="text-sm text-gray-500">Location</div>
+                                  <div className="font-medium">
+                                    {[user?.city, user?.country].filter(Boolean).join(', ')}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {user?.timezone && (
+                              <div className="flex items-center space-x-3">
+                                <Clock className="h-5 w-5 text-gray-400" />
+                                <div>
+                                  <div className="text-sm text-gray-500">Timezone</div>
+                                  <div className="font-medium">{user.timezone}</div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Social Media & Online Presence Section */}
+                      {(user?.website || user?.twitter) && (
+                        <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                            <Globe className="h-5 w-5 mr-2 text-gray-500" />
+                            Social Media & Online Presence
+                          </h3>
+                          <div className="grid md:grid-cols-2 gap-6">
+                            {user?.website && (
+                              <div className="flex items-center space-x-3">
+                                <Globe className="h-5 w-5 text-gray-400" />
+                                <div>
+                                  <div className="text-sm text-gray-500">Website</div>
+                                  <div className="font-medium">
+                                    <a 
+                                      href={user.website}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:text-blue-800 hover:underline"
+                                    >
+                                      {user.website.replace(/^https?:\/\//, '')}
+                                    </a>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {user?.twitter && (
+                              <div className="flex items-center space-x-3">
+                                <Twitter className="h-5 w-5 text-gray-400" />
+                                <div>
+                                  <div className="text-sm text-gray-500">Twitter/X</div>
+                                  <div className="font-medium">
+                                    <a 
+                                      href={`https://twitter.com/${user.twitter}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:text-blue-800 hover:underline"
+                                    >
+                                      @{user.twitter}
+                                    </a>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* About You Section */}
+                      {(user?.bio || (user?.skills && user.skills.length > 0)) && (
+                        <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-6">About You</h3>
+                          <div className="space-y-6">
+                            {/* Bio */}
+                            {user?.bio && (
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-700 mb-3">Personal Bio</h4>
+                                <div className="bg-gray-50 rounded-xl p-4">
+                                  <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
+                                    {user.bio}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Skills */}
+                            {user?.skills && user.skills.length > 0 && (
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-700 mb-3">Skills & Expertise</h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {user.skills.map((skill, index) => (
+                                    <span
+                                      key={index}
+                                      className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+                                    >
+                                      {skill}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
+
+                {/* Connections Section */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+                  <div className="p-6 border-b border-gray-100">
+                    <h2 className="text-xl font-semibold text-gray-900">Your Network</h2>
+                  </div>
+                  <div className="p-6">
+                    <ConnectionsCard />
+                  </div>
+                </div>
               </div>
 
-              {/* Announcements Sidebar - Takes 1/3 of the space */}
-              <div className="lg:col-span-1">
-                <AnnouncementsSidebar />
+              
+              {/* Sidebar - Takes 1/4 of the space */}
+              <div className="lg:col-span-1 space-y-6">
+                
+                {/* Quick Actions Card */}
+                <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                  <div className="space-y-3">
+                    <button 
+                      onClick={() => window.location.href = '/directory'}
+                      className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
+                    >
+                      <Users className="h-5 w-5 text-gray-500" />
+                      <span className="text-sm font-medium">Browse Members</span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => window.location.href = '/events'}
+                      className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
+                    >
+                      <Calendar className="h-5 w-5 text-gray-500" />
+                      <span className="text-sm font-medium">View Events</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Announcements Card */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="p-4 border-b border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-900">Announcements</h3>
+                  </div>
+                  <div className="p-0">
+                    <AnnouncementsSidebar />
+                  </div>
+                </div>
+                
+                {/* Profile Completion Card */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Profile Strength</h3>
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: '85%' }}
+                      ></div>
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">85%</span>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">Add more details to strengthen your profile and connect with more members.</p>
+                  <button
+                    onClick={handleEditProfile}
+                    className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Complete Profile
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </section>
       )}
 
-      {/* Connections Section - Only show if logged in */}
+      {/* Event Tickets Section - Part of main dashboard */}
       {user && (
-        <section className="py-16 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <ConnectionsCard />
-          </div>
-        </section>
-      )}
-
-      {/* My Tickets Section - Only show if logged in and has registrations */}
-      {user && (
-        <section className="py-16 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 slide-up">
-                My <span className="gradient-text">Tickets</span>
-              </h2>
+        <section className="py-8 bg-gradient-to-br from-gray-50 to-white">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    Your <span className="gradient-text">Event Tickets</span>
+                  </h2>
+                  <p className="text-gray-600">Manage your event registrations and tickets</p>
+                </div>
+                <button 
+                  onClick={() => window.location.href = '/events'}
+                  className="bg-gradient-to-r from-red-700 to-blue-600 text-white px-6 py-2 rounded-xl hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2"
+                >
+                  <Calendar className="h-4 w-4" />
+                  <span>Browse Events</span>
+                </button>
+              </div>
             </div>
 
             {registrationsLoading ? (
-              <div className="text-center">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
                 <div className="w-8 h-8 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mx-auto mb-4"></div>
                 <p className="text-gray-600">Loading your tickets...</p>
               </div>
             ) : userRegistrations.length > 0 ? (
-              <div className="grid lg:grid-cols-2 gap-8 mb-16">
+              <div className="grid lg:grid-cols-2 gap-6">
                 {userRegistrations.map((registration, index) => {
                   const isExpired = !isUpcoming(registration.eventDate);
                   
@@ -954,13 +1563,21 @@ const EventsPage: React.FC = () => {
                 })}
               </div>
             ) : (
-              <div className="text-center mb-16">
-                <div className="bg-gray-50 rounded-2xl p-12">
-                  <Ticket className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div className="p-12 text-center">
+                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Ticket className="h-8 w-8 text-gray-400" />
+                  </div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">No tickets yet</h3>
-                  <p className="text-gray-600">
-                    No upcoming tickets yet. Explore events below to register!
+                  <p className="text-gray-600 mb-6">
+                    You haven't registered for any events yet. Discover amazing networking opportunities!
                   </p>
+                  <button 
+                    onClick={() => window.location.href = '/events'}
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-medium"
+                  >
+                    Explore Events
+                  </button>
                 </div>
               </div>
             )}
@@ -970,18 +1587,29 @@ const EventsPage: React.FC = () => {
 
       {/* Upcoming Events */}
       {upcomingEvents.length > 0 && (
-        <section className="py-24 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 slide-up">
-                Upcoming <span className="gradient-text">Events</span>
-              </h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto slide-up-delay">
-                Don't miss out on these exclusive opportunities to connect and learn.
-              </p>
+        <section className="py-16 bg-white">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    Upcoming <span className="gradient-text">Events</span>
+                  </h2>
+                  <p className="text-gray-600">
+                    Don't miss these exclusive networking opportunities
+                  </p>
+                </div>
+                <Link 
+                  to="/events"
+                  className="text-blue-600 hover:text-blue-700 font-medium flex items-center space-x-2"
+                >
+                  <span>View All Events</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-8">
+            <div className="grid lg:grid-cols-2 gap-6">
               {upcomingEvents.map((event, index) => {
                 const isRegistered = userRegistrations.some(reg => reg.eventId === event.id);
                 
@@ -1075,18 +1703,22 @@ const EventsPage: React.FC = () => {
 
       {/* Past Events */}
       {pastEvents.length > 0 && (
-        <section className="py-24 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 slide-up">
-                Past <span className="gradient-text">Events</span>
-              </h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto slide-up-delay">
-                Take a look at our previous successful gatherings.
-              </p>
+        <section className="py-16 bg-gray-50">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    Past <span className="gradient-text">Events</span>
+                  </h2>
+                  <p className="text-gray-600">
+                    Our successful networking gatherings
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {pastEvents.map((event, index) => (
                 <div
                   key={event.id}
@@ -1140,22 +1772,26 @@ const EventsPage: React.FC = () => {
 
       {/* No Events State */}
       {events.length === 0 && (
-        <section className="py-24 bg-white">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-6" />
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              No Events Available
-            </h2>
-            <p className="text-xl text-gray-600 mb-8">
-              We're working on exciting new events. Check back soon or contact us for updates.
-            </p>
-            <Link
-              to="/"
-              className="bg-gradient-to-r from-red-700 to-blue-600 text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
-            >
-              <span>Back to Home</span>
-              <ArrowRight className="h-5 w-5" />
-            </Link>
+        <section className="py-16 bg-white">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Calendar className="h-8 w-8 text-gray-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                No Events Available
+              </h2>
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                We're working on exciting new events. Check back soon for amazing networking opportunities!
+              </p>
+              <Link
+                to="/"
+                className="bg-gradient-to-r from-red-700 to-blue-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-medium inline-flex items-center space-x-2"
+              >
+                <span>Back to Home</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
         </section>
       )}

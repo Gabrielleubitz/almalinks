@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
-  const { user, loading, isAdmin, isMember, isPending, isRejected, networkError } = useAuth();
+  const { user, loading, isAdmin, isMember, isPending, isRejected, networkError, roleLoading } = useAuth();
   const [retryCount, setRetryCount] = useState(0);
   const [showRetryButton, setShowRetryButton] = useState(false);
 
@@ -27,13 +27,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
     window.location.reload();
   };
 
-  // Show loading while checking authentication
-  if (loading) {
+  // Show loading while checking authentication or roles
+  if (loading || roleLoading) {
+    console.log('⏳ ProtectedRoute - Loading state:', { loading, roleLoading });
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking permissions...</p>
+          <p className="text-gray-600">
+            {roleLoading ? 'Loading user permissions...' : 'Checking permissions...'}
+          </p>
         </div>
       </div>
     );
@@ -84,8 +87,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
 
   // Check role-based access
   if (requiredRole) {
+    console.log('🔍 ProtectedRoute - Role check:', { 
+      requiredRole, 
+      userRole: user?.role, 
+      isAdmin, 
+      isMember,
+      loading
+    });
+    
     if (requiredRole === 'admin' && !isAdmin) {
       console.log('❌ ProtectedRoute - Admin access required but user is not admin');
+      console.log('   User data:', { uid: user?.uid, role: user?.role, email: user?.email });
       return <Navigate to="/unauthorized" replace />;
     }
     

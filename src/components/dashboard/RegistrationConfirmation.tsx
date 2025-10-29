@@ -39,7 +39,7 @@ const RegistrationConfirmation: React.FC<RegistrationConfirmationProps> = ({ dat
         ctx.drawImage(img, 0, 0, 200, 200);
         
         const link = document.createElement('a');
-        link.download = `wine-grind-qr-${data.name.replace(/\s+/g, '-').toLowerCase()}.png`;
+        link.download = `almalinks-qr-${data.name.replace(/\s+/g, '-').toLowerCase()}.png`;
         link.href = canvas.toDataURL();
         link.click();
       }
@@ -76,9 +76,9 @@ const RegistrationConfirmation: React.FC<RegistrationConfirmationProps> = ({ dat
     
     const params = new URLSearchParams({
       action: 'TEMPLATE',
-      text: 'Wine & Grind 4.0',
+      text: 'AlmaLinks Network Event',
       dates: `${startTime}/${endTime}`,
-      details: 'Join us for Wine & Grind 4.0 - where bold ideas meet real conversations. This exclusive event brings together founders, investors, and operators for meaningful networking and discussions.',
+      details: 'Join us for an exclusive AlmaLinks network event - connecting impact-driven business leaders in Jewish communities worldwide. This professional networking event fosters meaningful relationships and business development.',
       location: 'Deli Vino, Natan Yonatan St 10, Netanya'
     });
     
@@ -93,7 +93,7 @@ const RegistrationConfirmation: React.FC<RegistrationConfirmationProps> = ({ dat
           <Check className="h-10 w-10 text-white" />
         </div>
         <h2 className="text-4xl font-bold text-gray-900 mb-3">
-          ✅ You're registered for Wine & Grind 4.0!
+          ✅ You're registered for the AlmaLinks network event!
         </h2>
         <p className="text-xl text-gray-600">
           Your spot is confirmed. We can't wait to see you there!
@@ -260,7 +260,7 @@ const RegistrationConfirmation: React.FC<RegistrationConfirmationProps> = ({ dat
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a
-            href="mailto:info@winengrind.com"
+            href="mailto:info@almalinks.org"
             className="inline-flex items-center justify-center bg-gradient-to-r from-red-700 to-blue-600 text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
           >
             Contact Us

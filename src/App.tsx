@@ -21,8 +21,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import CompleteProfilePage from './pages/CompleteProfilePage';
 import PendingPage from './pages/PendingPage';
-import AdminCheckIn from './pages/AdminCheckIn';
-import AdminTools from './pages/AdminTools';
+// Removed QR-based AdminTools and AdminCheckIn - using EventManagement for manual check-in
 import AdminSMS from './pages/admin/AdminSMS';
 import AdminAnnouncements from './pages/admin/AdminAnnouncements';
 import AddEvent from './pages/admin/AddEvent';
@@ -30,15 +29,21 @@ import EditEvent from './pages/admin/EditEvent';
 import EventManagement from './pages/admin/EventManagement';
 import SpeakerManagement from './pages/admin/SpeakerManagement';
 import UserManagement from './pages/admin/UserManagement';
+import AdminDashboard from './pages/admin/AdminDashboard';
 import PendingRegistrations from './pages/admin/PendingRegistrations';
 import SystemTestPage from './pages/admin/SystemTestPage';
-import AdminBadges from './pages/admin/Badges';
-import BadgeManager from './pages/admin/BadgeManager';
+import ConnectionManagement from './pages/admin/ConnectionManagement';
+// Removed badge generator functionality
 import AdGenerator from './pages/admin/AdGenerator';
 import ProfileSyncTools from './pages/admin/ProfileSyncTools';
-import SpeakerDashboard from './pages/SpeakerDashboard';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import ConnectPage from './pages/ConnectPage';
+import UserProfilePage from './pages/UserProfilePage';
+import MembersPage from './pages/MembersPage';
+import ChatsPage from './pages/ChatsPage';
+import ChatViewPage from './pages/ChatViewPage';
+import DiscoverChatsPage from './pages/DiscoverChatsPage';
+import CreateChatGroup from './pages/admin/CreateChatGroup';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AuthWrapper from './components/auth/AuthWrapper';
 import NetworkStatusIndicator from './components/ui/NetworkStatusIndicator';
@@ -113,23 +118,47 @@ function App() {
           } 
         />
         <Route 
-          path="/speaker-dashboard" 
+          path="/profile/:userId" 
           element={
             <ProtectedRoute>
-              <SpeakerDashboard />
+              <UserProfilePage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/members" 
+          element={
+            <ProtectedRoute>
+              <MembersPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/chats" 
+          element={
+            <ProtectedRoute>
+              <ChatsPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/chats/:chatId" 
+          element={
+            <ProtectedRoute>
+              <ChatViewPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/discover-chats" 
+          element={
+            <ProtectedRoute>
+              <DiscoverChatsPage />
             </ProtectedRoute>
           } 
         />
         
         {/* Admin Routes */}
-        <Route 
-          path="/admin-tools" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminTools />
-            </ProtectedRoute>
-          } 
-        />
         <Route 
           path="/admin/sms" 
           element={
@@ -147,6 +176,14 @@ function App() {
           } 
         />
         <Route 
+          path="/admin/chats/create" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <CreateChatGroup />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
           path="/admin/events" 
           element={
             <ProtectedRoute requiredRole="admin">
@@ -156,6 +193,14 @@ function App() {
         />
         <Route 
           path="/admin/events/create" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AddEvent />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/events/add" 
           element={
             <ProtectedRoute requiredRole="admin">
               <AddEvent />
@@ -195,6 +240,22 @@ function App() {
           } 
         />
         <Route 
+          path="/admin/pending" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <PendingRegistrations />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/connections" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <ConnectionManagement />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
           path="/admin/system-test" 
           element={
             <ProtectedRoute requiredRole="admin">
@@ -204,32 +265,13 @@ function App() {
         />
         <Route 
           path="/admin" 
-          element={<Navigate to="/admin-tools" replace />} 
-        />
-        <Route 
-          path="/admin/check-in" 
           element={
             <ProtectedRoute requiredRole="admin">
-              <AdminCheckIn />
+              <AdminDashboard />
             </ProtectedRoute>
           } 
         />
-        <Route 
-          path="/admin/badges" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <BadgeManager />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/badges/event" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminBadges />
-            </ProtectedRoute>
-          } 
-        />
+        {/* Removed badge generator routes */}
         <Route 
           path="/admin/ad-generator" 
           element={

@@ -1,8 +1,12 @@
 {
-  "name": "voice-chatbot",
+  "name": "almalinks",
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:Gabrielleubitz/almalinks.git"
+  },
   "scripts": {
     "dev": "concurrently --kill-others-on-fail \"npm run dev:vite\" \"npm run dev:api\"",
     "dev:vite": "vite --force --port 5173",

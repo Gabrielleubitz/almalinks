@@ -4,12 +4,23 @@ import { AnnouncementService, AnnouncementData } from '../../services/announceme
 import EmojiReactions from './EmojiReactions';
 import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import { useAuth } from '../../hooks/useAuth';
 
 const AnnouncementsSidebar: React.FC = () => {
   const [announcements, setAnnouncements] = useState<AnnouncementData[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
+    // Wait for authentication to complete
+    if (authLoading) return;
+    
+    // Only set up listener if user is authenticated
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    
     // Set up real-time listener for announcements
     const announcementsRef = collection(db, 'announcements');
     const q = query(
@@ -38,9 +49,14 @@ const AnnouncementsSidebar: React.FC = () => {
     
     // Clean up listener on unmount
     return () => unsubscribe();
-  }, []);
+  }, [user, authLoading]);
 
-  if (loading) {
+  // Don't render if user is not authenticated
+  if (!user && !authLoading) {
+    return null;
+  }
+
+  if (loading || authLoading) {
     return (
       <div className="bg-white rounded-3xl shadow-xl p-6 border border-gray-100">
         <div className="flex items-center space-x-3 mb-4">

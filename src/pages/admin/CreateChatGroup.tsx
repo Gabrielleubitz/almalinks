@@ -1,0 +1,591 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  ArrowLeft, 
+  MessageCircle, 
+  Users, 
+  Settings,
+  Plus,
+  X,
+  Search,
+  Shield,
+  Save,
+  AlertCircle
+} from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { ChatService } from '../../services/chatService';
+import { UserService } from '../../services/userService';
+import { CreateChatGroupForm } from '../../types/chat';
+import { UserCard } from '../../types/user';
+import AdminHeader from '../../components/admin/AdminHeader';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { auth } from '../../firebase/config';
+
+const CreateChatGroup: React.FC = () => {
+  const navigate = useNavigate();
+  const { user, isAdmin, loading: authLoading } = useAuth();
+  
+  const [formData, setFormData] = useState<CreateChatGroupForm>({
+    name: '',
+    description: '',
+    imageUrl: '',
+    allowRequests: false,
+    isPublic: false,
+    initialAdmins: [],
+    seedMembers: []
+  });
+  
+  const [users, setUsers] = useState<UserCard[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Wait for auth to finish loading before checking admin status
+    if (authLoading) return;
+    
+    console.log('🔍 CreateChatGroup - Auth state:', { 
+      user: user?.uid, 
+      isAdmin, 
+      role: user?.role, 
+      authLoading 
+    });
+    
+    if (!isAdmin) {
+      console.log('❌ User is not admin, redirecting to unauthorized');
+      navigate('/unauthorized');
+      return;
+    }
+    
+    console.log('✅ User is admin, proceeding with chat creation setup');
+    
+    // Add current user as initial admin
+    if (user?.uid) {
+      setFormData(prev => ({
+        ...prev,
+        initialAdmins: [user.uid]
+      }));
+    }
+    
+    loadUsers();
+  }, [isAdmin, user?.uid, navigate, authLoading]);
+
+  const loadUsers = async () => {
+    if (!user?.uid) return;
+
+    try {
+      setUsersLoading(true);
+      // Get all users for the admin to choose from
+      const allUsers = await UserService.getAllMembersForDirectory(user.uid, user.role);
+      setUsers(allUsers);
+    } catch (err) {
+      console.error('❌ Error loading users:', err);
+      setError('Failed to load users');
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData(prev => ({ ...prev, [name]: checked }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleUserSelection = (userId: string, role: 'admin' | 'member') => {
+    setFormData(prev => {
+      const currentAdmins = prev.initialAdmins;
+      const currentMembers = prev.seedMembers;
+      
+      if (role === 'admin') {
+        if (currentAdmins.includes(userId)) {
+          // Remove from admins
+          return {
+            ...prev,
+            initialAdmins: currentAdmins.filter(id => id !== userId)
+          };
+        } else {
+          // Add to admins and remove from members if present
+          return {
+            ...prev,
+            initialAdmins: [...currentAdmins, userId],
+            seedMembers: currentMembers.filter(id => id !== userId)
+          };
+        }
+      } else {
+        if (currentMembers.includes(userId)) {
+          // Remove from members
+          return {
+            ...prev,
+            seedMembers: currentMembers.filter(id => id !== userId)
+          };
+        } else {
+          // Add to members and remove from admins if present (except current user)
+          const newAdmins = userId === user?.uid 
+            ? currentAdmins 
+            : currentAdmins.filter(id => id !== userId);
+          
+          return {
+            ...prev,
+            initialAdmins: newAdmins,
+            seedMembers: [...currentMembers, userId]
+          };
+        }
+      }
+    });
+  };
+
+  const getUserRole = (userId: string): 'admin' | 'member' | 'none' => {
+    if (formData.initialAdmins.includes(userId)) return 'admin';
+    if (formData.seedMembers.includes(userId)) return 'member';
+    return 'none';
+  };
+
+  const filteredUsers = users.filter(user => {
+    const query = searchQuery.toLowerCase();
+    return (
+      user.displayName.toLowerCase().includes(query) ||
+      user.firstName?.toLowerCase().includes(query) ||
+      user.lastName?.toLowerCase().includes(query) ||
+      user.title?.toLowerCase().includes(query) ||
+      user.company?.toLowerCase().includes(query)
+    );
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user?.uid || loading) return;
+
+    // Clear previous messages
+    setError(null);
+    setSuccess(null);
+    setDebugInfo(null);
+
+    // Validation
+    if (!formData.name.trim()) {
+      setError('Chat name is required');
+      return;
+    }
+
+    if (formData.name.length > 100) {
+      setError('Chat name must be 100 characters or less');
+      return;
+    }
+
+    if (formData.description.length > 500) {
+      setError('Description must be 500 characters or less');
+      return;
+    }
+
+    if (formData.initialAdmins.length === 0) {
+      setError('At least one admin is required');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const requestData = {
+        ...formData,
+        createdBy: user.uid
+      };
+
+      console.log('🚀 Creating chat group:', requestData);
+      console.log('👤 Current user:', { uid: user.uid, role: user.role, isAdmin });
+
+      // Get the current user's ID token for authentication
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated. Please try logging out and back in.');
+      }
+
+      console.log('🔐 Getting fresh ID token...');
+      const idToken = await currentUser.getIdToken(true); // Force refresh token
+      console.log('✅ Retrieved fresh ID token for authentication');
+
+      // Create the chat group via API
+      const apiUrl = '/api/admin/chats';
+      console.log(`📡 Sending POST request to ${apiUrl}`);
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      console.log('📡 API Response:', { status: response.status, ok: response.ok });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('❌ API Error Response:', errorData);
+        
+        // Show detailed error information
+        const errorMessage = errorData.message || errorData.error || `Failed to create chat group (${response.status})`;
+        const errorDetails = errorData.details ? ` | Details: ${errorData.details}` : '';
+        
+        setDebugInfo(`Status: ${response.status} | User: ${user.uid} | Role: ${user.role}${errorDetails}`);
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      console.log('✅ Chat group created:', result);
+      
+      setSuccess('✅ Chat group created successfully! Redirecting...');
+      
+      // Redirect after a short delay
+      setTimeout(() => {
+        navigate(`/chats/${result.chatId}`);
+      }, 1500);
+
+    } catch (err: any) {
+      console.error('❌ Error creating chat group:', err);
+      setError(err.message || 'Failed to create chat group. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Show loading spinner while auth is loading
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+        <AdminHeader />
+        <div className="pt-20 pb-16 flex items-center justify-center">
+          <LoadingSpinner size="lg" color="border-blue-600" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return null; // Will redirect to unauthorized
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      <AdminHeader />
+      
+      <div className="pt-20 pb-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Page Header */}
+          <div className="mb-8">
+            <div className="flex items-center space-x-4 mb-6">
+              <button
+                onClick={() => navigate('/admin')}
+                className="text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white">
+                <MessageCircle className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Create Chat Group</h1>
+                <p className="text-gray-600">Set up a new group chat for your community</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Chat Settings Form */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">Chat Settings</h2>
+              
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Chat Name */}
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    Chat Name *
+                  </label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    maxLength={100}
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter chat name"
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.name.length}/100 characters
+                  </p>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    rows={3}
+                    maxLength={500}
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    placeholder="What's this chat about?"
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.description.length}/500 characters
+                  </p>
+                </div>
+
+                {/* Group Image URL */}
+                <div>
+                  <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-2">
+                    Group Image URL
+                  </label>
+                  <input
+                    id="imageUrl"
+                    name="imageUrl"
+                    type="url"
+                    value={formData.imageUrl}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="https://example.com/group-image.jpg"
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Optional: URL to an image that will serve as the group icon
+                  </p>
+                  {formData.imageUrl && (
+                    <div className="mt-2">
+                      <img
+                        src={formData.imageUrl}
+                        alt="Group preview"
+                        className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Settings Toggles */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label htmlFor="allowRequests" className="text-sm font-medium text-gray-700">
+                        Allow Join Requests
+                      </label>
+                      <p className="text-xs text-gray-500">
+                        Let users request to join this chat
+                      </p>
+                    </div>
+                    <input
+                      id="allowRequests"
+                      name="allowRequests"
+                      type="checkbox"
+                      checked={formData.allowRequests}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label htmlFor="isPublic" className="text-sm font-medium text-gray-700">
+                        Public Chat
+                      </label>
+                      <p className="text-xs text-gray-500">
+                        Make this chat discoverable
+                      </p>
+                    </div>
+                    <input
+                      id="isPublic"
+                      name="isPublic"
+                      type="checkbox"
+                      checked={formData.isPublic}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+
+                {/* Summary */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-gray-900 mb-2">Summary</h3>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <p><span className="font-medium">Admins:</span> {formData.initialAdmins.length}</p>
+                    <p><span className="font-medium">Initial Members:</span> {formData.seedMembers.length}</p>
+                    <p><span className="font-medium">Total Members:</span> {formData.initialAdmins.length + formData.seedMembers.length}</p>
+                  </div>
+                </div>
+
+                {/* Debug Info */}
+                {debugInfo && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex items-start space-x-2">
+                      <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-yellow-800 text-sm font-medium mb-1">Debug Information:</p>
+                        <p className="text-yellow-700 text-xs font-mono">{debugInfo}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error Message */}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p className="text-red-600 text-sm">{error}</p>
+                  </div>
+                )}
+
+                {/* Success Message */}
+                {success && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <p className="text-green-600 text-sm">{success}</p>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={loading || !formData.name.trim() || formData.initialAdmins.length === 0}
+                  className="w-full flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Create Chat Group
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+
+            {/* User Selection */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-gray-900">Select Members</h2>
+                <div className="text-sm text-gray-600">
+                  {formData.initialAdmins.length + formData.seedMembers.length} selected
+                </div>
+              </div>
+
+              {/* Search */}
+              <div className="mb-6">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search users..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Users List */}
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {usersLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <LoadingSpinner size="md" color="border-blue-600" />
+                  </div>
+                ) : filteredUsers.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    {searchQuery ? 'No users found matching your search' : 'No users available'}
+                  </div>
+                ) : (
+                  filteredUsers.map((u) => {
+                    const role = getUserRole(u.uid);
+                    const isCurrentUser = u.uid === user?.uid;
+                    
+                    return (
+                      <div key={u.uid} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                            {u.displayName.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900">
+                              {u.displayName}
+                              {isCurrentUser && ' (You)'}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {u.title && u.company ? `${u.title} at ${u.company}` : u.title || u.company || 'Member'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          {role === 'admin' && (
+                            <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                              <Shield className="h-3 w-3 mr-1" />
+                              Admin
+                            </div>
+                          )}
+                          
+                          {role === 'member' && (
+                            <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              Member
+                            </div>
+                          )}
+
+                          <div className="flex space-x-1">
+                            <button
+                              onClick={() => handleUserSelection(u.uid, 'admin')}
+                              disabled={isCurrentUser && formData.initialAdmins.length === 1}
+                              className={`px-3 py-1 text-xs rounded-lg transition-colors ${
+                                role === 'admin' 
+                                  ? 'bg-purple-600 text-white'
+                                  : 'bg-gray-200 text-gray-700 hover:bg-purple-100'
+                              } ${isCurrentUser && formData.initialAdmins.length === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              title={isCurrentUser && formData.initialAdmins.length === 1 ? 'At least one admin is required' : 'Make Admin'}
+                            >
+                              Admin
+                            </button>
+                            
+                            <button
+                              onClick={() => handleUserSelection(u.uid, 'member')}
+                              className={`px-3 py-1 text-xs rounded-lg transition-colors ${
+                                role === 'member'
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-gray-200 text-gray-700 hover:bg-blue-100'
+                              }`}
+                            >
+                              Member
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CreateChatGroup;

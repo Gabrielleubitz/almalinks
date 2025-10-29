@@ -24,7 +24,7 @@ const PendingPage: React.FC = () => {
         <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
           <img 
             src={logoSvg}
-            alt="Wine & Grind Logo" 
+            alt="AlmaLinks Logo" 
             className="h-8 md:h-10 w-auto"
           />
         </Link>
@@ -78,10 +78,10 @@ const PendingPage: React.FC = () => {
                     If you have any questions or need to update your information, please contact us:
                   </p>
                   <a 
-                    href="mailto:info@winengrind.com" 
+                    href="mailto:info@almalinks.org" 
                     className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                   >
-                    info@winengrind.com
+                    info@almalinks.org
                   </a>
                 </div>
               </div>

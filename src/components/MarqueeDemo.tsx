@@ -11,7 +11,7 @@ const MarqueeDemo: React.FC = () => {
             Backed by <span className="gradient-text">Bold Founders</span>
           </h2>
           <p className="mt-2 text-lg text-gray-600">
-            Startups that pitched at Wine & Grind are building the future—from AI to blockchain. We give rising founders the mic
+            Members of AlmaLinks are building the future—from AI to blockchain. We connect outstanding leaders across industries.
           </p>
         </div>
 

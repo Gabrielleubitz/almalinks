@@ -6,24 +6,24 @@ const FAQ = () => {
 
   const faqs = [
     {
-      question: "What is Wine & Grind?",
-      answer: "Wine & Grind is an exclusive, invite-only event series that brings together founders, investors, and operators for meaningful conversations about the future of business and technology. We combine professional networking with a relaxed, intimate atmosphere where real connections are made."
+      question: "What is AlmaLinks?",
+      answer: "AlmaLinks is a global professional network that fosters meaningful relationships between altruistic CEOs, founders, financiers, and seasoned executives. We nurture our members' professional success and personal development by connecting them to outstanding business leaders in Israel and Jewish communities worldwide."
     },
     {
-      question: "Who attends Wine & Grind events?",
-      answer: "Our community consists of carefully vetted CEOs, founders, C-level executives, investors, and high-level operators from the tech and business world. We maintain a high bar for attendees to ensure quality conversations and valuable connections."
+      question: "Who are AlmaLinks members?",
+      answer: "Our community consists of impact-driven CEOs, founders, financiers, and seasoned executives from Jewish heritage. We maintain high standards for membership to ensure meaningful connections and valuable professional relationships across 20+ industries in 45+ cities worldwide."
     },
     {
-      question: "Can I present or speak at Wine & Grind?",
-      answer: "Absolutely! We're always looking for exceptional speakers who can share valuable insights with our community. Wine & Grind is designed for genuine relationship building and strategic conversations, and we welcome presentations that focus on actionable insights rather than product pitches. If you're interested in speaking, simply let our AI assistant know during registration, or contact us directly at info@winengrind.com. We'll review your background and presentation topic to ensure it aligns with our community's interests and adds real value to the conversation."
+      question: "Can I present or speak at AlmaLinks events?",
+      answer: "Absolutely! We're always looking for exceptional speakers who can share valuable insights with our community. AlmaLinks is designed for genuine relationship building and strategic conversations. We welcome presentations that focus on actionable insights, intellectual generosity, and fostering our culture of curiosity. If you're interested in speaking, please contact us directly. We'll review your background and presentation topic to ensure it aligns with our community's interests."
     },
     {
-      question: "Is Wine & Grind truly invite-only?",
-      answer: "Yes, absolutely. We carefully curate our guest list to maintain the quality and intimacy that makes our events special. Applications are reviewed by our team, and invitations are extended based on professional background, potential contribution to discussions, and alignment with our community values."
+      question: "Is AlmaLinks membership exclusive?",
+      answer: "Yes, absolutely. We carefully curate our membership to maintain the quality and meaningful connections that make our network special. Applications are reviewed by our team, and invitations are extended based on professional background, potential contribution to the community, and alignment with our core values of intellectual generosity, mutual respect, and openness."
     },
     {
-      question: "Do I need to be in tech to attend?",
-      answer: "While many of our attendees are from the tech industry, we welcome leaders from various sectors who are innovating and shaping the future of business. We value diverse perspectives and believe cross-industry connections often lead to the most interesting opportunities."
+      question: "Do I need to be in tech to join?",
+      answer: "While many of our members are from the tech industry, we welcome leaders from various sectors across 20+ industries. We value diverse perspectives and believe cross-industry connections often lead to the most meaningful opportunities. All members share Jewish heritage and commitment to supporting Israel and Jewish communities."
     }
   ];
 
@@ -35,7 +35,7 @@ const FAQ = () => {
             Frequently Asked <span className="gradient-text">Questions</span>
           </h2>
           <p className="text-xl text-gray-600 slide-up-delay">
-            Everything you need to know about Wine & Grind
+            Everything you need to know about AlmaLinks
           </p>
         </div>
 
@@ -81,10 +81,10 @@ const FAQ = () => {
               We're here to help! Reach out to us directly for any inquiries about events, speaking opportunities, or partnerships.
             </p>
             <a 
-              href="mailto:info@winengrind.com"
+              href="mailto:info@almalinks.org"
               className="inline-flex items-center justify-center bg-gradient-to-r from-red-700 to-blue-600 text-white px-8 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
             >
-              Contact Us: info@winengrind.com
+              Contact Us: info@almalinks.org
             </a>
           </div>
         </div>

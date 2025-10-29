@@ -90,7 +90,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               {/* Admin Tools Button - Only show for admins */}
               {isAdmin && (
                 <Link
-                  to="/admin-tools"
+                  to="/admin"
                   className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 py-2 rounded-full hover:from-purple-700 hover:to-purple-800 transition-all duration-300 font-medium shadow-md hover:shadow-lg"
                 >
                   <Shield className="h-4 w-4" />
@@ -180,7 +180,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
                 {isAdmin && (
                   <Link
-                    to="/admin-tools"
+                    to="/admin"
                     className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl hover:shadow-md transition-all duration-300 group"
                   >
                     <div className="flex items-center space-x-3">

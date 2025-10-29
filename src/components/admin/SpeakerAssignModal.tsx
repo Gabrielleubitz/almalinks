@@ -1,231 +1,329 @@
-import React from 'react';
-import { User, Search } from 'lucide-react';
-import { SpeakerService } from '../../services/speakerService';
+import React, { useState } from 'react';
+import { User, X, Save } from 'lucide-react';
+import { SpeakerService, EventSpeaker } from '../../services/speakerService';
+import { useAuth } from '../../hooks/useAuth';
 
-interface UserData {
-  uid: string;
-  displayName: string;
+interface SpeakerFormData {
+  name: string;
+  title: string;
+  bio: string;
   email: string;
-  role?: string;
-  roleType?: 'speaker' | 'admin';
-  profileImage?: string | null;
+  company: string;
+  imageUrl: string;
+  linkedIn: string;
+  twitter: string;
+  website: string;
 }
 
 interface SpeakerAssignModalProps {
   isOpen: boolean;
   onClose: () => void;
-  users: UserData[];
-  loading: boolean;
-  searchTerm: string;
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onAssignSpeaker: (userId: string, userName: string, userEmail: string) => void;
-  assigningUser: boolean;
-  eventSpeakers: any[];
+  eventId: string;
   selectedEventName?: string;
+  onSpeakerCreated: () => void; // Callback to refresh the speakers list
 }
 
 const SpeakerAssignModal: React.FC<SpeakerAssignModalProps> = ({
   isOpen,
   onClose,
-  users,
-  loading,
-  searchTerm,
-  onSearchChange,
-  onAssignSpeaker,
-  assigningUser,
-  eventSpeakers,
-  selectedEventName
+  eventId,
+  selectedEventName,
+  onSpeakerCreated
 }) => {
+  const { user } = useAuth();
+  const [formData, setFormData] = useState<SpeakerFormData>({
+    name: '',
+    title: '',
+    bio: '',
+    email: '',
+    company: '',
+    imageUrl: '',
+    linkedIn: '',
+    twitter: '',
+    website: ''
+  });
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name.trim()) {
+      setError('Speaker name is required');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (!user?.uid) {
+        setError('You must be logged in to create a speaker');
+        return;
+      }
+
+      if (user.role !== 'admin') {
+        setError('Only administrators can create speakers');
+        return;
+      }
+      
+      await SpeakerService.createSpeaker(eventId, {
+        name: formData.name.trim(),
+        title: formData.title.trim() || undefined,
+        bio: formData.bio.trim() || undefined,
+        email: formData.email.trim() || undefined,
+        company: formData.company.trim() || undefined,
+        imageUrl: formData.imageUrl.trim() || undefined,
+        linkedIn: formData.linkedIn.trim() || undefined,
+        twitter: formData.twitter.trim() || undefined,
+        website: formData.website.trim() || undefined,
+        createdBy: user.uid
+      }, user.uid);
+
+      // Reset form and close modal
+      setFormData({
+        name: '',
+        title: '',
+        bio: '',
+        email: '',
+        company: '',
+        imageUrl: '',
+        linkedIn: '',
+        twitter: '',
+        website: ''
+      });
+      
+      onSpeakerCreated(); // Refresh the speakers list
+      onClose();
+      
+    } catch (err: any) {
+      console.error('❌ Error creating speaker:', err);
+      setError(err.message || 'Failed to create speaker');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (!loading) {
+      setError(null);
+      onClose();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-8" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-2xl font-bold text-gray-900 mb-4">
-          Assign Speaker to Event
-        </h3>
-        
-        <p className="text-gray-600 mb-6">
-          Select a user to assign as a speaker for {selectedEventName}.
-        </p>
-
-        {/* Debug Info */}
-        <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-sm text-blue-800">
-            <strong>Debug Info:</strong> Showing {users.length} users with speaker/admin roles.
-            {users.length === 0 && (
-              <span className="text-red-600"> No speaker-eligible users found!</span>
-            )}
-          </p>
-        </div>
-        
-        {/* Search Input */}
-        <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search users by name or email..."
-              value={searchTerm}
-              onChange={onSearchChange}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-            />
+      <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white rounded-t-3xl border-b border-gray-200 px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">
+                Add New Speaker
+              </h3>
+              <p className="text-gray-600 mt-1">
+                Create a speaker profile for {selectedEventName}
+              </p>
+            </div>
+            <button
+              onClick={handleClose}
+              disabled={loading}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
         </div>
         
-        {/* Users List */}
-        <div className="max-h-96 overflow-y-auto mb-6">
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading speaker-eligible users...</p>
-            </div>
-          ) : users.length === 0 ? (
-            <div className="text-center py-8">
-              <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">No Speaker-Eligible Users Found</h4>
-              <p className="text-gray-600 mb-4">
-                {searchTerm 
-                  ? `No users with speaker roles match "${searchTerm}"`
-                  : "No users have the 'speaker' or 'admin' role assigned."
-                }
-              </p>
-              
-              {!searchTerm && (
-                <div className="text-left bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                  <h5 className="font-semibold text-yellow-800 mb-2">💡 To fix this:</h5>
-                  <ol className="text-sm text-yellow-700 space-y-1 list-decimal list-inside">
-                    <li>Go to Firebase Console → Firestore</li>
-                    <li>Navigate to the 'users' collection</li>
-                    <li>Find the user documents you want as speakers</li>
-                    <li>Add/edit the 'role' field to be "speaker" or "admin"</li>
-                    <li>Refresh this page</li>
-                  </ol>
-                  
-                  <div className="mt-3 pt-2 border-t border-yellow-300">
-                    <p className="text-xs text-yellow-600">
-                      <strong>Or use the browser console:</strong><br />
-                      <code className="bg-yellow-100 px-1 rounded">
-                        await SpeakerService.setUserAsSpeaker('user-id-here')
-                      </code>
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {users.map((userData) => {
-                const isAlreadyAssigned = eventSpeakers.some(speaker => speaker.userId === userData.uid);
-                
-                return (
-                  <div 
-                    key={userData.uid}
-                    className="p-4 rounded-xl border border-gray-200 hover:border-purple-200 hover:shadow-sm transition-all duration-200"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-full overflow-hidden">
-                          {userData.profileImage ? (
-                            <img 
-                              src={userData.profileImage} 
-                              alt={userData.displayName} 
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSIzMCIgZmlsbD0iIzlDQTNBRiIvPgo8ZWxsaXBzZSBjeD0iMTAwIiBjeT0iMTQwIiByeD0iNDAiIHJ5PSIyMCIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4=';
-                              }}
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold">
-                              {userData.displayName?.charAt(0) || userData.email?.charAt(0) || '?'}
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <h4 className="font-medium text-gray-900">{userData.displayName || 'Unknown User'}</h4>
-                            {/* Role Badge */}
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              userData.role === 'admin' 
-                                ? 'bg-purple-100 text-purple-800' 
-                                : 'bg-orange-100 text-orange-800'
-                            }`}>
-                              {userData.role === 'admin' ? '👑 Admin' : '🎤 Speaker'}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600">{userData.email}</p>
-                          <p className="text-xs text-gray-500">Role: {userData.role}</p>
-                        </div>
-                      </div>
-                      
-                      <button
-                        onClick={() => onAssignSpeaker(userData.uid, userData.displayName || 'Unknown User', userData.email)}
-                        disabled={isAlreadyAssigned || assigningUser}
-                        className={`px-4 py-2 rounded-lg font-medium text-sm ${
-                          isAlreadyAssigned
-                            ? 'bg-green-100 text-green-700 cursor-not-allowed'
-                            : 'bg-purple-600 text-white hover:bg-purple-700'
-                        } transition-colors duration-200 disabled:opacity-50`}
-                      >
-                        {assigningUser ? (
-                          <div className="flex items-center space-x-2">
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>Assigning...</span>
-                          </div>
-                        ) : isAlreadyAssigned ? (
-                          '✅ Already Assigned'
-                        ) : (
-                          'Assign as Speaker'
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 text-sm">{error}</p>
             </div>
           )}
-        </div>
+
+          {/* Speaker Name */}
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+              Speaker Name *
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              placeholder="Enter speaker's full name"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+              required
+            />
+          </div>
+
+          {/* Speaker Title */}
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+              Title/Position
+            </label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleInputChange}
+              placeholder="e.g., Senior Developer, CTO, Founder"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+            />
+          </div>
+
+          {/* Company */}
+          <div>
+            <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
+              Company
+            </label>
+            <input
+              type="text"
+              id="company"
+              name="company"
+              value={formData.company}
+              onChange={handleInputChange}
+              placeholder="Company or organization"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              placeholder="speaker@example.com"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+            />
+          </div>
+
+          {/* Image URL */}
+          <div>
+            <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-2">
+              Profile Image URL
+            </label>
+            <input
+              type="url"
+              id="imageUrl"
+              name="imageUrl"
+              value={formData.imageUrl}
+              onChange={handleInputChange}
+              placeholder="https://example.com/speaker-photo.jpg"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+            />
+          </div>
+
+          {/* Bio */}
+          <div>
+            <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
+              Biography
+            </label>
+            <textarea
+              id="bio"
+              name="bio"
+              value={formData.bio}
+              onChange={handleInputChange}
+              placeholder="Brief biography or description of the speaker..."
+              rows={4}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 resize-none"
+            />
+          </div>
+
+          {/* LinkedIn */}
+          <div>
+            <label htmlFor="linkedIn" className="block text-sm font-medium text-gray-700 mb-2">
+              LinkedIn Profile
+            </label>
+            <input
+              type="url"
+              id="linkedIn"
+              name="linkedIn"
+              value={formData.linkedIn}
+              onChange={handleInputChange}
+              placeholder="https://linkedin.com/in/username or just username"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+            />
+          </div>
+
+          {/* Twitter */}
+          <div>
+            <label htmlFor="twitter" className="block text-sm font-medium text-gray-700 mb-2">
+              Twitter/X Handle
+            </label>
+            <input
+              type="text"
+              id="twitter"
+              name="twitter"
+              value={formData.twitter}
+              onChange={handleInputChange}
+              placeholder="@username or https://twitter.com/username"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+            />
+          </div>
+
+          {/* Website */}
+          <div>
+            <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">
+              Personal Website
+            </label>
+            <input
+              type="url"
+              id="website"
+              name="website"
+              value={formData.website}
+              onChange={handleInputChange}
+              placeholder="https://example.com"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+            />
+          </div>
         
-        <div className="flex justify-end space-x-3">
-          <button
-            onClick={onClose}
-            className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium"
-          >
-            Close
-          </button>
-          
-          {/* Quick Fix Button */}
-          {users.length === 0 && !loading && (
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
             <button
-              onClick={async () => {
-                if (!window.confirm("This will set your user account to have the 'speaker' role. Continue?")) {
-                  return;
-                }
-                
-                try {
-                  // Get current user ID from localStorage or auth context
-                  const currentUser = JSON.parse(localStorage.getItem('authUser') || '{}');
-                  const userId = currentUser?.uid;
-                  
-                  if (!userId) {
-                    alert('❌ Could not determine your user ID. Please try logging out and back in.');
-                    return;
-                  }
-                  
-                  await SpeakerService.setUserAsSpeaker(userId);
-                  alert('✅ Your role has been set to speaker! Refresh the page and try again.');
-                  window.location.reload();
-                } catch (error: any) {
-                  alert('❌ Error setting role: ' + error.message);
-                }
-              }}
-              className="px-4 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors duration-200 font-medium text-sm"
+              type="button"
+              onClick={handleClose}
+              disabled={loading}
+              className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium disabled:opacity-50"
             >
-              🔧 Make Me Speaker
+              Cancel
             </button>
-          )}
-        </div>
+            
+            <button
+              type="submit"
+              disabled={loading || !formData.name.trim()}
+              className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Creating...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  <span>Create Speaker</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

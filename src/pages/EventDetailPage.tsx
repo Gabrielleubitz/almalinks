@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Clock, ArrowLeft, Users, CheckCircle, AlertCircle, Ticket, Download, User, Mic, Linkedin, Briefcase, CalendarPlus } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { EventService, EventData } from '../services/eventService';
+import { SpeakerService, EventSpeaker } from '../services/speakerService';
 import { useAuth } from '../hooks/useAuth';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -16,6 +17,7 @@ const EventDetailPage: React.FC = () => {
   const { user } = useAuth();
   
   const [event, setEvent] = useState<EventData | null>(null);
+  const [speakers, setSpeakers] = useState<EventSpeaker[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
@@ -68,31 +70,33 @@ const EventDetailPage: React.FC = () => {
       const eventData = await EventService.getEventBySlugOrId(slug);
       
       if (eventData) {
-        // For each speaker in the event, fetch additional user data
-        if (eventData.speakers && eventData.speakers.length > 0) {
-          const enhancedSpeakers = await Promise.all(
-            eventData.speakers.map(async (speaker: any) => {
-              try {
-                // Get user document from Firestore to get LinkedIn and position
-                const userData = await EventService.getUserById(speaker.userId);
-                return {
-                  ...speaker,
-                  linkedinUsername: userData?.linkedinUsername || '',
-                  position: userData?.position || '',
-                  profileImage: userData?.profileImage || speaker.profileImage || null
-                };
-              } catch (error) {
-                console.error('❌ Error fetching speaker data:', error);
-                return speaker;
-              }
-            })
-          );
-          
-          eventData.speakers = enhancedSpeakers;
-        }
-        
         setEvent(eventData);
         console.log('✅ Event loaded:', eventData.name);
+        
+        // Load speakers separately using inline method (bypassing cache issues)
+        try {
+          console.log('🔍 Loading speakers for event:', eventData.id);
+          const { collection, getDocs } = await import('firebase/firestore');
+          const { db } = await import('../firebase/config');
+          
+          const speakersRef = collection(db, 'speakers');
+          const allSnapshot = await getDocs(speakersRef);
+          console.log('📊 Found', allSnapshot.docs.length, 'total speakers');
+          
+          const allSpeakers = allSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          
+          const eventSpeakers = allSpeakers.filter(speaker => speaker.eventId === eventData.id);
+          console.log('✅ Found', eventSpeakers.length, 'speakers for this event');
+          
+          setSpeakers(eventSpeakers as EventSpeaker[]);
+        } catch (speakerError) {
+          console.error('❌ Error loading event speakers:', speakerError);
+          // Don't fail the whole page if speakers fail to load
+          setSpeakers([]);
+        }
         
         // Check registration status if user is logged in
         if (user?.uid) {
@@ -374,7 +378,7 @@ const EventDetailPage: React.FC = () => {
 
   const statusInfo = getStatusInfo(event.status);
   const formattedDate = formatDate(event.date);
-  const hasSpeakers = event.speakers && event.speakers.length > 0;
+  const hasSpeakers = speakers && speakers.length > 0;
 
   return (
     <div className="min-h-screen bg-white">
@@ -439,7 +443,7 @@ const EventDetailPage: React.FC = () => {
                 {hasSpeakers && (
                   <div className="flex items-center space-x-3 text-lg">
                     <Mic className="h-6 w-6 text-orange-600" />
-                    <span className="text-gray-700">{event.speakers.length} {event.speakers.length === 1 ? 'Speaker' : 'Speakers'}</span>
+                    <span className="text-gray-700">{speakers.length} {speakers.length === 1 ? 'Speaker' : 'Speakers'}</span>
                   </div>
                 )}
               </div>
@@ -645,7 +649,7 @@ const EventDetailPage: React.FC = () => {
             {/* Event Speakers */}
             {hasSpeakers ? (
               <EventSpeakers 
-                speakers={event.speakers} 
+                speakers={speakers} 
                 className="bg-gradient-to-br from-red-50 to-blue-50"
               />
             ) : (

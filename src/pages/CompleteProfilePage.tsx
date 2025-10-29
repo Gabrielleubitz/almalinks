@@ -218,7 +218,7 @@ const CompleteProfilePage: React.FC = () => {
         <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
           <img 
             src={logoSvg}
-            alt="Wine & Grind Logo" 
+            alt="AlmaLinks Logo" 
             className="h-8 md:h-10 w-auto"
           />
         </Link>

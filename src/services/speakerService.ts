@@ -39,12 +39,21 @@ export interface SpeakerFile {
 }
 
 export interface EventSpeaker {
-  userId: string;
+  id: string;
   name: string;
-  email: string;
-  assignedAt: any;
-  assignedBy: string;
-  profileImage?: string | null;
+  title?: string;
+  bio?: string;
+  email?: string;
+  company?: string;
+  imageUrl?: string;
+  linkedIn?: string;
+  twitter?: string;
+  website?: string;
+  eventId: string;
+  createdAt: any;
+  createdBy: string;
+  updatedAt?: any;
+  updatedBy?: string;
 }
 
 export interface SpeakerAssignment {
@@ -54,21 +63,17 @@ export interface SpeakerAssignment {
   eventDate: string;
   speakerId: string;
   speakerName: string;
-  speakerEmail: string;
-  assignedAt: any;
-  assignedBy: string;
-  speakerProfileImage?: string | null;
+  speakerTitle?: string;
+  speakerImageUrl?: string;
+  createdAt: any;
+  createdBy: string;
 }
 
 export interface SpeakerDebugInfo {
-  userId: string;
-  hasUserDoc: boolean;
-  userRole: string | null;
-  userDocData: any;
+  speakerId: string;
+  speakerName: string;
   assignedEvents: any[];
   speakerAssignments: any[];
-  roleBasedSpeaker: boolean;
-  eventBasedSpeaker: boolean;
   finalResult: boolean;
   timestamp: string;
 }
@@ -76,8 +81,170 @@ export interface SpeakerDebugInfo {
 export class SpeakerService {
   
   /**
-   * 🎯 MAIN METHOD: Check if user is a speaker
-   * Checks BOTH user role AND event assignments with extensive logging
+   * Create a new speaker for an event (admin-managed)
+   */
+  static async createSpeaker(eventId: string, speakerData: Omit<EventSpeaker, 'id' | 'eventId' | 'createdAt'>, adminUserId: string): Promise<EventSpeaker> {
+    try {
+      const speakerId = nanoid();
+      
+      console.log('📝 Creating speaker with data:', speakerData);
+      console.log('🎯 For eventId:', eventId);
+      
+      // Filter out undefined values - Firestore doesn't accept undefined
+      const cleanSpeakerData = Object.fromEntries(
+        Object.entries(speakerData).filter(([_, value]) => value !== undefined)
+      );
+      
+      console.log('🧹 Cleaned speaker data:', cleanSpeakerData);
+      
+      const speaker: Partial<EventSpeaker> = {
+        id: speakerId,
+        eventId,
+        ...cleanSpeakerData,
+        createdAt: serverTimestamp(),
+        createdBy: adminUserId
+      };
+
+      console.log('💾 Final speaker object to save:', speaker);
+      
+      const speakerRef = doc(db, 'speakers', speakerId);
+      await setDoc(speakerRef, speaker);
+
+      console.log('✅ Speaker created successfully with ID:', speakerId);
+      return speaker as EventSpeaker;
+
+    } catch (error) {
+      console.error('❌ Error creating speaker:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update speaker information
+   */
+  static async updateSpeaker(speakerId: string, updates: Partial<Omit<EventSpeaker, 'id' | 'eventId' | 'createdAt' | 'createdBy'>>, adminUserId: string): Promise<void> {
+    try {
+      // Filter out undefined values - Firestore doesn't accept undefined
+      const cleanUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([_, value]) => value !== undefined)
+      );
+      
+      const speakerRef = doc(db, 'speakers', speakerId);
+      await updateDoc(speakerRef, {
+        ...cleanUpdates,
+        updatedAt: serverTimestamp(),
+        updatedBy: adminUserId
+      });
+
+      console.log('✅ Speaker updated successfully:', speakerId);
+
+    } catch (error) {
+      console.error('❌ Error updating speaker:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a speaker
+   */
+  static async deleteSpeaker(speakerId: string): Promise<void> {
+    try {
+      const speakerRef = doc(db, 'speakers', speakerId);
+      await deleteDoc(speakerRef);
+
+      console.log('✅ Speaker deleted successfully:', speakerId);
+
+    } catch (error) {
+      console.error('❌ Error deleting speaker:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Test method to check if we can read from speakers collection
+   */
+  static async testSpeakersCollection(): Promise<void> {
+    try {
+      console.log('🧪 Testing speakers collection access...');
+      const speakersRef = collection(db, 'speakers');
+      const snapshot = await getDocs(speakersRef);
+      console.log(`✅ Can read speakers collection. Found ${snapshot.docs.length} documents`);
+    } catch (error) {
+      console.error('❌ Cannot read speakers collection:', error);
+    }
+  }
+
+  /**
+   * Get all speakers for an event (NEW VERSION)
+   */
+  static async getEventSpeakersNew(eventId: string): Promise<EventSpeaker[]> {
+    console.error('🚀🚀🚀 NEW FUNCTION RUNNING - getEventSpeakersNew called with eventId:', eventId);
+    alert('NEW FUNCTION getEventSpeakersNew called with eventId: ' + eventId);
+    
+    try {
+      const speakersRef = collection(db, 'speakers');
+      
+      // Get all speakers and filter manually (temporary fix)
+      console.error('📡📡📡 Fetching all speakers...');
+      const allSnapshot = await getDocs(speakersRef);
+      console.error(`📊📊📊 Retrieved ${allSnapshot.docs.length} total speaker documents`);
+      
+      const allSpeakers = allSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      // Log each speaker for debugging
+      allSpeakers.forEach(speaker => {
+        console.error(`📄📄📄 Speaker: ${speaker.name} | eventId: "${speaker.eventId}" | matches: ${speaker.eventId === eventId}`);
+      });
+      
+      // Filter for the specific event
+      const eventSpeakers = allSpeakers.filter(speaker => speaker.eventId === eventId);
+      console.error(`✅✅✅ Found ${eventSpeakers.length} speakers for event ${eventId}:`, eventSpeakers);
+      
+      return eventSpeakers as EventSpeaker[];
+
+    } catch (error) {
+      console.error('❌❌❌ Error in getEventSpeakersNew:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get all speakers for an event
+   */
+  static async getEventSpeakers(eventId: string): Promise<EventSpeaker[]> {
+    // Call the new version
+    return this.getEventSpeakersNew(eventId);
+  }
+
+  /**
+   * Get a specific speaker by ID
+   */
+  static async getSpeaker(speakerId: string): Promise<EventSpeaker | null> {
+    try {
+      const speakerRef = doc(db, 'speakers', speakerId);
+      const speakerDoc = await getDoc(speakerRef);
+
+      if (speakerDoc.exists()) {
+        return {
+          id: speakerDoc.id,
+          ...speakerDoc.data()
+        } as EventSpeaker;
+      }
+
+      return null;
+
+    } catch (error) {
+      console.error('❌ Error getting speaker:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 🎯 DEPRECATED: Check if user is a speaker (keeping for backward compatibility)
+   * This method is now deprecated since speakers are no longer user-based
    */
   static async isUserSpeaker(userId: string): Promise<boolean> {
     if (!userId) {

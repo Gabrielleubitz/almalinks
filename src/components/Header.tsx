@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   User, 
+  Users,
   Settings, 
   LogOut, 
   Calendar, 
@@ -9,10 +10,10 @@ import {
   Shield, 
   ChevronDown,
   Menu,
-  X
+  X,
+  MessageCircle
 } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth'; // Your actual auth hook
-import { SpeakerService } from '../services/speakerService'; // Your speaker service
+import { useAuth } from '../hooks/useAuth';
 import logoSvg from '../assets/W&G Logo.svg';
 import ProfilePictureUploader from './profile/ProfilePictureUploader';
 
@@ -21,40 +22,11 @@ const SpeakerAwareHeader: React.FC = () => {
   const location = useLocation();
   const { user, logout, isAdmin, isPending } = useAuth(); // Added isPending check
   
-  const [isSpeaker, setIsSpeaker] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [checkingSpeakerStatus, setCheckingSpeakerStatus] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
 
-  // Check if user is a speaker when component mounts or user changes
-  useEffect(() => {
-    const checkSpeakerStatus = async () => {
-      if (!user?.uid) {
-        setIsSpeaker(false);
-        return;
-      }
-
-      try {
-        setCheckingSpeakerStatus(true);
-        console.log('🎤 Checking speaker status for user:', user.uid);
-        
-        // Use your actual SpeakerService to check if user is a speaker
-        const isUserSpeaker = await SpeakerService.isUserSpeaker(user.uid);
-        console.log('🎤 Speaker status result:', isUserSpeaker);
-        
-        setIsSpeaker(isUserSpeaker);
-      } catch (error) {
-        console.error('❌ Error checking speaker status:', error);
-        setIsSpeaker(false);
-      } finally {
-        setCheckingSpeakerStatus(false);
-      }
-    };
-
-    checkSpeakerStatus();
-  }, [user?.uid]);
 
   // Update profile image when user changes
   useEffect(() => {
@@ -133,7 +105,7 @@ const SpeakerAwareHeader: React.FC = () => {
               >
                 <img 
                   src={logoSvg}
-                  alt="Wine & Grind Logo" 
+                  alt="AlmaLinks Logo" 
                   className="h-8 sm:h-10 w-auto"
                 />
               </button>
@@ -166,7 +138,7 @@ const SpeakerAwareHeader: React.FC = () => {
               >
                 <img 
                   src={logoSvg}
-                  alt="Wine & Grind Logo" 
+                  alt="AlmaLinks Logo" 
                   className="h-8 sm:h-10 w-auto"
                 />
               </button>
@@ -266,30 +238,35 @@ const SpeakerAwareHeader: React.FC = () => {
             >
               Events
             </button>
+            
+            <button 
+              onClick={() => handleNavigation('/members')}
+              className={`font-medium transition-colors ${
+                location.pathname === '/members' 
+                  ? 'text-red-600' 
+                  : 'text-gray-600 hover:text-red-600'
+              }`}
+            >
+              Members
+            </button>
 
-            {/* Speaker Navigation - Only show if user is a speaker */}
-            {isSpeaker && (
-              <button 
-                onClick={() => handleNavigation('/speaker-dashboard')}
-                className={`flex items-center space-x-2 font-medium transition-colors px-3 py-2 rounded-full ${
-                  location.pathname === '/speaker-dashboard'
-                    ? 'text-orange-700 bg-orange-100'
-                    : 'text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100'
-                }`}
-                title="Speaker Dashboard"
-              >
-                <Mic className="h-4 w-4" />
-                <span>Speaker</span>
-                {checkingSpeakerStatus && (
-                  <div className="w-3 h-3 border border-orange-600 border-t-transparent rounded-full animate-spin ml-1" />
-                )}
-              </button>
-            )}
+            <button 
+              onClick={() => handleNavigation('/chats')}
+              className={`flex items-center space-x-1 font-medium transition-colors ${
+                location.pathname.startsWith('/chats')
+                  ? 'text-blue-600' 
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>Chats</span>
+            </button>
+
 
             {/* Admin Navigation - Only show if user is admin */}
             {isAdmin && (
               <button 
-                onClick={() => handleNavigation('/admin-tools')}
+                onClick={() => handleNavigation('/admin')}
                 className={`flex items-center space-x-2 font-medium transition-colors px-3 py-2 rounded-full ${
                   location.pathname.startsWith('/admin')
                     ? 'text-purple-700 bg-purple-100'
@@ -362,13 +339,7 @@ const SpeakerAwareHeader: React.FC = () => {
                               Admin
                             </span>
                           )}
-                          {isSpeaker && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                              <Mic className="h-3 w-3 mr-1" />
-                              Speaker
-                            </span>
-                          )}
-                          {!isAdmin && !isSpeaker && (
+                          {!isAdmin && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                               <User className="h-3 w-3 mr-1" />
                               Member
@@ -413,24 +384,34 @@ const SpeakerAwareHeader: React.FC = () => {
                       <Calendar className="h-4 w-4" />
                       <span>Browse Events</span>
                     </button>
+                    
+                    <button
+                      onClick={() => {
+                        navigate('/members');
+                        setShowProfileMenu(false);
+                      }}
+                      className="flex items-center space-x-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Users className="h-4 w-4" />
+                      <span>Browse Members</span>
+                    </button>
 
-                    {isSpeaker && (
-                      <button
-                        onClick={() => {
-                          navigate('/speaker-dashboard');
-                          setShowProfileMenu(false);
-                        }}
-                        className="flex items-center space-x-3 w-full px-4 py-2 text-sm text-orange-700 hover:bg-orange-50 transition-colors"
-                      >
-                        <Mic className="h-4 w-4" />
-                        <span>Speaker Dashboard</span>
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        navigate('/chats');
+                        setShowProfileMenu(false);
+                      }}
+                      className="flex items-center space-x-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      <span>Chats</span>
+                    </button>
+
 
                     {isAdmin && (
                       <button
                         onClick={() => {
-                          navigate('/admin-tools');
+                          navigate('/admin');
                           setShowProfileMenu(false);
                         }}
                         className="flex items-center space-x-3 w-full px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 transition-colors"
@@ -496,29 +477,35 @@ const SpeakerAwareHeader: React.FC = () => {
               >
                 Events
               </button>
+              
+              <button 
+                onClick={() => handleNavigation('/members')}
+                className={`block w-full text-left px-4 py-4 text-base rounded-lg transition-colors touch-manipulation ${
+                  location.pathname === '/members'
+                    ? 'text-red-600 bg-red-50'
+                    : 'text-gray-600 hover:text-red-600 hover:bg-gray-50'
+                }`}
+              >
+                Members
+              </button>
 
-              {/* Speaker Mobile Menu Item */}
-              {isSpeaker && (
-                <button 
-                  onClick={() => handleNavigation('/speaker-dashboard')}
-                  className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation ${
-                    location.pathname === '/speaker-dashboard'
-                      ? 'text-orange-700 bg-orange-50'
-                      : 'text-orange-600 hover:text-orange-700 hover:bg-orange-50'
-                  }`}
-                >
-                  <Mic className="h-4 w-4" />
-                  <span>Speaker Dashboard</span>
-                  {checkingSpeakerStatus && (
-                    <div className="w-3 h-3 border border-orange-600 border-t-transparent rounded-full animate-spin ml-1" />
-                  )}
-                </button>
-              )}
+              <button 
+                onClick={() => handleNavigation('/chats')}
+                className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation ${
+                  location.pathname.startsWith('/chats')
+                    ? 'text-blue-600 bg-blue-50'
+                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                }`}
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span>Chats</span>
+              </button>
+
 
               {/* Admin Mobile Menu Item */}
               {isAdmin && (
                 <button 
-                  onClick={() => handleNavigation('/admin-tools')}
+                  onClick={() => handleNavigation('/admin')}
                   className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation ${
                     location.pathname.startsWith('/admin')
                       ? 'text-purple-700 bg-purple-50'
@@ -566,13 +553,7 @@ const SpeakerAwareHeader: React.FC = () => {
                       Admin
                     </span>
                   )}
-                  {isSpeaker && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                      <Mic className="h-3 w-3 mr-1" />
-                      Speaker
-                    </span>
-                  )}
-                  {!isAdmin && !isSpeaker && (
+                  {!isAdmin && (
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                       <User className="h-3 w-3 mr-1" />
                       Member

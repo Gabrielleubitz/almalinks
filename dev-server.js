@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { config } from 'dotenv';
 import chatHandler from './api/chat.js';
+import adminChatsHandler from './api/admin/chats.js';
 
 // Load environment variables from .env file
 config();
@@ -35,6 +36,11 @@ app.post('/api/chat', (req, res) => {
   chatHandler(req, res);
 });
 
+app.post('/api/admin/chats', (req, res) => {
+  console.log('Admin Chat Creation API called:', req.body);
+  adminChatsHandler(req, res);
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Development API server running' });
@@ -44,5 +50,6 @@ app.listen(PORT, () => {
   console.log(`🚀 Development API server running on http://localhost:${PORT}`);
   console.log('Available endpoints:');
   console.log('  - POST http://localhost:3001/api/chat');
+  console.log('  - POST http://localhost:3001/api/admin/chats');
   console.log('  - GET  http://localhost:3001/api/health');
 });

@@ -153,11 +153,11 @@ Technical specs: High resolution, suitable for digital advertising, visually com
    * Generate a contextual image prompt based on ad content
    */
   static generateContextualImagePrompt(businessInfo: BusinessInfo, adContent: AdContent): string {
-    const isWineGrind = businessInfo.businessName.toLowerCase().includes('wine');
+    const isAlmaLinks = businessInfo.businessName.toLowerCase().includes('alma');
     
-    if (isWineGrind) {
-      // Specialized prompt for Wine & Grind events
-      return `Professional networking event photography: Elegant wine bar setting with diverse group of well-dressed entrepreneurs networking over wine glasses. Modern, sophisticated venue with warm lighting. People engaged in meaningful business conversations. High-end restaurant or wine bar atmosphere. Professional business attire. Candid moments of connection and collaboration. Lifestyle photography style, natural lighting, welcoming and upscale environment. Perfect for ${adContent.platform} advertising.`;
+    if (isAlmaLinks) {
+      // Specialized prompt for AlmaLinks events
+      return `Professional networking event photography: Elegant business conference setting with diverse group of well-dressed executives and CEOs networking. Modern, sophisticated venue with warm lighting. People engaged in meaningful professional conversations. High-end conference center or business lounge atmosphere. Professional business attire. Candid moments of connection and collaboration between Jewish business leaders. Lifestyle photography style, natural lighting, welcoming and upscale environment. Perfect for ${adContent.platform} advertising.`;
     }
 
     // General business prompt

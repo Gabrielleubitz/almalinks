@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
-type EventFilter = 'all' | 'active' | 'past' | 'completed';
+type EventFilter = 'all' | 'active' | 'completed';
 
 const EventsPage: React.FC = () => {
   const { user } = useAuth();
@@ -51,11 +51,21 @@ const EventsPage: React.FC = () => {
     }
   };
 
-  const getEventStatus = (event: EventData): 'active' | 'past' | 'completed' => {
+  const getEventStatus = (event: EventData): 'active' | 'completed' => {
     // DEBUG: Log the event status processing
     console.log(`🔍 Processing event "${event.name}" with database status: "${event.status}"`);
     
-    // First check the database status - respect it completely
+    // First, check if the event date has passed - this overrides database status
+    const eventDate = new Date(event.date);
+    const now = new Date();
+    
+    // If the event date has passed, it should always be completed
+    if (now > eventDate) {
+      console.log(`✅ Event "${event.name}" date has passed (${event.date}), marking as completed`);
+      return 'completed';
+    }
+    
+    // If event is explicitly marked as completed in database, respect it
     if (event.status === 'completed') {
       console.log(`✅ Event "${event.name}" marked as completed in database`);
       return 'completed';
@@ -67,43 +77,9 @@ const EventsPage: React.FC = () => {
       return 'completed'; // Hide it by marking as completed
     }
     
-    if (event.status === 'sold-out') {
-      const eventDate = new Date(event.date);
-      const now = new Date();
-      const eventEndTime = new Date(eventDate);
-      eventEndTime.setHours(eventEndTime.getHours() + 4); // Assume 4-hour events
-      
-      if (now > eventEndTime) {
-        console.log(`✅ Event "${event.name}" is past sold-out event, marking as completed`);
-        return 'completed'; // Past sold-out event
-      } else {
-        console.log(`✅ Event "${event.name}" is future sold-out event, marking as active`);
-        return 'active'; // Future sold-out event
-      }
-    }
-    
-    // For 'active' status, determine based on date
-    if (event.status === 'active') {
-      const eventDate = new Date(event.date);
-      const now = new Date();
-      const eventEndTime = new Date(eventDate);
-      eventEndTime.setHours(eventEndTime.getHours() + 4); // Assume 4-hour events
-      
-      if (now < eventDate) {
-        console.log(`✅ Event "${event.name}" is future active event`);
-        return 'active'; // Future event
-      } else if (now > eventEndTime) {
-        console.log(`✅ Event "${event.name}" is past active event, marking as completed`);
-        return 'completed'; // Past event that's finished
-      } else {
-        console.log(`✅ Event "${event.name}" is currently happening`);
-        return 'past'; // Event that's happening now or just finished
-      }
-    }
-    
-    // Fallback for unknown statuses
-    console.warn(`⚠️ Unknown event status "${event.status}" for event "${event.name}"`);
-    return 'completed';
+    // For future events, they're active regardless of sold-out or active status
+    console.log(`✅ Event "${event.name}" is in the future, marking as active`);
+    return 'active';
   };
 
   const filteredEvents = events.filter(event => {
@@ -111,16 +87,14 @@ const EventsPage: React.FC = () => {
     return getEventStatus(event) === filter;
   });
 
-  const getStatusBadge = (event: EventData, status: 'active' | 'past' | 'completed') => {
+  const getStatusBadge = (event: EventData, status: 'active' | 'completed') => {
     const styles = {
       active: event.status === 'sold-out' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800',
-      past: 'bg-yellow-100 text-yellow-800',
       completed: 'bg-blue-100 text-blue-800'
     };
     
     const labels = {
       active: event.status === 'sold-out' ? 'Sold Out' : 'Upcoming',
-      past: 'Recent',
       completed: 'Completed'
     };
 
@@ -194,7 +168,6 @@ const EventsPage: React.FC = () => {
               {[
                 { key: 'all', label: 'All Events' },
                 { key: 'active', label: 'Upcoming' },
-                { key: 'past', label: 'Recent' },
                 { key: 'completed', label: 'Completed' }
               ].map(({ key, label }) => (
                 <button

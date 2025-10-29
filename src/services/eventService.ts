@@ -27,6 +27,7 @@ export interface EventData {
   createdBy: string;
   createdAt: any;
   updatedAt?: any;
+  autoConnectEnabled?: boolean; // NEW: Auto-connect control
 }
 
 export interface EventRegistration {
@@ -69,7 +70,8 @@ export class EventService {
         slug: uniqueSlug,
         createdBy: adminUid,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        autoConnectEnabled: eventData.autoConnectEnabled ?? true // Default to true
       };
 
       await setDoc(doc(db, 'events', eventId), newEvent);
@@ -425,7 +427,7 @@ export class EventService {
       }
 
       // Generate connection URL for QR code (camera-scannable)
-      const qrCodeUrl = `https://winengrind.com/connect?to=${userId}&event=${eventId}`;
+      const qrCodeUrl = `https://almalinks.org/connect?to=${userId}&event=${eventId}`;
       
       // Also store the check-in code for admin scanner
       const checkInCode = `${eventId}-${userId}`;
@@ -440,6 +442,18 @@ export class EventService {
       });
       
       console.log('✅ User registered for event:', eventId, userId);
+      
+      // ENHANCED: Trigger auto-connect after successful registration
+      try {
+        // Import here to avoid circular dependency
+        const { AutoConnectService } = await import('./autoConnectService');
+        await AutoConnectService.autoConnectForEvent(userId, eventId);
+        console.log('✅ Auto-connect completed for user registration:', userId, eventId);
+      } catch (autoConnectError) {
+        // Log but don't fail registration if auto-connect fails
+        console.error('⚠️ Auto-connect failed (registration still successful):', autoConnectError);
+      }
+      
     } catch (error) {
       console.error('❌ Error registering for event:', error);
       throw error;
@@ -537,6 +551,20 @@ export class EventService {
       
       await updateDoc(regRef, updateData);
       console.log('✅ Check-in status updated:', eventId, userId, checkedIn);
+      
+      // ENHANCED: Trigger auto-connect when user checks in
+      if (checkedIn) {
+        try {
+          // Import here to avoid circular dependency
+          const { AutoConnectService } = await import('./autoConnectService');
+          await AutoConnectService.autoConnectForEvent(userId, eventId);
+          console.log('✅ Auto-connect completed for user check-in:', userId, eventId);
+        } catch (autoConnectError) {
+          // Log but don't fail check-in if auto-connect fails
+          console.error('⚠️ Auto-connect failed during check-in (check-in still successful):', autoConnectError);
+        }
+      }
+      
     } catch (error) {
       console.error('❌ Error updating check-in status:', error);
       throw error;
@@ -556,6 +584,64 @@ export class EventService {
     } catch (error) {
       console.error('❌ Error loading event stats:', error);
       return { total: 0, registered: 0, checkedIn: 0 };
+    }
+  }
+
+  // ENHANCED: Update auto-connect setting for an event
+  static async updateAutoConnectSetting(eventId: string, enabled: boolean): Promise<void> {
+    try {
+      const eventRef = doc(db, 'events', eventId);
+      await updateDoc(eventRef, {
+        autoConnectEnabled: enabled,
+        updatedAt: serverTimestamp()
+      });
+      
+      console.log('✅ Auto-connect setting updated:', eventId, enabled);
+      
+      // If enabling auto-connect, trigger retroactive connections
+      if (enabled) {
+        try {
+          const { AutoConnectService } = await import('./autoConnectService');
+          await AutoConnectService.retroactiveAutoConnect(eventId);
+          console.log('✅ Retroactive auto-connect completed for event:', eventId);
+        } catch (error) {
+          console.error('⚠️ Retroactive auto-connect failed:', error);
+          // Don't throw - the setting update was successful
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Error updating auto-connect setting:', error);
+      throw error;
+    }
+  }
+
+  // ENHANCED: Get auto-connect status for an event
+  static async getAutoConnectStatus(eventId: string): Promise<boolean> {
+    try {
+      const eventDoc = await getDoc(doc(db, 'events', eventId));
+      if (!eventDoc.exists()) {
+        return true; // Default to enabled for new events
+      }
+      
+      const eventData = eventDoc.data();
+      return eventData.autoConnectEnabled ?? true; // Default to true if not set
+      
+    } catch (error) {
+      console.error('❌ Error getting auto-connect status:', error);
+      return true; // Default to enabled on error
+    }
+  }
+
+  // ENHANCED: Manual trigger for retroactive auto-connect (admin only)
+  static async triggerRetroactiveAutoConnect(eventId: string): Promise<void> {
+    try {
+      const { AutoConnectService } = await import('./autoConnectService');
+      await AutoConnectService.retroactiveAutoConnect(eventId);
+      console.log('✅ Manual retroactive auto-connect completed for event:', eventId);
+    } catch (error) {
+      console.error('❌ Error in manual retroactive auto-connect:', error);
+      throw error;
     }
   }
 }

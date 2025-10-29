@@ -1,21 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { Navigate, Link } from 'react-router-dom';
-import { EventService } from '../services/eventService';
-import { useAdminScanner } from '../hooks/useAdminScanner';
-import { Calendar, Users, ChevronDown, MessageSquare, Megaphone, Mic, UserCog, UserPlus, Zap, FileText, Wand2, RefreshCw } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { 
+  Calendar, 
+  Users, 
+  MessageSquare, 
+  MessageCircle,
+  UserCog, 
+  Megaphone, 
+  Mic,
+  FileText,
+  Wand2,
+  Settings,
+  Activity,
+  TrendingUp,
+  Clock,
+  CheckCircle,
+  ChevronDown,
+  UserPlus,
+  Zap,
+  RefreshCw,
+  Send,
+  AlertCircle
+} from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { EventService } from '../../services/eventService';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { db } from '../../firebase/config';
+import AdminHeader from '../../components/admin/AdminHeader';
+import StatsCards from '../../components/admin/StatsCards';
+import UserListModal from '../../components/admin/UserListModal';
 
-import AdminHeader from '../components/admin/AdminHeader';
-import StatsCards from '../components/admin/StatsCards';
-import QRScanner from '../components/admin/QRScanner';
-import ManualSearch from '../components/admin/ManualSearch';
-import RegistrationDetails from '../components/admin/RegistrationDetails';
-import UserListModal from '../components/admin/UserListModal';
-
-const AdminTools: React.FC = () => {
-  const { user, loading: authLoading, isAdmin } = useAuth();
+const AdminDashboard: React.FC = () => {
+  const { user } = useAuth();
   const [stats, setStats] = useState({
     total: 0,
     registered: 0,
@@ -33,21 +49,14 @@ const AdminTools: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalUsers, setModalUsers] = useState<any[]>([]);
   const [modalTitle, setModalTitle] = useState('');
-
-  const {
-    scanResult,
-    scannedRegistration,
-    scanning,
-    error,
-    success,
-    autoCheckInEnabled,
-    handleScanSuccess,
-    handleManualSearch,
-    handleManualCheckIn,
-    clearScanResult,
-    toggleAutoCheckIn,
-    setEventForScanning
-  } = useAdminScanner(user?.uid);
+  
+  // SMS state
+  const [smsMessage, setSmsMessage] = useState('');
+  const [smsRecipientGroup, setSmsRecipientGroup] = useState<'all' | 'registered' | 'pending' | 'speaker'>('all');
+  const [smsRecipientCount, setSmsRecipientCount] = useState(0);
+  const [smsLoading, setSmsLoading] = useState(false);
+  const [smsError, setSmsError] = useState<string | null>(null);
+  const [smsSuccess, setSmsSuccess] = useState<string | null>(null);
 
   // Load events on component mount
   useEffect(() => {
@@ -68,16 +77,19 @@ const AdminTools: React.FC = () => {
       }
     };
 
-    if (isAdmin) {
-      loadEvents();
-      loadPendingCount();
-    }
-  }, [isAdmin, selectedEventId]);
+    loadEvents();
+    loadPendingCount();
+  }, [selectedEventId]);
+
+  // Update SMS recipient count when event or group changes
+  useEffect(() => {
+    updateSmsRecipientCount();
+  }, [selectedEventId, smsRecipientGroup, registrations]);
 
   // Load stats and registrations for selected event
   useEffect(() => {
     const loadEventData = async () => {
-      if (selectedEventId && isAdmin) {
+      if (selectedEventId) {
         setLoadingStats(true);
         try {
           console.log('📊 Loading data for event:', selectedEventId);
@@ -108,7 +120,7 @@ const AdminTools: React.FC = () => {
     };
 
     loadEventData();
-  }, [selectedEventId, isAdmin]);
+  }, [selectedEventId]);
 
   // Load pending registrations count
   const loadPendingCount = async () => {
@@ -141,27 +153,156 @@ const AdminTools: React.FC = () => {
     }
   };
 
-  // Update stats when check-in occurs
-  useEffect(() => {
-    if (success && success.includes('checked in successfully')) {
-      setStats(prev => ({
-        ...prev,
-        registered: prev.registered - 1,
-        attended: prev.attended + 1
-      }));
-      
-      // Reload registrations to get updated data
-      if (selectedEventId) {
-        EventService.getEventRegistrations(selectedEventId).then(setRegistrations);
-      }
-    }
-  }, [success, selectedEventId]);
-
   // Handle event selection
   const handleEventSelect = (eventId: string) => {
     console.log('📅 Event selected:', eventId);
     setSelectedEventId(eventId);
-    setEventForScanning(eventId);
+  };
+
+  // SMS helper functions
+  const updateSmsRecipientCount = async () => {
+    if (!selectedEventId || !registrations.length) {
+      setSmsRecipientCount(0);
+      return;
+    }
+
+    try {
+      let filteredUsers = registrations;
+
+      switch (smsRecipientGroup) {
+        case 'all':
+          filteredUsers = registrations;
+          break;
+        case 'registered':
+          filteredUsers = registrations.filter(reg => !reg.checkedIn);
+          break;
+        case 'pending':
+          filteredUsers = registrations.filter(reg => reg.status === 'pending');
+          break;
+        case 'speaker':
+          const selectedEvent = events.find(e => e.id === selectedEventId);
+          const eventSpeakers = selectedEvent?.speakers || [];
+          filteredUsers = registrations.filter(reg => 
+            eventSpeakers.some((speaker: any) => speaker.userId === reg.userId)
+          );
+          break;
+      }
+
+      // Filter out users without phone numbers
+      const usersWithPhones = filteredUsers.filter(user => user.phone && user.phone.trim());
+      setSmsRecipientCount(usersWithPhones.length);
+    } catch (error) {
+      console.error('❌ Error counting SMS recipients:', error);
+      setSmsRecipientCount(0);
+    }
+  };
+
+  const sendQuickSMS = async () => {
+    if (!selectedEventId) {
+      setSmsError('Please select an event');
+      return;
+    }
+
+    if (!smsMessage.trim()) {
+      setSmsError('Please enter a message');
+      return;
+    }
+
+    if (smsMessage.length > 300) {
+      setSmsError('Message must be 300 characters or less');
+      return;
+    }
+
+    if (smsRecipientCount === 0) {
+      setSmsError('No recipients found for the selected group');
+      return;
+    }
+
+    setSmsLoading(true);
+    setSmsError(null);
+    setSmsSuccess(null);
+
+    try {
+      let filteredUsers = registrations;
+
+      switch (smsRecipientGroup) {
+        case 'all':
+          filteredUsers = registrations;
+          break;
+        case 'registered':
+          filteredUsers = registrations.filter(reg => !reg.checkedIn);
+          break;
+        case 'pending':
+          filteredUsers = registrations.filter(reg => reg.status === 'pending');
+          break;
+        case 'speaker':
+          const selectedEvent = events.find(e => e.id === selectedEventId);
+          const eventSpeakers = selectedEvent?.speakers || [];
+          filteredUsers = registrations.filter(reg => 
+            eventSpeakers.some((speaker: any) => speaker.userId === reg.userId)
+          );
+          break;
+      }
+
+      // Filter out users without phone numbers and deduplicate
+      const usersWithPhones = filteredUsers.filter(user => user.phone && user.phone.trim());
+      const uniquePhones = new Set<string>();
+      const uniqueUsers = usersWithPhones.filter(user => {
+        const normalizedPhone = user.phone.replace(/\D/g, '');
+        if (uniquePhones.has(normalizedPhone)) {
+          return false;
+        }
+        uniquePhones.add(normalizedPhone);
+        return true;
+      });
+
+      console.log(`📱 Sending SMS to ${uniqueUsers.length} unique recipients`);
+
+      let successCount = 0;
+      let failureCount = 0;
+
+      // Send SMS to each user via API endpoint
+      for (const user of uniqueUsers) {
+        try {
+          const response = await fetch('/api/send-sms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: user.phone,
+              body: smsMessage
+            })
+          });
+
+          if (response.ok) {
+            successCount++;
+          } else {
+            failureCount++;
+          }
+        } catch (error) {
+          failureCount++;
+          console.error(`❌ Failed to send SMS to ${user.name}:`, error);
+        }
+
+        // Small delay between messages
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      // Show results
+      if (successCount > 0 && failureCount === 0) {
+        setSmsSuccess(`✅ Successfully sent ${successCount} messages!`);
+        setSmsMessage(''); // Clear form on success
+      } else if (successCount > 0 && failureCount > 0) {
+        setSmsSuccess(`⚠️ Sent ${successCount} messages successfully, ${failureCount} failed.`);
+      } else {
+        setSmsError(`❌ All ${failureCount} messages failed to send.`);
+      }
+
+    } catch (error: any) {
+      console.error('❌ SMS sending error:', error);
+      setSmsError(`Failed to send messages: ${error.message}`);
+    } finally {
+      setSmsLoading(false);
+    }
   };
 
   // Handle stat card clicks
@@ -291,30 +432,13 @@ const AdminTools: React.FC = () => {
     });
   };
 
-  // Show loading while checking admin status
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking permissions...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // This should be handled by ProtectedRoute, but keeping as fallback
-  if (!isAdmin) {
-    console.log('❌ Access denied - user is not admin');
-    return <Navigate to="/unauthorized" replace />;
-  }
-
   const selectedEvent = events.find(e => e.id === selectedEventId);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <AdminHeader 
         title="Admin Dashboard" 
+        subtitle={`Welcome back, ${user?.displayName || user?.name || 'Admin'}`}
       />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-12">
@@ -452,6 +576,21 @@ const AdminTools: React.FC = () => {
               </Link>
 
               <Link
+                to="/admin/chats/create"
+                className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="flex-shrink-0">
+                    <MessageCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-lg font-semibold text-gray-900">Create Chat Group</h4>
+                    <p className="text-gray-600 text-sm">Create new group chats</p>
+                  </div>
+                </div>
+              </Link>
+
+              <Link
                 to="/admin/ad-generator"
                 className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift"
               >
@@ -468,7 +607,7 @@ const AdminTools: React.FC = () => {
             </div>
           </div>
 
-          {/* Event Tools - Always Visible */}
+          {/* Event Tools */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">🎯 Event Tools</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -488,7 +627,7 @@ const AdminTools: React.FC = () => {
               </Link>
 
               <Link
-                to="/admin/check-in"
+                to="/admin/users"
                 className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift"
               >
                 <div className="flex items-center space-x-4">
@@ -496,23 +635,8 @@ const AdminTools: React.FC = () => {
                     <Users className="h-8 w-8 text-blue-600" />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="text-lg font-semibold text-gray-900">Check-in</h4>
-                    <p className="text-gray-600 text-sm">Event check-in system</p>
-                  </div>
-                </div>
-              </Link>
-
-              <Link
-                to="/admin/badges"
-                className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    <FileText className="h-8 w-8 text-indigo-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="text-lg font-semibold text-gray-900">Badges</h4>
-                    <p className="text-gray-600 text-sm">Generate event badges</p>
+                    <h4 className="text-lg font-semibold text-gray-900">Connections</h4>
+                    <p className="text-gray-600 text-sm">Manage user connections</p>
                   </div>
                 </div>
               </Link>
@@ -548,7 +672,6 @@ const AdminTools: React.FC = () => {
               </Link>
             </div>
           </div>
-
         </div>
 
         {/* Event Selection Dropdown */}
@@ -613,6 +736,107 @@ const AdminTools: React.FC = () => {
           )}
         </div>
 
+        {/* Quick SMS Section - Only show if event is selected */}
+        {selectedEventId && (
+          <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Quick SMS</h2>
+              <MessageSquare className="h-6 w-6 text-blue-600" />
+            </div>
+
+            {/* SMS Error Message */}
+            {smsError && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-3">
+                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                <p className="text-red-600 text-sm">{smsError}</p>
+              </div>
+            )}
+
+            {/* SMS Success Message */}
+            {smsSuccess && (
+              <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center space-x-3">
+                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                <p className="text-green-600 text-sm">{smsSuccess}</p>
+              </div>
+            )}
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Recipient Group Selection */}
+              <div>
+                <label htmlFor="sms-group" className="block text-sm font-medium text-gray-700 mb-2">
+                  Recipient Group
+                </label>
+                <div className="relative">
+                  <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <select
+                    id="sms-group"
+                    value={smsRecipientGroup}
+                    onChange={(e) => setSmsRecipientGroup(e.target.value as any)}
+                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none"
+                  >
+                    <option value="all">All Users</option>
+                    <option value="registered">Registered (Not Checked In)</option>
+                    <option value="pending">Pending Users</option>
+                    <option value="speaker">Speakers</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                </div>
+                <div className="mt-2 text-sm text-gray-600">
+                  📊 {smsRecipientCount} recipients
+                </div>
+              </div>
+
+              {/* Message Input */}
+              <div>
+                <label htmlFor="sms-message" className="block text-sm font-medium text-gray-700 mb-2">
+                  Message ({smsMessage.length}/300)
+                </label>
+                <textarea
+                  id="sms-message"
+                  value={smsMessage}
+                  onChange={(e) => setSmsMessage(e.target.value)}
+                  rows={3}
+                  maxLength={300}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                  placeholder="Enter your message..."
+                />
+                <div className={`mt-2 text-sm ${smsMessage.length > 280 ? 'text-red-600' : 'text-gray-500'}`}>
+                  {300 - smsMessage.length} characters remaining
+                </div>
+              </div>
+            </div>
+
+            {/* Send Button */}
+            <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-200">
+              <Link
+                to="/admin/sms"
+                className="text-blue-600 hover:text-blue-700 font-medium flex items-center space-x-2"
+              >
+                <MessageSquare className="h-4 w-4" />
+                <span>Advanced SMS Panel</span>
+              </Link>
+              
+              <button
+                onClick={sendQuickSMS}
+                disabled={smsLoading || smsRecipientCount === 0 || !smsMessage.trim()}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                {smsLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Sending...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    <span>Send to {smsRecipientCount}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Registration Stats - Only show if event is selected */}
         {selectedEventId ? (
           <div className="mb-8">
@@ -641,34 +865,6 @@ const AdminTools: React.FC = () => {
             </div>
           </div>
         )}
-
-        <div className="grid lg:grid-cols-2 gap-8">
-          <QRScanner
-            onScanSuccess={handleScanSuccess}
-            scanResult={scanResult}
-            onClearResult={clearScanResult}
-            autoCheckInEnabled={autoCheckInEnabled}
-            onToggleAutoCheckIn={toggleAutoCheckIn}
-            scanning={scanning}
-            selectedEventId={selectedEventId}
-            onEventSelect={handleEventSelect}
-          />
-
-          <ManualSearch
-            onSearch={handleManualSearch}
-            searching={false}
-          />
-        </div>
-
-        {/* Registration Details */}
-        {(scannedRegistration && !scanResult) && (
-          <RegistrationDetails
-            registration={scannedRegistration}
-            onCheckIn={handleManualCheckIn}
-            error={error}
-            success={success}
-          />
-        )}
       </div>
 
       {/* User List Modal */}
@@ -685,4 +881,4 @@ const AdminTools: React.FC = () => {
   );
 };
 
-export default AdminTools;
+export default AdminDashboard;

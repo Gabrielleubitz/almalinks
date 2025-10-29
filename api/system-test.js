@@ -85,8 +85,8 @@ async function testEmail(params, res) {
     Messages: [
       {
         From: {
-          Email: 'noreply@winengrind.com',
-          Name: 'Wine & Grind'
+          Email: 'noreply@almalinks.org',
+          Name: 'AlmaLinks'
         },
         To: [
           {
@@ -99,7 +99,7 @@ async function testEmail(params, res) {
         HTMLPart: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #7C3AED; margin: 0;">Wine & Grind</h1>
+              <h1 style="color: #7C3AED; margin: 0;">AlmaLinks</h1>
               <p style="color: #6B7280; margin: 5px 0;">System Test Email</p>
             </div>
             
@@ -109,7 +109,7 @@ async function testEmail(params, res) {
             
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #E5E7EB;">
               <p style="color: #9CA3AF; font-size: 14px; margin: 0;">
-                This is a test email from the Wine & Grind admin system.
+                This is a test email from the AlmaLinks admin system.
               </p>
               <p style="color: #9CA3AF; font-size: 12px; margin: 5px 0 0 0;">
                 Sent at ${new Date().toLocaleString()}
@@ -208,7 +208,7 @@ async function testGPT(params, res) {
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
-      { role: "system", content: "You are a helpful assistant for Wine & Grind, an exclusive networking event for founders and investors." },
+      { role: "system", content: "You are a helpful assistant for AlmaLinks, a global professional network for Jewish business leaders." },
       { role: "user", content: prompt }
     ],
     max_tokens: 500

@@ -250,10 +250,10 @@ const FloatingBubbles = () => {
           <div className="relative z-20">
             <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 md:p-12 border border-white/20 shadow-2xl">
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
-                Meet Our Wine & Grind Community
+                Meet Our AlmaLinks Community
               </h2>
               <p className="text-xl text-white/90 leading-relaxed">
-                Watch our vibrant community of 700+ founders, investors, and tech leaders flow before your eyes. Each profile represents a connection waiting to be made at Wine & Grind - where the future of business takes shape over exceptional wine.
+                Watch our vibrant community of 500+ CEOs, founders, financiers, and executives flow before your eyes. Each profile represents a meaningful connection waiting to be made at AlmaLinks - where outstanding business leaders build relationships across Jewish communities worldwide.
               </p>
               <p className="mt-4 font-bold text-white text-lg">
                 Try Popping A Bubble 🫧

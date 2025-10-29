@@ -6,12 +6,13 @@ import { getAnalytics, isSupported } from 'firebase/analytics';
 
 // Get Firebase config from environment variables
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDQBifOIzlR0YnT26wKHk3epaIa_T6BLH8",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "wine-and-grind.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "wine-and-grind",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "wine-and-grind.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "467002681617",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:467002681617:web:4b2e28b545e678f51184b0"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyC6cvhqnPB04oiCnfI2eYRfZ8Wsdxojcb4",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "alma-links-test.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "alma-links-test",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "alma-links-test.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "993488312241",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:993488312241:web:7fc18f59d3ec9457afcf90",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-CBHYZHPBSC"
 };
 
 // Check if we're running in a secure context
@@ -37,6 +38,12 @@ console.log('🔥 Initializing Firebase with config:', {
 });
 
 const app = initializeApp(firebaseConfig);
+
+// Expose Firebase app and auth to window for debugging
+if (typeof window !== 'undefined') {
+  (window as any).__app = app;
+  (window as any).__auth = getAuth(app);
+}
 
 // Initialize Firebase Authentication
 export const auth = getAuth(app);

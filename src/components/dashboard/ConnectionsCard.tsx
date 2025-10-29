@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, User, Briefcase, Linkedin, Mail, ChevronRight, ChevronLeft, Calendar, ChevronDown } from 'lucide-react';
+import { Users, User, Briefcase, Linkedin, Mail, ChevronRight, ChevronLeft, Calendar, ChevronDown, Eye, Shield, UserPlus, Zap } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { ConnectionService, Connection } from '../../services/connectionService';
+import { ConnectionService, LegacyConnection, Connection } from '../../services/connectionService';
 import { EventService } from '../../services/eventService';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 
-interface EnrichedConnection extends Connection {
+interface EnrichedConnection extends LegacyConnection {
   partnerData?: {
     uid: string;
     name: string;
@@ -40,27 +40,34 @@ const ConnectionsCard: React.FC = () => {
     }
   }, [user]);
   
-  // Load only events the user has registered for
+  // Load events where user has registered OR has connections
   const loadUserRegisteredEvents = async () => {
     if (!user?.uid) return;
     
     try {
       setLoadingEvents(true);
       
+      // Get all user connections first to find events they're connected to
+      const userConnections = await ConnectionService.getUserConnectionsLegacy(user.uid);
+      const connectedEventIds = new Set(userConnections.map(conn => conn.eventId).filter(Boolean));
+      
       // Get all events - getPublicEvents already filters out non-active ones
       const allEvents = await EventService.getPublicEvents();
       
-      // Filter to only include events the user has registered for
-      const userRegisteredEvents = [];
+      // Filter to include events the user has registered for OR has connections in
+      const userRelevantEvents = [];
       
       for (const event of allEvents) {
         const registration = await EventService.getUserRegistration(event.id, user.uid);
-        if (registration) {
-          userRegisteredEvents.push(event);
+        const hasConnections = connectedEventIds.has(event.id);
+        
+        if (registration || hasConnections) {
+          userRelevantEvents.push(event);
         }
       }
       
-      setEvents(userRegisteredEvents);
+      console.log('🎯 User relevant events (registered + connected):', userRelevantEvents.length);
+      setEvents(userRelevantEvents);
     } catch (error) {
       console.error('❌ Error loading user registered events:', error);
     } finally {
@@ -138,7 +145,7 @@ const ConnectionsCard: React.FC = () => {
       let userConnections;
       if (selectedEventId === 'all') {
         // Load all connections
-        userConnections = await ConnectionService.getUserConnections(user.uid);
+        userConnections = await ConnectionService.getUserConnectionsLegacy(user.uid);
         
         // Deduplicate users when showing "All Events"
         // Keep only the most recent connection with each unique user
@@ -189,22 +196,34 @@ const ConnectionsCard: React.FC = () => {
         console.log('🔄 Deduplicated connections (All Events):', userConnections.length);
       } else {
         // Load connections for specific event (no deduplication needed)
-        userConnections = await ConnectionService.getUserConnectionsByEvent(user.uid, selectedEventId);
+        userConnections = await ConnectionService.getUserConnectionsByEventLegacy(user.uid, selectedEventId);
         console.log('🔄 Event-specific connections:', userConnections.length);
       }
       
       console.log('🔄 Final connections to display:', userConnections);
       
+      // Load detailed connection reasons
+      await loadConnectionReasons(userConnections);
+      
       // Enrich connections with fresh user data if profile image is missing
       const enrichedConnections: EnrichedConnection[] = [];
+      const userDataCache = new Map<string, any>(); // Cache to avoid duplicate fetches
       
       for (const connection of userConnections) {
         const partner = getConnectionPartner(connection);
         let enrichedConnection = { ...connection };
         
         if (partner && !partner.profileImage) {
-          console.log('🔄 Profile image missing for', partner.name, '- fetching fresh user data');
-          const freshUserData = await fetchUserData(partner.uid);
+          // Check cache first to avoid duplicate API calls
+          let freshUserData = userDataCache.get(partner.uid);
+          if (!freshUserData) {
+            console.log('🔄 Profile image missing for', partner.name, '- fetching fresh user data');
+            freshUserData = await fetchUserData(partner.uid);
+            if (freshUserData) {
+              userDataCache.set(partner.uid, freshUserData);
+            }
+          }
+          
           if (freshUserData) {
             enrichedConnection.partnerData = {
               uid: partner.uid,
@@ -290,6 +309,97 @@ const ConnectionsCard: React.FC = () => {
     
     const index = Math.abs(hash) % colors.length;
     return colors[index];
+  };
+
+  // Get connection reason badge with clearer text
+  const getConnectionReasonBadge = (connectionType: string) => {
+    switch (connectionType) {
+      case 'auto':
+        return {
+          icon: Zap,
+          label: 'Connected by Event',
+          bgColor: 'bg-green-100',
+          textColor: 'text-green-800',
+          iconColor: 'text-green-600'
+        };
+      case 'manual':
+        return {
+          icon: Shield,
+          label: 'Connected by Admin',
+          bgColor: 'bg-purple-100',
+          textColor: 'text-purple-800',
+          iconColor: 'text-purple-600'
+        };
+      case 'scan':
+      default:
+        return {
+          icon: UserPlus,
+          label: 'Connected by Request',
+          bgColor: 'bg-blue-100',
+          textColor: 'text-blue-800',
+          iconColor: 'text-blue-600'
+        };
+    }
+  };
+
+  // Get all connection reasons for a user pair
+  const [connectionReasons, setConnectionReasons] = useState<Map<string, Connection>>(new Map());
+
+  // Load detailed connection info for better reason display
+  const loadConnectionReasons = async (connections: EnrichedConnection[]) => {
+    if (!user?.uid) return;
+    
+    const reasonsMap = new Map<string, Connection>();
+    
+    for (const connection of connections) {
+      try {
+        // Get the other user's UID
+        const otherUid = connection.fromUid === user.uid ? connection.toUid : connection.fromUid;
+        
+        // Check if there's a new-format connection with multiple reasons
+        const detailedConnection = await ConnectionService.checkExistingConnection(user.uid, otherUid);
+        
+        if (detailedConnection) {
+          reasonsMap.set(otherUid, detailedConnection);
+        }
+      } catch (error) {
+        console.error('Error loading connection reasons for:', connection.id, error);
+      }
+    }
+    
+    setConnectionReasons(reasonsMap);
+  };
+
+  // Get all reasons for a connection
+  const getConnectionReasons = (connection: EnrichedConnection): string[] => {
+    const otherUid = connection.fromUid === user?.uid ? connection.toUid : connection.fromUid;
+    const detailedConnection = connectionReasons.get(otherUid);
+    
+    if (detailedConnection && detailedConnection.reasons) {
+      return detailedConnection.reasons.map(reason => {
+        switch (reason.type) {
+          case 'event':
+            return 'Connected by Event';
+          case 'admin':
+            return reason.context ? `Connected by Admin: "${reason.context}"` : 'Connected by Admin';
+          case 'user':
+            return 'Connected by Request';
+          default:
+            return 'Connected';
+        }
+      });
+    }
+    
+    // Fallback to legacy reason
+    switch (connection.connectionType) {
+      case 'auto':
+        return ['Connected by Event'];
+      case 'manual':
+        return ['Connected by Admin'];
+      case 'scan':
+      default:
+        return ['Connected by Request'];
+    }
   };
   
   // Handle event selection
@@ -501,15 +611,80 @@ const ConnectionsCard: React.FC = () => {
                       </div>
                     )}
                     
+                    {/* Connection Reason Badges */}
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        {(() => {
+                          const reasons = getConnectionReasons(connection);
+                          
+                          return (
+                            <div className="flex flex-wrap gap-1">
+                              {reasons.map((reason, index) => {
+                                const isAdminReason = reason.includes('Connected by Admin');
+                                const isEventReason = reason.includes('Connected by Event');
+                                const isUserReason = reason.includes('Connected by Request');
+                                
+                                let badge;
+                                if (isEventReason) {
+                                  badge = {
+                                    icon: Zap,
+                                    bgColor: 'bg-green-100',
+                                    textColor: 'text-green-800',
+                                    iconColor: 'text-green-600'
+                                  };
+                                } else if (isAdminReason) {
+                                  badge = {
+                                    icon: Shield,
+                                    bgColor: 'bg-purple-100',
+                                    textColor: 'text-purple-800',
+                                    iconColor: 'text-purple-600'
+                                  };
+                                } else {
+                                  badge = {
+                                    icon: UserPlus,
+                                    bgColor: 'bg-blue-100',
+                                    textColor: 'text-blue-800',
+                                    iconColor: 'text-blue-600'
+                                  };
+                                }
+                                
+                                const IconComponent = badge.icon;
+                                const displayText = isAdminReason && reason.includes(':') 
+                                  ? reason.split(': ')[0] // Show just "Connected by Admin" in badge
+                                  : reason;
+                                const adminNote = isAdminReason && reason.includes(':') 
+                                  ? reason.split(': ')[1] // Extract the admin note
+                                  : null;
+                                
+                                return (
+                                  <div key={index} className="flex flex-col">
+                                    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${badge.bgColor} ${badge.textColor}`}>
+                                      <IconComponent className={`h-3 w-3 mr-1 ${badge.iconColor}`} />
+                                      {displayText}
+                                    </div>
+                                    {adminNote && (
+                                      <div className="mt-1 text-xs text-gray-600 italic line-clamp-2">
+                                        {adminNote.replace(/['"]/g, '')}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                      {selectedEventId === 'all' && eventCount > 1 && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          {eventCount} events
+                        </span>
+                      )}
+                    </div>
+                    
                     {/* Event Name */}
                     <div className="flex items-center text-xs text-gray-600 mb-2">
                       <Calendar className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
                       <span className="line-clamp-1">{eventName}</span>
-                      {selectedEventId === 'all' && eventCount > 1 && (
-                        <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {eventCount}
-                        </span>
-                      )}
                     </div>
                     
                     <div className="pt-3 border-t border-gray-100 flex flex-col space-y-2">
@@ -534,6 +709,15 @@ const ConnectionsCard: React.FC = () => {
                           <span className="line-clamp-1">{partner.email}</span>
                         </a>
                       )}
+                      
+                      {/* View Profile Button */}
+                      <Link
+                        to={`/profile/${partner.uid}`}
+                        className="flex items-center justify-center text-xs font-medium text-purple-600 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 py-2 px-3 rounded-lg transition-colors duration-200 mt-2"
+                      >
+                        <Eye className="h-3.5 w-3.5 mr-1.5" />
+                        View Profile
+                      </Link>
                       
                       <div className="text-xs text-gray-500 mt-1">
                         Connected on {ConnectionService.formatTimestamp(connection.timestamp)}

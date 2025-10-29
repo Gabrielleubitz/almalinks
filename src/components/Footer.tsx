@@ -20,14 +20,15 @@ const Footer = () => {
           <div className="flex items-center justify-center space-x-3 mb-6 sm:mb-8">
             <img 
               src={logoSvg}
-              alt="Wine & Grind Logo" 
+              alt="AlmaLinks Logo" 
               className="h-12 sm:h-16 w-auto filter brightness-0 invert"
             />
           </div>
           
           <p className="text-gray-400 text-base sm:text-lg mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
-            Where bold ideas meet real conversations. Join our exclusive community 
-            of founders, investors, and operators shaping the future. Pop us a message anytime!
+            A community of impact-driven CEOs, financiers, and executives committed to Israel 
+            and Jewish communities. Building meaningful relationships between outstanding 
+            business leaders worldwide. Connect with us anytime!
           </p>
           
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-6 sm:mb-8 px-4">
@@ -81,7 +82,7 @@ const Footer = () => {
               <Send className="h-5 w-5 sm:h-6 sm:w-6" />
             </a>
             <a
-              href="mailto:info@wineandgrind.com"
+              href="mailto:info@almalinks.org"
               className="text-gray-400 hover:text-white transition-colors duration-200"
               aria-label="Email"
             >
@@ -90,7 +91,7 @@ const Footer = () => {
           </div>
           
           <div className="mt-12 pt-8 border-t border-gray-800 text-gray-500 text-sm">
-            <p>&copy; 2025 Wine & Grind. All rights reserved.</p>
+            <p>&copy; 2025 AlmaLinks. All rights reserved.</p>
           </div>
         </div>
       </div>

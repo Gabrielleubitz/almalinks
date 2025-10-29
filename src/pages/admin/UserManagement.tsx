@@ -17,12 +17,16 @@ import {
   Phone,
   Briefcase,
   Linkedin,
-  Eye
+  Eye,
+  UserPlus,
+  UserMinus
 } from 'lucide-react';
 import { collection, getDocs, doc, updateDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useAuth } from '../../hooks/useAuth';
 import AdminHeader from '../../components/admin/AdminHeader';
+import UserConnectionModal from '../../components/admin/UserConnectionModal';
+import ConnectionManagementModal from '../../components/admin/ConnectionManagementModal';
 
 interface UserData {
   uid: string;
@@ -68,6 +72,10 @@ const UserManagement: React.FC = () => {
     name: string;
     email: string;
   } | null>(null);
+  const [showConnectionModal, setShowConnectionModal] = useState(false);
+  const [userToConnect, setUserToConnect] = useState<UserData | null>(null);
+  const [showConnectionManagement, setShowConnectionManagement] = useState(false);
+  const [userToManage, setUserToManage] = useState<UserData | null>(null);
 
   useEffect(() => {
     loadUsers();
@@ -156,6 +164,21 @@ const UserManagement: React.FC = () => {
   const handleCloseProfileModal = () => {
     setSelectedUser(null);
     setShowProfileModal(false);
+  };
+
+  const handleConnectClick = (userData: UserData) => {
+    setUserToConnect(userData);
+    setShowConnectionModal(true);
+  };
+
+  const handleManageConnectionsClick = (userData: UserData) => {
+    setUserToManage(userData);
+    setShowConnectionManagement(true);
+  };
+
+  const handleCloseConnectionModal = () => {
+    setUserToConnect(null);
+    setShowConnectionModal(false);
   };
 
   const formatPosition = (position: string) => {
@@ -298,7 +321,7 @@ const UserManagement: React.FC = () => {
         {/* Back Button */}
         <div className="mb-8">
           <button
-            onClick={() => navigate('/admin-tools')}
+            onClick={() => navigate('/admin')}
             className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -484,6 +507,30 @@ const UserManagement: React.FC = () => {
                             )}
                           </div>
                           
+                          {/* Connect Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleConnectClick(userData);
+                            }}
+                            className="bg-blue-100 text-blue-700 p-2 rounded-lg hover:bg-blue-200 transition-colors duration-200"
+                            title="Connect this user with another user"
+                          >
+                            <UserPlus className="h-5 w-5" />
+                          </button>
+
+                          {/* Manage Connections Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleManageConnectionsClick(userData);
+                            }}
+                            className="bg-purple-100 text-purple-700 p-2 rounded-lg hover:bg-purple-200 transition-colors duration-200"
+                            title="Manage user's connections"
+                          >
+                            <UserMinus className="h-5 w-5" />
+                          </button>
+
                           {/* Delete Button */}
                           <button
                             onClick={(e) => {
@@ -512,15 +559,33 @@ const UserManagement: React.FC = () => {
 
         {/* Information Box */}
         <div className="mt-8 bg-gray-50 rounded-2xl p-6">
-          <h3 className="font-semibold text-gray-900 mb-3">👥 User Role Information:</h3>
-          <ul className="text-sm text-gray-600 space-y-2">
-            <li>• <strong>Member:</strong> Regular users who can register for events and access their dashboard</li>
-            <li>• <strong>Speaker:</strong> Users who can upload presentation materials and access the speaker dashboard</li>
-            <li>• <strong>Admin:</strong> Full access to all admin features including user management</li>
-            <li>• <strong>Note:</strong> Changing a user's role takes effect immediately</li>
-            <li>• <strong>Security:</strong> Admins cannot change their own role or delete their own account</li>
-            <li>• <strong>Deletion:</strong> Deleting a user removes them from both Firebase Authentication and Firestore</li>
-          </ul>
+          <h3 className="font-semibold text-gray-900 mb-3">👥 User Management Information:</h3>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">User Roles:</h4>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• <strong>Member:</strong> Regular users who can register for events and access their dashboard</li>
+                <li>• <strong>Speaker:</strong> Users who can upload presentation materials and access the speaker dashboard</li>
+                <li>• <strong>Admin:</strong> Full access to all admin features including user management</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">Available Actions:</h4>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• <strong>👁 View Profile:</strong> Click on any user row to view detailed profile information</li>
+                <li>• <strong>👥 Connect Users:</strong> Use the blue connect button to manually connect any user with another user</li>
+                <li>• <strong>🔗 Manage Connections:</strong> Use the purple connections button to view and delete user's existing connections</li>
+                <li>• <strong>🗑 Delete User:</strong> Permanently remove user from both Firebase Authentication and Firestore</li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• <strong>Note:</strong> Role changes take effect immediately</li>
+              <li>• <strong>Security:</strong> Admins cannot change their own role or delete their own account</li>
+              <li>• <strong>Connections:</strong> Admin-created connections bypass user privacy settings and are logged for audit purposes</li>
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -749,6 +814,29 @@ const UserManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Connection Management Modal */}
+      <ConnectionManagementModal
+        isOpen={showConnectionManagement}
+        onClose={() => {
+          setShowConnectionManagement(false);
+          setUserToManage(null);
+        }}
+        userId={userToManage?.uid || ''}
+        userName={userToManage?.name || 'Unknown User'}
+      />
+
+      {/* User Connection Modal */}
+      <UserConnectionModal
+        isOpen={showConnectionModal}
+        onClose={handleCloseConnectionModal}
+        selectedUser={userToConnect ? {
+          uid: userToConnect.uid,
+          name: userToConnect.name || 'Unknown User',
+          email: userToConnect.email,
+          work: userToConnect.work || userToConnect.company || 'Not specified'
+        } : null}
+      />
     </div>
   );
 };

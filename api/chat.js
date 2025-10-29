@@ -18,10 +18,11 @@ if (!admin.apps.length) {
         databaseURL: `https://${serviceAccountKey.project_id}-default-rtdb.firebaseio.com`
       });
     } else {
-      // Fallback to service account file for development
-      const serviceAccountPath = join(__dirname, '..', 'wine-and-grind-firebase-adminsdk-fbsvc-df3dd963a0.json');
+      // Fallback to alma-links-test service account file for development
+      const serviceAccountPath = join(__dirname, '..', 'alma-links-test-firebase-adminsdk-fbsvc-0a0cc6c7cc.json');
       const serviceAccountContent = readFileSync(serviceAccountPath, 'utf8');
       const serviceAccount = JSON.parse(serviceAccountContent);
+      console.log(`🔍 Using service account for project: ${serviceAccount.project_id}`);
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
         databaseURL: `https://${serviceAccount.project_id}-default-rtdb.firebaseio.com`
@@ -265,7 +266,7 @@ EVENT LOGISTICS:
 - Doors usually open 30 minutes before start time
 
 REGISTRATION PROCESS:
-- Registration can ONLY be done through the website at winengrind.com
+- Registration can ONLY be done through the website at almalinks.org
 - Users must create an account and log in to register
 - Each person must register individually with their own account
 - Entry tickets are provided immediately after registration
@@ -279,7 +280,7 @@ ${upcomingEventsText}
 RECENT PAST EVENTS:
 ${pastEventsText}
 ` : `
-USER NOT LOGGED IN: Direct them to log in at winengrind.com to view current event details.
+USER NOT LOGGED IN: Direct them to log in at almalinks.org to view current event details.
 `}
 
 CONTACT INFORMATION:

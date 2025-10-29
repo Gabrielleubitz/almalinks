@@ -36,6 +36,7 @@ firebase-debug.log
 firebase-debug.*.log
 .firebase/
 wine-and-grind-firebase-adminsdk-*.json
+alma-links-*-firebase-adminsdk-*.json
 
 # Netlify
 .netlify/

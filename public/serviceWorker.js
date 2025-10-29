@@ -1,5 +1,5 @@
 // Cache name with version - increment when you need to bust cache
-const CACHE_NAME = 'wine-grind-cache-v2';
+const CACHE_NAME = 'almalinks-cache-v2';
 
 // Assets to cache on install
 const STATIC_ASSETS = [
@@ -131,7 +131,7 @@ self.addEventListener('push', (event) => {
   const data = event.data.json();
   
   const options = {
-    body: data.body || 'New notification from Wine & Grind',
+    body: data.body || 'New notification from AlmaLinks',
     icon: '/android-chrome-192x192.png',
     badge: '/favicon-32x32.png',
     vibrate: [100, 50, 100],
@@ -141,7 +141,7 @@ self.addEventListener('push', (event) => {
   };
   
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Wine & Grind', options)
+    self.registration.showNotification(data.title || 'AlmaLinks', options)
   );
 });
 

@@ -10,19 +10,38 @@ export interface AuthUser {
   role?: string;
   status?: string;
   phone?: string;
+  company?: string;
   work?: string;
   linkedinUsername?: string;
   position?: string;
   profileImage?: string | null;
+  bioTitle?: string;
+  bio?: string;
+  city?: string;
+  country?: string;
+  timezone?: string;
+  website?: string;
+  twitter?: string;
+  skills?: string[];
 }
 
 export interface ProfileData {
   name?: string;
   phone?: string;
+  company?: string;
   work?: string;
   linkedinUsername?: string;
   position?: string;
+  status?: string;
   profileImage?: string | null;
+  bioTitle?: string;
+  bio?: string;
+  city?: string;
+  country?: string;
+  timezone?: string;
+  website?: string;
+  twitter?: string;
+  skills?: string[];
 }
 
 const getAuthErrorMessage = (errorCode: string): string => {
@@ -75,10 +94,19 @@ export const useAuth = () => {
           role: userData.role || 'member',
           status: userData.status || 'approved', // Default to approved for existing users
           phone: userData.phone || '',
+          company: userData.company || '',
           work: userData.work || '',
           linkedinUsername: userData.linkedinUsername || '',
           position: userData.position || '',
-          profileImage: userData.profileImage || null
+          profileImage: userData.profileImage || null,
+          bioTitle: userData.bioTitle || '',
+          bio: userData.bio || '',
+          city: userData.city || '',
+          country: userData.country || '',
+          timezone: userData.timezone || '',
+          website: userData.website || '',
+          twitter: userData.twitter || '',
+          skills: userData.skills || []
         };
       }
       return null;
@@ -110,6 +138,14 @@ export const useAuth = () => {
           linkedinUsername: profileData?.linkedinUsername || '',
           position: profileData?.position || '',
           profileImage: profileData?.profileImage || null,
+          bioTitle: profileData?.bioTitle || '',
+          bio: profileData?.bio || '',
+          city: profileData?.city || '',
+          country: profileData?.country || '',
+          timezone: profileData?.timezone || '',
+          website: profileData?.website || '',
+          twitter: profileData?.twitter || '',
+          skills: profileData?.skills || [],
           role: 'member',
           status: 'pending', // New users start with pending status
           createdAt: serverTimestamp()
@@ -174,10 +210,19 @@ export const useAuth = () => {
           ...baseData,
           ...(profileData?.name && { name: profileData.name }),
           ...(profileData?.phone && { phone: profileData.phone }),
+          ...(profileData?.company && { company: profileData.company }),
           ...(profileData?.work && { work: profileData.work }),
           ...(profileData?.linkedinUsername && { linkedinUsername: profileData.linkedinUsername }),
           ...(profileData?.position && { position: profileData.position }),
-          ...(profileData?.profileImage !== undefined && { profileImage: profileData.profileImage })
+          ...(profileData?.profileImage !== undefined && { profileImage: profileData.profileImage }),
+          ...(profileData?.bioTitle !== undefined && { bioTitle: profileData.bioTitle }),
+          ...(profileData?.bio !== undefined && { bio: profileData.bio }),
+          ...(profileData?.city !== undefined && { city: profileData.city }),
+          ...(profileData?.country !== undefined && { country: profileData.country }),
+          ...(profileData?.timezone !== undefined && { timezone: profileData.timezone }),
+          ...(profileData?.website !== undefined && { website: profileData.website }),
+          ...(profileData?.twitter !== undefined && { twitter: profileData.twitter }),
+          ...(profileData?.skills !== undefined && { skills: profileData.skills })
         };
         
         await retryOnNetworkFailure(async () => setDoc(userDocRef, updatedData, { merge: true }));
@@ -193,7 +238,7 @@ export const useAuth = () => {
   // Function to check if profile is complete
   const checkProfileComplete = (): boolean => {
     if (!user) return false;
-    return !!(user.displayName && user.phone && user.work && user.linkedinUsername && user.position);
+    return !!(user.displayName && user.phone && user.company && user.work && user.linkedinUsername && user.position);
   };
 
   // Function to update user profile
@@ -209,10 +254,19 @@ export const useAuth = () => {
       const updateData = {
         ...(profileData.name && { name: profileData.name }),
         ...(profileData.phone && { phone: profileData.phone }),
+        ...(profileData.company && { company: profileData.company }),
         ...(profileData.work && { work: profileData.work }),
         ...(profileData.linkedinUsername && { linkedinUsername: profileData.linkedinUsername }),
         ...(profileData.position && { position: profileData.position }),
         ...(profileData.profileImage !== undefined && { profileImage: profileData.profileImage }),
+        ...(profileData.bioTitle !== undefined && { bioTitle: profileData.bioTitle }),
+        ...(profileData.bio !== undefined && { bio: profileData.bio }),
+        ...(profileData.city !== undefined && { city: profileData.city }),
+        ...(profileData.country !== undefined && { country: profileData.country }),
+        ...(profileData.timezone !== undefined && { timezone: profileData.timezone }),
+        ...(profileData.website !== undefined && { website: profileData.website }),
+        ...(profileData.twitter !== undefined && { twitter: profileData.twitter }),
+        ...(profileData.skills !== undefined && { skills: profileData.skills }),
         updatedAt: serverTimestamp()
       };
 
@@ -223,10 +277,19 @@ export const useAuth = () => {
         ...prev,
         displayName: profileData.name || prev.displayName,
         phone: profileData.phone || prev.phone,
+        company: profileData.company || prev.company,
         work: profileData.work || prev.work,
         linkedinUsername: profileData.linkedinUsername || prev.linkedinUsername,
         position: profileData.position || prev.position,
-        profileImage: profileData.profileImage !== undefined ? profileData.profileImage : prev.profileImage
+        profileImage: profileData.profileImage !== undefined ? profileData.profileImage : prev.profileImage,
+        bioTitle: profileData.bioTitle !== undefined ? profileData.bioTitle : prev.bioTitle,
+        bio: profileData.bio !== undefined ? profileData.bio : prev.bio,
+        city: profileData.city !== undefined ? profileData.city : prev.city,
+        country: profileData.country !== undefined ? profileData.country : prev.country,
+        timezone: profileData.timezone !== undefined ? profileData.timezone : prev.timezone,
+        website: profileData.website !== undefined ? profileData.website : prev.website,
+        twitter: profileData.twitter !== undefined ? profileData.twitter : prev.twitter,
+        skills: profileData.skills !== undefined ? profileData.skills : prev.skills
       } : null);
 
       console.log('✅ Profile updated successfully');
@@ -287,10 +350,19 @@ export const useAuth = () => {
               role: userData.role || 'member',
               status: userData.status || 'pending',
               phone: userData.phone || '',
+              company: userData.company || '',
               work: userData.work || '',
               linkedinUsername: userData.linkedinUsername || '',
               position: userData.position || '',
-              profileImage: userData.profileImage || null
+              profileImage: userData.profileImage || null,
+              bioTitle: userData.bioTitle || '',
+              bio: userData.bio || '',
+              city: userData.city || '',
+              country: userData.country || '',
+              timezone: userData.timezone || '',
+              website: userData.website || '',
+              twitter: userData.twitter || '',
+              skills: userData.skills || []
             };
           }
           
@@ -328,7 +400,18 @@ export const useAuth = () => {
             role: 'member',
             status: 'pending',
             phone: '',
-            work: ''
+            company: '',
+            work: '',
+            linkedinUsername: '',
+            position: '',
+            bioTitle: '',
+            bio: '',
+            city: '',
+            country: '',
+            timezone: '',
+            website: '',
+            twitter: '',
+            skills: []
           });
           
           if (error.code === 'auth/network-request-failed' || error.code === 'unavailable') {

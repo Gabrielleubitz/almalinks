@@ -94,7 +94,7 @@ const AddEvent: React.FC = () => {
 
       // Redirect after 2 seconds
       setTimeout(() => {
-        navigate('/admin/events');
+        navigate('/admin');
       }, 2000);
 
     } catch (err: any) {
@@ -123,7 +123,7 @@ const AddEvent: React.FC = () => {
         {/* Back Button */}
         <div className="mb-8">
           <button
-            onClick={() => navigate('/admin/events')}
+            onClick={() => navigate('/admin')}
             className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
           >
             <ArrowLeft className="h-5 w-5" />

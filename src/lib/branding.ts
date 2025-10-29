@@ -1,5 +1,5 @@
 /**
- * Wine & Grind Brand System for Badge Generation
+ * AlmaLinks Brand System for Badge Generation
  * Professional specifications for consistent branding across all materials
  */
 

@@ -67,7 +67,7 @@ async function testQRData(req, res) {
     const userId = doc.id;
     
     // Same logic as in the badge API
-    const qrCodeUrl = registration.qrCodeUrl || `https://winengrind.com/connect?to=${userId}&event=${eventId}`;
+    const qrCodeUrl = registration.qrCodeUrl || `https://almalinks.org/connect?to=${userId}&event=${eventId}`;
     
     qrTestData.push({
       userId: userId,
@@ -128,7 +128,7 @@ async function cleanupQR(req, res) {
     
     // Check if qrCodeUrl is corrupted (contains API key data or invalid format)
     const currentQrUrl = registration.qrCodeUrl;
-    const expectedQrUrl = `https://winengrind.com/connect?to=${userId}&event=${eventId}`;
+    const expectedQrUrl = `https://almalinks.org/connect?to=${userId}&event=${eventId}`;
     
     console.log(`🔍 Checking ${userName} (${userId}):`);
     console.log(`   Current: ${currentQrUrl}`);
@@ -137,7 +137,7 @@ async function cleanupQR(req, res) {
     const isCorrupted = !currentQrUrl || 
                        currentQrUrl.includes('sk-') || 
                        currentQrUrl.includes('API_KEY') || 
-                       !currentQrUrl.startsWith('https://winengrind.com/connect');
+                       !currentQrUrl.startsWith('https://almalinks.org/connect');
     
     if (isCorrupted) {
       console.log(`   ❌ CORRUPTED: Will fix`);

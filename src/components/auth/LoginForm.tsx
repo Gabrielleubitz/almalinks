@@ -135,7 +135,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
           <img 
             src={logoSvg}
-            alt="Wine & Grind Logo" 
+            alt="AlmaLinks Logo" 
             className="h-8 md:h-10 w-auto"
           />
         </Link>
@@ -159,7 +159,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
               <User className="h-8 w-8 text-white" />
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Join Wine & Grind
+              Join AlmaLinks
             </h2>
             <p className="text-gray-600">
               Enter your details to access events and your dashboard
@@ -304,7 +304,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">
-              By continuing, you agree to receive event updates and communications from Wine & Grind.
+              By continuing, you agree to receive event updates and communications from AlmaLinks.
             </p>
           </div>
         </div>
