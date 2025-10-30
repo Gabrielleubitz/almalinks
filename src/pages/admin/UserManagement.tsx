@@ -23,7 +23,8 @@ import {
   Upload,
   Activity,
   Key,
-  Download
+  Download,
+  Edit3
 } from 'lucide-react';
 import { collection, getDocs, doc, updateDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase/config';
@@ -578,6 +579,20 @@ const UserManagement: React.FC = () => {
                             )}
                           </div>
                           
+                          {/* Edit Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const editRoute = `/admin/users/${userData.uid}/edit`;
+                              console.log('🎯 Navigating to admin user edit:', editRoute, 'for user:', userData.name);
+                              navigate(editRoute);
+                            }}
+                            className="bg-green-100 text-green-700 p-2 rounded-lg hover:bg-green-200 transition-colors duration-200"
+                            title="Edit user profile"
+                          >
+                            <Edit3 className="h-5 w-5" />
+                          </button>
+
                           {/* Connect Button */}
                           <button
                             onClick={(e) => {
@@ -661,6 +676,7 @@ const UserManagement: React.FC = () => {
               <h4 className="font-medium text-gray-900 mb-2">User Actions:</h4>
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• <strong>👁 View Profile:</strong> Click on any user row to view detailed profile information</li>
+                <li>• <strong>✏️ Edit User:</strong> Use the green edit button to modify user profile, role, and information</li>
                 <li>• <strong>👥 Connect Users:</strong> Use the blue connect button to manually connect any user with another user</li>
                 <li>• <strong>🔗 Manage Connections:</strong> Use the purple connections button to view and delete user's existing connections</li>
                 <li>• <strong>🔑 Force Password Reset:</strong> Use the orange key button to require a user to change their password</li>
@@ -812,13 +828,28 @@ const UserManagement: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={handleCloseProfileModal}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
-                aria-label="Close modal"
-              >
-                <X className="h-6 w-6" />
-              </button>
+              <div className="flex items-center space-x-2">
+                {/* Edit Button */}
+                <button
+                  onClick={() => {
+                    console.log('🎯 Navigating to admin user edit from modal:', `/admin/users/${selectedUser.uid}/edit`, 'for user:', selectedUser.name);
+                    navigate(`/admin/users/${selectedUser.uid}/edit`);
+                  }}
+                  className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
+                >
+                  <Edit3 className="h-4 w-4 mr-2" />
+                  Edit User
+                </button>
+                
+                {/* Close Button */}
+                <button
+                  onClick={handleCloseProfileModal}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                  aria-label="Close modal"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
             </div>
 
             {/* Modal Body */}

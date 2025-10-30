@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Save, 
@@ -9,27 +9,33 @@ import {
   Briefcase, 
   MapPin, 
   Shield, 
+  Mic,
   CheckCircle,
   AlertCircle,
   X,
   Camera,
   Trash2
 } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { UserService } from '../services/userService';
-import { UserProfile, UserProfileForm } from '../types/user';
-import { validateUserProfile } from '../utils/validation';
-import { uploadProfilePicture, deleteProfilePicture } from '../services/profileService';
-import AdminHeader from '../components/admin/AdminHeader';
-import ProfilePictureUploader from '../components/profile/ProfilePictureUploader';
-import ProfileBasicsStep from '../components/signup/steps/ProfileBasicsStep';
-import AboutYouStep from '../components/signup/steps/AboutYouStep';
-import ContactLocationStep from '../components/signup/steps/ContactLocationStep';
-import PrivacyStep from '../components/signup/steps/PrivacyStep';
+import { useAuth } from '../../hooks/useAuth';
+import { UserService } from '../../services/userService';
+import { UserProfile, UserProfileForm } from '../../types/user';
+import { validateUserProfile } from '../../utils/validation';
+import { uploadProfilePicture, deleteProfilePicture } from '../../services/profileService';
+import AdminHeader from '../../components/admin/AdminHeader';
+import ProfilePictureUploader from '../../components/profile/ProfilePictureUploader';
+import ProfileBasicsStep from '../../components/signup/steps/ProfileBasicsStep';
+import AboutYouStep from '../../components/signup/steps/AboutYouStep';
+import ContactLocationStep from '../../components/signup/steps/ContactLocationStep';
+import PrivacyStep from '../../components/signup/steps/PrivacyStep';
 
-const ProfileEditPage: React.FC = () => {
-  const { user } = useAuth();
+interface AdminUserEditProps {}
+
+const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
+  const { userId } = useParams<{ userId: string }>();
+  
+  console.log('🔧 AdminUserEdit component loaded for userId:', userId);
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [formData, setFormData] = useState<UserProfileForm>({
@@ -53,6 +59,7 @@ const ProfileEditPage: React.FC = () => {
     profileVisibility: 'event_only'
   });
   
+  const [userRole, setUserRole] = useState<'member' | 'admin' | 'speaker'>('member');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -74,20 +81,36 @@ const ProfileEditPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (user?.uid) {
-      loadProfile();
+    console.log('🔧 AdminUserEdit useEffect - currentUser:', currentUser, 'userId:', userId);
+    
+    // Don't redirect if user is still loading
+    if (!currentUser) {
+      console.log('⏳ Current user not loaded yet, waiting...');
+      return;
     }
-  }, [user]);
+    
+    if (currentUser.role !== 'admin') {
+      console.log('❌ Access denied - user role:', currentUser.role, 'redirecting to /admin');
+      navigate('/admin');
+      return;
+    }
+    
+    console.log('✅ Admin access confirmed, loading user profile for:', userId);
+    if (userId) {
+      loadUserProfile();
+    }
+  }, [userId, currentUser, navigate]);
 
-  const loadProfile = async () => {
-    if (!user?.uid) return;
+  const loadUserProfile = async () => {
+    if (!userId) return;
 
     try {
       setLoading(true);
-      const userProfile = await UserService.getUser(user.uid, user.uid, user.role);
+      const userProfile = await UserService.getUser(userId, currentUser?.uid, currentUser?.role);
       
       if (userProfile) {
         setProfile(userProfile as UserProfile);
+        setUserRole((userProfile as any).role || 'member');
         
         // Convert profile to form data - map actual field names from database
         // Handle LinkedIn URL conversion
@@ -121,6 +144,9 @@ const ProfileEditPage: React.FC = () => {
           profileVisibility: userProfile.profileVisibility || 'event_only'
         };
         
+        console.log('📝 Loaded profile data:', userProfile);
+        console.log('📝 Mapped form data:', profileFormData);
+        
         setFormData(profileFormData);
       }
     } catch (error) {
@@ -144,14 +170,24 @@ const ProfileEditPage: React.FC = () => {
   };
 
   const saveProfile = async () => {
-    if (!user?.uid || !profile) {
+    console.log('🚀 Save button clicked!');
+    console.log('🔍 Checking requirements:', { userId, profile: !!profile, currentUserId: currentUser?.uid });
+    
+    if (!userId || !profile || !currentUser?.uid) {
+      console.log('❌ Missing requirements, cannot save');
       return;
     }
 
     // Validate form
+    console.log('🔍 Validating form data:', formData);
     const validation = validateUserProfile(formData);
+    console.log('🔍 Validation result:', validation);
     
     if (!validation.isValid) {
+      console.log('❌ Form validation failed:', validation.errors);
+      validation.errors.forEach(error => {
+        console.log(`❌ Validation error - Field: ${error.field}, Message: ${error.message}`);
+      });
       const errorMap: Record<string, string> = {};
       validation.errors.forEach(error => {
         errorMap[error.field] = error.message;
@@ -160,6 +196,8 @@ const ProfileEditPage: React.FC = () => {
       showToast(`Please fix form validation errors: ${validation.errors[0].message}`, 'error');
       return;
     }
+    
+    console.log('✅ Form validation passed, proceeding with save...');
 
     try {
       setSaving(true);
@@ -196,23 +234,47 @@ const ProfileEditPage: React.FC = () => {
         country: formData.country,
         timezone: formData.timezone,
         showPhone: formData.showPhone,
-        profileVisibility: formData.profileVisibility
+        profileVisibility: formData.profileVisibility,
+        role: userRole
       };
       
-      // For regular users, update their own profile using UserService
-      await UserService.updateUser(user.uid, updateData);
+      console.log('💾 Saving profile with mapped data:', updateData);
+      console.log('📝 Original form data:', formData);
+      console.log('🎯 Specific fields - bio:', formData.bio, 'phone:', formData.phone, 'company:', formData.company);
+      
+      // Call the user update API
+      const response = await fetch('http://localhost:3001/api/user-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update-user',
+          adminId: currentUser.uid,
+          targetUserId: userId,
+          updateData: updateData
+        })
+      });
+
+      const responseData = await response.json();
+      console.log('📬 API Response:', responseData);
+      
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Failed to update user');
+      }
       
       // Update local profile state with the mapped data
       const updatedProfile = { 
         ...profile, 
-        ...updateData
+        ...updateData,  // Use the mapped data, not the form data
+        role: userRole 
       };
       setProfile(updatedProfile);
       
-      showToast('Profile updated successfully', 'success');
+      showToast('User profile updated successfully', 'success');
       
       // Reload the profile to ensure we have the latest data
-      await loadProfile();
+      await loadUserProfile();
       
     } catch (error: any) {
       console.error('❌ Error saving profile:', error);
@@ -232,10 +294,10 @@ const ProfileEditPage: React.FC = () => {
   };
 
   const handleDeleteAvatar = async () => {
-    if (!user?.uid) return;
+    if (!userId) return;
     
     try {
-      await deleteProfilePicture(user.uid);
+      await deleteProfilePicture(userId);
       setProfile(prev => prev ? { ...prev, avatarUrl: undefined, profileImage: undefined } : null);
     } catch (error: any) {
       console.error('Error deleting avatar:', error);
@@ -243,14 +305,51 @@ const ProfileEditPage: React.FC = () => {
     }
   };
 
-  if (loading) {
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return <Shield className="h-4 w-4" />;
+      case 'speaker':
+        return <Mic className="h-4 w-4" />;
+      default:
+        return <User className="h-4 w-4" />;
+    }
+  };
+
+  const getRoleBadgeClass = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'speaker':
+        return 'bg-green-100 text-green-800 border-green-200';
+      default:
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+    }
+  };
+
+  // Show loading while currentUser is being loaded
+  if (!currentUser) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-        <AdminHeader title="Edit Profile" subtitle="Loading your profile..." />
+        <AdminHeader title="Edit User" subtitle="Loading..." />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading your profile...</p>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+        <AdminHeader title="Edit User" subtitle="Loading user profile..." />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading user profile...</p>
           </div>
         </div>
       </div>
@@ -260,17 +359,17 @@ const ProfileEditPage: React.FC = () => {
   if (!profile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-        <AdminHeader title="Edit Profile" subtitle="Profile not found" />
+        <AdminHeader title="Edit User" subtitle="User not found" />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Profile Not Found</h2>
-            <p className="text-gray-600 mb-8">Unable to load your profile data.</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">User Not Found</h2>
+            <p className="text-gray-600 mb-8">The user you're looking for doesn't exist or has been deleted.</p>
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/admin/users')}
               className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200"
             >
               <ArrowLeft className="h-5 w-5" />
-              <span>Back to Dashboard</span>
+              <span>Back to User Management</span>
             </button>
           </div>
         </div>
@@ -281,8 +380,8 @@ const ProfileEditPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <AdminHeader 
-        title="Edit Profile" 
-        subtitle={`Editing your profile`}
+        title="Edit User" 
+        subtitle={`Editing profile for ${profile.displayName || profile.firstName || 'User'}`}
       />
 
       {/* Toast Notification */}
@@ -325,23 +424,26 @@ const ProfileEditPage: React.FC = () => {
         {/* Back Button */}
         <div className="mb-8">
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/admin/users')}
             className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
           >
             <ArrowLeft className="h-5 w-5" />
-            <span>Back to Dashboard</span>
+            <span>Back to User Management</span>
           </button>
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-          {/* Header with Save Button - IDENTICAL TO ADMIN */}
+          {/* Header with Save Button */}
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Edit User Profile</h2>
               <p className="text-gray-600 mt-1">Modify user information and settings</p>
             </div>
             <button
-              onClick={saveProfile}
+              onClick={(e) => {
+                console.log('🖱️ Button clicked event:', e);
+                saveProfile();
+              }}
               disabled={saving}
               className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
@@ -354,7 +456,7 @@ const ProfileEditPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Profile Picture Section - IDENTICAL TO ADMIN */}
+          {/* Profile Picture Section */}
           <div className="mb-8 p-6 border border-gray-200 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <Camera className="h-5 w-5 mr-2 text-blue-600" />
@@ -371,7 +473,7 @@ const ProfileEditPage: React.FC = () => {
               
               <div className="flex-1">
                 <p className="text-gray-600 text-sm mb-4">
-                  Upload a professional photo. This will be visible on your profile and connection cards.
+                  Upload a professional photo for this user. This will be visible on their profile and connection cards.
                 </p>
                 
                 {profilePictureUploadError && (
@@ -393,7 +495,31 @@ const ProfileEditPage: React.FC = () => {
             </div>
           </div>
 
-          {/* IDENTICAL PROFILE EDITING SECTIONS - SAME AS ADMIN EDIT */}
+          {/* User Role Selection - ADMIN ONLY FEATURE */}
+          <div className="mb-8 p-6 border border-gray-200 rounded-xl">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">User Role</h3>
+            <div className="grid grid-cols-3 gap-3">
+              {(['member', 'speaker', 'admin'] as const).map((role) => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => setUserRole(role)}
+                  className={`p-3 rounded-xl border-2 transition-all duration-200 ${
+                    userRole === role
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    {getRoleIcon(role)}
+                    <span className="font-medium capitalize">{role}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* STANDARDIZED PROFILE EDITING SECTIONS - SAME AS USER EDIT */}
           <div className="space-y-8">
             
             {/* Basic Information Section */}
@@ -454,10 +580,13 @@ const ProfileEditPage: React.FC = () => {
 
           </div>
 
-          {/* Save Button (Mobile) - IDENTICAL TO ADMIN */}
+          {/* Save Button (Mobile) */}
           <div className="mt-8 md:hidden">
             <button
-              onClick={saveProfile}
+              onClick={(e) => {
+                console.log('🖱️ Mobile button clicked event:', e);
+                saveProfile();
+              }}
               disabled={saving}
               className="w-full inline-flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
@@ -475,4 +604,4 @@ const ProfileEditPage: React.FC = () => {
   );
 };
 
-export default ProfileEditPage;
+export default AdminUserEdit;

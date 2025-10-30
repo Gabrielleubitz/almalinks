@@ -572,15 +572,6 @@ const EventsPage: React.FC = () => {
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
                   <p className="text-gray-600">Manage your profile, tickets, and connections</p>
                 </div>
-                {!isEditingProfile && (
-                  <button
-                    onClick={handleEditProfile}
-                    className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-2xl hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2 w-fit"
-                  >
-                    <Edit className="h-5 w-5" />
-                    <span>Edit Profile</span>
-                  </button>
-                )}
               </div>
             </div>
 
@@ -1448,12 +1439,6 @@ const EventsPage: React.FC = () => {
                     <span className="text-sm font-medium text-gray-700">85%</span>
                   </div>
                   <p className="text-sm text-gray-600 mb-4">Add more details to strengthen your profile and connect with more members.</p>
-                  <button
-                    onClick={handleEditProfile}
-                    className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Complete Profile
-                  </button>
                 </div>
               </div>
             </div>

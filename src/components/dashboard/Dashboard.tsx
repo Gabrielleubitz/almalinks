@@ -6,7 +6,6 @@ import { useRegistration } from '../../hooks/useRegistration';
 import RegistrationForm from './RegistrationForm';
 import RegistrationStatus from './RegistrationStatus';
 import logoSvg from '../../assets/W&G Logo.svg';
-import ProfileEditor from './ProfileEditor';
 import ProfilePictureUploader from '../profile/ProfilePictureUploader';
 
 interface DashboardProps {
@@ -16,7 +15,6 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const { user, logout, isAdmin } = useAuth();
   const { registration, loading: registrationLoading } = useRegistration();
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(user?.profileImage || null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
 
@@ -200,25 +198,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Your Profile</h2>
-                {!isEditingProfile && (
-                  <button
-                    onClick={() => setIsEditingProfile(true)}
-                    className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-full hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2"
-                    aria-label="Edit Profile"
-                  >
-                    <User className="h-4 w-4 edit-profile-icon" />
-                    <span>Edit Profile</span>
-                  </button>
-                )}
               </div>
 
-              {isEditingProfile ? (
-                <ProfileEditor 
-                  user={user}
-                  onCancel={() => setIsEditingProfile(false)}
-                  onSuccess={() => setIsEditingProfile(false)}
-                />
-              ) : (
                 <div className="flex flex-col md:flex-row md:items-start gap-8">
                   {/* Profile Picture */}
                   <div className="flex flex-col items-center">
@@ -304,7 +285,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     </div>
                   </div>
                 </div>
-              )}
               
               {user?.role && (
                 <div className="mt-6 pt-6 border-t border-gray-200">

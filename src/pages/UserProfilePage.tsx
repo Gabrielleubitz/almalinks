@@ -251,15 +251,42 @@ const UserProfilePage: React.FC = () => {
                   )}
                 </div>
                 
-                {/* Connection Status */}
-                {connections.length > 0 && (
-                  <div className="mt-4">
+                <div className="mt-4 flex flex-col items-end space-y-2">
+                  {/* Edit Button - Show if viewing own profile or if admin */}
+                  {(currentUser?.uid === userId || currentUser?.role === 'admin') && (
+                    <div className="flex space-x-2">
+                      {/* Regular Edit Button - Always show for own profile */}
+                      {currentUser?.uid === userId && (
+                        <button
+                          onClick={() => navigate('/profile/edit')}
+                          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
+                        >
+                          <Edit3 className="h-4 w-4 mr-2" />
+                          Edit Profile
+                        </button>
+                      )}
+                      
+                      {/* Admin Edit Button - Only show for admins viewing other profiles */}
+                      {currentUser?.role === 'admin' && currentUser?.uid !== userId && (
+                        <button
+                          onClick={() => navigate(`/admin/users/${userId}/edit`)}
+                          className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200 text-sm font-medium"
+                        >
+                          <Edit3 className="h-4 w-4 mr-2" />
+                          Admin Edit
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Connection Status */}
+                  {connections.length > 0 && (
                     <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
                       <Users className="h-4 w-4 mr-1" />
                       Connected
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
               {/* Name and Role */}

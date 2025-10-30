@@ -56,12 +56,14 @@ export default async function handler(req, res) {
         return await bulkImport(req, res, adminId);
       case 'force-password-reset':
         return await forcePasswordReset(req, res, adminId);
+      case 'update-user':
+        return await updateUser(req, res, adminId);
       case 'get-audit-logs':
         return await getAuditLogs(req, res, adminId);
       default:
         return res.status(400).json({ 
           success: false, 
-          error: `Unknown action: ${action}. Available actions: create-user, bulk-import, force-password-reset, get-audit-logs` 
+          error: `Unknown action: ${action}. Available actions: create-user, bulk-import, force-password-reset, update-user, get-audit-logs` 
         });
     }
   } catch (error) {
@@ -356,6 +358,99 @@ async function bulkImport(req, res, adminId) {
     results,
     message: `Bulk import completed. ${results.successful.length}/${results.total} users created successfully.`
   });
+}
+
+// Update user profile and role
+async function updateUser(req, res, adminId) {
+  const { targetUserId, updateData } = req.body;
+
+  console.log('🔄 updateUser called with:');
+  console.log('📋 targetUserId:', targetUserId);
+  console.log('📋 updateData:', JSON.stringify(updateData, null, 2));
+  console.log('📋 adminId:', adminId);
+
+  if (!targetUserId) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Target user ID is required' 
+    });
+  }
+
+  if (!updateData || typeof updateData !== 'object') {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Update data is required' 
+    });
+  }
+
+  try {
+    console.log(`👤 Updating user: ${targetUserId}`);
+
+    // Get current user data for audit log
+    const userRef = db.collection('users').doc(targetUserId);
+    const userDoc = await userRef.get();
+    
+    if (!userDoc.exists) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'User not found' 
+      });
+    }
+
+    const currentData = userDoc.data();
+    const oldRole = currentData.role;
+    
+    // Prepare update data with timestamp
+    const updatePayload = {
+      ...updateData,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedBy: adminId
+    };
+
+    // Update user profile in Firestore
+    await userRef.update(updatePayload);
+
+    // If role changed, also update Firebase Auth custom claims
+    if (updateData.role && updateData.role !== oldRole) {
+      try {
+        await auth.setCustomUserClaims(targetUserId, {
+          role: updateData.role
+        });
+        console.log(`✅ Updated Firebase Auth claims for user: ${targetUserId}`);
+      } catch (authError) {
+        console.warn('⚠️ Failed to update Firebase Auth claims:', authError.message);
+        // Don't fail the entire operation if claims update fails
+      }
+    }
+
+    // Log audit trail
+    const auditDetails = {
+      targetUserId: targetUserId,
+      targetEmail: currentData.email,
+      targetName: currentData.name || currentData.displayName,
+      changedFields: Object.keys(updateData),
+      oldRole: oldRole,
+      newRole: updateData.role || oldRole
+    };
+
+    if (updateData.role && updateData.role !== oldRole) {
+      await logAuditAction(adminId, 'ROLE_CHANGED', auditDetails);
+    } else {
+      await logAuditAction(adminId, 'USER_UPDATED', auditDetails);
+    }
+
+    console.log(`✅ User ${targetUserId} updated successfully`);
+
+    return res.status(200).json({ 
+      success: true,
+      message: 'User updated successfully',
+      changedFields: Object.keys(updateData)
+    });
+
+  } catch (error) {
+    console.error('❌ Error updating user:', error);
+    throw error;
+  }
 }
 
 // Force password reset for a user

@@ -33,6 +33,8 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import PendingRegistrations from './pages/admin/PendingRegistrations';
 import SystemTestPage from './pages/admin/SystemTestPage';
 import ConnectionManagement from './pages/admin/ConnectionManagement';
+import AdminUserEdit from './pages/admin/AdminUserEdit';
+import ProfileEditPage from './pages/ProfileEditPage';
 // Removed badge generator functionality
 import AdGenerator from './pages/admin/AdGenerator';
 import ProfileSyncTools from './pages/admin/ProfileSyncTools';
@@ -114,6 +116,14 @@ function App() {
           element={
             <ProtectedRoute>
               <CompleteProfilePage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/profile/edit" 
+          element={
+            <ProtectedRoute>
+              <ProfileEditPage />
             </ProtectedRoute>
           } 
         />
@@ -252,6 +262,14 @@ function App() {
           element={
             <ProtectedRoute requiredRole="admin">
               <ConnectionManagement />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/users/:userId/edit" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminUserEdit />
             </ProtectedRoute>
           } 
         />
