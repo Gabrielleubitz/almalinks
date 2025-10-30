@@ -16,6 +16,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useActivityTracking } from '../hooks/useActivityTracking';
 import { UserService } from '../services/userService';
 import { UserProfile, UserProfileForm } from '../types/user';
 import { validateUserProfile } from '../utils/validation';
@@ -30,6 +31,7 @@ import PrivacyStep from '../components/signup/steps/PrivacyStep';
 const ProfileEditPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { logProfileUpdate } = useActivityTracking();
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [formData, setFormData] = useState<UserProfileForm>({
@@ -210,6 +212,10 @@ const ProfileEditPage: React.FC = () => {
       setProfile(updatedProfile);
       
       showToast('Profile updated successfully', 'success');
+      
+      // Log profile update activity
+      const changedFields = Object.keys(updateData);
+      logProfileUpdate(changedFields);
       
       // Reload the profile to ensure we have the latest data
       await loadProfile();

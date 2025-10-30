@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, setPersistence, browserLocalPersistence, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, retryOnNetworkFailure } from '../firebase/config';
+import { ActivityService } from '../services/activityService';
 
 export interface AuthUser {
   uid: string;
@@ -377,6 +378,16 @@ export const useAuth = () => {
           console.log('✅ Setting auth user with profile:', userProfile);
           setUser(userProfile);
           
+          // Log login activity (this will only trigger on actual login, not on page refresh)
+          const isNewLogin = !user; // If user was null, this is a new login
+          if (isNewLogin && userProfile.uid) {
+            ActivityService.logLogin(
+              userProfile.uid,
+              userProfile.email || '',
+              userProfile.displayName || userProfile.name || 'User'
+            );
+          }
+          
           // Set initial admin view mode based on role
           if (userProfile.role === 'admin') {
             setAdminViewMode('admin');
@@ -550,6 +561,16 @@ export const useAuth = () => {
   const logout = async () => {
     try {
       setError(null);
+      
+      // Log logout activity before signing out
+      if (user?.uid) {
+        await ActivityService.logLogout(
+          user.uid,
+          user.email || '',
+          user.displayName || user.name || 'User'
+        );
+      }
+      
       console.log('🚪 Signing out user...');
       await signOut(auth);
       console.log('✅ Sign out successful');

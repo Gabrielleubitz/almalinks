@@ -1,0 +1,575 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { 
+  Activity, 
+  Filter, 
+  Download, 
+  Calendar, 
+  User, 
+  Clock, 
+  Search,
+  RefreshCw,
+  TrendingUp,
+  Users,
+  BarChart3,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  AlertTriangle
+} from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { ActivityLogDisplay, ActivityFilters, ActivityStats, ActivityType } from '../../types/activity';
+import AdminHeader from '../../components/admin/AdminHeader';
+import { auth } from '../../firebase/config';
+
+// Activity type labels and colors
+const ACTIVITY_TYPES: Record<ActivityType, { label: string; color: string }> = {
+  login: { label: 'Login', color: 'bg-green-100 text-green-800' },
+  logout: { label: 'Logout', color: 'bg-gray-100 text-gray-800' },
+  page_view: { label: 'Page View', color: 'bg-blue-100 text-blue-800' },
+  profile_update: { label: 'Profile Update', color: 'bg-purple-100 text-purple-800' },
+  event_register: { label: 'Event Registration', color: 'bg-orange-100 text-orange-800' },
+  event_unregister: { label: 'Event Unregistration', color: 'bg-red-100 text-red-800' },
+  connection_request: { label: 'Connection Request', color: 'bg-indigo-100 text-indigo-800' },
+  connection_accept: { label: 'Connection Accept', color: 'bg-emerald-100 text-emerald-800' },
+  chat_create: { label: 'Chat Created', color: 'bg-cyan-100 text-cyan-800' },
+  chat_join: { label: 'Chat Joined', color: 'bg-teal-100 text-teal-800' },
+  admin_action: { label: 'Admin Action', color: 'bg-purple-100 text-purple-800' },
+  user_created: { label: 'User Created', color: 'bg-green-100 text-green-800' },
+  password_reset: { label: 'Password Reset', color: 'bg-yellow-100 text-yellow-800' }
+};
+
+const ActivityManagement: React.FC = () => {
+  const { user } = useAuth();
+  const [activities, setActivities] = useState<ActivityLogDisplay[]>([]);
+  const [stats, setStats] = useState<ActivityStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<ActivityFilters>({});
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState<ActivityLogDisplay | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [lastDocId, setLastDocId] = useState<string | null>(null);
+
+  // Load activities from API
+  const loadActivities = useCallback(async (reset = true) => {
+    if (!user?.uid) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch('/api/activity-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
+        },
+        body: JSON.stringify({
+          action: 'get-activities',
+          filters,
+          limitCount: 50,
+          lastDocId: reset ? null : lastDocId,
+          adminEmail: user.email,
+          adminName: user.displayName
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to load activities');
+      }
+
+      if (reset) {
+        setActivities(data.activities);
+      } else {
+        setActivities(prev => [...prev, ...data.activities]);
+      }
+      
+      setHasMore(data.hasMore);
+      setLastDocId(data.lastDocId);
+
+    } catch (error) {
+      console.error('❌ Error loading activities:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load activities');
+    } finally {
+      setLoading(false);
+    }
+  }, [user, filters, lastDocId]);
+
+  // Load activity statistics
+  const loadStats = useCallback(async () => {
+    if (!user?.uid) return;
+    
+    try {
+      const response = await fetch('/api/activity-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
+        },
+        body: JSON.stringify({
+          action: 'get-activity-stats',
+          days: 30,
+          adminEmail: user.email,
+          adminName: user.displayName
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setStats(data.stats);
+      }
+
+    } catch (error) {
+      console.error('❌ Error loading stats:', error);
+    }
+  }, [user]);
+
+  // Load data on component mount and filter changes
+  useEffect(() => {
+    loadActivities(true);
+  }, [filters]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  // Handle filter changes
+  const handleFilterChange = (key: keyof ActivityFilters, value: any) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setFilters({});
+  };
+
+  // Export activities (basic CSV export)
+  const exportActivities = () => {
+    const csvContent = [
+      ['Timestamp', 'User', 'Email', 'Activity Type', 'Description', 'IP Address', 'User Agent'].join(','),
+      ...activities.map(activity => [
+        activity.formattedTime,
+        activity.userName,
+        activity.userEmail,
+        activity.activityType,
+        activity.description.replace(/,/g, ';'), // Replace commas to avoid CSV issues
+        activity.metadata?.ipAddress || 'N/A',
+        activity.metadata?.userAgent || 'N/A'
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `activity_logs_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Clean up old logs
+  const cleanupOldLogs = async () => {
+    if (!user?.uid || !confirm('Are you sure you want to delete activity logs older than 90 days?')) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      const response = await fetch('/api/activity-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
+        },
+        body: JSON.stringify({
+          action: 'cleanup-old-logs',
+          daysToKeep: 90,
+          adminEmail: user.email,
+          adminName: user.displayName
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(`Successfully cleaned up ${data.deletedCount} old activity logs`);
+        loadActivities(true);
+      } else {
+        throw new Error(data.error);
+      }
+
+    } catch (error) {
+      console.error('❌ Error cleaning up logs:', error);
+      alert('Failed to clean up old logs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <AdminHeader />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Activity Management</h1>
+              <p className="text-gray-600">Monitor user activities and system usage</p>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => loadActivities(true)}
+                disabled={loading}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+              <button
+                onClick={exportActivities}
+                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </button>
+              <button
+                onClick={cleanupOldLogs}
+                className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                Cleanup Old Logs
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Statistics Cards */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Activity className="h-6 w-6 text-blue-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Total Activities</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalActivities.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Users className="h-6 w-6 text-green-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Active Users</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.uniqueUsers}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-purple-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Top Activity</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stats.topActivities[0]?.type || 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <BarChart3 className="h-6 w-6 text-orange-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Daily Average</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {Math.round(stats.totalActivities / (stats.dailyStats.length || 1))}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow mb-6">
+          <div className="p-4 border-b border-gray-200">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center space-x-2 text-gray-700 hover:text-gray-900"
+            >
+              <Filter className="h-5 w-5" />
+              <span className="font-medium">Filters</span>
+              {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+          </div>
+          
+          {showFilters && (
+            <div className="p-4 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {/* Search */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                  <div className="relative">
+                    <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
+                    <input
+                      type="text"
+                      value={filters.search || ''}
+                      onChange={(e) => handleFilterChange('search', e.target.value)}
+                      placeholder="Search users, descriptions..."
+                      className="pl-10 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* Activity Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Activity Type</label>
+                  <select
+                    value={filters.activityType || ''}
+                    onChange={(e) => handleFilterChange('activityType', e.target.value || undefined)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  >
+                    <option value="">All Types</option>
+                    {Object.entries(ACTIVITY_TYPES).map(([type, { label }]) => (
+                      <option key={type} value={type}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Start Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                  <input
+                    type="date"
+                    value={filters.startDate ? filters.startDate.toISOString().split('T')[0] : ''}
+                    onChange={(e) => handleFilterChange('startDate', e.target.value ? new Date(e.target.value) : undefined)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+
+                {/* End Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                  <input
+                    type="date"
+                    value={filters.endDate ? filters.endDate.toISOString().split('T')[0] : ''}
+                    onChange={(e) => handleFilterChange('endDate', e.target.value ? new Date(e.target.value) : undefined)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+
+                {/* Clear Filters */}
+                <div className="flex items-end">
+                  <button
+                    onClick={clearFilters}
+                    className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 text-sm"
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Activities Table */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="p-4 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900">Recent Activities</h3>
+            <p className="text-sm text-gray-600">Showing {activities.length} activities</p>
+          </div>
+          
+          {error && (
+            <div className="p-4 bg-red-50 border-l-4 border-red-400">
+              <p className="text-red-700">{error}</p>
+            </div>
+          )}
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Timestamp
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    User
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Activity
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Description
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    IP Address
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {loading && activities.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                      <div className="flex items-center justify-center space-x-2">
+                        <RefreshCw className="h-5 w-5 animate-spin" />
+                        <span>Loading activities...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : activities.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                      No activities found matching the current filters.
+                    </td>
+                  </tr>
+                ) : (
+                  activities.map((activity) => (
+                    <tr key={activity.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div className="flex items-center space-x-2">
+                          <Clock className="h-4 w-4 text-gray-400" />
+                          <span>{activity.formattedTime}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                            <User className="h-4 w-4 text-gray-500" />
+                          </div>
+                          <div className="ml-3">
+                            <div className="text-sm font-medium text-gray-900">{activity.userName}</div>
+                            <div className="text-sm text-gray-500">{activity.userEmail}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                          ACTIVITY_TYPES[activity.activityType]?.color || 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {ACTIVITY_TYPES[activity.activityType]?.label || activity.activityType}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        <div className="max-w-xs truncate" title={activity.description}>
+                          {activity.description}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {activity.metadata?.ipAddress || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <button
+                          onClick={() => setSelectedActivity(activity)}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Load More */}
+          {hasMore && !loading && (
+            <div className="p-4 text-center border-t border-gray-200">
+              <button
+                onClick={() => loadActivities(false)}
+                className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+              >
+                Load More Activities
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Activity Detail Modal */}
+        {selectedActivity && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-96 overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Activity Details</h3>
+                  <button
+                    onClick={() => setSelectedActivity(null)}
+                    className="text-gray-400 hover:text-gray-500"
+                  >
+                    ×
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Timestamp</label>
+                    <p className="text-sm text-gray-900">{selectedActivity.formattedTime}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">User</label>
+                    <p className="text-sm text-gray-900">
+                      {selectedActivity.userName} ({selectedActivity.userEmail})
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Activity Type</label>
+                    <p className="text-sm text-gray-900">
+                      {ACTIVITY_TYPES[selectedActivity.activityType]?.label || selectedActivity.activityType}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Description</label>
+                    <p className="text-sm text-gray-900">{selectedActivity.description}</p>
+                  </div>
+                  
+                  {selectedActivity.metadata && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Metadata</label>
+                      <pre className="text-xs text-gray-900 bg-gray-100 p-2 rounded mt-1 overflow-x-auto">
+                        {JSON.stringify(selectedActivity.metadata, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ActivityManagement;

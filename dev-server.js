@@ -5,6 +5,7 @@ import { config } from 'dotenv';
 import chatHandler from './api/chat.js';
 import adminChatsHandler from './api/admin/chats.js';
 import userAdminHandler from './api/user-admin.js';
+import activityAdminHandler from './api/activity-admin.js';
 import emailServiceHandler from './api/email-service.js';
 import deleteUserHandler from './api/delete-user.js';
 // Temporarily disabled problematic imports
@@ -54,6 +55,12 @@ app.post('/api/admin/chats', (req, res) => {
 app.post('/api/user-admin', (req, res) => {
   console.log('User Admin API called:', req.body?.action);
   userAdminHandler(req, res);
+});
+
+// Activity Admin API - User activity tracking and analytics
+app.post('/api/activity-admin', (req, res) => {
+  console.log('Activity Admin API called:', req.body?.action);
+  activityAdminHandler(req, res);
 });
 
 // Email Service API - Consolidated email handling
@@ -110,6 +117,7 @@ app.listen(PORT, () => {
   console.log('  - POST http://localhost:3001/api/chat');
   console.log('  - POST http://localhost:3001/api/admin/chats');
   console.log('  - POST http://localhost:3001/api/user-admin          [NEW] User management');
+  console.log('  - POST http://localhost:3001/api/activity-admin      [NEW] Activity tracking');
   console.log('  - ALL  http://localhost:3001/api/email-service       Consolidated email');
   console.log('  - POST http://localhost:3001/api/delete-user         Delete users');
   console.log('  - GET  http://localhost:3001/api/health              Health check');

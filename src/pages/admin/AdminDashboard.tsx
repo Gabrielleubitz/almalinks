@@ -517,6 +517,20 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
               </Link>
+              <Link
+                to="/admin/activity"
+                className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="flex-shrink-0">
+                    <Activity className="h-8 w-8 text-red-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-lg font-semibold text-gray-900">Activity</h4>
+                    <p className="text-gray-600 text-sm">Monitor user activities</p>
+                  </div>
+                </div>
+              </Link>
 
               <Link
                 to="/admin/pending-registrations"
