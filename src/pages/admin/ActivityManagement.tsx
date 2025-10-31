@@ -61,10 +61,12 @@ const ActivityManagement: React.FC = () => {
   // Load activities from API
   const loadActivities = useCallback(async (reset = true) => {
     if (!user?.uid) return;
-    
+
     try {
       setLoading(true);
       setError(null);
+
+      console.log('🔄 Loading activities...', { reset, filters, userId: user.uid });
 
       const response = await fetch('/api/activity-admin', {
         method: 'POST',
@@ -87,7 +89,14 @@ const ActivityManagement: React.FC = () => {
       }
 
       const data = await response.json();
-      
+
+      console.log('📊 Activities response:', {
+        success: data.success,
+        count: data.activities?.length,
+        hasMore: data.hasMore,
+        activities: data.activities
+      });
+
       if (!data.success) {
         throw new Error(data.error || 'Failed to load activities');
       }
@@ -97,9 +106,11 @@ const ActivityManagement: React.FC = () => {
       } else {
         setActivities(prev => [...prev, ...data.activities]);
       }
-      
+
       setHasMore(data.hasMore);
       setLastDocId(data.lastDocId);
+
+      console.log(`✅ Loaded ${data.activities.length} activities`);
 
     } catch (error) {
       console.error('❌ Error loading activities:', error);

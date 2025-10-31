@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Activity logs collection - IMPORTANT FOR MEMBER ACTIVITY TRACKING
+    match /activity_logs/{activityId} {
+      // Allow ANY authenticated user to create activity logs
+      // This is crucial for tracking member user activities!
+      allow create: if isAuthenticated();
+
+      // Only admins can read activity logs
+      allow read: if isAdmin();
+
+      // Only admins can update or delete activity logs
+      allow update, delete: if isAdmin();
+    }
+
+    // Chats collection
+    match /chats/{chatId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // Chat members collection
+    match /chat_members/{memberId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+
+    // Chat messages collection
+    match /chat_messages/{messageId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if resource.data.userId == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    // Chat requests collection
+    match /chat_requests/{requestId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+
+    // Events collection
+    match /events/{eventId} {
+      allow read: if true; // Public read
+      allow write: if isAdmin();
+    }
+
+    // Event registrations collection
+    match /event_registrations/{registrationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Speakers collection
+    match /speakers/{speakerId} {
+      allow read: if true; // Public read
+      allow write: if isAdmin();
+    }
+
+    // Connections collection
+    match /connections/{connectionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
