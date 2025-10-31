@@ -156,11 +156,33 @@ async function getActivities(req, res, adminId) {
 
     const activityData = activities.map(doc => {
       const data = doc.data();
+
+      // Handle timestamp conversion safely
+      let timestampDate;
+      try {
+        if (data.timestamp && typeof data.timestamp.toDate === 'function') {
+          timestampDate = data.timestamp.toDate();
+        } else if (data.timestamp instanceof Date) {
+          timestampDate = data.timestamp;
+        } else {
+          timestampDate = new Date();
+        }
+      } catch (e) {
+        console.error('❌ Error converting timestamp:', e);
+        timestampDate = new Date();
+      }
+
       return {
         id: doc.id,
-        ...data,
-        timestamp: data.timestamp?.toDate?.() || new Date(),
-        formattedTime: (data.timestamp?.toDate?.() || new Date()).toLocaleString()
+        userId: data.userId || 'unknown',
+        userEmail: data.userEmail || 'unknown',
+        userName: data.userName || 'Unknown User',
+        activityType: data.activityType || 'unknown',
+        description: data.description || '',
+        metadata: data.metadata || {},
+        sessionId: data.sessionId,
+        timestamp: timestampDate,
+        formattedTime: timestampDate.toLocaleString()
       };
     });
 
@@ -199,7 +221,20 @@ async function getActivities(req, res, adminId) {
 
   } catch (error) {
     console.error('❌ Error getting activities:', error);
-    throw error;
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      adminId,
+      filters
+    });
+
+    // Return error response instead of throwing
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to get activities',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 }
 
@@ -218,10 +253,20 @@ async function getActivityStats(req, res, adminId) {
       .orderBy('timestamp', 'desc');
 
     const snapshot = await query.get();
-    const activities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const activities = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        userId: data.userId || 'unknown',
+        userEmail: data.userEmail || 'unknown',
+        userName: data.userName || 'Unknown User',
+        activityType: data.activityType || 'unknown',
+        timestamp: data.timestamp
+      };
+    });
 
     // Calculate stats
-    const uniqueUsers = new Set(activities.map(a => a.userId)).size;
+    const uniqueUsers = new Set(activities.map(a => a.userId).filter(id => id !== 'unknown')).size;
     
     // Count activities by type
     const activityCounts = {};
@@ -237,8 +282,21 @@ async function getActivityStats(req, res, adminId) {
     // Daily stats
     const dailyStats = {};
     activities.forEach(activity => {
-      const date = activity.timestamp?.toDate?.()?.toDateString() || new Date().toDateString();
-      dailyStats[date] = (dailyStats[date] || 0) + 1;
+      try {
+        let date;
+        if (activity.timestamp && typeof activity.timestamp.toDate === 'function') {
+          date = activity.timestamp.toDate().toDateString();
+        } else if (activity.timestamp instanceof Date) {
+          date = activity.timestamp.toDateString();
+        } else {
+          date = new Date().toDateString();
+        }
+        dailyStats[date] = (dailyStats[date] || 0) + 1;
+      } catch (e) {
+        console.error('❌ Error processing timestamp for daily stats:', e);
+        const fallbackDate = new Date().toDateString();
+        dailyStats[fallbackDate] = (dailyStats[fallbackDate] || 0) + 1;
+      }
     });
 
     const dailyStatsArray = Object.entries(dailyStats)
