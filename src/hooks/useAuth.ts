@@ -377,15 +377,24 @@ export const useAuth = () => {
           
           console.log('✅ Setting auth user with profile:', userProfile);
           setUser(userProfile);
-          
-          // Log login activity (this will only trigger on actual login, not on page refresh)
-          const isNewLogin = !user; // If user was null, this is a new login
-          if (isNewLogin && userProfile.uid) {
+
+          // Log login activity only on actual new login (not page refresh)
+          // Use sessionStorage to track if login was already logged this session
+          const sessionKey = `login_logged_${userProfile.uid}`;
+          const loginAlreadyLogged = sessionStorage.getItem(sessionKey);
+
+          if (!loginAlreadyLogged) {
+            // This is a new session/login
             ActivityService.logLogin(
               userProfile.uid,
               userProfile.email || '',
               userProfile.displayName || userProfile.name || 'User'
             );
+            // Mark login as logged for this session
+            sessionStorage.setItem(sessionKey, 'true');
+            console.log('✅ Login activity logged for new session');
+          } else {
+            console.log('🔄 Session restored, skipping login activity log');
           }
           
           // Set initial admin view mode based on role
@@ -561,7 +570,7 @@ export const useAuth = () => {
   const logout = async () => {
     try {
       setError(null);
-      
+
       // Log logout activity before signing out
       if (user?.uid) {
         await ActivityService.logLogout(
@@ -569,8 +578,13 @@ export const useAuth = () => {
           user.email || '',
           user.displayName || user.name || 'User'
         );
+
+        // Clear session tracking
+        const sessionKey = `login_logged_${user.uid}`;
+        sessionStorage.removeItem(sessionKey);
+        console.log('✅ Logout activity logged and session cleared');
       }
-      
+
       console.log('🚪 Signing out user...');
       await signOut(auth);
       console.log('✅ Sign out successful');
