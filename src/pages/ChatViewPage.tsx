@@ -23,6 +23,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useActivityTracking } from '../hooks/useActivityTracking';
 import { ChatService } from '../services/chatService';
 import { UserService } from '../services/userService';
 import { 
@@ -43,6 +44,7 @@ const ChatViewPage: React.FC = () => {
   const { chatId } = useParams<{ chatId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { logChatMessage } = useActivityTracking();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const [chat, setChat] = useState<ChatWithMembers | null>(null);
@@ -189,6 +191,11 @@ const ChatViewPage: React.FC = () => {
       
       await ChatService.sendMessage(form, user.uid);
       setMessageText('');
+
+      // Log chat message activity
+      if (chat) {
+        logChatMessage(chatId, chat.name);
+      }
       
     } catch (err: any) {
       console.error('❌ Error sending message:', err);

@@ -14,7 +14,8 @@
     "dev:all": "concurrently --kill-others \"npm run dev:vite\" \"npm run dev:netlify\"",
     "dev:netlify": "netlify dev --port 8888",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "fix-user-claims": "node scripts/fix-user-claims.js"
   },
   "dependencies": {
     "@daily-co/daily-js": "^0.70.0",

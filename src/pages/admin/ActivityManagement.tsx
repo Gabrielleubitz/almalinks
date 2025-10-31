@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Activity, 
-  Filter, 
-  Download, 
-  Calendar, 
-  User, 
-  Clock, 
+import {
+  Activity,
+  Filter,
+  Download,
+  Calendar,
+  User,
+  Clock,
   Search,
   RefreshCw,
   TrendingUp,
@@ -14,12 +14,16 @@ import {
   ChevronDown,
   ChevronUp,
   Eye,
-  AlertTriangle
+  AlertTriangle,
+  MessageCircle,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { ActivityLogDisplay, ActivityFilters, ActivityStats, ActivityType } from '../../types/activity';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { auth } from '../../firebase/config';
+import { AdminChatService } from '../../services/adminChatService';
+import { ChatMessage } from '../../types/chat';
 
 // Activity type labels and colors
 const ACTIVITY_TYPES: Record<ActivityType, { label: string; color: string }> = {
@@ -33,6 +37,7 @@ const ACTIVITY_TYPES: Record<ActivityType, { label: string; color: string }> = {
   connection_accept: { label: 'Connection Accept', color: 'bg-emerald-100 text-emerald-800' },
   chat_create: { label: 'Chat Created', color: 'bg-cyan-100 text-cyan-800' },
   chat_join: { label: 'Chat Joined', color: 'bg-teal-100 text-teal-800' },
+  chat_message: { label: 'Chat Message', color: 'bg-blue-100 text-blue-800' },
   admin_action: { label: 'Admin Action', color: 'bg-purple-100 text-purple-800' },
   user_created: { label: 'User Created', color: 'bg-green-100 text-green-800' },
   password_reset: { label: 'Password Reset', color: 'bg-yellow-100 text-yellow-800' }
@@ -49,6 +54,9 @@ const ActivityManagement: React.FC = () => {
   const [selectedActivity, setSelectedActivity] = useState<ActivityLogDisplay | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [lastDocId, setLastDocId] = useState<string | null>(null);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [loadingChat, setLoadingChat] = useState(false);
 
   // Load activities from API
   const loadActivities = useCallback(async (reset = true) => {
@@ -95,7 +103,16 @@ const ActivityManagement: React.FC = () => {
 
     } catch (error) {
       console.error('❌ Error loading activities:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load activities');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load activities';
+      setError(`${errorMessage}. Check console for details.`);
+
+      // Log additional debug info
+      console.error('Debug Info:', {
+        userId: user?.uid,
+        email: user?.email,
+        filters,
+        errorDetails: error
+      });
     } finally {
       setLoading(false);
     }
@@ -132,6 +149,11 @@ const ActivityManagement: React.FC = () => {
 
     } catch (error) {
       console.error('❌ Error loading stats:', error);
+      console.error('Stats Debug Info:', {
+        userId: user?.uid,
+        email: user?.email,
+        errorDetails: error
+      });
     }
   }, [user]);
 
@@ -147,6 +169,30 @@ const ActivityManagement: React.FC = () => {
   // Handle filter changes
   const handleFilterChange = (key: keyof ActivityFilters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Load chat messages for viewing
+  const loadChatMessages = async (chatId: string) => {
+    try {
+      setLoadingChat(true);
+      const messages = await AdminChatService.getAllChatMessages(chatId);
+      setChatMessages(messages);
+      setSelectedChatId(chatId);
+    } catch (error) {
+      console.error('❌ Error loading chat messages:', error);
+      alert('Failed to load chat messages');
+    } finally {
+      setLoadingChat(false);
+    }
+  };
+
+  // Handle viewing chat from activity
+  const handleViewChat = (activity: ActivityLogDisplay) => {
+    const chatId = activity.metadata?.chatId;
+    if (chatId) {
+      loadChatMessages(chatId);
+      setSelectedActivity(null); // Close activity detail modal
+    }
   };
 
   // Clear all filters
@@ -553,7 +599,20 @@ const ActivityManagement: React.FC = () => {
                     <label className="text-sm font-medium text-gray-500">Description</label>
                     <p className="text-sm text-gray-900">{selectedActivity.description}</p>
                   </div>
-                  
+
+                  {/* Show View Chat button for chat_message activities */}
+                  {selectedActivity.activityType === 'chat_message' && selectedActivity.metadata?.chatId && (
+                    <div>
+                      <button
+                        onClick={() => handleViewChat(selectedActivity)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        <span>View Full Chat Conversation</span>
+                      </button>
+                    </div>
+                  )}
+
                   {selectedActivity.metadata && (
                     <div>
                       <label className="text-sm font-medium text-gray-500">Metadata</label>
@@ -563,6 +622,74 @@ const ActivityManagement: React.FC = () => {
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Chat Messages Viewer Modal */}
+        {selectedChatId && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-gray-900">Chat Conversation</h3>
+                  <button
+                    onClick={() => {
+                      setSelectedChatId(null);
+                      setChatMessages([]);
+                    }}
+                    className="text-gray-400 hover:text-gray-500"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  {chatMessages.length} messages • Admin view (hidden from regular users)
+                </p>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {loadingChat ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
+                  </div>
+                ) : chatMessages.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No messages in this chat
+                  </div>
+                ) : (
+                  chatMessages.map((message) => (
+                    <div
+                      key={message.id}
+                      className="flex space-x-3 p-4 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex-shrink-0">
+                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <User className="h-5 w-5 text-blue-600" />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium text-gray-900">
+                            {message.userName}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {message.createdAt?.toDate?.()?.toLocaleString() || 'Unknown time'}
+                          </p>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {message.text}
+                        </p>
+                        {message.userEmail && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            {message.userEmail}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

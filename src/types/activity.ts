@@ -1,17 +1,18 @@
 // Activity tracking types
 import { Timestamp } from 'firebase/firestore';
 
-export type ActivityType = 
-  | 'login' 
-  | 'logout' 
-  | 'page_view' 
-  | 'profile_update' 
-  | 'event_register' 
-  | 'event_unregister' 
-  | 'connection_request' 
-  | 'connection_accept' 
-  | 'chat_create' 
-  | 'chat_join' 
+export type ActivityType =
+  | 'login'
+  | 'logout'
+  | 'page_view'
+  | 'profile_update'
+  | 'event_register'
+  | 'event_unregister'
+  | 'connection_request'
+  | 'connection_accept'
+  | 'chat_create'
+  | 'chat_join'
+  | 'chat_message'
   | 'admin_action'
   | 'user_created'
   | 'password_reset';

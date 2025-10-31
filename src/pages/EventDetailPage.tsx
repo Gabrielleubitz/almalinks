@@ -5,6 +5,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { EventService, EventData } from '../services/eventService';
 import { SpeakerService, EventSpeaker } from '../services/speakerService';
 import { useAuth } from '../hooks/useAuth';
+import { useActivityTracking } from '../hooks/useActivityTracking';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import EventSpeakers from '../components/EventSpeakers';
@@ -15,6 +16,7 @@ const EventDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { logEventRegistration } = useActivityTracking();
   
   const [event, setEvent] = useState<EventData | null>(null);
   const [speakers, setSpeakers] = useState<EventSpeaker[]>([]);
@@ -179,9 +181,12 @@ const EventDetailPage: React.FC = () => {
 
       console.log('✅ Registration successful');
 
+      // Log event registration activity
+      logEventRegistration(event.id, event.name);
+
       // Reload registration status
       await checkRegistrationStatus(event.id);
-      
+
       // Show success message
       setSuccess('✅ You\'re all set! Your spot is confirmed.');
       setShowTicket(true);

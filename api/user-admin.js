@@ -135,6 +135,12 @@ async function createUser(req, res, adminId) {
 
     console.log(`✅ Firebase Auth user created: ${userRecord.uid}`);
 
+    // Set custom claims for role-based access
+    await auth.setCustomUserClaims(userRecord.uid, {
+      role: role
+    });
+    console.log(`✅ Firebase Auth custom claims set for user: ${userRecord.uid} with role: ${role}`);
+
     // Create user profile in Firestore
     const userProfile = {
       email: email.toLowerCase().trim(),
@@ -294,6 +300,11 @@ async function bulkImport(req, res, adminId) {
           password: defaultTempPassword,
           displayName: name.trim(),
           emailVerified: true
+        });
+
+        // Set custom claims for role-based access
+        await auth.setCustomUserClaims(userRecord.uid, {
+          role: role
         });
 
         // Create user profile in Firestore

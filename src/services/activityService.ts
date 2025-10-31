@@ -49,32 +49,45 @@ export class ActivityService {
     metadata?: any
   ): Promise<void> {
     try {
-      // Don't log if user is not authenticated or in development mode
-      if (!userId || process.env.NODE_ENV === 'development') {
-        console.log(`[DEV] Activity logged: ${activityType} - ${description}`, metadata);
+      // Don't log if user is not authenticated
+      if (!userId) {
+        console.log(`[DEV] Activity skipped - no userId: ${activityType} - ${description}`, metadata);
+        return;
+      }
+
+      // Optional: Skip activity logging if explicitly disabled via env variable
+      if (import.meta.env.VITE_SKIP_ACTIVITY_LOGGING === 'true') {
+        console.log(`[DEV] Activity logging disabled: ${activityType} - ${description}`, metadata);
         return;
       }
 
       const ipAddress = await this.getClientIP();
-      
+
+      // Build metadata without undefined values (Firestore doesn't allow undefined)
+      const activityMetadata: Record<string, any> = {
+        ...metadata,
+        userAgent: this.getUserAgent(),
+        page: window.location.pathname,
+      };
+
+      // Only add ipAddress if it's defined
+      if (ipAddress !== undefined) {
+        activityMetadata.ipAddress = ipAddress;
+      }
+
       const activityLog: Omit<ActivityLog, 'id'> = {
         userId,
         userEmail,
         userName,
         activityType,
         description,
-        metadata: {
-          ...metadata,
-          ipAddress,
-          userAgent: this.getUserAgent(),
-          page: window.location.pathname,
-        },
+        metadata: activityMetadata,
         timestamp: Timestamp.now(),
         sessionId: this.sessionId
       };
 
       // Add to Firestore
-      await retryOnNetworkFailure(() => 
+      await retryOnNetworkFailure(() =>
         addDoc(collection(db, 'activity_logs'), activityLog)
       );
 
@@ -154,12 +167,23 @@ export class ActivityService {
 
   static async logAdminAction(userId: string, userEmail: string, userName: string, action: string, details?: any): Promise<void> {
     await this.logActivity(
-      userId, 
-      userEmail, 
-      userName, 
-      'admin_action', 
+      userId,
+      userEmail,
+      userName,
+      'admin_action',
       action,
       details
+    );
+  }
+
+  static async logChatMessage(userId: string, userEmail: string, userName: string, chatId: string, chatName: string): Promise<void> {
+    await this.logActivity(
+      userId,
+      userEmail,
+      userName,
+      'chat_message',
+      `Sent message in ${chatName}`,
+      { chatId, chatName }
     );
   }
 

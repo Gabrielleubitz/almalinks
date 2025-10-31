@@ -51,6 +51,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import AuthWrapper from './components/auth/AuthWrapper';
 import NetworkStatusIndicator from './components/ui/NetworkStatusIndicator';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
+import ActivityTracker from './components/ActivityTracker';
 
 // Home page component
 const HomePage = () => (
@@ -72,6 +73,7 @@ const HomePage = () => (
 function App() {
   return (
     <Router>
+      <ActivityTracker />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/speakers" element={<SpeakersPage />} />

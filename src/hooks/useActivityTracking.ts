@@ -128,6 +128,17 @@ export const useActivityTracking = () => {
         action,
         details
       );
+    },
+
+    logChatMessage: (chatId: string, chatName: string) => {
+      if (!user?.uid) return;
+      ActivityService.logChatMessage(
+        user.uid,
+        user.email || '',
+        user.displayName || user.name || 'User',
+        chatId,
+        chatName
+      );
     }
   };
 };
