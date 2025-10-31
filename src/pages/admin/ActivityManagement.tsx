@@ -60,7 +60,11 @@ const ActivityManagement: React.FC = () => {
 
   // Load activities from API
   const loadActivities = useCallback(async (reset = true) => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      console.log('⚠️ Cannot load activities - user not authenticated');
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -68,51 +72,67 @@ const ActivityManagement: React.FC = () => {
 
       console.log('🔄 Loading activities...', { reset, filters, userId: user.uid });
 
-      const response = await fetch('/api/activity-admin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
-        },
-        body: JSON.stringify({
-          action: 'get-activities',
-          filters,
-          limitCount: 50,
-          lastDocId: reset ? null : lastDocId,
-          adminEmail: user.email,
-          adminName: user.displayName
-        })
-      });
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      try {
+        const response = await fetch('/api/activity-admin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
+          },
+          body: JSON.stringify({
+            action: 'get-activities',
+            filters,
+            limitCount: 50,
+            lastDocId: reset ? null : lastDocId,
+            adminEmail: user.email,
+            adminName: user.displayName
+          }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        console.log('📊 Activities response:', {
+          success: data.success,
+          count: data.activities?.length,
+          hasMore: data.hasMore,
+          activities: data.activities
+        });
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to load activities');
+        }
+
+        if (reset) {
+          setActivities(data.activities);
+        } else {
+          setActivities(prev => [...prev, ...data.activities]);
+        }
+
+        setHasMore(data.hasMore);
+        setLastDocId(data.lastDocId);
+
+        console.log(`✅ Loaded ${data.activities.length} activities`);
+
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Request timed out after 30 seconds. Please check your internet connection and try again.');
+        }
+        throw fetchError;
       }
 
-      const data = await response.json();
-
-      console.log('📊 Activities response:', {
-        success: data.success,
-        count: data.activities?.length,
-        hasMore: data.hasMore,
-        activities: data.activities
-      });
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to load activities');
-      }
-
-      if (reset) {
-        setActivities(data.activities);
-      } else {
-        setActivities(prev => [...prev, ...data.activities]);
-      }
-
-      setHasMore(data.hasMore);
-      setLastDocId(data.lastDocId);
-
-      console.log(`✅ Loaded ${data.activities.length} activities`);
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error loading activities:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to load activities';
       setError(`${errorMessage}. Check console for details.`);
@@ -131,7 +151,10 @@ const ActivityManagement: React.FC = () => {
 
   // Load activity statistics
   const loadStats = useCallback(async () => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      console.log('⚠️ Cannot load stats - user not authenticated');
+      return;
+    }
     
     try {
       const response = await fetch('/api/activity-admin', {
@@ -170,12 +193,16 @@ const ActivityManagement: React.FC = () => {
 
   // Load data on component mount and filter changes
   useEffect(() => {
-    loadActivities(true);
-  }, [filters]);
+    if (user?.uid) {
+      loadActivities(true);
+    }
+  }, [user?.uid, filters, loadActivities]);
 
   useEffect(() => {
-    loadStats();
-  }, [loadStats]);
+    if (user?.uid) {
+      loadStats();
+    }
+  }, [user?.uid, loadStats]);
 
   // Handle filter changes
   const handleFilterChange = (key: keyof ActivityFilters, value: any) => {
