@@ -4,6 +4,7 @@ import { Calendar, MapPin, ArrowRight, Clock, Users, RotateCcw, User, Mail, Phon
 import { QRCodeSVG } from 'qrcode.react';
 import { EventService, EventData } from '../services/eventService';
 import { useAuth } from '../hooks/useAuth';
+import { useActivityTracking } from '../hooks/useActivityTracking';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AnnouncementsSidebar from '../components/announcements/AnnouncementsSidebar';
