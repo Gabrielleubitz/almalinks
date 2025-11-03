@@ -36,17 +36,17 @@ const SystemTestPage: React.FC = () => {
   
   const [emailTest, setEmailTest] = useState({
     recipient: '',
-    subject: 'Wine & Grind System Test',
-    message: 'This is a test email from the Wine & Grind admin panel.'
+    subject: 'Alma Links System Test',
+    message: 'This is a test email from the Alma Links admin panel.'
   });
   
   const [smsTest, setSmsTest] = useState({
     recipient: '',
-    message: 'This is a test SMS from Wine & Grind admin panel.'
+    message: 'This is a test SMS from Alma Links admin panel.'
   });
   
   const [gptTest, setGptTest] = useState({
-    prompt: 'Briefly describe Wine & Grind in one sentence.'
+    prompt: 'Briefly describe Alma Links in one sentence.'
   });
   
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -464,7 +464,7 @@ const SystemTestPage: React.FC = () => {
             {/* Email Test */}
             <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
               <div className="flex items-center space-x-3 mb-6">
-                <Mail className="h-6 w-6 text-blue-600" />
+                <Mail className="h-6 w-6 text-brand-light" />
                 <h2 className="text-xl font-bold text-gray-900">Email API Test</h2>
               </div>
               
@@ -517,7 +517,7 @@ const SystemTestPage: React.FC = () => {
                 <button
                   onClick={testEmailApi}
                   disabled={!emailTest.recipient || runningTest !== null}
-                  className="w-full bg-blue-600 text-white px-4 py-3 rounded-xl hover:bg-blue-700 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  className="w-full bg-brand-dark text-white px-4 py-3 rounded-xl hover:bg-brand-mid transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
                   {runningTest === 'email' ? (
                     <>
@@ -595,7 +595,7 @@ const SystemTestPage: React.FC = () => {
             {/* GPT Test */}
             <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
               <div className="flex items-center space-x-3 mb-6">
-                <Bot className="h-6 w-6 text-purple-600" />
+                <Bot className="h-6 w-6 text-brand-dark" />
                 <h2 className="text-xl font-bold text-gray-900">OpenAI GPT API Test</h2>
               </div>
               
@@ -618,7 +618,7 @@ const SystemTestPage: React.FC = () => {
                 <button
                   onClick={testGptApi}
                   disabled={!gptTest.prompt || runningTest !== null}
-                  className="w-full bg-purple-600 text-white px-4 py-3 rounded-xl hover:bg-purple-700 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  className="w-full bg-brand-dark text-white px-4 py-3 rounded-xl hover:bg-brand-mid transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
                   {runningTest === 'gpt' ? (
                     <>
@@ -685,7 +685,7 @@ const SystemTestPage: React.FC = () => {
                   <button
                     onClick={runAllTests}
                     disabled={isRunningTests || runningTest !== null}
-                    className="w-full bg-gradient-to-r from-red-700 to-blue-600 text-white px-4 py-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-4 py-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   >
                     {isRunningTests ? (
                       <>
@@ -771,7 +771,7 @@ const SystemTestPage: React.FC = () => {
                               : result.status === 'error'
                               ? 'text-red-600'
                               : result.status === 'pending'
-                              ? 'text-blue-600'
+                              ? 'text-brand-light'
                               : 'text-gray-600'
                           }`}>
                             {result.message}

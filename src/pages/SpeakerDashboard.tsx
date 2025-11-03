@@ -226,7 +226,7 @@ const SpeakerDashboard: React.FC = () => {
     if (fileType.includes('pdf')) {
       return <FileIcon className="h-6 w-6 text-red-600" />;
     } else if (fileType.includes('image')) {
-      return <FileIcon className="h-6 w-6 text-blue-600" />;
+      return <FileIcon className="h-6 w-6 text-brand-light" />;
     } else if (fileType.includes('presentation') || fileType.includes('powerpoint')) {
       return <FileIcon className="h-6 w-6 text-orange-600" />;
     } else {

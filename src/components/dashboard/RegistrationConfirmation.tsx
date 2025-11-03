@@ -175,7 +175,7 @@ const RegistrationConfirmation: React.FC<RegistrationConfirmationProps> = ({ dat
             </div>
             <button
               onClick={downloadQRCode}
-              className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="inline-flex items-center space-x-2 text-brand-light hover:text-blue-700 text-sm font-medium"
             >
               <Download className="h-4 w-4" />
               <span>Download QR Code</span>
@@ -196,7 +196,7 @@ const RegistrationConfirmation: React.FC<RegistrationConfirmationProps> = ({ dat
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <Clock className="h-5 w-5 text-blue-600" />
+            <Clock className="h-5 w-5 text-brand-light" />
             <div>
               <div className="text-sm text-gray-500">Time</div>
               <div className="font-semibold text-gray-900">18:30 - 22:00</div>
@@ -217,7 +217,7 @@ const RegistrationConfirmation: React.FC<RegistrationConfirmationProps> = ({ dat
             href={createGoogleCalendarUrl()}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center space-x-2 bg-white text-blue-600 hover:text-blue-700 hover:bg-blue-50 border border-blue-200 px-6 py-3 rounded-xl transition-colors duration-200 font-medium"
+            className="inline-flex items-center space-x-2 bg-white text-brand-light hover:text-blue-700 hover:bg-blue-50 border border-blue-200 px-6 py-3 rounded-xl transition-colors duration-200 font-medium"
           >
             <CalendarPlus className="h-5 w-5" />
             <span>Add to Google Calendar</span>
@@ -261,7 +261,7 @@ const RegistrationConfirmation: React.FC<RegistrationConfirmationProps> = ({ dat
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a
             href="mailto:info@almalinks.org"
-            className="inline-flex items-center justify-center bg-gradient-to-r from-red-700 to-blue-600 text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
+            className="inline-flex items-center justify-center bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
           >
             Contact Us
           </a>

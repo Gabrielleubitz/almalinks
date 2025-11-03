@@ -73,7 +73,7 @@ const PrivacySettings: React.FC = () => {
       icon: Users,
       title: 'Event Only',
       description: 'Only visible to people who share an event with you',
-      color: 'text-blue-600'
+      color: 'text-brand-light'
     },
     {
       value: 'hidden' as DiscoverabilityLevel,
@@ -102,7 +102,7 @@ const PrivacySettings: React.FC = () => {
     <div className="bg-white rounded-3xl shadow-xl p-6 border border-gray-100">
       {/* Header */}
       <div className="flex items-center space-x-3 mb-6">
-        <Shield className="h-6 w-6 text-blue-600" />
+        <Shield className="h-6 w-6 text-brand-light" />
         <h3 className="text-xl font-bold text-gray-900">Privacy & Discovery</h3>
       </div>
 
@@ -153,7 +153,7 @@ const PrivacySettings: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       <span className="font-medium text-gray-900">{option.title}</span>
                       {isSelected && (
-                        <span className="text-sm px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
+                        <span className="text-sm px-2 py-1 bg-blue-50 text-blue-700 rounded-full">
                           Current
                         </span>
                       )}

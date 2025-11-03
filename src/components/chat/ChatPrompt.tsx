@@ -55,7 +55,7 @@ export class ChatPrompt {
       console.error('❌ Error calling enhanced chat API:', error);
       
       // Fallback response
-      const fallbackResponse = "I'm having trouble accessing my knowledge base right now. Please try again in a moment, or contact us at info@winengrind.com for immediate assistance.";
+      const fallbackResponse = "I'm having trouble accessing my knowledge base right now. Please try again in a moment, or contact us at info@almalinks.com for immediate assistance.";
       
       this.conversationHistory.push({ role: 'user', content: userMessage });
       this.conversationHistory.push({ role: 'assistant', content: fallbackResponse });

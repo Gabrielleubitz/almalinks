@@ -98,8 +98,8 @@ exports.handler = async (event, context) => {
       Messages: [
         {
           From: {
-            Email: "info@winengrind.com",
-            Name: "Wine & Grind"
+            Email: "info@almalinks.com",
+            Name: "Alma Links"
           },
           To: [{ Email: email }],
           Subject: "Reset your password",
@@ -112,12 +112,12 @@ ${resetUrl}
 
 If you didn't request this, ignore this message.
 
-– Wine & Grind
+– Alma Links
           `,
           HTMLPart: `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
   <div style="text-align: center; margin-bottom: 20px;">
-    <h1 style="color: #C8102E;">Wine & Grind</h1>
+    <h1 style="color: #C8102E;">Alma Links</h1>
   </div>
   
   <p>Hi there,</p>
@@ -130,7 +130,7 @@ If you didn't request this, ignore this message.
   
   <p>If you didn't request this, please ignore this message.</p>
   
-  <p>– Wine & Grind Team</p>
+  <p>– Alma Links Team</p>
   
   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; text-align: center;">
     <p>If the button doesn't work, copy and paste this link into your browser:</p>

@@ -197,11 +197,11 @@ const UserCreationForm: React.FC<UserCreationFormProps> = ({
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'admin':
-        return <Shield className="h-4 w-4 text-purple-600" />;
+        return <Shield className="h-4 w-4 text-brand-dark" />;
       case 'speaker':
         return <Mic className="h-4 w-4 text-orange-600" />;
       default:
-        return <UserIcon className="h-4 w-4 text-blue-600" />;
+        return <UserIcon className="h-4 w-4 text-brand-light" />;
     }
   };
 
@@ -212,7 +212,7 @@ const UserCreationForm: React.FC<UserCreationFormProps> = ({
       case 'speaker':
         return 'bg-orange-100 text-orange-800 border-orange-200';
       default:
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-50 text-blue-800 border-blue-200';
     }
   };
 
@@ -262,7 +262,7 @@ const UserCreationForm: React.FC<UserCreationFormProps> = ({
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
             <div className="p-3 bg-purple-100 rounded-xl">
-              <UserPlus className="h-6 w-6 text-purple-600" />
+              <UserPlus className="h-6 w-6 text-brand-dark" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">Create New User</h2>
@@ -534,7 +534,7 @@ const UserCreationForm: React.FC<UserCreationFormProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 bg-purple-600 text-white px-6 py-3 rounded-xl hover:bg-purple-700 transition-colors duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              className="flex-1 bg-brand-dark text-white px-6 py-3 rounded-xl hover:bg-brand-mid transition-colors duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
               {isSubmitting ? (
                 <>

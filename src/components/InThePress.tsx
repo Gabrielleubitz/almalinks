@@ -12,7 +12,7 @@ const InThePress = () => {
       id: 1,
       publication: "Times of Israel",
       logo: timesOfIsraelLogo,
-      headline: "Israel's Resilience and Innovation Amidst Conflict: Wine & Grind's Impact",
+      headline: "Israel's Resilience and Innovation Amidst Conflict: Alma Links's Impact",
       blurb: "Jul 7, 2024.",
       url: "https://blogs.timesofisrael.com/israels-resilience-and-innovation-amidst-conflict-wine-grinds-impact/",
     },
@@ -20,7 +20,7 @@ const InThePress = () => {
       id: 2,
       publication: "EIN Presswire / AP News",
       logo: einPresswireLogo,
-      headline: "Wine & Grind Brings Founders and Investors Together in Israel's Innovation Hub",
+      headline: "Alma Links Brings Founders and Investors Together in Israel's Innovation Hub",
       blurb: "July 10, 2024.",
       url: "https://apnews.com/press-release/ein-presswire-newsmatics/israel-992251169fb2af3a8ab978a2462c72fb",
     },
@@ -28,17 +28,17 @@ const InThePress = () => {
       id: 3,
       publication: "Benzinga",
       logo: benzingaLogo,
-      headline: "Wine & Grind: Bridging Tech Startups and Investors with a Unique Networking Experience in Israel",
+      headline: "Alma Links: Bridging Tech Startups and Investors with a Unique Networking Experience in Israel",
       blurb: "July 10, 2024.",
-      url: "https://www.benzinga.com/content/39710031/wine-grind-bridging-tech-startups-and-investors-with-a-unique-networking-experience-in-israel",
+      url: "https://www.benzinga.com/content/39710031/alma-links-bridging-tech-startups-and-investors-with-a-unique-networking-experience-in-israel",
     },
     {
       id: 4,
       publication: "Times of Israel",
       logo: timesOfIsraelLogo,
-      headline: "Wine & Grind: A Community Built on Authentic Connections",
+      headline: "Alma Links: A Community Built on Authentic Connections",
       blurb: "Feb 3, 2025",
-      url: "https://blogs.timesofisrael.com/wine-grind-a-community-built-on-authentic-connections/",
+      url: "https://blogs.timesofisrael.com/alma-links-a-community-built-on-authentic-connections/",
     }
   ];
 
@@ -90,7 +90,7 @@ const InThePress = () => {
                     href={article.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center space-x-2 text-red-700 hover:text-blue-600 font-semibold transition-colors duration-200 group"
+                    className="inline-flex items-center space-x-2 text-red-700 hover:text-brand-light font-semibold transition-colors duration-200 group"
                   >
                     <span>Read more</span>
                     <ExternalLink className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
@@ -126,7 +126,7 @@ const InThePress = () => {
                     href={article.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center space-x-2 text-red-700 hover:text-blue-600 font-semibold transition-colors duration-200 group"
+                    className="inline-flex items-center space-x-2 text-red-700 hover:text-brand-light font-semibold transition-colors duration-200 group"
                   >
                     <span>Read more</span>
                     <ExternalLink className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
@@ -149,7 +149,7 @@ const InThePress = () => {
             </p>
             <a 
               href="mailto:press@almalinks.org"
-              className="inline-flex items-center justify-center bg-gradient-to-r from-red-700 to-blue-600 text-white px-8 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
+              className="inline-flex items-center justify-center bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
             >
               Contact Press Team
             </a>

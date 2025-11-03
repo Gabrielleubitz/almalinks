@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Lock, ArrowRight, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
 import { auth } from '../firebase/config';
 import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
-import logoSvg from '../assets/W&G Logo.svg';
+import logoSvg from '../assets/alma-links-logo.svg';
 
 const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
@@ -91,7 +91,7 @@ const ResetPasswordPage: React.FC = () => {
 
   if (isVerifying) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-blue-50 flex items-center justify-center px-4 relative">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-4 relative">
         <div className="max-w-md w-full text-center">
           <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
             <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
@@ -109,7 +109,7 @@ const ResetPasswordPage: React.FC = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-blue-50 flex items-center justify-center px-4 relative">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-4 relative">
         <div className="max-w-md w-full text-center">
           <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-6">
@@ -123,7 +123,7 @@ const ResetPasswordPage: React.FC = () => {
             </p>
             <Link
               to="/login"
-              className="bg-gradient-to-r from-red-700 to-blue-600 text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
+              className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
             >
               <span>Go to Login</span>
               <ArrowRight className="h-5 w-5" />
@@ -135,13 +135,13 @@ const ResetPasswordPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-blue-50 flex items-center justify-center px-4 relative">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-4 relative">
       {/* Logo in top left corner */}
       <div className="absolute top-6 left-6 z-10">
         <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
           <img 
             src={logoSvg}
-            alt="Wine & Grind Logo" 
+            alt="Alma Links Logo" 
             className="h-8 md:h-10 w-auto"
           />
         </Link>
@@ -161,7 +161,7 @@ const ResetPasswordPage: React.FC = () => {
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-700 to-blue-600 rounded-full mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-full mb-4">
               <Lock className="h-8 w-8 text-white" />
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
@@ -236,7 +236,7 @@ const ResetPasswordPage: React.FC = () => {
             <button
               type="submit"
               disabled={isSubmitting || !newPassword || !confirmPassword}
-              className="w-full bg-gradient-to-r from-red-700 to-blue-600 text-white py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>

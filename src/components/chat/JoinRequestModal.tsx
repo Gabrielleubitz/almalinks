@@ -146,7 +146,7 @@ const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center"
+                  className="flex-1 px-4 py-2 bg-brand-dark text-white rounded-xl hover:bg-brand-mid transition-colors disabled:opacity-50 flex items-center justify-center"
                 >
                   {loading ? (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

@@ -90,7 +90,7 @@ const EventsPage: React.FC = () => {
   const getStatusBadge = (event: EventData, status: 'active' | 'completed') => {
     const styles = {
       active: event.status === 'sold-out' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800',
-      completed: 'bg-blue-100 text-blue-800'
+      completed: 'bg-blue-50 text-blue-800'
     };
     
     const labels = {
@@ -150,7 +150,7 @@ const EventsPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 fade-in px-2">
-              Wine & Grind <span className="gradient-text">Events</span>
+              Alma Links <span className="gradient-text">Events</span>
             </h1>
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-600 mb-8 sm:mb-12 max-w-4xl mx-auto leading-relaxed fade-in-delay px-4">
               Discover upcoming events and explore our event history. Join exclusive gatherings where founders, investors, and innovators come together.
@@ -175,7 +175,7 @@ const EventsPage: React.FC = () => {
                   onClick={() => setFilter(key as EventFilter)}
                   className={`px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-xs sm:text-sm font-medium rounded-full transition-all duration-200 whitespace-nowrap ${
                     filter === key
-                      ? 'bg-gradient-to-r from-red-700 to-blue-600 text-white shadow-lg'
+                      ? 'bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white shadow-lg'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
                   }`}
                 >
@@ -244,7 +244,7 @@ const EventsPage: React.FC = () => {
                           <span className="font-medium text-sm sm:text-base">{formatDate(event.date)}</span>
                         </div>
                         <div className="flex items-center space-x-2 sm:space-x-3 text-gray-600">
-                          <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
+                          <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-brand-light flex-shrink-0" />
                           <span className="font-medium text-sm sm:text-base">{formatTime(event.date)}</span>
                         </div>
                         {event.location && (
@@ -265,7 +265,7 @@ const EventsPage: React.FC = () => {
                         
                         <Link
                           to={`/events/${event.slug}`}
-                          className="bg-gradient-to-r from-red-700 to-blue-600 text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
+                          className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
                         >
                           <span>View Details</span>
                           <ArrowRight className="h-4 w-4" />

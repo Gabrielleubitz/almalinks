@@ -180,7 +180,7 @@ const EnhancedUserProfilePage: React.FC = () => {
               <p className="text-gray-600 mb-8">{error || 'The user profile you\'re looking for doesn\'t exist.'}</p>
               <button
                 onClick={() => navigate(-1)}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-dark hover:bg-brand-mid"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
@@ -253,7 +253,7 @@ const EnhancedUserProfilePage: React.FC = () => {
                     {profile.canConnect && connectionStatus === 'none' && (
                       <button
                         onClick={handleConnect}
-                        className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200 font-semibold"
+                        className="inline-flex items-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid transition-colors duration-200 font-semibold"
                       >
                         <UserPlus className="h-5 w-5" />
                         <span>Connect</span>
@@ -354,8 +354,8 @@ const EnhancedUserProfilePage: React.FC = () => {
               {profile.bio && (
                 <div className="bg-white rounded-2xl shadow-lg p-8">
                   <div className="flex items-center space-x-3 mb-6">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <User className="h-6 w-6 text-blue-600" />
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <User className="h-6 w-6 text-brand-light" />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900">About</h2>
                   </div>
@@ -409,7 +409,7 @@ const EnhancedUserProfilePage: React.FC = () => {
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="p-2 bg-purple-100 rounded-lg">
-                    <Mail className="h-6 w-6 text-purple-600" />
+                    <Mail className="h-6 w-6 text-brand-dark" />
                   </div>
                   <h3 className="text-xl font-bold text-gray-900">Contact</h3>
                 </div>
@@ -467,8 +467,8 @@ const EnhancedUserProfilePage: React.FC = () => {
               {(profile.linkedin || profile.website || profile.twitter) && (
                 <div className="bg-white rounded-2xl shadow-lg p-6">
                   <div className="flex items-center space-x-3 mb-6">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Globe className="h-6 w-6 text-blue-600" />
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <Globe className="h-6 w-6 text-brand-light" />
                     </div>
                     <h3 className="text-xl font-bold text-gray-900">Links</h3>
                   </div>
@@ -479,11 +479,11 @@ const EnhancedUserProfilePage: React.FC = () => {
                         href={profile.linkedin}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center space-x-3 p-3 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors duration-200 group"
+                        className="flex items-center space-x-3 p-3 bg-blue-50 rounded-xl hover:bg-blue-50 transition-colors duration-200 group"
                       >
-                        <Linkedin className="h-5 w-5 text-blue-600" />
-                        <span className="text-blue-700 font-medium group-hover:text-blue-800">LinkedIn Profile</span>
-                        <ExternalLink className="h-4 w-4 text-blue-500 group-hover:text-blue-600" />
+                        <Linkedin className="h-5 w-5 text-brand-light" />
+                        <span className="text-blue-700 font-medium group-hover:text-brand-mid">LinkedIn Profile</span>
+                        <ExternalLink className="h-4 w-4 text-blue-500 group-hover:text-brand-light" />
                       </a>
                     )}
                     

@@ -194,7 +194,7 @@ const EditEvent: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
-              <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
+              <Loader2 className="h-8 w-8 text-brand-dark animate-spin" />
             </div>
             <h1 className="text-xl font-semibold text-gray-900 mb-2">Loading Event</h1>
             <p className="text-gray-600">Please wait while we load the event details...</p>
@@ -252,14 +252,14 @@ const EditEvent: React.FC = () => {
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-600 to-purple-700 rounded-full mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-full mb-4">
               <Calendar className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Edit Event
             </h1>
             <p className="text-gray-600">
-              Update the details of your Wine & Grind event
+              Update the details of your Alma Links event
             </p>
             {!hasChanges() && (
               <p className="text-sm text-gray-500 mt-2">
@@ -300,7 +300,7 @@ const EditEvent: React.FC = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-                  placeholder="e.g., Wine & Grind 5.0"
+                  placeholder="e.g., Alma Links 5.0"
                 />
               </div>
               {/* URL Preview */}
@@ -309,8 +309,8 @@ const EditEvent: React.FC = () => {
                   <div className="text-sm text-blue-800">
                     <strong>Event URL Preview:</strong>
                   </div>
-                  <div className="text-sm text-blue-600 font-mono">
-                    winengrind.com/events/{previewSlug}
+                  <div className="text-sm text-brand-light font-mono">
+                    almalinks.com/events/{previewSlug}
                   </div>
                   {originalEvent?.slug !== previewSlug && (
                     <div className="text-xs text-blue-700 mt-1">
@@ -442,7 +442,7 @@ const EditEvent: React.FC = () => {
               <button
                 type="submit"
                 disabled={saving || !hasChanges()}
-                className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
                 {saving ? (
                   <>

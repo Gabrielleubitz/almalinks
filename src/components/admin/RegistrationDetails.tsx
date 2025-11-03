@@ -109,7 +109,7 @@ const RegistrationDetails: React.FC<RegistrationDetailsProps> = ({
                     <div className="font-medium">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                         registration.status === 'attended' 
-                          ? 'bg-blue-100 text-blue-800' 
+                          ? 'bg-blue-50 text-blue-800' 
                           : 'bg-green-100 text-green-800'
                       }`}>
                         <Check className="h-4 w-4 mr-1" />

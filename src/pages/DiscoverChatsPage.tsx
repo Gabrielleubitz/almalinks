@@ -223,7 +223,7 @@ const DiscoverChatsPage: React.FC = () => {
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-brand-light hover:text-blue-700 font-medium"
                 >
                   Clear search
                 </button>
@@ -304,7 +304,7 @@ const DiscoverChatsPage: React.FC = () => {
                     ) : chat.canRequest ? (
                       <button
                         onClick={() => handleJoinRequest(chat)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center space-x-1"
+                        className="px-4 py-2 bg-brand-dark text-white rounded-lg text-sm font-medium hover:bg-brand-mid transition-colors flex items-center space-x-1"
                       >
                         <UserPlus className="h-4 w-4" />
                         <span>Request to Join</span>

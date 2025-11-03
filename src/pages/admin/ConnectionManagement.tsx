@@ -51,7 +51,7 @@ const ConnectionManagement: React.FC = () => {
                 onClick={() => setActiveView('overview')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeView === 'overview'
-                    ? 'bg-white text-blue-600 shadow-sm'
+                    ? 'bg-white text-brand-light shadow-sm'
                     : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
@@ -61,7 +61,7 @@ const ConnectionManagement: React.FC = () => {
                 onClick={() => setActiveView('management')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeView === 'management'
-                    ? 'bg-white text-blue-600 shadow-sm'
+                    ? 'bg-white text-brand-light shadow-sm'
                     : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
@@ -94,7 +94,7 @@ const ConnectionManagement: React.FC = () => {
                   <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                     <div>
                       <p className="font-medium text-blue-900">Global Directory</p>
-                      <p className="text-sm text-blue-600">Active and searchable</p>
+                      <p className="text-sm text-brand-light">Active and searchable</p>
                     </div>
                     <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                   </div>
@@ -119,7 +119,7 @@ const ConnectionManagement: React.FC = () => {
                       <p className="text-sm font-medium text-gray-900">
                         15 auto-connections created
                       </p>
-                      <p className="text-xs text-gray-600">Wine & Grind Event - 2 hours ago</p>
+                      <p className="text-xs text-gray-600">Alma Links Event - 2 hours ago</p>
                     </div>
                   </div>
                   
@@ -147,7 +147,7 @@ const ConnectionManagement: React.FC = () => {
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <Link
                     to="/admin/connections?tab=stats"
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    className="text-sm text-brand-light hover:text-blue-700 font-medium"
                   >
                     View detailed analytics →
                   </Link>
@@ -173,7 +173,7 @@ const ConnectionManagement: React.FC = () => {
                       type="checkbox"
                       id="auto-connect-default"
                       defaultChecked={true}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-brand-light focus:ring-blue-500 border-gray-300 rounded"
                     />
                     <label htmlFor="auto-connect-default" className="ml-2 text-sm text-gray-900">
                       Enabled
@@ -206,7 +206,7 @@ const ConnectionManagement: React.FC = () => {
                       type="checkbox"
                       id="directory-search"
                       defaultChecked={true}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-brand-light focus:ring-blue-500 border-gray-300 rounded"
                     />
                     <label htmlFor="directory-search" className="ml-2 text-sm text-gray-900">
                       Enabled
@@ -216,7 +216,7 @@ const ConnectionManagement: React.FC = () => {
               </div>
 
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                <button className="px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors font-medium">
                   Save Settings
                 </button>
               </div>

@@ -215,7 +215,7 @@ const EventPositionChart: React.FC<EventPositionChartProps> = ({ eventId, classN
     return (
       <div className={`bg-white rounded-3xl shadow-xl p-6 border border-gray-100 ${className}`}>
         <div className="flex items-center space-x-3 mb-4">
-          <PieChart className="h-5 w-5 text-blue-600" />
+          <PieChart className="h-5 w-5 text-brand-light" />
           <h3 className="text-lg font-semibold text-gray-900">Attendee Positions Breakdown</h3>
         </div>
         <div className="flex items-center justify-center h-64">
@@ -232,7 +232,7 @@ const EventPositionChart: React.FC<EventPositionChartProps> = ({ eventId, classN
     return (
       <div className={`bg-white rounded-3xl shadow-xl p-6 border border-gray-100 ${className}`}>
         <div className="flex items-center space-x-3 mb-4">
-          <PieChart className="h-5 w-5 text-blue-600" />
+          <PieChart className="h-5 w-5 text-brand-light" />
           <h3 className="text-lg font-semibold text-gray-900">Attendee Positions Breakdown</h3>
         </div>
         <div className="flex items-center justify-center h-64">
@@ -246,7 +246,7 @@ const EventPositionChart: React.FC<EventPositionChartProps> = ({ eventId, classN
     return (
       <div className={`bg-white rounded-3xl shadow-xl p-6 border border-gray-100 ${className}`}>
         <div className="flex items-center space-x-3 mb-4">
-          <PieChart className="h-5 w-5 text-blue-600" />
+          <PieChart className="h-5 w-5 text-brand-light" />
           <h3 className="text-lg font-semibold text-gray-900">Attendee Positions Breakdown</h3>
         </div>
         <div className="flex flex-col items-center justify-center h-64">
@@ -262,7 +262,7 @@ const EventPositionChart: React.FC<EventPositionChartProps> = ({ eventId, classN
     <div className={`bg-white rounded-3xl shadow-xl p-6 border border-gray-100 ${className}`}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <PieChart className="h-5 w-5 text-blue-600" />
+          <PieChart className="h-5 w-5 text-brand-light" />
           <h3 className="text-lg font-semibold text-gray-900">Attendee Positions Breakdown</h3>
         </div>
         <div className="text-sm text-gray-500">

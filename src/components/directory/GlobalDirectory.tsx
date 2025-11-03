@@ -188,7 +188,7 @@ const GlobalDirectory: React.FC<GlobalDirectoryProps> = ({ eventId, className = 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <Users className="h-6 w-6 text-blue-600" />
+          <Users className="h-6 w-6 text-brand-light" />
           <h3 className="text-xl font-bold text-gray-900">
             {selectedEventFilter ? `${getEventName(selectedEventFilter)} Directory` : 'Global Directory'}
           </h3>
@@ -326,7 +326,7 @@ const GlobalDirectory: React.FC<GlobalDirectoryProps> = ({ eventId, className = 
                       ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
                       : rateLimitStatus.remaining <= 0
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-red-700 to-blue-600 text-white hover:shadow-lg'
+                      : 'bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white hover:shadow-lg'
                   }`}
                 >
                   {isConnecting ? (

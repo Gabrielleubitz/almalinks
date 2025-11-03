@@ -116,7 +116,7 @@ const AddEvent: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <AdminHeader 
         title="Create New Event" 
-        subtitle="Add a new Wine & Grind event to the system"
+        subtitle="Add a new Alma Links event to the system"
       />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -133,14 +133,14 @@ const AddEvent: React.FC = () => {
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-600 to-purple-700 rounded-full mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-full mb-4">
               <Calendar className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Create New Event
             </h1>
             <p className="text-gray-600">
-              Fill in the details below to create a new Wine & Grind event
+              Fill in the details below to create a new Alma Links event
             </p>
           </div>
 
@@ -176,7 +176,7 @@ const AddEvent: React.FC = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-                  placeholder="e.g., Wine & Grind 5.0"
+                  placeholder="e.g., Alma Links 5.0"
                 />
               </div>
               {/* URL Preview */}
@@ -185,8 +185,8 @@ const AddEvent: React.FC = () => {
                   <div className="text-sm text-blue-800">
                     <strong>Event URL Preview:</strong>
                   </div>
-                  <div className="text-sm text-blue-600 font-mono">
-                    winengrind.com/events/{previewSlug}
+                  <div className="text-sm text-brand-light font-mono">
+                    almalinks.com/events/{previewSlug}
                   </div>
                 </div>
               )}
@@ -306,7 +306,7 @@ const AddEvent: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
                 {loading ? (
                   <>

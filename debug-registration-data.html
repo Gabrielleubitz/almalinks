@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Debug Registration Data - Wine & Grind</title>
+    <title>Debug Registration Data - Alma Links</title>
     <style>
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -113,8 +113,8 @@
             <label for="eventSelect">Select Event:</label>
             <select id="eventSelect">
                 <option value="">Choose an event...</option>
-                <option value="wine-grind-4">Wine & Grind 4.0</option>
-                <option value="wine-grind-3">Wine & Grind 3.0</option>
+                <option value="alma-links-4">Alma Links 4.0</option>
+                <option value="alma-links-3">Alma Links 3.0</option>
             </select>
         </div>
         
@@ -128,7 +128,7 @@
         <h3>⚠️ Known Issues</h3>
         <div class="warning">
             <strong>Issue:</strong> QR codes in downloaded PDFs contain API keys instead of connection URLs<br>
-            <strong>Expected:</strong> <code>https://winengrind.com/connect?to=userId&event=eventId</code><br>
+            <strong>Expected:</strong> <code>https://almalinks.com/connect?to=userId&event=eventId</code><br>
             <strong>Actual:</strong> <code>sk-proj-TTh88MeTOvJYlQUZwbaa...</code>
         </div>
         
@@ -180,7 +180,7 @@
                         if (item.generatedQrUrl.includes('sk-proj') || item.generatedQrUrl.includes('API_KEY')) {
                             html += `   🚨 ALERT: Contains API key data!\\n`;
                         }
-                        if (!item.generatedQrUrl.startsWith('https://winengrind.com/connect')) {
+                        if (!item.generatedQrUrl.startsWith('https://almalinks.com/connect')) {
                             html += `   ⚠️  WARNING: Not a proper connection URL\\n`;
                         }
                         html += `\\n`;

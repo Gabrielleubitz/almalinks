@@ -32,7 +32,7 @@ const About = () => {
                 className={`text-center slide-up hover-lift bg-gray-50 p-6 sm:p-8 rounded-2xl`}
                 style={{ animationDelay: `${index * 0.2}s` }}
               >
-                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-red-700 to-blue-600 rounded-full mb-3 sm:mb-4">
+                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-full mb-3 sm:mb-4">
                   <IconComponent className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
                 <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{stat.number}</div>

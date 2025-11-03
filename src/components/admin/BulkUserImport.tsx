@@ -314,8 +314,8 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <Users className="h-6 w-6 text-blue-600" />
+            <div className="p-3 bg-blue-50 rounded-xl">
+              <Users className="h-6 w-6 text-brand-light" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">Bulk User Import</h2>
@@ -333,16 +333,16 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
         {/* Steps Indicator */}
         <div className="px-6 pt-4">
           <div className="flex items-center justify-center space-x-8">
-            <div className={`flex items-center space-x-2 ${currentStep === 'upload' ? 'text-blue-600' : currentStep === 'review' || currentStep === 'results' ? 'text-green-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'upload' ? 'bg-blue-100' : currentStep === 'review' || currentStep === 'results' ? 'bg-green-100' : 'bg-gray-100'}`}>1</div>
+            <div className={`flex items-center space-x-2 ${currentStep === 'upload' ? 'text-brand-light' : currentStep === 'review' || currentStep === 'results' ? 'text-green-600' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'upload' ? 'bg-blue-50' : currentStep === 'review' || currentStep === 'results' ? 'bg-green-100' : 'bg-gray-100'}`}>1</div>
               <span>Upload CSV</span>
             </div>
-            <div className={`flex items-center space-x-2 ${currentStep === 'review' ? 'text-blue-600' : currentStep === 'results' ? 'text-green-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'review' ? 'bg-blue-100' : currentStep === 'results' ? 'bg-green-100' : 'bg-gray-100'}`}>2</div>
+            <div className={`flex items-center space-x-2 ${currentStep === 'review' ? 'text-brand-light' : currentStep === 'results' ? 'text-green-600' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'review' ? 'bg-blue-50' : currentStep === 'results' ? 'bg-green-100' : 'bg-gray-100'}`}>2</div>
               <span>Review & Import</span>
             </div>
-            <div className={`flex items-center space-x-2 ${currentStep === 'results' ? 'text-blue-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'results' ? 'bg-blue-100' : 'bg-gray-100'}`}>3</div>
+            <div className={`flex items-center space-x-2 ${currentStep === 'results' ? 'text-brand-light' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 'results' ? 'bg-blue-50' : 'bg-gray-100'}`}>3</div>
               <span>Results</span>
             </div>
           </div>
@@ -356,7 +356,7 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
               {/* Download Template */}
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                 <div className="flex items-start space-x-3">
-                  <FileText className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <FileText className="h-5 w-5 text-brand-light mt-0.5" />
                   <div className="flex-1">
                     <h4 className="font-semibold text-blue-900">Need a template?</h4>
                     <p className="text-sm text-blue-700 mb-3">
@@ -364,7 +364,7 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
                     </p>
                     <button
                       onClick={downloadTemplate}
-                      className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                      className="inline-flex items-center px-3 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors text-sm font-medium"
                     >
                       <Download className="h-4 w-4 mr-2" />
                       Download Template
@@ -495,7 +495,7 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
                             <td className="px-4 py-2 text-sm text-gray-900">{user.email}</td>
                             <td className="px-4 py-2 text-sm text-gray-900">{user.name}</td>
                             <td className="px-4 py-2">
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-800">
                                 {user.role || 'member'}
                               </span>
                             </td>
@@ -519,7 +519,7 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
                 <button
                   onClick={handleImport}
                   disabled={isImporting || !defaultTempPassword || defaultTempPassword.length < 8}
-                  className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  className="flex-1 bg-brand-dark text-white px-6 py-3 rounded-xl hover:bg-brand-mid transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
                   {isImporting ? (
                     <>
@@ -633,7 +633,7 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
                 </button>
                 <button
                   onClick={handleClose}
-                  className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors font-semibold"
+                  className="flex-1 bg-brand-dark text-white px-6 py-3 rounded-xl hover:bg-brand-mid transition-colors font-semibold"
                 >
                   Done
                 </button>

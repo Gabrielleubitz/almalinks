@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shield, User, RotateCcw, LogOut, Calendar } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import logoSvg from '../../assets/W&G Logo.svg';
+import logoSvg from '../../assets/alma-links-logo.svg';
 
 interface AdminHeaderProps {
   title: string;
@@ -30,15 +30,15 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title, subtitle }) => {
             <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
               <img 
                 src={logoSvg}
-                alt="Wine & Grind Logo" 
+                alt="Alma Links Logo" 
                 className="h-10 w-auto"
               />
             </Link>
             <div className="flex items-center space-x-2">
-              <Shield className="h-5 w-5 text-purple-600" />
+              <Shield className="h-5 w-5 text-brand-dark" />
               <span className="text-lg font-semibold text-gray-900">{title}</span>
               {isInUserView && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-800">
                   User View
                 </span>
               )}
@@ -52,7 +52,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title, subtitle }) => {
                 {isInUserView ? (
                   <button
                     onClick={switchToAdminView}
-                    className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 py-2 rounded-full hover:from-purple-700 hover:to-purple-800 transition-all duration-300 font-medium shadow-md hover:shadow-lg"
+                    className="flex items-center space-x-2 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-4 py-2 rounded-full hover:from-brand-blue-mid hover:to-brand-blue-dark transition-all duration-300 font-medium shadow-md hover:shadow-lg"
                   >
                     <RotateCcw className="h-4 w-4" />
                     <span>Back to Admin</span>
@@ -91,13 +91,13 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title, subtitle }) => {
               <span className="hidden sm:inline">Logout</span>
             </button>
 
-            <Link
-              to="/"
+            <button
+              onClick={() => navigate(-1)}
               className="flex items-center space-x-2 text-gray-600 hover:text-red-600 transition-colors duration-200"
             >
               <ArrowLeft className="h-5 w-5" />
-              <span>Back to Home</span>
-            </Link>
+              <span>Back to Previous Page</span>
+            </button>
           </div>
         </div>
       </div>

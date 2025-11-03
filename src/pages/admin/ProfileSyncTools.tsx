@@ -111,7 +111,7 @@ const ProfileSyncTools: React.FC = () => {
         {/* Information Card */}
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-8">
           <div className="flex items-start space-x-3">
-            <Info className="h-6 w-6 text-blue-600 mt-0.5" />
+            <Info className="h-6 w-6 text-brand-light mt-0.5" />
             <div>
               <h3 className="text-lg font-semibold text-blue-900 mb-2">What does this tool do?</h3>
               <div className="text-blue-800 space-y-2">
@@ -142,7 +142,7 @@ const ProfileSyncTools: React.FC = () => {
                   value="single"
                   checked={syncType === 'single'}
                   onChange={(e) => setSyncType(e.target.value as 'single' | 'all')}
-                  className="h-4 w-4 text-purple-600"
+                  className="h-4 w-4 text-brand-dark"
                 />
                 <label htmlFor="single" className="text-lg font-medium text-gray-900">
                   Single User Sync
@@ -167,7 +167,7 @@ const ProfileSyncTools: React.FC = () => {
                   <button
                     onClick={runSingleUserSync}
                     disabled={isRunning || !targetUserId.trim()}
-                    className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="inline-flex items-center px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {isRunning ? (
                       <>
@@ -195,7 +195,7 @@ const ProfileSyncTools: React.FC = () => {
                   value="all"
                   checked={syncType === 'all'}
                   onChange={(e) => setSyncType(e.target.value as 'single' | 'all')}
-                  className="h-4 w-4 text-purple-600"
+                  className="h-4 w-4 text-brand-dark"
                 />
                 <label htmlFor="all" className="text-lg font-medium text-gray-900">
                   All Users Sync

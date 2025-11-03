@@ -45,7 +45,7 @@ const Chat: React.FC<ChatProps> = ({ messages, isLoading, onSendMessage }) => {
             <div
               className={`max-w-[80%] p-3 rounded-2xl ${
                 message.isUser
-                  ? 'bg-gradient-to-r from-red-700 to-blue-600 text-white'
+                  ? 'bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white'
                   : 'bg-gray-800 text-gray-100 border border-gray-700'
               }`}
             >
@@ -94,7 +94,7 @@ const Chat: React.FC<ChatProps> = ({ messages, isLoading, onSendMessage }) => {
           <button
             type="submit"
             disabled={!inputText.trim() || isLoading}
-            className="bg-gradient-to-r from-red-700 to-blue-600 text-white p-2 rounded-full hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white p-2 rounded-full hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="h-5 w-5" />
           </button>

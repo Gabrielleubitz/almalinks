@@ -205,7 +205,7 @@ const PendingRegistrations: React.FC = () => {
         },
         body: JSON.stringify({
           to: userToApprove.phone,
-          body: `You're officially approved, welcome to the Wine & Grind community!🍷💼\n\nYour account is ready — check out upcoming events!\nhttps://winengrind.com\n\nJoin our exclusive Telegram to never miss an event!\nhttps://t.me/winengrind\n\nCheers!\nThe Wine & Grind Team ✨`
+          body: `You're officially approved, welcome to the Alma Links community!🍷💼\n\nYour account is ready — check out upcoming events!\nhttps://almalinks.com\n\nJoin our exclusive Telegram to never miss an event!\nhttps://t.me/almalinks\n\nCheers!\nThe Alma Links Team ✨`
         })
       });
       
@@ -482,7 +482,7 @@ const PendingRegistrations: React.FC = () => {
                                       href={`https://linkedin.com/in/${userData.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '')}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-blue-600 hover:text-blue-800 hover:underline"
+                                      className="text-brand-light hover:text-brand-mid hover:underline"
                                     >
                                       View Profile
                                     </a>

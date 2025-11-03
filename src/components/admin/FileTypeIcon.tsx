@@ -10,7 +10,7 @@ const FileTypeIcon: React.FC<FileTypeIconProps> = ({ fileType, className = "h-6 
   if (fileType.includes('pdf')) {
     return <FileText className={`${className} text-red-600`} />;
   } else if (fileType.includes('image')) {
-    return <Image className={`${className} text-blue-600`} />;
+    return <Image className={`${className} text-brand-light`} />;
   } else if (fileType.includes('presentation') || fileType.includes('powerpoint')) {
     return <Presentation className={`${className} text-orange-600`} />;
   } else {

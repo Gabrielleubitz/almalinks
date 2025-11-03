@@ -50,7 +50,7 @@ const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
     switch (reason) {
       case 'temporary_password':
         return {
-          icon: <Key className="h-6 w-6 text-blue-600" />,
+          icon: <Key className="h-6 w-6 text-brand-light" />,
           title: 'Temporary Password Change Required',
           description: 'You are using a temporary password. For security, you must set a new permanent password.',
           bgColor: 'bg-blue-50',
@@ -66,7 +66,7 @@ const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
         };
       default:
         return {
-          icon: <Lock className="h-6 w-6 text-purple-600" />,
+          icon: <Lock className="h-6 w-6 text-brand-dark" />,
           title: 'Password Change Required',
           description: 'For your security, you must change your password before continuing.',
           bgColor: 'bg-purple-50',
@@ -359,7 +359,7 @@ const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
           {/* Security Notice */}
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
             <div className="flex items-start space-x-3">
-              <Shield className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <Shield className="h-5 w-5 text-brand-light flex-shrink-0 mt-0.5" />
               <div className="text-sm text-blue-800">
                 <p className="font-medium mb-1">Security Guidelines:</p>
                 <ul className="space-y-1 text-xs">
@@ -376,7 +376,7 @@ const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
           <button
             type="submit"
             disabled={isSubmitting || passwordStrength.score < 3 || newPassword !== confirmPassword}
-            className="w-full bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            className="w-full bg-brand-dark text-white px-6 py-3 rounded-xl hover:bg-brand-mid transition-colors duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
           >
             {isSubmitting ? (
               <>

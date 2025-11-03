@@ -298,21 +298,21 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
     
     try {
       await deleteProfilePicture(userId);
-      setProfile(prev => prev ? { ...prev, avatarUrl: undefined, profileImage: undefined } : null);
-    } catch (error: any) {
-      console.error('Error deleting avatar:', error);
-      showToast('Failed to delete profile picture', 'error');
+      setProfile(prev => prev ? { ...prev, avatarUrl: null, profileImage: null } : null);
+    } catch (error) {
+      console.error('❌ Error deleting avatar:', error);
+      setProfilePictureUploadError('Failed to delete profile picture');
     }
   };
 
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'admin':
-        return <Shield className="h-4 w-4" />;
+        return <Shield className="h-4 w-4 text-brand-dark" />;
       case 'speaker':
-        return <Mic className="h-4 w-4" />;
+        return <Mic className="h-4 w-4 text-orange-600" />;
       default:
-        return <User className="h-4 w-4" />;
+        return <User className="h-4 w-4 text-brand-light" />;
     }
   };
 
@@ -321,7 +321,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       case 'admin':
         return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'speaker':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-orange-100 text-orange-800 border-orange-200';
       default:
         return 'bg-blue-50 text-blue-800 border-blue-200';
     }
@@ -363,10 +363,10 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">User Not Found</h2>
-            <p className="text-gray-600 mb-8">The user you're looking for doesn't exist or has been deleted.</p>
+            <p className="text-gray-600 mb-8">The user profile you're trying to edit doesn't exist.</p>
             <button
               onClick={() => navigate('/admin/users')}
-              className="inline-flex items-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid transition-colors duration-200"
+              className="inline-flex items-center space-x-2 text-brand-dark hover:text-purple-700 font-medium"
             >
               <ArrowLeft className="h-5 w-5" />
               <span>Back to User Management</span>
@@ -386,11 +386,11 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
 
       {/* Toast Notification */}
       {toast.visible && (
-        <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top duration-300">
-          <div
-            className={`max-w-md w-full mx-auto rounded-xl border p-4 shadow-lg flex items-center space-x-3 ${
-              toast.type === 'success'
-                ? 'bg-green-50 border-green-200'
+        <div className="fixed top-6 right-6 z-50 animate-fade-in">
+          <div 
+            className={`flex items-center p-4 rounded-xl shadow-lg border ${
+              toast.type === 'success' 
+                ? 'bg-green-50 border-green-200' 
                 : 'bg-red-50 border-red-200'
             }`}
           >
@@ -495,7 +495,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
             </div>
           </div>
 
-          {/* User Role Selection - ADMIN ONLY FEATURE */}
+          {/* User Role Selection */}
           <div className="mb-8 p-6 border border-gray-200 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">User Role</h3>
             <div className="grid grid-cols-3 gap-3">
@@ -505,9 +505,9 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
                   type="button"
                   onClick={() => setUserRole(role)}
                   className={`p-3 rounded-xl border-2 transition-all duration-200 ${
-                    userRole === role
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                    userRole === role 
+                      ? getRoleBadgeClass(role)
+                      : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
                   }`}
                 >
                   <div className="flex items-center justify-center space-x-2">
@@ -519,7 +519,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
             </div>
           </div>
 
-          {/* STANDARDIZED PROFILE EDITING SECTIONS - SAME AS USER EDIT */}
+          {/* Profile Editing Sections - Same as User Edit */}
           <div className="space-y-8">
             
             {/* Basic Information Section */}
@@ -536,48 +536,158 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
               />
             </div>
 
-            {/* About & Professional Section */}
-            <div className="p-6 border border-gray-200 rounded-xl">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Briefcase className="h-5 w-5 mr-2 text-brand-light" />
-                About & Professional
-              </h3>
-              <AboutYouStep
-                formData={formData}
-                errors={errors}
-                touchedFields={touchedFields}
-                onUpdate={updateFormData}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Last Name
+              </label>
+              <input
+                type="text"
+                value={formData.lastName}
+                onChange={(e) => updateFormData('lastName', e.target.value)}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                  errors.lastName ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
+                placeholder="Last name"
+              />
+              {errors.lastName && (
+                <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Display Name
+              </label>
+              <input
+                type="text"
+                value={formData.displayName}
+                onChange={(e) => updateFormData('displayName', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="How should this user be displayed?"
               />
             </div>
 
-            {/* Contact & Location Section */}
-            <div className="p-6 border border-gray-200 rounded-xl">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <MapPin className="h-5 w-5 mr-2 text-brand-light" />
-                Contact & Location
-              </h3>
-              <ContactLocationStep
-                formData={formData}
-                errors={errors}
-                touchedFields={touchedFields}
-                onUpdate={updateFormData}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => updateFormData('email', e.target.value)}
+                  className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                    errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="user@example.com"
+                />
+              </div>
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => updateFormData('phone', e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  placeholder="+1 (555) 123-4567"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Job Title
+              </label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => updateFormData('title', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="Software Engineer"
               />
             </div>
 
-            {/* Privacy Settings Section */}
-            <div className="p-6 border border-gray-200 rounded-xl">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Shield className="h-5 w-5 mr-2 text-brand-light" />
-                Privacy Settings
-              </h3>
-              <PrivacyStep
-                formData={formData}
-                errors={errors}
-                touchedFields={touchedFields}
-                onUpdate={updateFormData}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Company
+              </label>
+              <div className="relative">
+                <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={formData.company}
+                  onChange={(e) => updateFormData('company', e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  placeholder="ACME Corp"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                City
+              </label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={formData.city}
+                  onChange={(e) => updateFormData('city', e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  placeholder="New York"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Bio Title
+              </label>
+              <input
+                type="text"
+                value={formData.bioTitle}
+                onChange={(e) => updateFormData('bioTitle', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="Short tagline or professional headline"
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                LinkedIn Profile
+              </label>
+              <input
+                type="url"
+                value={formData.linkedin}
+                onChange={(e) => updateFormData('linkedin', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="https://linkedin.com/in/username"
+              />
+            </div>
+
+            {/* Bio - Full Width */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Bio
+              </label>
+              <textarea
+                value={formData.bio}
+                onChange={(e) => updateFormData('bio', e.target.value)}
+                rows={4}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="Tell us about this user's background, experience, and interests..."
+              />
+            </div>
           </div>
 
           {/* Save Button (Mobile) */}

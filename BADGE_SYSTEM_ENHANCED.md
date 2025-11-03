@@ -1,11 +1,11 @@
-# Wine & Grind Professional Badge Generator
+# Alma Links Professional Badge Generator
 
-A comprehensive, brand-consistent lanyard badge generation system that produces print-ready PDFs with Wine & Grind visual identity.
+A comprehensive, brand-consistent lanyard badge generation system that produces print-ready PDFs with Alma Links visual identity.
 
 ## Features ✨
 
 ### Professional Design
-- **Wine & Grind Branding**: Consistent visual identity with logo and brand colors
+- **Alma Links Branding**: Consistent visual identity with logo and brand colors
 - **Event Photo Backgrounds**: Dynamic event imagery with proper opacity and overlays
 - **Typography Hierarchy**: Auto-scaling fonts with professional spacing
 - **Print-Ready Quality**: 300 DPI with precise crop marks for professional finishing
@@ -68,7 +68,7 @@ Returns a downloadable PDF with all confirmed attendees' badges.
 ### Logo Assets (Priority Order)
 1. `/public/logo.png` - Preferred PNG format
 2. `/public/logo.svg` - Vector SVG format  
-3. `/public/W&G Logo.svg` - Fallback Wine & Grind logo
+3. `/public/W&G Logo.svg` - Fallback Alma Links logo
 
 ### Background Images
 1. `/public/event-hero.jpg` - Primary event background
@@ -85,7 +85,7 @@ To use different backgrounds per event:
 ### Recommended Settings
 - **Paper**: Heavy cardstock (250gsm or higher)
 - **Print Quality**: High/Best quality setting
-- **Color Profile**: RGB or sRGB for accurate Wine & Grind colors
+- **Color Profile**: RGB or sRGB for accurate Alma Links colors
 - **Scale**: 100% (do not fit to page)
 - **Margins**: None (full bleed printing)
 
@@ -223,7 +223,7 @@ curl "http://localhost:3000/api/event-badges-enhanced?eventId=your-event-id" -o 
 - [ ] All text fits within badge boundaries  
 - [ ] QR codes scan reliably from printed badges
 - [ ] Crop marks align for precise cutting
-- [ ] Colors match Wine & Grind brand guidelines
+- [ ] Colors match Alma Links brand guidelines
 - [ ] PDF downloads with correct filename
 - [ ] Multiple pages handle large attendee lists
 
@@ -233,7 +233,7 @@ When making changes to the badge system:
 
 1. **Update Tests**: Modify test cases for new features
 2. **Test Print Quality**: Always verify on physical printer
-3. **Check Brand Consistency**: Ensure Wine & Grind guidelines
+3. **Check Brand Consistency**: Ensure Alma Links guidelines
 4. **Update Documentation**: Keep README current
 5. **Performance Testing**: Verify with various attendee counts
 
@@ -265,7 +265,7 @@ When making changes to the badge system:
 
 ## License & Support 📄
 
-Part of the Wine & Grind event management system. For technical support or feature requests, contact the development team.
+Part of the Alma Links event management system. For technical support or feature requests, contact the development team.
 
 **Version**: Enhanced Professional Badge System v2.0  
 **Last Updated**: September 2025  

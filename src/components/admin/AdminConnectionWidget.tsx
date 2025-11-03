@@ -64,7 +64,7 @@ const AdminConnectionWidget: React.FC<AdminConnectionWidgetProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <Users className="h-6 w-6 text-blue-600" />
+          <Users className="h-6 w-6 text-brand-light" />
           <h3 className="text-xl font-bold text-gray-900">Connection Overview</h3>
         </div>
         <div className="flex items-center space-x-2 text-sm text-gray-600">
@@ -77,12 +77,12 @@ const AdminConnectionWidget: React.FC<AdminConnectionWidgetProps> = ({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-blue-50 p-4 rounded-xl">
           <div className="flex items-center space-x-3">
-            <Link2 className="h-6 w-6 text-blue-600" />
+            <Link2 className="h-6 w-6 text-brand-light" />
             <div>
               <p className="text-2xl font-bold text-blue-900">
                 {stats.totalConnections.toLocaleString()}
               </p>
-              <p className="text-sm text-blue-600 font-medium">Total Connections</p>
+              <p className="text-sm text-brand-light font-medium">Total Connections</p>
             </div>
           </div>
         </div>
@@ -101,12 +101,12 @@ const AdminConnectionWidget: React.FC<AdminConnectionWidgetProps> = ({
 
         <div className="bg-purple-50 p-4 rounded-xl">
           <div className="flex items-center space-x-3">
-            <UserPlus className="h-6 w-6 text-purple-600" />
+            <UserPlus className="h-6 w-6 text-brand-dark" />
             <div>
               <p className="text-2xl font-bold text-purple-900">
                 {stats.manualConnections.toLocaleString()}
               </p>
-              <p className="text-sm text-purple-600 font-medium">Manual Connections</p>
+              <p className="text-sm text-brand-dark font-medium">Manual Connections</p>
             </div>
           </div>
         </div>

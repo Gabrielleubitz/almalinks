@@ -172,10 +172,10 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
       case 'auto':
         return <Zap className="h-4 w-4 text-green-600" />;
       case 'manual':
-        return <UserPlus className="h-4 w-4 text-blue-600" />;
+        return <UserPlus className="h-4 w-4 text-brand-light" />;
       case 'scan':
       default:
-        return <QrCode className="h-4 w-4 text-purple-600" />;
+        return <QrCode className="h-4 w-4 text-brand-dark" />;
     }
   };
 
@@ -184,7 +184,7 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <Users className="h-6 w-6 text-blue-600" />
+          <Users className="h-6 w-6 text-brand-light" />
           <h3 className="text-xl font-bold text-gray-900">Connection Management</h3>
         </div>
       </div>
@@ -203,7 +203,7 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-lg transition-all ${
                 activeTab === tab.id
-                  ? 'bg-white text-blue-600 shadow-sm'
+                  ? 'bg-white text-brand-light shadow-sm'
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
@@ -227,9 +227,9 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-blue-50 p-4 rounded-xl">
                   <div className="flex items-center space-x-3">
-                    <Users className="h-8 w-8 text-blue-600" />
+                    <Users className="h-8 w-8 text-brand-light" />
                     <div>
-                      <p className="text-sm text-blue-600 font-medium">Total Users</p>
+                      <p className="text-sm text-brand-light font-medium">Total Users</p>
                       <p className="text-2xl font-bold text-blue-900">{userStats.length}</p>
                     </div>
                   </div>
@@ -247,9 +247,9 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
                 </div>
                 <div className="bg-purple-50 p-4 rounded-xl">
                   <div className="flex items-center space-x-3">
-                    <UserPlus className="h-8 w-8 text-purple-600" />
+                    <UserPlus className="h-8 w-8 text-brand-dark" />
                     <div>
-                      <p className="text-sm text-purple-600 font-medium">Manual Connections</p>
+                      <p className="text-sm text-brand-dark font-medium">Manual Connections</p>
                       <p className="text-2xl font-bold text-purple-900">
                         {userStats.reduce((sum, user) => sum + user.manualConnections, 0)}
                       </p>
@@ -312,7 +312,7 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                          <span className="px-2 py-1 bg-blue-50 text-blue-800 rounded-full text-sm">
                             {user.registeredEvents.length} events
                           </span>
                         </td>
@@ -385,7 +385,7 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
                       <div className="text-right">
                         <p className="text-sm text-gray-600">{user.connectionCount} connections</p>
                         {selectedEvent && (
-                          <p className="text-xs text-blue-600">
+                          <p className="text-xs text-brand-light">
                             {user.isRegisteredForEvent ? '✓ Registered' : '○ Not registered'}
                           </p>
                         )}
@@ -416,7 +416,7 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
                       </span>
                       <button
                         onClick={() => handleRemoveUser(userId)}
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-brand-light hover:text-brand-mid"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -448,7 +448,7 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
             <button
               onClick={handleCreateConnections}
               disabled={connecting}
-              className="w-full py-3 px-4 bg-gradient-to-r from-red-700 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 font-semibold disabled:opacity-50 flex items-center justify-center space-x-2"
+              className="w-full py-3 px-4 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white rounded-lg hover:shadow-lg transition-all duration-300 font-semibold disabled:opacity-50 flex items-center justify-center space-x-2"
             >
               {connecting ? (
                 <>

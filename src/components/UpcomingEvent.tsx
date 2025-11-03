@@ -51,7 +51,7 @@ const UpcomingEvent = () => {
     const badges = {
       'active': { bg: 'bg-green-100', text: 'text-green-800', label: 'Register Now' },
       'sold-out': { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Sold Out' },
-      'completed': { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Completed' }
+      'completed': { bg: 'bg-blue-50', text: 'text-blue-800', label: 'Completed' }
     };
     
     const badge = badges[status as keyof typeof badges];
@@ -91,7 +91,7 @@ const UpcomingEvent = () => {
           </div>
           
           <div className="max-w-4xl mx-auto">
-            <div className="bg-gradient-to-br from-red-50 via-white to-blue-50 rounded-3xl p-8 md:p-12 shadow-xl text-center">
+            <div className="bg-gradient-to-br from-blue-50 via-white to-blue-100 rounded-3xl p-8 md:p-12 shadow-xl text-center">
               <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-6" />
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
                 No Upcoming Events
@@ -101,7 +101,7 @@ const UpcomingEvent = () => {
               </p>
               <Link
                 to="/events"
-                className="bg-gradient-to-r from-red-700 to-blue-600 text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
+                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
               >
                 <span>View Past Events</span>
                 <ArrowRight className="h-5 w-5" />
@@ -167,7 +167,7 @@ const UpcomingEvent = () => {
 
                     <div className="flex items-center space-x-4">
                       <div className="flex-shrink-0">
-                        <Clock className="h-8 w-8 text-blue-600" />
+                        <Clock className="h-8 w-8 text-brand-light" />
                       </div>
                       <div>
                         <div className="font-semibold text-gray-900">Time?</div>
@@ -192,7 +192,7 @@ const UpcomingEvent = () => {
                       <div className="flex flex-col items-center justify-center space-y-4">
                         <div className="flex items-center space-x-3">
                           <Calendar className="h-6 w-6 text-red-700" />
-                          <Clock className="h-6 w-6 text-blue-600" />
+                          <Clock className="h-6 w-6 text-brand-light" />
                           <MapPin className="h-6 w-6 text-red-700" />
                         </div>
                         <p className="text-lg font-medium text-gray-800">Sign up to see event details</p>
@@ -240,7 +240,7 @@ const UpcomingEvent = () => {
                       // Approved users - go to event detail page
                       <Link
                         to={`/events/${upcomingEvent.slug}`}
-                        className="bg-gradient-to-r from-red-700 to-blue-600 text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold text-lg flex items-center space-x-2"
+                        className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold text-lg flex items-center space-x-2"
                       >
                         <span>Register Now</span>
                         <ArrowRight className="h-5 w-5" />
@@ -255,7 +255,7 @@ const UpcomingEvent = () => {
                     // Not logged in - go to signup page
                     <Link
                       to="/signup"
-                      className="bg-gradient-to-r from-red-700 to-blue-600 text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold text-lg flex items-center space-x-2"
+                      className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold text-lg flex items-center space-x-2"
                     >
                       <span>Apply for Access</span>
                       <ArrowRight className="h-5 w-5" />

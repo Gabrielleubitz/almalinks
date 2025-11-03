@@ -64,7 +64,7 @@ const SignupProgress: React.FC<SignupProgressProps> = ({
                   ${status === 'completed' 
                     ? 'bg-green-500 text-white' 
                     : status === 'current'
-                    ? 'bg-white text-blue-600 shadow-md'
+                    ? 'bg-white text-brand-light shadow-md'
                     : 'bg-gray-300 text-gray-600'
                   }
                 `}>
@@ -90,7 +90,7 @@ const SignupProgress: React.FC<SignupProgressProps> = ({
                       : status === 'current'
                       ? 'text-blue-700'
                       : isAccessible
-                      ? 'text-gray-700 hover:text-blue-600'
+                      ? 'text-gray-700 hover:text-brand-light'
                       : 'text-gray-400'
                     }
                   `}>
@@ -101,7 +101,7 @@ const SignupProgress: React.FC<SignupProgressProps> = ({
                     ${status === 'completed' 
                       ? 'text-green-600' 
                       : status === 'current'
-                      ? 'text-blue-600'
+                      ? 'text-brand-light'
                       : 'text-gray-500'
                     }
                   `}>

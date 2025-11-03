@@ -269,7 +269,7 @@ const EventManagement: React.FC = () => {
       'active': 'bg-green-100 text-green-800',
       'non-active': 'bg-gray-100 text-gray-800',
       'sold-out': 'bg-yellow-100 text-yellow-800',
-      'completed': 'bg-blue-100 text-blue-800'
+      'completed': 'bg-blue-50 text-blue-800'
     };
     
     const labels = {
@@ -316,7 +316,7 @@ const EventManagement: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <AdminHeader 
         title="Event Management" 
-        subtitle="Create, manage, and monitor all Wine & Grind events"
+        subtitle="Create, manage, and monitor all Alma Links events"
       />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -338,7 +338,7 @@ const EventManagement: React.FC = () => {
           </h1>
           <Link
             to="/admin/events/create"
-            className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center space-x-2"
+            className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center space-x-2"
           >
             <Plus className="h-5 w-5" />
             <span>Create Event</span>
@@ -351,11 +351,11 @@ const EventManagement: React.FC = () => {
             <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No Events Yet</h3>
             <p className="text-gray-600 mb-6">
-              Get started by creating your first Wine & Grind event.
+              Get started by creating your first Alma Links event.
             </p>
             <Link
               to="/admin/events/create"
-              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
+              className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
             >
               <Plus className="h-5 w-5" />
               <span>Create First Event</span>
@@ -417,7 +417,7 @@ const EventManagement: React.FC = () => {
                       <option value="completed">Completed - Show publicly, disable registration</option>
                     </select>
                     {updatingStatus === event.id && (
-                      <div className="mt-2 flex items-center space-x-2 text-sm text-blue-600">
+                      <div className="mt-2 flex items-center space-x-2 text-sm text-brand-light">
                         <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                         <span>Updating...</span>
                       </div>
@@ -441,7 +441,7 @@ const EventManagement: React.FC = () => {
                       <span>Edit</span>
                     </Link>
                     <button 
-                      className="flex-1 bg-blue-100 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-200 transition-colors duration-200 font-medium flex items-center justify-center space-x-2 text-sm"
+                      className="flex-1 bg-blue-50 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-200 transition-colors duration-200 font-medium flex items-center justify-center space-x-2 text-sm"
                       onClick={() => handleShowRegistrations(event)}
                     >
                       <Users className="h-4 w-4" />
@@ -692,7 +692,7 @@ const EventManagement: React.FC = () => {
                                     href={`https://linkedin.com/in/${formatLinkedinUrl(registration.linkedinUsername)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                                    className="text-brand-light hover:text-brand-mid hover:underline"
                                   >
                                     {formatLinkedinUrl(registration.linkedinUsername)}
                                   </a>

@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useRegistration } from '../../hooks/useRegistration';
 import RegistrationForm from './RegistrationForm';
 import RegistrationStatus from './RegistrationStatus';
-import logoSvg from '../../assets/W&G Logo.svg';
+import logoSvg from '../../assets/alma-links-logo.svg';
 import ProfilePictureUploader from '../profile/ProfilePictureUploader';
 
 interface DashboardProps {
@@ -36,7 +36,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   };
 
   const eventDetails = {
-    name: "Wine & Grind 4.0",
+    name: "Alma Links 4.0",
     date: "June 28th, 2025",
     time: "18:30",
     location: "Deli Vino, Netanya",
@@ -79,7 +79,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
                 <img 
                   src={logoSvg}
-                  alt="Wine & Grind Logo" 
+                  alt="Alma Links Logo" 
                   className="h-10 w-auto"
                 />
               </Link>
@@ -89,7 +89,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               {isAdmin && (
                 <Link
                   to="/admin"
-                  className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 py-2 rounded-full hover:from-purple-700 hover:to-purple-800 transition-all duration-300 font-medium shadow-md hover:shadow-lg"
+                  className="flex items-center space-x-2 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-4 py-2 rounded-full hover:from-brand-blue-mid hover:to-brand-blue-dark transition-all duration-300 font-medium shadow-md hover:shadow-lg"
                 >
                   <Shield className="h-4 w-4" />
                   <span>Admin Tools</span>
@@ -111,7 +111,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         {/* Welcome Section */}
         <div className="mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Welcome back, <span className="gradient-text">{user?.displayName || 'Wine & Grind Member'}</span>!
+            Welcome back, <span className="gradient-text">{user?.displayName || 'Alma Links Member'}</span>!
           </h1>
           <p className="text-xl text-gray-600">
             {user?.status === 'pending' ? 
@@ -121,7 +121,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           {isAdmin && (
             <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-xl">
               <div className="flex items-center space-x-2">
-                <Shield className="h-5 w-5 text-purple-600" />
+                <Shield className="h-5 w-5 text-brand-dark" />
                 <span className="text-purple-800 font-medium">Admin Access Enabled</span>
               </div>
               <p className="text-purple-700 text-sm mt-1">
@@ -245,7 +245,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                                   href={`https://linkedin.com/in/${formatLinkedinUrl(user.linkedinUsername)}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-blue-600 hover:text-blue-800 hover:underline"
+                                  className="text-brand-light hover:text-brand-mid hover:underline"
                                 >
                                   {formatLinkedinUrl(user.linkedinUsername)}
                                 </a>
@@ -332,7 +332,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             </div>
 
             {/* Community Stats */}
-            <div className="bg-gradient-to-br from-red-700 to-blue-600 rounded-3xl p-6 text-white">
+            <div className="bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-3xl p-6 text-white">
               <h3 className="text-xl font-bold mb-4">Community</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">

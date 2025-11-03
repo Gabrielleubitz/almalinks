@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Badge QR Generation - Wine & Grind</title>
+    <title>Test Badge QR Generation - Alma Links</title>
     <style>
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -108,8 +108,8 @@
             <label for="eventSelect">Event:</label>
             <select id="eventSelect">
                 <option value="">Select an event...</option>
-                <option value="wine-grind-4">Wine & Grind 4.0</option>
-                <option value="wine-grind-3">Wine & Grind 3.0</option>
+                <option value="alma-links-4">Alma Links 4.0</option>
+                <option value="alma-links-3">Alma Links 3.0</option>
             </select>
         </div>
         
@@ -131,7 +131,7 @@
         
         <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; margin: 15px 0;">
             <strong style="color: #1976D2;">Expected QR Code Format:</strong><br>
-            <code>https://winengrind.com/connect?to={userId}&event={eventId}</code>
+            <code>https://almalinks.com/connect?to={userId}&event={eventId}</code>
         </div>
         
         <div style="background: #f3e5f5; padding: 15px; border-radius: 6px;">
@@ -272,8 +272,8 @@
             
             // Test URL generation
             const testUserId = 'test-user-123';
-            const testEventId = 'wine-grind-4';
-            const testUrl = `https://winengrind.com/connect?to=${testUserId}&event=${testEventId}`;
+            const testEventId = 'alma-links-4';
+            const testUrl = `https://almalinks.com/connect?to=${testUserId}&event=${testEventId}`;
             
             console.log('🧪 Testing QR code generation for URL:', testUrl);
             
@@ -301,8 +301,8 @@
         // Test connection URL format when page loads
         window.addEventListener('load', function() {
             console.log('🧪 QR Code Format Test');
-            console.log('Expected format: https://winengrind.com/connect?to={userId}&event={eventId}');
-            console.log('Sample URL: https://winengrind.com/connect?to=user123&event=wine-grind-4');
+            console.log('Expected format: https://almalinks.com/connect?to={userId}&event={eventId}');
+            console.log('Sample URL: https://almalinks.com/connect?to=user123&event=alma-links-4');
             console.log('📱 This should be camera-scannable and open the connection page');
         });
     </script>

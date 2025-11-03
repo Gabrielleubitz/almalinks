@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { User, Mail, Phone, Briefcase, ArrowRight, ArrowLeft, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import logoSvg from '../../assets/W&G Logo.svg';
+import logoSvg from '../../assets/alma-links-logo.svg';
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -129,7 +129,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const selectedCountry = COUNTRY_CODES.find(country => country.code === selectedCountryCode);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-blue-50 flex items-center justify-center px-4 relative">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-4 relative">
       {/* Logo in top left corner */}
       <div className="absolute top-6 left-6 z-10">
         <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
@@ -155,7 +155,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-700 to-blue-600 rounded-full mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-full mb-4">
               <User className="h-8 w-8 text-white" />
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
@@ -289,7 +289,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             <button
               type="submit"
               disabled={isSubmitting || !isFormValid}
-              className="w-full bg-gradient-to-r from-red-700 to-blue-600 text-white py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

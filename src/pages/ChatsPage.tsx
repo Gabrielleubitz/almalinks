@@ -72,7 +72,7 @@ const ChatsPage: React.FC = () => {
 
   const getRoleColor = (role?: 'member' | 'admin') => {
     switch (role) {
-      case 'admin': return 'text-purple-600 bg-purple-100';
+      case 'admin': return 'text-brand-dark bg-purple-100';
       default: return 'text-gray-600 bg-gray-100';
     }
   };
@@ -121,7 +121,7 @@ const ChatsPage: React.FC = () => {
               
               <button
                 onClick={() => navigate('/discover-chats')}
-                className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors"
               >
                 <Compass className="h-4 w-4" />
                 <span>Discover Chats</span>
@@ -185,7 +185,7 @@ const ChatsPage: React.FC = () => {
               </p>
               <button
                 onClick={() => navigate('/discover-chats')}
-                className="inline-flex items-center space-x-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                className="inline-flex items-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors"
               >
                 <Compass className="h-5 w-5" />
                 <span>Discover Chats</span>
@@ -225,7 +225,7 @@ const ChatsPage: React.FC = () => {
                           {chat.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-brand-light transition-colors truncate">
                             {chat.name}
                           </h3>
                           <div className="flex items-center space-x-4 text-sm text-gray-500">

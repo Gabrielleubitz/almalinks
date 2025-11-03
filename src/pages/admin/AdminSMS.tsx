@@ -521,19 +521,19 @@ const AdminSMS: React.FC = () => {
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-blue-800 font-medium">Sending Messages...</span>
-                <span className="text-blue-600 text-sm">
+                <span className="text-brand-light text-sm">
                   {sendingProgress.sent + sendingProgress.failed} / {sendingProgress.total}
                 </span>
               </div>
               <div className="w-full bg-blue-200 rounded-full h-2">
                 <div 
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  className="bg-brand-dark h-2 rounded-full transition-all duration-300"
                   style={{ 
                     width: `${((sendingProgress.sent + sendingProgress.failed) / sendingProgress.total) * 100}%` 
                   }}
                 ></div>
               </div>
-              <div className="flex justify-between text-xs text-blue-600 mt-1">
+              <div className="flex justify-between text-xs text-brand-light mt-1">
                 <span>✅ Sent: {sendingProgress.sent}</span>
                 <span>❌ Failed: {sendingProgress.failed}</span>
               </div>
@@ -603,7 +603,7 @@ const AdminSMS: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowUserSelection(!showUserSelection)}
-                    className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors duration-200 flex items-center space-x-2"
+                    className="bg-blue-50 text-brand-light px-4 py-2 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors duration-200 flex items-center space-x-2"
                   >
                     <User className="h-4 w-4" />
                     <span>{showUserSelection ? 'Hide' : 'Show'} User Selection</span>
@@ -674,7 +674,7 @@ const AdminSMS: React.FC = () => {
                           checked={isSelected}
                           onChange={() => hasPhone && toggleUserSelection(userId)}
                           disabled={!hasPhone}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="rounded border-gray-300 text-brand-light focus:ring-blue-500"
                         />
                         <div className="flex-1">
                           <div className="font-medium text-gray-900">{user.name}</div>

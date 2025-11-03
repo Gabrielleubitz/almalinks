@@ -175,7 +175,7 @@ const ConnectionManagementModal: React.FC<ConnectionManagementModalProps> = ({
   const getConnectionTypeColor = (type: string) => {
     switch (type) {
       case 'auto': return 'bg-green-100 text-green-800';
-      case 'manual': return 'bg-blue-100 text-blue-800';
+      case 'manual': return 'bg-blue-50 text-blue-800';
       case 'admin': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -208,7 +208,7 @@ const ConnectionManagementModal: React.FC<ConnectionManagementModalProps> = ({
             badgeColor = 'bg-green-100 text-green-800';
             label = 'Event Auto-Connect';
           } else if (reason.type === 'user') {
-            badgeColor = 'bg-blue-100 text-blue-800';
+            badgeColor = 'bg-blue-50 text-blue-800';
             label = 'User Request';
           }
           
@@ -272,11 +272,11 @@ const ConnectionManagementModal: React.FC<ConnectionManagementModalProps> = ({
                 <div className="text-sm text-gray-600">Auto Connected</div>
               </div>
               <div className="bg-white p-4 rounded-xl">
-                <div className="text-2xl font-bold text-blue-600">{stats.byType.manual || 0}</div>
+                <div className="text-2xl font-bold text-brand-light">{stats.byType.manual || 0}</div>
                 <div className="text-sm text-gray-600">Manual</div>
               </div>
               <div className="bg-white p-4 rounded-xl">
-                <div className="text-2xl font-bold text-purple-600">{stats.byType.admin || 0}</div>
+                <div className="text-2xl font-bold text-brand-dark">{stats.byType.admin || 0}</div>
                 <div className="text-sm text-gray-600">Admin Created</div>
               </div>
             </div>
@@ -319,7 +319,7 @@ const ConnectionManagementModal: React.FC<ConnectionManagementModalProps> = ({
         <div className="flex-1 overflow-y-auto max-h-96">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader className="h-8 w-8 text-purple-600 animate-spin" />
+              <Loader className="h-8 w-8 text-brand-dark animate-spin" />
               <span className="ml-2 text-gray-600">Loading connections...</span>
             </div>
           ) : filteredConnections.length === 0 ? (
@@ -475,7 +475,7 @@ const ConnectionManagementModal: React.FC<ConnectionManagementModalProps> = ({
           <div className={`flex items-center space-x-2 px-4 py-3 rounded-xl shadow-lg ${
             toast.type === 'success' ? 'bg-green-600 text-white' :
             toast.type === 'error' ? 'bg-red-600 text-white' :
-            'bg-blue-600 text-white'
+            'bg-brand-dark text-white'
           }`}>
             {toast.type === 'success' && <CheckCircle className="h-5 w-5" />}
             {toast.type === 'error' && <AlertCircle className="h-5 w-5" />}

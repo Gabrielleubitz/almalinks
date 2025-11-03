@@ -9,13 +9,41 @@
 }
 
 :root {
-  --sky-400: #38bdf8;
-  --sky-500: #0ea5e9;
+  /* Brand Colors - Updated AlmaLinks Blue Gradient */
+  --brand-blue-dark: #0B2B6B;   /* Primary dark blue for gradients and buttons */
+  --brand-blue-light: #2E7FEF;  /* Primary light blue for gradients and accents */
+  --brand-dark: #0B2B6B;        /* Primary buttons, icons, main headings */
+  --brand-light: #2E7FEF;       /* Links, focus rings, accents, chips */
+  --brand-mid: #1E56B3;         /* Hover states (calculated mid-point) */
+  
+  /* Base Colors */
+  --bg: #FFFFFF;             /* Page background, cards */
+  --text: #1C1C1C;           /* Body text */
+  --muted: #6B7280;          /* Secondary text */
+  --border: #E5E7EB;         /* Borders/dividers */
+  
+  /* Legacy support */
+  --sky-400: #2E7FEF;        /* Updated to brand-light */
+  --sky-500: #1E56B3;        /* Updated to brand-mid */
 }
 
 .dark {
-  --sky-400: #38bdf8;
-  --sky-500: #0ea5e9;
+  /* Brand Colors - Updated AlmaLinks Blue Gradient */
+  --brand-blue-dark: #0B2B6B;
+  --brand-blue-light: #2E7FEF;
+  --brand-dark: #0B2B6B;
+  --brand-light: #2E7FEF;
+  --brand-mid: #1E56B3;
+  
+  /* Base Colors remain the same for consistency */
+  --bg: #FFFFFF;
+  --text: #1C1C1C;
+  --muted: #6B7280;
+  --border: #E5E7EB;
+  
+  /* Legacy support */
+  --sky-400: #2E7FEF;
+  --sky-500: #1E56B3;
 }
 
 .fade-in {
@@ -54,14 +82,14 @@
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #C8102E 0%, #0070FF 100%);
+  background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand-light) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .gradient-text-bold-ideas {
-  background: linear-gradient(90deg, #000000 0%, #C8102E 100%);
+  background: linear-gradient(90deg, var(--text) 0%, var(--brand-dark) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -428,7 +456,7 @@ html, body {
 }
 
 .offline-fallback button {
-  background: linear-gradient(135deg, #C8102E 0%, #0070FF 100%);
+  background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand-light) 100%);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;

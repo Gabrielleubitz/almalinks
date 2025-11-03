@@ -396,7 +396,7 @@ const CreateChatGroup: React.FC = () => {
                       type="checkbox"
                       checked={formData.allowRequests}
                       onChange={handleInputChange}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-brand-light focus:ring-blue-500 border-gray-300 rounded"
                       disabled={loading}
                     />
                   </div>
@@ -416,7 +416,7 @@ const CreateChatGroup: React.FC = () => {
                       type="checkbox"
                       checked={formData.isPublic}
                       onChange={handleInputChange}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-brand-light focus:ring-blue-500 border-gray-300 rounded"
                       disabled={loading}
                     />
                   </div>
@@ -463,7 +463,7 @@ const CreateChatGroup: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading || !formData.name.trim() || formData.initialAdmins.length === 0}
-                  className="w-full flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-full flex items-center justify-center px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {loading ? (
                     <>
@@ -544,7 +544,7 @@ const CreateChatGroup: React.FC = () => {
                           )}
                           
                           {role === 'member' && (
-                            <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-800">
                               Member
                             </div>
                           )}
@@ -555,7 +555,7 @@ const CreateChatGroup: React.FC = () => {
                               disabled={isCurrentUser && formData.initialAdmins.length === 1}
                               className={`px-3 py-1 text-xs rounded-lg transition-colors ${
                                 role === 'admin' 
-                                  ? 'bg-purple-600 text-white'
+                                  ? 'bg-brand-dark text-white'
                                   : 'bg-gray-200 text-gray-700 hover:bg-purple-100'
                               } ${isCurrentUser && formData.initialAdmins.length === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                               title={isCurrentUser && formData.initialAdmins.length === 1 ? 'At least one admin is required' : 'Make Admin'}
@@ -567,8 +567,8 @@ const CreateChatGroup: React.FC = () => {
                               onClick={() => handleUserSelection(u.uid, 'member')}
                               className={`px-3 py-1 text-xs rounded-lg transition-colors ${
                                 role === 'member'
-                                  ? 'bg-blue-600 text-white'
-                                  : 'bg-gray-200 text-gray-700 hover:bg-blue-100'
+                                  ? 'bg-brand-dark text-white'
+                                  : 'bg-gray-200 text-gray-700 hover:bg-blue-50'
                               }`}
                             >
                               Member

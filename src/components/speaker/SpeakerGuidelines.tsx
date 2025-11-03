@@ -27,7 +27,7 @@ const SpeakerGuidelines: React.FC = () => {
         
         <div className="p-3 bg-purple-50 rounded-lg">
           <p className="text-sm text-purple-800 font-medium">Need Help?</p>
-          <p className="text-sm text-purple-700">Contact our speaker coordinator at <a href="mailto:speakers@winengrind.com" className="underline">speakers@winengrind.com</a></p>
+          <p className="text-sm text-purple-700">Contact our speaker coordinator at <a href="mailto:speakers@almalinks.com" className="underline">speakers@almalinks.com</a></p>
         </div>
       </div>
     </div>

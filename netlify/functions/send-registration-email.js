@@ -98,15 +98,15 @@ exports.handler = async (event, context) => {
       Messages: [
         {
           From: {
-            Email: "info@winengrind.com",
-            Name: "Wine & Grind"
+            Email: "info@almalinks.com",
+            Name: "Alma Links"
           },
           To: [{ Email: email }],
-          Subject: "Registration Received - Wine & Grind",
+          Subject: "Registration Received - Alma Links",
           TextPart: `
 Hi ${name},
 
-Thank you for registering for Wine & Grind!
+Thank you for registering for Alma Links!
 
 Your registration has been received and is currently under review. We'll notify you once your spot is confirmed.
 
@@ -119,17 +119,17 @@ If you have any questions, feel free to reply to this email.
 
 Looking forward to seeing you soon!
 
-– The Wine & Grind Team
+– The Alma Links Team
           `,
           HTMLPart: `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
   <div style="text-align: center; margin-bottom: 20px;">
-    <h1 style="color: #C8102E;">Wine & Grind</h1>
+    <h1 style="color: #C8102E;">Alma Links</h1>
   </div>
   
   <p>Hi ${name},</p>
   
-  <p><strong>Thank you for registering for Wine & Grind!</strong></p>
+  <p><strong>Thank you for registering for Alma Links!</strong></p>
   
   <p>Your registration has been received and is currently under review. We'll notify you once your spot is confirmed.</p>
   
@@ -144,11 +144,11 @@ Looking forward to seeing you soon!
   
   <p>Looking forward to seeing you soon!</p>
   
-  <p>– The Wine & Grind Team</p>
+  <p>– The Alma Links Team</p>
   
   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; text-align: center;">
-    <p>Wine & Grind - Where Bold Ideas Meet Real Conversations</p>
-    <p>This email was sent because you registered for an event at winengrind.com</p>
+    <p>Alma Links - Where Bold Ideas Meet Real Conversations</p>
+    <p>This email was sent because you registered for an event at almalinks.com</p>
   </div>
 </div>
           `

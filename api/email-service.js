@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     switch (type) {
       case 'registration':
         templateId = process.env.MAILJET_REGISTRATION_TEMPLATE_ID;
-        subject = 'Registration Confirmation - Wine & Grind';
+        subject = 'Registration Confirmation - Alma Links';
         variables = {
           name: name || 'Valued Member',
           eventDetails: additionalData.eventDetails || {}
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
 
       case 'acceptance':
         templateId = process.env.MAILJET_ACCEPTANCE_TEMPLATE_ID;
-        subject = 'Welcome to Wine & Grind!';
+        subject = 'Welcome to Alma Links!';
         variables = {
           name: name || 'Valued Member'
         };
@@ -54,7 +54,7 @@ export default async function handler(req, res) {
 
       case 'signup':
         templateId = process.env.MAILJET_SIGNUP_TEMPLATE_ID;
-        subject = 'Welcome to Wine & Grind!';
+        subject = 'Welcome to Alma Links!';
         variables = {
           name: name || 'New Member'
         };
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
 
       case 'reset':
         templateId = process.env.MAILJET_RESET_TEMPLATE_ID;
-        subject = 'Password Reset - Wine & Grind';
+        subject = 'Password Reset - Alma Links';
         variables = {
           name: name || 'User',
           resetLink: additionalData.resetLink || ''
@@ -71,7 +71,7 @@ export default async function handler(req, res) {
 
       case 'admin-notification':
         templateId = process.env.MAILJET_ADMIN_NOTIFICATION_TEMPLATE_ID;
-        subject = additionalData.subject || 'Admin Notification - Wine & Grind';
+        subject = additionalData.subject || 'Admin Notification - Alma Links';
         variables = {
           ...additionalData
         };
@@ -103,7 +103,7 @@ export default async function handler(req, res) {
           {
             From: {
               Email: process.env.FROM_EMAIL || 'noreply@wineandgrind.com',
-              Name: process.env.FROM_NAME || 'Wine & Grind'
+              Name: process.env.FROM_NAME || 'Alma Links'
             },
             To: [
               {

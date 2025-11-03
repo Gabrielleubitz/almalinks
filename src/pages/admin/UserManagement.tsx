@@ -321,11 +321,11 @@ const UserManagement: React.FC = () => {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'admin':
-        return <Shield className="h-4 w-4 text-purple-600" />;
+        return <Shield className="h-4 w-4 text-brand-dark" />;
       case 'speaker':
         return <Mic className="h-4 w-4 text-orange-600" />;
       default:
-        return <UserIcon className="h-4 w-4 text-blue-600" />;
+        return <UserIcon className="h-4 w-4 text-brand-light" />;
     }
   };
 
@@ -336,7 +336,7 @@ const UserManagement: React.FC = () => {
       case 'speaker':
         return 'bg-orange-100 text-orange-800';
       default:
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-50 text-blue-800';
     }
   };
 
@@ -434,7 +434,7 @@ const UserManagement: React.FC = () => {
               <div className="flex space-x-2">
                 <button
                   onClick={() => setShowUserCreation(true)}
-                  className="inline-flex items-center px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                  className="inline-flex items-center px-3 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors text-sm font-medium"
                   title="Create new user"
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
@@ -442,7 +442,7 @@ const UserManagement: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setShowBulkImport(true)}
-                  className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  className="inline-flex items-center px-3 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors text-sm font-medium"
                   title="Bulk import users from CSV"
                 >
                   <Upload className="h-4 w-4 mr-2" />
@@ -599,7 +599,7 @@ const UserManagement: React.FC = () => {
                               e.stopPropagation();
                               handleConnectClick(userData);
                             }}
-                            className="bg-blue-100 text-blue-700 p-2 rounded-lg hover:bg-blue-200 transition-colors duration-200"
+                            className="bg-blue-50 text-blue-700 p-2 rounded-lg hover:bg-blue-200 transition-colors duration-200"
                             title="Connect this user with another user"
                           >
                             <UserPlus className="h-5 w-5" />
@@ -835,7 +835,7 @@ const UserManagement: React.FC = () => {
                     console.log('🎯 Navigating to admin user edit from modal:', `/admin/users/${selectedUser.uid}/edit`, 'for user:', selectedUser.name);
                     navigate(`/admin/users/${selectedUser.uid}/edit`);
                   }}
-                  className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
+                  className="inline-flex items-center px-3 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors duration-200 text-sm font-medium"
                 >
                   <Edit3 className="h-4 w-4 mr-2" />
                   Edit User
@@ -915,7 +915,7 @@ const UserManagement: React.FC = () => {
                         href={`https://linkedin.com/in/${selectedUser.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-medium text-blue-600 hover:text-blue-700 underline"
+                        className="font-medium text-brand-light hover:text-blue-700 underline"
                       >
                         linkedin.com/in/{selectedUser.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '')}
                       </a>

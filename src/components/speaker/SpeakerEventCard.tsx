@@ -30,7 +30,7 @@ const SpeakerEventCard: React.FC<SpeakerEventProps> = ({ event, formatDate }) =>
           <span className="text-gray-700">{formattedDate.date}</span>
         </div>
         <div className="flex items-center space-x-3">
-          <Clock className="h-5 w-5 text-blue-600" />
+          <Clock className="h-5 w-5 text-brand-light" />
           <span className="text-gray-700">{formattedDate.time}</span>
         </div>
         {event.location && (

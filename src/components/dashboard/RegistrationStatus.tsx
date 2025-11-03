@@ -80,7 +80,7 @@ const RegistrationStatus: React.FC = () => {
   // Generate event-specific QR code
   const qrCodeValue = user?.uid && registration.eventId ? 
     QRCodeService.generateRegistrationQRUrl(user.uid, registration.eventId) : 
-    `https://winengrind.com/connect?to=${user?.uid}`; // Fallback for legacy data
+    `https://almalinks.com/connect?to=${user?.uid}`; // Fallback for legacy data
 
   const downloadQRCode = () => {
     const svg = document.getElementById('qr-code-svg-status');
@@ -101,7 +101,7 @@ const RegistrationStatus: React.FC = () => {
         ctx.drawImage(img, 0, 0, 200, 200);
         
         const link = document.createElement('a');
-        link.download = `wine-grind-qr-${registration.name.replace(/\s+/g, '-').toLowerCase()}.png`;
+        link.download = `alma-links-qr-${registration.name.replace(/\s+/g, '-').toLowerCase()}.png`;
         link.href = canvas.toDataURL();
         link.click();
       }
@@ -190,9 +190,9 @@ const RegistrationStatus: React.FC = () => {
     
     const params = new URLSearchParams({
       action: 'TEMPLATE',
-      text: event.eventName || event.name || 'Wine & Grind Event',
+      text: event.eventName || event.name || 'Alma Links Event',
       dates: `${startTime}/${endTime}`,
-      details: event.description || 'Join us for this exclusive Wine & Grind event!',
+      details: event.description || 'Join us for this exclusive Alma Links event!',
       location: event.location || 'Deli Vino, Netanya'
     });
     
@@ -232,10 +232,10 @@ const RegistrationStatus: React.FC = () => {
             <Check className="h-8 w-8 text-white" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            ✅ You're registered for Wine & Grind 4.0
+            ✅ You're registered for Alma Links 4.0
           </h2>
           <p className="text-gray-600">
-            Your spot at Wine & Grind 4.0 is confirmed
+            Your spot at Alma Links 4.0 is confirmed
           </p>
         </div>
 
@@ -298,7 +298,7 @@ const RegistrationStatus: React.FC = () => {
                 </div>
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                   registration.status === 'attended' 
-                    ? 'bg-blue-100 text-blue-800' 
+                    ? 'bg-blue-50 text-blue-800' 
                     : 'bg-green-100 text-green-800'
                 }`}>
                   <Check className="h-4 w-4 mr-1" />
@@ -326,7 +326,7 @@ const RegistrationStatus: React.FC = () => {
               </div>
               <button
                 onClick={downloadQRCode}
-                className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                className="inline-flex items-center space-x-2 text-brand-light hover:text-blue-700 text-sm font-medium"
               >
                 <Download className="h-4 w-4" />
                 <span>Download QR Code</span>
@@ -344,7 +344,7 @@ const RegistrationStatus: React.FC = () => {
               <span className="text-gray-700">June 28th, 2025</span>
             </div>
             <div className="flex items-center space-x-3">
-              <Clock className="h-5 w-5 text-blue-600" />
+              <Clock className="h-5 w-5 text-brand-light" />
               <span className="text-gray-700">18:30 - 22:00</span>
             </div>
             <div className="flex items-center space-x-3">
@@ -359,7 +359,7 @@ const RegistrationStatus: React.FC = () => {
               href={createGoogleCalendarUrl(registration)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center space-x-2 bg-white text-blue-600 hover:text-blue-700 hover:bg-blue-50 border border-blue-200 px-4 py-2 rounded-lg transition-colors duration-200 font-medium"
+              className="inline-flex items-center space-x-2 bg-white text-brand-light hover:text-blue-700 hover:bg-blue-50 border border-blue-200 px-4 py-2 rounded-lg transition-colors duration-200 font-medium"
             >
               <CalendarPlus className="h-5 w-5" />
               <span>Add to Google Calendar</span>
@@ -385,7 +385,7 @@ const RegistrationStatus: React.FC = () => {
       </div>
 
       {/* Digital Ticket */}
-      <div className="bg-gradient-to-br from-red-700 to-blue-600 rounded-3xl p-8 text-white relative overflow-hidden">
+      <div className="bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-3xl p-8 text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-12 -translate-x-12"></div>
         
@@ -401,7 +401,7 @@ const RegistrationStatus: React.FC = () => {
           </div>
           
           <div className="space-y-3 mb-6">
-            <div className="text-2xl font-bold">Wine & Grind 4.0</div>
+            <div className="text-2xl font-bold">Alma Links 4.0</div>
             <div className="opacity-90">June 28th, 2025 • 18:30</div>
             <div className="opacity-90">Deli Vino, Netanya</div>
           </div>
@@ -464,7 +464,7 @@ const RegistrationStatus: React.FC = () => {
             </div>
           </div>
           <div className="flex items-start space-x-3">
-            <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+            <div className="w-2 h-2 bg-brand-dark rounded-full mt-2"></div>
             <div>
               <div className="font-medium text-gray-900">Complimentary Wine</div>
               <div className="text-gray-600 text-sm">Enjoy premium wine selection upon arrival</div>
@@ -478,7 +478,7 @@ const RegistrationStatus: React.FC = () => {
             </div>
           </div>
           <div className="flex items-start space-x-3">
-            <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+            <div className="w-2 h-2 bg-brand-dark rounded-full mt-2"></div>
             <div>
               <div className="font-medium text-gray-900">Food Available</div>
               <div className="text-gray-600 text-sm">Delicious food options available for purchase</div>

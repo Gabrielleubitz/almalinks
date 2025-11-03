@@ -557,7 +557,7 @@ const ChatViewPage: React.FC = () => {
               <p className="text-gray-600 mb-8">{error || 'The chat you\'re looking for doesn\'t exist or you don\'t have access.'}</p>
               <button
                 onClick={() => navigate('/chats')}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-dark hover:bg-brand-mid"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Chats
@@ -662,9 +662,9 @@ const ChatViewPage: React.FC = () => {
                 <div>
                   <button
                     onClick={() => setShowChatInfo(!showChatInfo)}
-                    className="text-left hover:text-blue-600 transition-colors"
+                    className="text-left hover:text-brand-light transition-colors"
                   >
-                    <h1 className="text-xl font-semibold text-gray-900 hover:text-blue-600 transition-colors">{chat.name}</h1>
+                    <h1 className="text-xl font-semibold text-gray-900 hover:text-brand-light transition-colors">{chat.name}</h1>
                   </button>
                   <div className="flex items-center space-x-4 text-sm text-gray-500">
                     <div className="flex items-center space-x-1">
@@ -673,7 +673,7 @@ const ChatViewPage: React.FC = () => {
                     </div>
                     {chat.userRole && (
                       <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        chat.userRole === 'admin' ? 'text-purple-600 bg-purple-100' : 'text-gray-600 bg-gray-100'
+                        chat.userRole === 'admin' ? 'text-brand-dark bg-purple-100' : 'text-gray-600 bg-gray-100'
                       }`}>
                         {chat.userRole === 'admin' && <Shield className="h-3 w-3 mr-1" />}
                         {chat.userRole === 'admin' ? 'Admin' : 'Member'}
@@ -777,7 +777,7 @@ const ChatViewPage: React.FC = () => {
                       }}
                       className="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
                     >
-                      <UserPlus className="h-5 w-5 text-blue-600 mb-1" />
+                      <UserPlus className="h-5 w-5 text-brand-light mb-1" />
                       <span className="text-xs text-gray-700">Add Member</span>
                     </button>
                   )}
@@ -827,7 +827,7 @@ const ChatViewPage: React.FC = () => {
                         setShowMembersList(!showMembersList);
                         setShowChatInfo(false);
                       }}
-                      className="text-xs text-blue-600 hover:text-blue-700"
+                      className="text-xs text-brand-light hover:text-blue-700"
                     >
                       View All
                     </button>
@@ -843,14 +843,14 @@ const ChatViewPage: React.FC = () => {
                             onClick={() => navigate(`/profile/${member.userId}`)}
                             className="text-left w-full"
                           >
-                            <p className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors cursor-pointer truncate">
+                            <p className="text-sm font-medium text-gray-900 hover:text-brand-light transition-colors cursor-pointer truncate">
                               {member.displayName || 'Unknown User'}
                               {member.userId === user?.uid && ' (You)'}
                             </p>
                           </button>
                           <div className="flex items-center space-x-2">
                             {member.role === 'admin' ? (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-600">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-brand-dark">
                                 <Shield className="h-3 w-3 mr-1" />
                                 Admin
                               </span>
@@ -858,7 +858,7 @@ const ChatViewPage: React.FC = () => {
                               chat.userRole === 'admin' && (
                                 <button
                                   onClick={() => handlePromoteMember(member.userId)}
-                                  className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                                  className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-50 text-brand-light hover:bg-blue-200 transition-colors"
                                   title="Promote to Admin"
                                 >
                                   <Shield className="h-3 w-3 mr-1" />
@@ -909,13 +909,13 @@ const ChatViewPage: React.FC = () => {
                         <div className={`max-w-md ${message.userId === user.uid ? 'ml-auto' : ''}`}>
                           <div className={`rounded-2xl px-4 py-3 ${
                             message.userId === user.uid 
-                              ? 'bg-blue-600 text-white' 
+                              ? 'bg-brand-dark text-white' 
                               : 'bg-white border border-gray-200 text-gray-900'
                           }`}>
                             {message.userId !== user.uid ? (
                               <button
                                 onClick={() => navigate(`/profile/${message.userId}`)}
-                                className="text-xs text-gray-500 mb-1 font-medium hover:text-blue-600 transition-colors cursor-pointer"
+                                className="text-xs text-gray-500 mb-1 font-medium hover:text-brand-light transition-colors cursor-pointer"
                               >
                                 {getMessageSenderName(message)}
                               </button>
@@ -970,7 +970,7 @@ const ChatViewPage: React.FC = () => {
                     <button
                       type="submit"
                       disabled={!messageText.trim() || sending}
-                      className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                      className="px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
                     >
                       {sending ? (
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -995,7 +995,7 @@ const ChatViewPage: React.FC = () => {
                 {chat.userRole === 'admin' && (
                   <button
                     onClick={() => setShowAddMemberModal(true)}
-                    className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                    className="p-1 text-brand-light hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
                     title="Add Member"
                   >
                     <UserPlus className="h-4 w-4" />
@@ -1019,7 +1019,7 @@ const ChatViewPage: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                       {member.role === 'admin' && (
-                        <Shield className="h-4 w-4 text-purple-600" />
+                        <Shield className="h-4 w-4 text-brand-dark" />
                       )}
                       {chat.userRole === 'admin' && member.userId !== user.uid && (
                         <button
@@ -1186,7 +1186,7 @@ const ChatViewPage: React.FC = () => {
                   type="checkbox"
                   checked={editingChat.allowRequests}
                   onChange={(e) => setEditingChat({...editingChat, allowRequests: e.target.checked})}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-brand-light focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="allowRequests" className="ml-2 text-sm text-gray-700">
                   Allow join requests
@@ -1204,7 +1204,7 @@ const ChatViewPage: React.FC = () => {
               <button
                 onClick={handleEditChat}
                 disabled={!editingChat.name.trim()}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-brand-dark rounded-md hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Save Changes
               </button>
@@ -1257,7 +1257,7 @@ const ChatViewPage: React.FC = () => {
                       </div>
                       <button
                         onClick={() => handleAddMember(result.uid || result.id)}
-                        className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
+                        className="px-3 py-1 text-xs font-medium text-brand-light bg-blue-50 rounded-md hover:bg-blue-200 transition-colors"
                       >
                         Add
                       </button>
@@ -1352,7 +1352,7 @@ const ChatViewPage: React.FC = () => {
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
-                <Shield className="h-6 w-6 text-blue-600" />
+                <Shield className="h-6 w-6 text-brand-light" />
               </div>
               <div className="ml-3">
                 <h3 className="text-lg font-medium text-gray-900">Appoint New Admin</h3>
@@ -1377,7 +1377,7 @@ const ChatViewPage: React.FC = () => {
                       value={member.userId}
                       checked={selectedNewAdmin === member.userId}
                       onChange={(e) => setSelectedNewAdmin(e.target.value)}
-                      className="text-blue-600 focus:ring-blue-500"
+                      className="text-brand-light focus:ring-blue-500"
                     />
                     <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
                       {(member.displayName || 'U').charAt(0).toUpperCase()}
@@ -1406,7 +1406,7 @@ const ChatViewPage: React.FC = () => {
               <button
                 onClick={handleAppointAdminAndLeave}
                 disabled={!selectedNewAdmin || appointingAdmin}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                className="px-4 py-2 text-sm font-medium text-white bg-brand-dark rounded-md hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
               >
                 {appointingAdmin ? (
                   <>
@@ -1443,7 +1443,7 @@ const ChatViewPage: React.FC = () => {
               <p className="text-gray-600">{chat.memberCount} member{chat.memberCount === 1 ? '' : 's'}</p>
               {chat.userRole === 'admin' && (
                 <div className="mt-6">
-                  <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                  <button className="px-6 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors text-sm font-medium">
                     Change Group Photo
                   </button>
                 </div>

@@ -186,7 +186,7 @@ const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
         {showButtons && !showPreview && (
           <button
             onClick={handleSelectImage}
-            className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full shadow-md hover:bg-blue-700 transition-colors"
+            className="absolute bottom-0 right-0 bg-brand-dark text-white p-2 rounded-full shadow-md hover:bg-brand-mid transition-colors"
             title="Change profile picture"
           >
             <Camera className="h-4 w-4" />
@@ -207,7 +207,7 @@ const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
           </button>
           <button
             onClick={handleUpload}
-            className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-1 disabled:opacity-50"
+            className="px-3 py-1 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors flex items-center space-x-1 disabled:opacity-50"
             disabled={isUploading}
           >
             {isUploading ? (

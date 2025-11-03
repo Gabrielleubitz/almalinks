@@ -431,7 +431,7 @@ const EventsPage: React.FC = () => {
     const badges = {
       'active': { bg: 'bg-green-100', text: 'text-green-800', label: 'Register Now' },
       'sold-out': { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Sold Out' },
-      'completed': { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Completed' }
+      'completed': { bg: 'bg-blue-50', text: 'text-blue-800', label: 'Completed' }
     };
     
     const badge = badges[status as keyof typeof badges];
@@ -534,12 +534,12 @@ const EventsPage: React.FC = () => {
               {user ? (
                 <>Welcome back, <span className="gradient-text">{user.displayName?.split(' ')[0] || 'Member'}</span></>
               ) : (
-                <>Wine & Grind <span className="gradient-text">Events</span></>
+                <>Alma Links <span className="gradient-text">Events</span></>
               )}
             </h1>
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-600 mb-8 sm:mb-12 max-w-4xl mx-auto leading-relaxed fade-in-delay px-4">
               {user ? (
-                "Your dashboard for exclusive Wine & Grind events and tickets."
+                "Your dashboard for exclusive Alma Links events and tickets."
               ) : (
                 "Join our exclusive gatherings where founders, investors, and innovators come together to shape the future of business and technology."
               )}
@@ -550,7 +550,7 @@ const EventsPage: React.FC = () => {
               <div className="mb-8">
                 <button
                   onClick={switchToAdminView}
-                  className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold text-lg flex items-center space-x-3 mx-auto"
+                  className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold text-lg flex items-center space-x-3 mx-auto"
                 >
                   <RotateCcw className="h-6 w-6" />
                   <span>Back to Admin Panel</span>
@@ -580,8 +580,8 @@ const EventsPage: React.FC = () => {
             <div className="grid md:grid-cols-3 gap-6 mb-8">
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <User className="h-6 w-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                    <User className="h-6 w-6 text-brand-light" />
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Profile Status</p>
@@ -605,7 +605,7 @@ const EventsPage: React.FC = () => {
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                    <Users className="h-6 w-6 text-purple-600" />
+                    <Users className="h-6 w-6 text-brand-dark" />
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Network</p>
@@ -1075,7 +1075,7 @@ const EventsPage: React.FC = () => {
                                   {editFormData.skills.map((skill, index) => (
                                     <span
                                       key={index}
-                                      className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm flex items-center font-medium"
+                                      className="px-3 py-1 bg-blue-50 text-blue-800 rounded-full text-sm flex items-center font-medium"
                                     >
                                       {skill}
                                       <button
@@ -1088,7 +1088,7 @@ const EventsPage: React.FC = () => {
                                           }));
                                           setSkillsInputValue(newSkills.join(', '));
                                         }}
-                                        className="ml-2 text-blue-600 hover:text-blue-800 text-sm"
+                                        className="ml-2 text-brand-light hover:text-brand-mid text-sm"
                                         disabled={profileUpdateLoading}
                                         title="Remove skill"
                                       >
@@ -1210,7 +1210,7 @@ const EventsPage: React.FC = () => {
                                     href={`https://linkedin.com/in/${formatLinkedinUrl(user.linkedinUsername)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                                    className="text-brand-light hover:text-brand-mid hover:underline"
                                   >
                                     {formatLinkedinUrl(user.linkedinUsername)}
                                   </a>
@@ -1309,7 +1309,7 @@ const EventsPage: React.FC = () => {
                                       href={user.website}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-blue-600 hover:text-blue-800 hover:underline"
+                                      className="text-brand-light hover:text-brand-mid hover:underline"
                                     >
                                       {user.website.replace(/^https?:\/\//, '')}
                                     </a>
@@ -1328,7 +1328,7 @@ const EventsPage: React.FC = () => {
                                       href={`https://twitter.com/${user.twitter}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-blue-600 hover:text-blue-800 hover:underline"
+                                      className="text-brand-light hover:text-brand-mid hover:underline"
                                     >
                                       @{user.twitter}
                                     </a>
@@ -1365,7 +1365,7 @@ const EventsPage: React.FC = () => {
                                   {user.skills.map((skill, index) => (
                                     <span
                                       key={index}
-                                      className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+                                      className="px-3 py-1 bg-blue-50 text-blue-800 rounded-full text-sm font-medium"
                                     >
                                       {skill}
                                     </span>
@@ -1461,7 +1461,7 @@ const EventsPage: React.FC = () => {
                 </div>
                 <button 
                   onClick={() => window.location.href = '/events'}
-                  className="bg-gradient-to-r from-red-700 to-blue-600 text-white px-6 py-2 rounded-xl hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2"
+                  className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-2 rounded-xl hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2"
                 >
                   <Calendar className="h-4 w-4" />
                   <span>Browse Events</span>
@@ -1482,7 +1482,7 @@ const EventsPage: React.FC = () => {
                   return (
                   <div
                     key={registration.eventId}
-                    className={`${isExpired ? 'bg-gradient-to-br from-gray-500 to-gray-600' : 'bg-gradient-to-br from-red-700 to-blue-600'} rounded-3xl p-8 text-white relative overflow-hidden slide-up`}
+                    className={`${isExpired ? 'bg-gradient-to-br from-gray-500 to-gray-600' : 'bg-gradient-to-br from-brand-blue-dark to-brand-blue-light'} rounded-3xl p-8 text-white relative overflow-hidden slide-up`}
                     style={{ animationDelay: `${index * 0.2}s` }}
                   >
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
@@ -1519,7 +1519,7 @@ const EventsPage: React.FC = () => {
                             <div className="bg-white p-2 rounded-lg mt-1">
                               <QRCodeSVG
                                 id={`qr-code-${registration.eventId}`}
-                                value={`https://winengrind.com/connect?to=${user.uid}&event=${registration.eventId}`}
+                                value={`https://almalinks.com/connect?to=${user.uid}&event=${registration.eventId}`}
                                 size={60}
                                 bgColor="#ffffff"
                                 fgColor="#000000"
@@ -1587,7 +1587,7 @@ const EventsPage: React.FC = () => {
                 </div>
                 <Link 
                   to="/events"
-                  className="text-blue-600 hover:text-blue-700 font-medium flex items-center space-x-2"
+                  className="text-brand-light hover:text-blue-700 font-medium flex items-center space-x-2"
                 >
                   <span>View All Events</span>
                   <ArrowRight className="h-4 w-4" />
@@ -1638,7 +1638,7 @@ const EventsPage: React.FC = () => {
                           <span>{formatDate(event.date).date}</span>
                         </div>
                         <div className="flex items-center space-x-3 text-gray-600">
-                          <Clock className="h-5 w-5 text-blue-600" />
+                          <Clock className="h-5 w-5 text-brand-light" />
                           <span>{formatDate(event.date).time}</span>
                         </div>
                         <div className="flex items-center space-x-3 text-gray-600">
@@ -1664,7 +1664,7 @@ const EventsPage: React.FC = () => {
                         ) : event.status === 'active' ? (
                           <button 
                             onClick={(e) => handleRegisterClick(e, event.slug, event.status)} // Use slug
-                            className="bg-gradient-to-r from-red-700 to-blue-600 text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold flex items-center space-x-2"
+                            className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold flex items-center space-x-2"
                           >
                             <span>Register Now</span>
                             <ArrowRight className="h-4 w-4" />
@@ -1724,7 +1724,7 @@ const EventsPage: React.FC = () => {
                       }}
                     />
                     <div className="absolute top-4 right-4">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-800">
                         Completed
                       </span>
                     </div>
@@ -1770,13 +1770,13 @@ const EventsPage: React.FC = () => {
               <p className="text-gray-600 mb-8 max-w-md mx-auto">
                 We're working on exciting new events. Check back soon for amazing networking opportunities!
               </p>
-              <Link
-                to="/"
-                className="bg-gradient-to-r from-red-700 to-blue-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-medium inline-flex items-center space-x-2"
+              <button
+                onClick={() => navigate(-1)}
+                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-medium inline-flex items-center space-x-2"
               >
-                <span>Back to Home</span>
+                <span>Back to Previous Page</span>
                 <ArrowRight className="h-4 w-4" />
-              </Link>
+              </button>
             </div>
           </div>
         </section>

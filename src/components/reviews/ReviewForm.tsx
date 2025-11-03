@@ -135,7 +135,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ eventId, onReviewSubmitted }) =
           <button
             type="submit"
             disabled={isSubmitting || rating === 0 || !comment.trim()}
-            className="bg-gradient-to-r from-red-700 to-blue-600 text-white px-6 py-2 rounded-xl hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-2 rounded-xl hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <>

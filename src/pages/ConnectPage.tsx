@@ -6,7 +6,7 @@ import { ConnectionService } from '../services/connectionService';
 import { EventService } from '../services/eventService';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import logoSvg from '../assets/W&G Logo.svg';
+import logoSvg from '../assets/alma-links-logo.svg';
 
 const ConnectPage: React.FC = () => {
   const navigate = useNavigate();
@@ -152,7 +152,7 @@ const ConnectPage: React.FC = () => {
   
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Processing connection...</p>
@@ -188,7 +188,7 @@ const ConnectPage: React.FC = () => {
                 <p className="text-gray-600 mb-6">{error}</p>
                 <button
                   onClick={() => navigate('/events')}
-                  className="bg-gradient-to-r from-red-700 to-blue-600 text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
+                  className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
                 >
                   Return to Dashboard
                 </button>
@@ -240,7 +240,7 @@ const ConnectPage: React.FC = () => {
                       href={`https://linkedin.com/in/${ConnectionService.formatLinkedinUrl(targetUser.linkedinUsername)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium text-center mb-3"
+                      className="block w-full bg-brand-dark text-white px-4 py-2 rounded-lg hover:bg-brand-mid transition-colors duration-200 font-medium text-center mb-3"
                     >
                       View LinkedIn Profile
                     </a>
@@ -254,7 +254,7 @@ const ConnectPage: React.FC = () => {
                 <div className="flex justify-center space-x-4">
                   <button
                     onClick={() => navigate('/events')}
-                    className="bg-gradient-to-r from-red-700 to-blue-600 text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
+                    className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
                   >
                     Go to Dashboard
                   </button>
@@ -262,16 +262,16 @@ const ConnectPage: React.FC = () => {
               </div>
             ) : connecting ? (
               <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-6">
-                  <Loader className="h-8 w-8 text-blue-600 animate-spin" />
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full mb-6">
+                  <Loader className="h-8 w-8 text-brand-light animate-spin" />
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-4">Creating Connection</h2>
                 <p className="text-gray-600">Please wait while we establish your connection...</p>
               </div>
             ) : (
               <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-6">
-                  <UserPlus className="h-8 w-8 text-blue-600" />
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full mb-6">
+                  <UserPlus className="h-8 w-8 text-brand-light" />
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-4">Processing Connection</h2>
                 <p className="text-gray-600">Please wait while we process your connection request...</p>

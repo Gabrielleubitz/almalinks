@@ -117,7 +117,7 @@ const SpeakerFileUploader: React.FC<SpeakerFileUploaderProps> = ({
         {selectedFile && (
           <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
             <div className="flex items-start space-x-3">
-              <div className="text-blue-600 mt-1">
+              <div className="text-brand-light mt-1">
                 {selectedFile.type.includes('pdf') ? (
                   <FileText className="h-6 w-6" />
                 ) : selectedFile.type.includes('image') ? (

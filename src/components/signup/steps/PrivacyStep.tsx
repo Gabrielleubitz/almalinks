@@ -166,7 +166,7 @@ const PrivacyStep: React.FC<PrivacyStepProps> = ({
       {/* Additional Information */}
       <div className="bg-blue-50 rounded-2xl p-6 border border-blue-200">
         <div className="flex items-start space-x-3">
-          <Shield className="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5" />
+          <Shield className="h-6 w-6 text-brand-light flex-shrink-0 mt-0.5" />
           <div>
             <h4 className="font-semibold text-blue-900 mb-2">Your Privacy is Important</h4>
             <div className="text-blue-800 text-sm space-y-2">

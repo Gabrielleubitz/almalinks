@@ -14,7 +14,7 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import logoSvg from '../assets/W&G Logo.svg';
+import logoSvg from '../assets/alma-links-logo.svg';
 import ProfilePictureUploader from './profile/ProfilePictureUploader';
 
 const SpeakerAwareHeader: React.FC = () => {
@@ -131,7 +131,7 @@ const SpeakerAwareHeader: React.FC = () => {
               </button>
               <button
                 onClick={() => navigate('/signup')}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
+                className="bg-brand-dark text-white px-4 py-2 rounded-lg hover:bg-brand-mid transition-colors duration-200 font-medium"
               >
                 Join Now
               </button>
@@ -163,7 +163,7 @@ const SpeakerAwareHeader: React.FC = () => {
               onClick={() => navigate('/dashboard')}
               className={`text-sm font-medium transition-colors duration-200 ${
                 location.pathname === '/dashboard'
-                  ? 'text-blue-600'
+                  ? 'text-brand-light'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -173,7 +173,7 @@ const SpeakerAwareHeader: React.FC = () => {
               onClick={() => navigate('/events')}
               className={`text-sm font-medium transition-colors duration-200 ${
                 location.pathname === '/events'
-                  ? 'text-blue-600'
+                  ? 'text-brand-light'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -183,7 +183,7 @@ const SpeakerAwareHeader: React.FC = () => {
               onClick={() => navigate('/members')}
               className={`text-sm font-medium transition-colors duration-200 ${
                 location.pathname === '/members'
-                  ? 'text-blue-600'
+                  ? 'text-brand-light'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -193,7 +193,7 @@ const SpeakerAwareHeader: React.FC = () => {
               onClick={() => navigate('/chats')}
               className={`text-sm font-medium transition-colors duration-200 ${
                 location.pathname === '/chats'
-                  ? 'text-blue-600'
+                  ? 'text-brand-light'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -204,8 +204,8 @@ const SpeakerAwareHeader: React.FC = () => {
                 onClick={() => navigate('/admin')}
                 className={`text-sm font-medium transition-colors duration-200 ${
                   location.pathname.startsWith('/admin')
-                    ? 'text-purple-600'
-                    : 'text-purple-600 hover:text-purple-700'
+                    ? 'text-brand-dark'
+                    : 'text-brand-dark hover:text-purple-700'
                 }`}
               >
                 Admin
@@ -319,7 +319,7 @@ const SpeakerAwareHeader: React.FC = () => {
                 className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation ${
                   location.pathname.startsWith('/admin')
                     ? 'text-purple-700 bg-purple-50'
-                    : 'text-purple-600 hover:text-purple-700 hover:bg-purple-50'
+                    : 'text-brand-dark hover:text-purple-700 hover:bg-purple-50'
                 }`}
               >
                 <Shield className="h-4 w-4" />
@@ -364,7 +364,7 @@ const SpeakerAwareHeader: React.FC = () => {
                   </span>
                 )}
                 {!isAdmin && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-800">
                     <User className="h-3 w-3 mr-1" />
                     Member
                   </span>

@@ -273,7 +273,7 @@ const ProfileEditPage: React.FC = () => {
             <p className="text-gray-600 mb-8">Unable to load your profile data.</p>
             <button
               onClick={() => navigate('/dashboard')}
-              className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200"
+              className="inline-flex items-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid transition-colors duration-200"
             >
               <ArrowLeft className="h-5 w-5" />
               <span>Back to Dashboard</span>
@@ -349,7 +349,7 @@ const ProfileEditPage: React.FC = () => {
             <button
               onClick={saveProfile}
               disabled={saving}
-              className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              className="inline-flex items-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
               {saving ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -363,7 +363,7 @@ const ProfileEditPage: React.FC = () => {
           {/* Profile Picture Section - IDENTICAL TO ADMIN */}
           <div className="mb-8 p-6 border border-gray-200 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Camera className="h-5 w-5 mr-2 text-blue-600" />
+              <Camera className="h-5 w-5 mr-2 text-brand-light" />
               Profile Picture
             </h3>
             
@@ -405,7 +405,7 @@ const ProfileEditPage: React.FC = () => {
             {/* Basic Information Section */}
             <div className="p-6 border border-gray-200 rounded-xl">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <User className="h-5 w-5 mr-2 text-blue-600" />
+                <User className="h-5 w-5 mr-2 text-brand-light" />
                 Basic Information
               </h3>
               <ProfileBasicsStep
@@ -419,7 +419,7 @@ const ProfileEditPage: React.FC = () => {
             {/* About & Professional Section */}
             <div className="p-6 border border-gray-200 rounded-xl">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Briefcase className="h-5 w-5 mr-2 text-blue-600" />
+                <Briefcase className="h-5 w-5 mr-2 text-brand-light" />
                 About & Professional
               </h3>
               <AboutYouStep
@@ -433,7 +433,7 @@ const ProfileEditPage: React.FC = () => {
             {/* Contact & Location Section */}
             <div className="p-6 border border-gray-200 rounded-xl">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <MapPin className="h-5 w-5 mr-2 text-blue-600" />
+                <MapPin className="h-5 w-5 mr-2 text-brand-light" />
                 Contact & Location
               </h3>
               <ContactLocationStep
@@ -447,7 +447,7 @@ const ProfileEditPage: React.FC = () => {
             {/* Privacy Settings Section */}
             <div className="p-6 border border-gray-200 rounded-xl">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Shield className="h-5 w-5 mr-2 text-blue-600" />
+                <Shield className="h-5 w-5 mr-2 text-brand-light" />
                 Privacy Settings
               </h3>
               <PrivacyStep
@@ -465,7 +465,7 @@ const ProfileEditPage: React.FC = () => {
             <button
               onClick={saveProfile}
               disabled={saving}
-              className="w-full inline-flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              className="w-full inline-flex items-center justify-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
               {saving ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

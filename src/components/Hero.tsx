@@ -61,7 +61,7 @@ const Hero = () => {
         
         <div className="mt-12 sm:mt-16 md:mt-20 slide-up-delay">
           <div className="flex justify-center">
-            <div className="w-2 h-12 sm:h-16 bg-gradient-to-b from-red-700 to-blue-600 rounded-full animate-pulse"></div>
+            <div className="w-2 h-12 sm:h-16 bg-gradient-to-b from-brand-blue-dark to-brand-blue-light rounded-full animate-pulse"></div>
           </div>
         </div>
       </div>

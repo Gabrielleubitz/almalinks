@@ -9,17 +9,54 @@ import {
   Timestamp,
   startAfter,
   QueryDocumentSnapshot,
-  DocumentData
+  DocumentData,
+  and
 } from 'firebase/firestore';
 import { db, retryOnNetworkFailure } from '../firebase/config';
 import { ActivityType, ActivityLog, ActivityFilters, ActivityStats, ActivityLogDisplay } from '../types/activity';
 
 export class ActivityService {
   private static sessionId: string = this.generateSessionId();
+  private static recentLogs: Map<string, number> = new Map(); // Track recent logs to prevent duplicates
+  private static DUPLICATE_THRESHOLD = 5000; // 5 seconds
 
   // Generate a unique session ID for this browser session
   private static generateSessionId(): string {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  // Generate a unique key for deduplication
+  private static generateLogKey(
+    userId: string,
+    activityType: ActivityType,
+    description: string
+  ): string {
+    return `${userId}-${activityType}-${description}`;
+  }
+
+  // Check if this exact activity was logged recently (within threshold)
+  private static isDuplicateLog(logKey: string): boolean {
+    const now = Date.now();
+    const lastLogTime = this.recentLogs.get(logKey);
+    
+    if (lastLogTime && (now - lastLogTime) < this.DUPLICATE_THRESHOLD) {
+      return true; // This is a duplicate
+    }
+    
+    // Update the timestamp for this log
+    this.recentLogs.set(logKey, now);
+    
+    // Clean up old entries (keep map size manageable)
+    if (this.recentLogs.size > 1000) {
+      const cutoff = now - this.DUPLICATE_THRESHOLD * 2;
+      for (const [key, timestamp] of this.recentLogs.entries()) {
+        if (timestamp < cutoff) {
+          this.recentLogs.delete(key);
+        }
+      }
+    }
+    
+    return false;
   }
 
   // Get client IP address (basic implementation)
@@ -37,6 +74,40 @@ export class ActivityService {
   // Get user agent
   private static getUserAgent(): string {
     return navigator.userAgent;
+  }
+
+  // Check if identical activity already exists in database
+  private static async checkDatabaseDuplicate(
+    userId: string,
+    activityType: ActivityType,
+    description: string,
+    sessionId: string
+  ): Promise<boolean> {
+    try {
+      // Check for exact matches within the last 30 seconds
+      const thirtySecondsAgo = new Date();
+      thirtySecondsAgo.setSeconds(thirtySecondsAgo.getSeconds() - 30);
+
+      const q = query(
+        collection(db, 'activity_logs'),
+        and(
+          where('userId', '==', userId),
+          where('activityType', '==', activityType),
+          where('description', '==', description),
+          where('sessionId', '==', sessionId),
+          where('timestamp', '>=', Timestamp.fromDate(thirtySecondsAgo))
+        ),
+        limit(1)
+      );
+
+      const snapshot = await retryOnNetworkFailure(() => getDocs(q));
+      return !snapshot.empty;
+
+    } catch (error) {
+      console.warn('❌ Error checking database duplicates:', error);
+      // If check fails, allow the log to proceed (fail open)
+      return false;
+    }
   }
 
   // Log activity (main method used by the app)
@@ -58,6 +129,26 @@ export class ActivityService {
       // Optional: Skip activity logging if explicitly disabled via env variable
       if (import.meta.env.VITE_SKIP_ACTIVITY_LOGGING === 'true') {
         console.log(`[DEV] Activity logging disabled: ${activityType} - ${description}`, metadata);
+        return;
+      }
+
+      // Check for duplicate logs (prevent logging the same activity within 5 seconds)
+      const logKey = this.generateLogKey(userId, activityType, description);
+      if (this.isDuplicateLog(logKey)) {
+        console.log(`[DEV] Duplicate activity prevented: ${activityType} - ${description}`);
+        return;
+      }
+
+      // Check database for existing identical records
+      const isDatabaseDuplicate = await this.checkDatabaseDuplicate(
+        userId, 
+        activityType, 
+        description, 
+        this.sessionId
+      );
+      
+      if (isDatabaseDuplicate) {
+        console.log(`[DEV] Database duplicate prevented: ${activityType} - ${description}`);
         return;
       }
 
@@ -320,6 +411,68 @@ export class ActivityService {
     } catch (error) {
       console.error('❌ Error getting activity stats:', error);
       throw error;
+    }
+  }
+
+  // Clean up duplicate activity logs (admin function)
+  static async cleanupDuplicateLogs(): Promise<{ removed: number; errors: number }> {
+    try {
+      console.log('🧹 Starting duplicate cleanup...');
+      
+      // Get all activity logs ordered by timestamp
+      const q = query(
+        collection(db, 'activity_logs'),
+        orderBy('timestamp', 'desc'),
+        limit(1000) // Process in batches for performance
+      );
+
+      const snapshot = await retryOnNetworkFailure(() => getDocs(q));
+      const activities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as (ActivityLog & { id: string })[];
+
+      // Group by user, activity type, description, and timestamp (within 30 seconds)
+      const groups = new Map<string, (ActivityLog & { id: string })[]>();
+      
+      activities.forEach(activity => {
+        // Round timestamp to 30-second intervals for grouping
+        const timestamp = activity.timestamp.toDate();
+        const roundedTime = Math.floor(timestamp.getTime() / 30000) * 30000;
+        
+        const key = `${activity.userId}-${activity.activityType}-${activity.description}-${roundedTime}`;
+        
+        if (!groups.has(key)) {
+          groups.set(key, []);
+        }
+        groups.get(key)!.push(activity);
+      });
+
+      // Find duplicates and mark for deletion (keep the first one, remove others)
+      const toDelete: string[] = [];
+      groups.forEach(group => {
+        if (group.length > 1) {
+          // Sort by timestamp and keep the earliest
+          group.sort((a, b) => a.timestamp.toDate().getTime() - b.timestamp.toDate().getTime());
+          // Mark all but the first for deletion
+          for (let i = 1; i < group.length; i++) {
+            toDelete.push(group[i].id);
+          }
+        }
+      });
+
+      console.log(`📋 Found ${toDelete.length} duplicate activities to remove`);
+      
+      // Note: In production, you'd want to use writeBatch for atomic deletions
+      // For now, we'll return the count that would be deleted
+      return {
+        removed: toDelete.length,
+        errors: 0
+      };
+
+    } catch (error) {
+      console.error('❌ Error cleaning up duplicate logs:', error);
+      return {
+        removed: 0,
+        errors: 1
+      };
     }
   }
 

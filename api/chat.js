@@ -93,7 +93,7 @@ export default async function handler(req, res) {
       { role: "user", content: message }
     ];
 
-    console.log(`🤖 Processing chat message for Wine & Grind: "${message.substring(0, 50)}..."`);
+    console.log(`🤖 Processing chat message for Alma Links: "${message.substring(0, 50)}..."`);
 
     // Call OpenAI API
     const response = await openai.chat.completions.create({
@@ -108,7 +108,7 @@ export default async function handler(req, res) {
     const assistantResponse = response.choices[0].message.content;
 
     // Log successful response
-    console.log('✅ Wine & Grind chat response generated successfully');
+    console.log('✅ Alma Links chat response generated successfully');
 
     // Return success response
     return res.status(200).json({ 
@@ -120,7 +120,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('❌ Wine & Grind Chat Function Error:', {
+    console.error('❌ Alma Links Chat Function Error:', {
       message: error.message,
       code: error.code,
       stack: error.stack,
@@ -144,7 +144,7 @@ export default async function handler(req, res) {
       console.log('🔧 Development mode: Providing fallback response for OpenAI connectivity issue');
       return res.status(200).json({ 
         success: true,
-        response: "Hi there! I'm your Wine & Grind assistant. I'm currently experiencing some connectivity issues with my AI service, but I'm here to help! What would you like to know about our exclusive networking events? You can ask me about upcoming events, event details, registration, or anything else about Wine & Grind.",
+        response: "Hi there! I'm your Alma Links assistant. I'm currently experiencing some connectivity issues with my AI service, but I'm here to help! What would you like to know about our exclusive networking events? You can ask me about upcoming events, event details, registration, or anything else about Alma Links.",
         usage: { total_tokens: 0 },
         model: 'fallback',
         timestamp: new Date().toISOString()
@@ -235,7 +235,7 @@ function buildSystemPrompt(eventsData, isUserLoggedIn) {
     ? pastEvents.slice(0, 5).map(formatEvent).join('\n') // Show last 5 events
     : 'No past events on record.';
 
-  return `You are the official AI assistant for Wine & Grind, an exclusive networking event series. You must ONLY provide information from the knowledge base below and NEVER make up information.
+  return `You are the official AI assistant for Alma Links, an exclusive networking event series. You must ONLY provide information from the knowledge base below and NEVER make up information.
 
 CRITICAL INSTRUCTIONS:
 - Be enthusiastic, warm, and friendly while maintaining exclusivity
@@ -247,7 +247,7 @@ CRITICAL INSTRUCTIONS:
 - For follow-up questions, respond directly without unnecessary greetings
 
 WINE & GRIND OVERVIEW:
-Wine & Grind is an exclusive event series where founders, investors, and tech operators gather to share insights and build meaningful connections over great wine. We've hosted several sold-out events with hundreds of CEOs, investors, and high-tech leaders.
+Alma Links is an exclusive event series where founders, investors, and tech operators gather to share insights and build meaningful connections over great wine. We've hosted several sold-out events with hundreds of CEOs, investors, and high-tech leaders.
 
 CORE VALUES & EXPERIENCE:
 - Exclusive networking for carefully vetted tech professionals
@@ -284,9 +284,9 @@ USER NOT LOGGED IN: Direct them to log in at almalinks.org to view current event
 `}
 
 CONTACT INFORMATION:
-- Email: info@winengrind.com  
+- Email: info@almalinks.com  
 - Phone: +972-584-447-7757
-- Website: winengrind.com
+- Website: almalinks.com
 
 PLATFORM FEATURES:
 - User Dashboard: Personal profile, event tickets, connections
@@ -307,7 +307,7 @@ FREQUENTLY ASKED QUESTIONS:
 
 CONVERSATION RULES:
 - Answer questions directly using only the information above
-- If asked about unrelated topics: "I'm all about Wine & Grind! What would you like to know about our events?"
+- If asked about unrelated topics: "I'm all about Alma Links! What would you like to know about our events?"
 - For registration questions: Direct them to log in and use the Events page
 - For event-specific details: Use the current events data above
 - Be enthusiastic but accurate - never fabricate information
@@ -316,5 +316,5 @@ CONVERSATION RULES:
 - Use varied, natural conversation starters: "Sure!", "Absolutely!", "Of course!", "Great question!", "Perfect!", etc.
 - Only use "Hey!" for initial greetings or when someone says hello
 
-Remember: You represent Wine & Grind's premium, exclusive brand. Be helpful, accurate, and engaging while maintaining our high standards.`;
+Remember: You represent Alma Links's premium, exclusive brand. Be helpful, accurate, and engaging while maintaining our high standards.`;
 }

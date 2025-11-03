@@ -1,12 +1,12 @@
 /**
- * Wine & Grind Enhanced Badge Branding Configuration
+ * Alma Links Enhanced Badge Branding Configuration
  * Professional branding system for event badges with rich visual identity
  */
 
-// Wine & Grind Brand Colors
+// Alma Links Brand Colors
 export const BRAND_COLORS = {
   // Primary brand colors
-  wine: '#7A1E1E',           // Deep wine red for header bands and accents
+  wine: '#0B2B6B',           // Deep blue for header bands and accents
   charcoal: '#11151A',       // Dark charcoal for primary text
   lightBg: '#F7F5F3',        // Light warm background
   accentGray: '#E8E5E1',     // Subtle accent gray for borders/dividers
@@ -41,7 +41,7 @@ export const TYPOGRAPHY = {
     size: 13,     // Fixed size for consistency
   },
   header: {
-    size: 16,     // "WINE & GRIND" header text
+    size: 16,     // "ALMA LINKS" header text
   },
   footer: {
     size: 10,     // Optional footer text
@@ -120,7 +120,7 @@ export const ASSETS = {
   logo: {
     png: '/logo.png',
     svg: '/logo.svg',
-    fallback: '/W&G Logo.svg',
+    fallback: '/alma-links-logo.svg',
   },
   eventBackground: '/event-hero.jpg',
   fallbackBackground: '/default-event-bg.jpg',

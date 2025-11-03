@@ -328,16 +328,16 @@ const ConnectionsCard: React.FC = () => {
           label: 'Connected by Admin',
           bgColor: 'bg-purple-100',
           textColor: 'text-purple-800',
-          iconColor: 'text-purple-600'
+          iconColor: 'text-brand-dark'
         };
       case 'scan':
       default:
         return {
           icon: UserPlus,
           label: 'Connected by Request',
-          bgColor: 'bg-blue-100',
+          bgColor: 'bg-blue-50',
           textColor: 'text-blue-800',
-          iconColor: 'text-blue-600'
+          iconColor: 'text-brand-light'
         };
     }
   };
@@ -430,7 +430,7 @@ const ConnectionsCard: React.FC = () => {
     <div className="bg-white rounded-3xl shadow-xl p-6 border border-gray-100">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <Users className="h-6 w-6 text-blue-600" />
+          <Users className="h-6 w-6 text-brand-light" />
           <h3 className="text-xl font-bold text-gray-900">My Connections</h3>
         </div>
         
@@ -503,7 +503,7 @@ const ConnectionsCard: React.FC = () => {
           </p>
           <Link
             to="/events"
-            className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium"
+            className="inline-flex items-center space-x-2 text-brand-light hover:text-blue-700 font-medium"
           >
             <span>View upcoming events</span>
             <ChevronRight className="h-4 w-4" />
@@ -520,7 +520,7 @@ const ConnectionsCard: React.FC = () => {
           </p>
           <Link
             to="/events"
-            className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium"
+            className="inline-flex items-center space-x-2 text-brand-light hover:text-blue-700 font-medium"
           >
             <span>View upcoming events</span>
             <ChevronRight className="h-4 w-4" />
@@ -546,7 +546,7 @@ const ConnectionsCard: React.FC = () => {
               const avatarColor = getAvatarColor(partner.name);
               
               // Handle event name display - show multiple events in "All Events" view
-              let eventName = 'Wine & Grind Event';
+              let eventName = 'Alma Links Event';
               let eventCount = 1;
               
               if (selectedEventId === 'all' && connection.allEventIds && connection.allEventIds.length > 0) {
@@ -637,14 +637,14 @@ const ConnectionsCard: React.FC = () => {
                                     icon: Shield,
                                     bgColor: 'bg-purple-100',
                                     textColor: 'text-purple-800',
-                                    iconColor: 'text-purple-600'
+                                    iconColor: 'text-brand-dark'
                                   };
                                 } else {
                                   badge = {
                                     icon: UserPlus,
-                                    bgColor: 'bg-blue-100',
+                                    bgColor: 'bg-blue-50',
                                     textColor: 'text-blue-800',
-                                    iconColor: 'text-blue-600'
+                                    iconColor: 'text-brand-light'
                                   };
                                 }
                                 
@@ -693,7 +693,7 @@ const ConnectionsCard: React.FC = () => {
                           href={`https://linkedin.com/in/${ConnectionService.formatLinkedinUrl(partner.linkedin)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                          className="flex items-center text-xs text-brand-light hover:text-brand-mid hover:underline"
                         >
                           <Linkedin className="h-3.5 w-3.5 mr-1.5" />
                           <span className="line-clamp-1">LinkedIn Profile</span>
@@ -713,7 +713,7 @@ const ConnectionsCard: React.FC = () => {
                       {/* View Profile Button */}
                       <Link
                         to={`/profile/${partner.uid}`}
-                        className="flex items-center justify-center text-xs font-medium text-purple-600 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 py-2 px-3 rounded-lg transition-colors duration-200 mt-2"
+                        className="flex items-center justify-center text-xs font-medium text-brand-dark hover:text-purple-800 bg-purple-50 hover:bg-purple-100 py-2 px-3 rounded-lg transition-colors duration-200 mt-2"
                       >
                         <Eye className="h-3.5 w-3.5 mr-1.5" />
                         View Profile

@@ -161,7 +161,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="mt-2 text-blue-600 hover:text-blue-700 font-medium"
+                  className="mt-2 text-brand-light hover:text-blue-700 font-medium"
                 >
                   Clear search
                 </button>

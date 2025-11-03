@@ -49,9 +49,9 @@ const ProfilePreviewCard: React.FC<ProfilePreviewCardProps> = ({
 
   const getVisibilityColor = (visibility: string) => {
     switch (visibility) {
-      case 'public': return 'text-blue-600 bg-blue-100';
+      case 'public': return 'text-brand-light bg-blue-50';
       case 'event_only': return 'text-green-600 bg-green-100';
-      case 'hidden': return 'text-purple-600 bg-purple-100';
+      case 'hidden': return 'text-brand-dark bg-purple-100';
       default: return 'text-green-600 bg-green-100';
     }
   };
@@ -164,21 +164,21 @@ const ProfilePreviewCard: React.FC<ProfilePreviewCardProps> = ({
             <h5 className="text-sm font-semibold text-gray-900 mb-3">Links</h5>
             <div className="space-y-2">
               {profile.linkedin && (
-                <div className="flex items-center text-blue-600 text-sm">
+                <div className="flex items-center text-brand-light text-sm">
                   <Linkedin className="h-4 w-4 mr-3 flex-shrink-0" />
                   <span className="truncate">LinkedIn Profile</span>
                 </div>
               )}
               
               {profile.website && (
-                <div className="flex items-center text-blue-600 text-sm">
+                <div className="flex items-center text-brand-light text-sm">
                   <Globe className="h-4 w-4 mr-3 flex-shrink-0" />
                   <span className="truncate">Website</span>
                 </div>
               )}
               
               {profile.twitter && (
-                <div className="flex items-center text-blue-600 text-sm">
+                <div className="flex items-center text-brand-light text-sm">
                   <Twitter className="h-4 w-4 mr-3 flex-shrink-0" />
                   <span className="truncate">Twitter/X</span>
                 </div>

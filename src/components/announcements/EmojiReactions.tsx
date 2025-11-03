@@ -61,7 +61,7 @@ const EmojiReactions: React.FC<EmojiReactionsProps> = ({ announcement }) => {
           disabled={!user || isReacting !== null}
           className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-sm transition-all duration-200 ${
             hasUserReacted(emoji)
-              ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+              ? 'bg-blue-50 text-blue-800 hover:bg-blue-200'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           } ${!user ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
           title={user ? `React with ${emoji}` : 'Login to react'}

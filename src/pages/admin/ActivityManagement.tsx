@@ -25,11 +25,41 @@ import { auth } from '../../firebase/config';
 import { AdminChatService } from '../../services/adminChatService';
 import { ChatMessage } from '../../types/chat';
 
+// Helper function to format timestamp without seconds
+const formatTimestamp = (timestamp: any): string => {
+  try {
+    let date: Date;
+    
+    if (timestamp instanceof Date) {
+      date = timestamp;
+    } else if (typeof timestamp === 'string') {
+      date = new Date(timestamp);
+    } else if (timestamp && typeof timestamp.toDate === 'function') {
+      // Firestore Timestamp
+      date = timestamp.toDate();
+    } else {
+      return String(timestamp);
+    }
+    
+    // Format as: MM/DD/YYYY, HH:MM AM/PM
+    return date.toLocaleString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  } catch (error) {
+    return String(timestamp);
+  }
+};
+
 // Activity type labels and colors
 const ACTIVITY_TYPES: Record<ActivityType, { label: string; color: string }> = {
   login: { label: 'Login', color: 'bg-green-100 text-green-800' },
   logout: { label: 'Logout', color: 'bg-gray-100 text-gray-800' },
-  page_view: { label: 'Page View', color: 'bg-blue-100 text-blue-800' },
+  page_view: { label: 'Page View', color: 'bg-blue-50 text-blue-800' },
   profile_update: { label: 'Profile Update', color: 'bg-purple-100 text-purple-800' },
   event_register: { label: 'Event Registration', color: 'bg-orange-100 text-orange-800' },
   event_unregister: { label: 'Event Unregistration', color: 'bg-red-100 text-red-800' },
@@ -37,7 +67,7 @@ const ACTIVITY_TYPES: Record<ActivityType, { label: string; color: string }> = {
   connection_accept: { label: 'Connection Accept', color: 'bg-emerald-100 text-emerald-800' },
   chat_create: { label: 'Chat Created', color: 'bg-cyan-100 text-cyan-800' },
   chat_join: { label: 'Chat Joined', color: 'bg-teal-100 text-teal-800' },
-  chat_message: { label: 'Chat Message', color: 'bg-blue-100 text-blue-800' },
+  chat_message: { label: 'Chat Message', color: 'bg-blue-50 text-blue-800' },
   admin_action: { label: 'Admin Action', color: 'bg-purple-100 text-purple-800' },
   user_created: { label: 'User Created', color: 'bg-green-100 text-green-800' },
   password_reset: { label: 'Password Reset', color: 'bg-yellow-100 text-yellow-800' }
@@ -57,6 +87,7 @@ const ActivityManagement: React.FC = () => {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   // Load activities from API
   const loadActivities = useCallback(async (reset = true) => {
@@ -132,6 +163,54 @@ const ActivityManagement: React.FC = () => {
         throw fetchError;
       }
 
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to load activities');
+      }
+
+      // Deduplicate activities based on timestamp, userId, activityType, and description
+      const deduplicateActivities = (activities: ActivityLogDisplay[]) => {
+        const seen = new Set<string>();
+        return activities.filter(activity => {
+          // Handle different timestamp formats
+          let timestampKey: string;
+          try {
+            if (activity.timestamp instanceof Date) {
+              timestampKey = activity.timestamp.getTime().toString();
+            } else if (typeof activity.timestamp === 'string') {
+              timestampKey = new Date(activity.timestamp).getTime().toString();
+            } else if (activity.timestamp && typeof activity.timestamp.toDate === 'function') {
+              // Firestore Timestamp
+              timestampKey = activity.timestamp.toDate().getTime().toString();
+            } else {
+              // Fallback to string representation
+              timestampKey = String(activity.timestamp);
+            }
+          } catch (error) {
+            // If timestamp parsing fails, use the raw timestamp as string
+            timestampKey = String(activity.timestamp);
+          }
+          
+          const key = `${timestampKey}-${activity.userId}-${activity.activityType}-${activity.description}`;
+          if (seen.has(key)) {
+            return false;
+          }
+          seen.add(key);
+          return true;
+        });
+      };
+
+      if (reset) {
+        setActivities(deduplicateActivities(data.activities));
+      } else {
+        const combinedActivities = [...activities, ...data.activities];
+        setActivities(deduplicateActivities(combinedActivities));
+      }
+      
+      setHasMore(data.hasMore);
+      setLastDocId(data.lastDocId);
+
     } catch (error: any) {
       console.error('❌ Error loading activities:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to load activities';
@@ -191,18 +270,28 @@ const ActivityManagement: React.FC = () => {
     }
   }, [user]);
 
-  // Load data on component mount and filter changes
+  // Load data on component mount - only run once when user is available
+  // TEMPORARILY DISABLED: Auto-loading to prevent quota exhaustion
+  // Load activities and stats on mount - only once
   useEffect(() => {
-    if (user?.uid) {
+    // DISABLED: Auto-loading disabled due to quota exhaustion
+    // if (user?.uid && !hasInitialized && !error?.includes('RESOURCE_EXHAUSTED')) {
+    //   setHasInitialized(true);
+    //   loadActivities(true);
+    //   loadStats();
+    // }
+    if (user?.uid && !hasInitialized) {
+      setHasInitialized(true);
+      setError('⚠️ Auto-loading disabled to prevent quota exhaustion. Use "Refresh" button to load data manually.');
+    }
+  }, [user?.uid, hasInitialized]);
+
+  // Load activities when filters change (but not on initial load)
+  useEffect(() => {
+    if (user?.uid && hasInitialized && !error?.includes('RESOURCE_EXHAUSTED') && Object.keys(filters).length > 0) {
       loadActivities(true);
     }
-  }, [user?.uid, filters, loadActivities]);
-
-  useEffect(() => {
-    if (user?.uid) {
-      loadStats();
-    }
-  }, [user?.uid, loadStats]);
+  }, [user?.uid, hasInitialized, error, JSON.stringify(filters)]);
 
   // Handle filter changes
   const handleFilterChange = (key: keyof ActivityFilters, value: any) => {
@@ -243,7 +332,7 @@ const ActivityManagement: React.FC = () => {
     const csvContent = [
       ['Timestamp', 'User', 'Email', 'Activity Type', 'Description', 'IP Address', 'User Agent'].join(','),
       ...activities.map(activity => [
-        activity.formattedTime,
+        formatTimestamp(activity.timestamp),
         activity.userName,
         activity.userEmail,
         activity.activityType,
@@ -262,6 +351,45 @@ const ActivityManagement: React.FC = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  // Clean up duplicate logs
+  const cleanupDuplicates = async () => {
+    if (!user?.uid || !confirm('Are you sure you want to remove duplicate activity entries? This will keep the earliest entry for each duplicate group.')) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      const response = await fetch('/api/activity-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
+        },
+        body: JSON.stringify({
+          action: 'cleanup-duplicates',
+          adminEmail: user.email,
+          adminName: user.displayName
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(`Successfully identified ${data.duplicateCount} duplicate entries for cleanup`);
+        loadActivities(true);
+      } else {
+        throw new Error(data.error || 'Failed to cleanup duplicates');
+      }
+
+    } catch (error) {
+      console.error('❌ Error cleaning up duplicates:', error);
+      alert('Failed to clean up duplicate entries');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Clean up old logs
@@ -318,9 +446,13 @@ const ActivityManagement: React.FC = () => {
             </div>
             <div className="flex space-x-3">
               <button
-                onClick={() => loadActivities(true)}
+                onClick={() => {
+                  setError(null); // Clear any previous errors
+                  loadActivities(true);
+                  loadStats();
+                }}
                 disabled={loading}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex items-center px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid disabled:opacity-50"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
@@ -331,6 +463,13 @@ const ActivityManagement: React.FC = () => {
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
+              </button>
+              <button
+                onClick={cleanupDuplicates}
+                className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+              >
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                Remove Duplicates
               </button>
               <button
                 onClick={cleanupOldLogs}
@@ -348,8 +487,8 @@ const ActivityManagement: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Activity className="h-6 w-6 text-blue-600" />
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <Activity className="h-6 w-6 text-brand-light" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Activities</p>
@@ -373,7 +512,7 @@ const ActivityManagement: React.FC = () => {
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
                 <div className="p-2 bg-purple-100 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-purple-600" />
+                  <TrendingUp className="h-6 w-6 text-brand-dark" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Top Activity</p>
@@ -490,8 +629,13 @@ const ActivityManagement: React.FC = () => {
           </div>
           
           {error && (
-            <div className="p-4 bg-red-50 border-l-4 border-red-400">
-              <p className="text-red-700">{error}</p>
+            <div className={`p-4 border-l-4 ${error.includes('RESOURCE_EXHAUSTED') ? 'bg-yellow-50 border-yellow-400' : 'bg-red-50 border-red-400'}`}>
+              <p className={error.includes('RESOURCE_EXHAUSTED') ? 'text-yellow-700' : 'text-red-700'}>
+                {error.includes('RESOURCE_EXHAUSTED') 
+                  ? '⚠️ Firebase quota temporarily exceeded. Data loading is paused. Quota will reset in 24 hours. You can still use the "Refresh" button to try loading data manually.'
+                  : error
+                }
+              </p>
             </div>
           )}
 
@@ -541,7 +685,7 @@ const ActivityManagement: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="flex items-center space-x-2">
                           <Clock className="h-4 w-4 text-gray-400" />
-                          <span>{activity.formattedTime}</span>
+                          <span>{formatTimestamp(activity.timestamp)}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -573,7 +717,7 @@ const ActivityManagement: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <button
                           onClick={() => setSelectedActivity(activity)}
-                          className="text-blue-600 hover:text-blue-800"
+                          className="text-brand-light hover:text-brand-mid"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
@@ -616,7 +760,7 @@ const ActivityManagement: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="text-sm font-medium text-gray-500">Timestamp</label>
-                    <p className="text-sm text-gray-900">{selectedActivity.formattedTime}</p>
+                    <p className="text-sm text-gray-900">{formatTimestamp(selectedActivity.timestamp)}</p>
                   </div>
                   
                   <div>
@@ -643,7 +787,7 @@ const ActivityManagement: React.FC = () => {
                     <div>
                       <button
                         onClick={() => handleViewChat(selectedActivity)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                        className="px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid flex items-center space-x-2"
                       >
                         <MessageCircle className="h-4 w-4" />
                         <span>View Full Chat Conversation</span>
@@ -703,8 +847,8 @@ const ActivityManagement: React.FC = () => {
                       className="flex space-x-3 p-4 bg-gray-50 rounded-lg"
                     >
                       <div className="flex-shrink-0">
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <User className="h-5 w-5 text-blue-600" />
+                        <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center">
+                          <User className="h-5 w-5 text-brand-light" />
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">

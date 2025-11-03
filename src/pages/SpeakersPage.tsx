@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Mail, Phone, Briefcase, Mic, Calendar, MapPin, Clock, Linkedin } from 'lucide-react';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -21,6 +21,7 @@ interface Speaker {
 }
 
 const SpeakersPage: React.FC = () => {
+  const navigate = useNavigate();
   const [speakers, setSpeakers] = useState<Speaker[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -178,13 +179,13 @@ const SpeakersPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back Button */}
           <div className="mb-8">
-            <Link
-              to="/"
+            <button
+              onClick={() => navigate(-1)}
               className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
             >
               <ArrowLeft className="h-5 w-5" />
-              <span>Back to Home</span>
-            </Link>
+              <span>Back to Previous Page</span>
+            </button>
           </div>
 
           <div className="text-center">
@@ -279,7 +280,7 @@ const SpeakersPage: React.FC = () => {
                             href={`https://linkedin.com/in/${formatLinkedinUrl(speaker.linkedinUsername)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 hover:underline"
+                            className="text-brand-light hover:text-brand-mid hover:underline"
                           >
                             {formatLinkedinUrl(speaker.linkedinUsername)}
                           </a>
@@ -297,7 +298,7 @@ const SpeakersPage: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <Mic className="h-5 w-5 text-red-600" />
-                          <span className="text-gray-700 font-medium">Wine & Grind Speaker</span>
+                          <span className="text-gray-700 font-medium">Alma Links Speaker</span>
                         </div>
                       </div>
                     </div>
@@ -313,14 +314,14 @@ const SpeakersPage: React.FC = () => {
       <section className="py-16 bg-gradient-to-br from-red-50 to-blue-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-6">
-            Interested in Speaking at Wine & Grind?
+            Interested in Speaking at Alma Links?
           </h2>
           <p className="text-xl text-gray-600 mb-8">
             Share your expertise with our exclusive community of founders, investors, and operators.
           </p>
           <a
-            href="mailto:speakers@winengrind.com?subject=Speaking at Wine & Grind"
-            className="inline-flex items-center justify-center bg-gradient-to-r from-red-700 to-blue-600 text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
+            href="mailto:speakers@almalinks.com?subject=Speaking at Alma Links"
+            className="inline-flex items-center justify-center bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
           >
             Apply to Speak
           </a>

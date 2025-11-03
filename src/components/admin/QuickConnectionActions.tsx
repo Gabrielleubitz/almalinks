@@ -47,7 +47,7 @@ const QuickConnectionActions: React.FC<QuickConnectionActionsProps> = ({
   return (
     <div className={`bg-blue-50 border border-blue-200 rounded-xl p-4 ${className}`}>
       <div className="flex items-center space-x-3 mb-3">
-        <Users className="h-5 w-5 text-blue-600" />
+        <Users className="h-5 w-5 text-brand-light" />
         <h4 className="font-semibold text-blue-900">Connection Actions</h4>
       </div>
 
@@ -60,7 +60,7 @@ const QuickConnectionActions: React.FC<QuickConnectionActionsProps> = ({
             <button
               onClick={handleQuickBulkConnect}
               disabled={bulkConnecting}
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 flex items-center justify-center space-x-2 text-sm"
+              className="w-full py-2 px-4 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors font-medium disabled:opacity-50 flex items-center justify-center space-x-2 text-sm"
             >
               {bulkConnecting ? (
                 <>
@@ -106,7 +106,7 @@ const QuickConnectionActions: React.FC<QuickConnectionActionsProps> = ({
         <div className="pt-2 border-t border-blue-200">
           <a
             href="/admin/connections"
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            className="text-sm text-brand-light hover:text-blue-700 font-medium"
           >
             Go to full Connection Management →
           </a>

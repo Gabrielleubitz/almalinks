@@ -44,7 +44,7 @@ const ContactLocationStep: React.FC<ContactLocationStepProps> = ({
       {/* Contact Information */}
       <div className="space-y-6">
         <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-          <Phone className="h-5 w-5 mr-2 text-blue-600" />
+          <Phone className="h-5 w-5 mr-2 text-brand-light" />
           Contact Information
         </h3>
 
@@ -88,7 +88,7 @@ const ContactLocationStep: React.FC<ContactLocationStepProps> = ({
                   onChange={(e) => onUpdate('showPhone', e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-dark"></div>
                 <span className="ml-3 text-sm text-gray-700">
                   {formData.showPhone ? 'Show phone number' : 'Hide phone number'}
                 </span>
@@ -101,7 +101,7 @@ const ContactLocationStep: React.FC<ContactLocationStepProps> = ({
       {/* Social Links */}
       <div className="space-y-6">
         <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-          <Globe className="h-5 w-5 mr-2 text-blue-600" />
+          <Globe className="h-5 w-5 mr-2 text-brand-light" />
           Social & Professional Links
         </h3>
 
@@ -188,7 +188,7 @@ const ContactLocationStep: React.FC<ContactLocationStepProps> = ({
       {/* Location */}
       <div className="space-y-6">
         <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-          <MapPin className="h-5 w-5 mr-2 text-blue-600" />
+          <MapPin className="h-5 w-5 mr-2 text-brand-light" />
           Location & Timezone
         </h3>
 
@@ -303,13 +303,13 @@ const ContactLocationStep: React.FC<ContactLocationStepProps> = ({
               <p className="text-sm text-gray-700">📞 {formData.phone}</p>
             )}
             {formData.linkedin && (
-              <p className="text-sm text-blue-600">💼 LinkedIn Profile</p>
+              <p className="text-sm text-brand-light">💼 LinkedIn Profile</p>
             )}
             {formData.website && (
-              <p className="text-sm text-blue-600">🌐 Website</p>
+              <p className="text-sm text-brand-light">🌐 Website</p>
             )}
             {formData.twitter && (
-              <p className="text-sm text-blue-600">🐦 Twitter/X</p>
+              <p className="text-sm text-brand-light">🐦 Twitter/X</p>
             )}
             {formData.timezone && (
               <p className="text-sm text-gray-600">

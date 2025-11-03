@@ -95,7 +95,7 @@ exports.handler = async (event, context) => {
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
-        { role: "system", content: "You are a helpful assistant for Wine & Grind, an exclusive networking event for founders and investors." },
+        { role: "system", content: "You are a helpful assistant for Alma Links, an exclusive networking event for founders and investors." },
         { role: "user", content: prompt }
       ],
       max_tokens: 500

@@ -7,16 +7,16 @@ export const BADGE_BRANDING = {
   // Colors (using AlmaLinks theme)
   colors: {
     // Primary brand color
-    primary: '#8B0000',
+    primary: '#0B2B6B',
     // Secondary blue from gradient
-    secondary: '#1E40AF',
+    secondary: '#2E7FEF',
     // Text colors
     textPrimary: '#1F2937', // Dark gray
     textSecondary: '#6B7280', // Medium gray
     // Background
     background: '#FFFFFF', // White
     // Accent for highlights
-    accent: '#DC2626', // Red-600
+    accent: '#0B2B6B', // Blue dark
     // QR code area background
     qrBackground: '#F9FAFB', // Very light gray
   },
@@ -58,7 +58,7 @@ export const BADGE_BRANDING = {
   // Asset paths
   assets: {
     logoPath: '/public/logo.png',
-    fallbackLogo: '/public/W&G Logo.svg', // Fallback if logo.png doesn't exist
+    fallbackLogo: '/public/alma-links-logo.svg', // Fallback if logo.png doesn't exist
   },
 
   // Crop marks

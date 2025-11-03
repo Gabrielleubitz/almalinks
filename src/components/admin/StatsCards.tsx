@@ -23,9 +23,9 @@ const StatsCards: React.FC<StatsCardsProps> = ({
       icon: Users,
       value: stats.total,
       label: 'Total Registered',
-      color: 'text-blue-600',
+      color: 'text-brand-light',
       bgColor: 'bg-blue-50',
-      hoverColor: 'hover:bg-blue-100',
+      hoverColor: 'hover:bg-blue-50',
       type: 'total' as const
     },
     {

@@ -185,7 +185,7 @@ const AboutYouStep: React.FC<AboutYouStepProps> = ({
             type="button"
             onClick={addSkill}
             disabled={!newSkill.trim() || formData.skills.length >= 12}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+            className="px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
           >
             <Plus className="h-5 w-5" />
           </button>
@@ -197,13 +197,13 @@ const AboutYouStep: React.FC<AboutYouStepProps> = ({
             {formData.skills.map((skill, index) => (
               <span
                 key={index}
-                className="inline-flex items-center space-x-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                className="inline-flex items-center space-x-2 px-3 py-1 bg-blue-50 text-blue-800 rounded-full text-sm"
               >
                 <span>{skill}</span>
                 <button
                   type="button"
                   onClick={() => removeSkill(index)}
-                  className="text-blue-600 hover:text-blue-800 transition-colors duration-200"
+                  className="text-brand-light hover:text-brand-mid transition-colors duration-200"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -240,7 +240,7 @@ const AboutYouStep: React.FC<AboutYouStepProps> = ({
           </div>
           
           {formData.bioTitle && (
-            <p className="text-blue-600 font-medium">{formData.bioTitle}</p>
+            <p className="text-brand-light font-medium">{formData.bioTitle}</p>
           )}
           
           {formData.bio && (

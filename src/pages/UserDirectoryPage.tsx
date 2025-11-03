@@ -270,7 +270,7 @@ const UserDirectoryPage: React.FC = () => {
                   <button
                     onClick={() => setViewMode('grid')}
                     className={`p-2 rounded-md transition-colors duration-200 ${
-                      viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+                      viewMode === 'grid' ? 'bg-white text-brand-light shadow-sm' : 'text-gray-600'
                     }`}
                   >
                     <Grid className="h-5 w-5" />
@@ -278,7 +278,7 @@ const UserDirectoryPage: React.FC = () => {
                   <button
                     onClick={() => setViewMode('list')}
                     className={`p-2 rounded-md transition-colors duration-200 ${
-                      viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+                      viewMode === 'list' ? 'bg-white text-brand-light shadow-sm' : 'text-gray-600'
                     }`}
                   >
                     <List className="h-5 w-5" />
@@ -295,7 +295,7 @@ const UserDirectoryPage: React.FC = () => {
                   <Filter className="h-5 w-5" />
                   <span>Filters</span>
                   {hasActiveFilters && (
-                    <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5">
+                    <span className="bg-brand-dark text-white text-xs rounded-full px-2 py-0.5">
                       {[
                         searchTerm ? 1 : 0,
                         filters.skills?.length || 0,
@@ -335,7 +335,7 @@ const UserDirectoryPage: React.FC = () => {
                                 removeSkillFilter(skill.value);
                               }
                             }}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="rounded border-gray-300 text-brand-light focus:ring-blue-500"
                           />
                           <span className="text-sm text-gray-700">
                             {skill.label} ({skill.count})
@@ -411,13 +411,13 @@ const UserDirectoryPage: React.FC = () => {
                         {filters.skills?.map((skill) => (
                           <span
                             key={skill}
-                            className="inline-flex items-center space-x-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                            className="inline-flex items-center space-x-1 px-3 py-1 bg-blue-50 text-blue-800 rounded-full text-sm"
                           >
                             <Hash className="h-3 w-3" />
                             <span>{skill}</span>
                             <button
                               onClick={() => removeSkillFilter(skill)}
-                              className="text-blue-600 hover:text-blue-800"
+                              className="text-brand-light hover:text-brand-mid"
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -443,7 +443,7 @@ const UserDirectoryPage: React.FC = () => {
                             <span>{filters.city}</span>
                             <button
                               onClick={() => updateFilter('city', undefined)}
-                              className="text-purple-600 hover:text-purple-800"
+                              className="text-brand-dark hover:text-purple-800"
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -501,7 +501,7 @@ const UserDirectoryPage: React.FC = () => {
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200"
+                  className="inline-flex items-center px-4 py-2 bg-brand-dark text-white rounded-xl hover:bg-brand-mid transition-colors duration-200"
                 >
                   Clear Filters
                 </button>
@@ -547,7 +547,7 @@ const UserDirectoryPage: React.FC = () => {
                             to={`/profile/${userCard.uid}`}
                             className="block"
                           >
-                            <h3 className="font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors duration-200">
+                            <h3 className="font-bold text-gray-900 truncate group-hover:text-brand-light transition-colors duration-200">
                               {userCard.displayName}
                             </h3>
                             {(userCard.title || userCard.company) && (
@@ -595,7 +595,7 @@ const UserDirectoryPage: React.FC = () => {
                       {/* Action Buttons */}
                       <div className="flex items-center space-x-2">
                         {userCard.canConnect && (
-                          <button className="flex-1 inline-flex items-center justify-center space-x-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium">
+                          <button className="flex-1 inline-flex items-center justify-center space-x-1 px-3 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors duration-200 text-sm font-medium">
                             <UserPlus className="h-4 w-4" />
                             <span>Connect</span>
                           </button>
@@ -638,7 +638,7 @@ const UserDirectoryPage: React.FC = () => {
                         
                         <div className="flex-1 min-w-0">
                           <Link to={`/profile/${userCard.uid}`}>
-                            <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-200 mb-1">
+                            <h3 className="font-bold text-gray-900 group-hover:text-brand-light transition-colors duration-200 mb-1">
                               {userCard.displayName}
                             </h3>
                           </Link>
@@ -687,7 +687,7 @@ const UserDirectoryPage: React.FC = () => {
                       {/* Action Buttons */}
                       <div className="flex items-center space-x-3">
                         {userCard.canConnect && (
-                          <button className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium">
+                          <button className="inline-flex items-center space-x-2 px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors duration-200 font-medium">
                             <UserPlus className="h-4 w-4" />
                             <span>Connect</span>
                           </button>

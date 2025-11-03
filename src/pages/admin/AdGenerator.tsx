@@ -47,7 +47,7 @@ const AdGenerator: React.FC = () => {
   const { user, loading: authLoading, isAdmin } = useAuth();
   const [ads, setAds] = useState<AdCreativeData[]>([]);
   const [businessInfo, setBusinessInfo] = useState<BusinessInfo>({
-    businessName: 'Wine & Grind',
+    businessName: 'Alma Links',
     productService: 'Networking events for entrepreneurs',
     targetCustomer: 'Entrepreneurs and business professionals',
     industry: 'Events & Networking',
@@ -76,10 +76,10 @@ const AdGenerator: React.FC = () => {
   const generateAdCopy = async (platform: 'facebook' | 'google') => {
     const newAd: AdCreativeData = {
       id: `${platform}-${Date.now()}`,
-      headline: `Join Wine & Grind - ${platform === 'facebook' ? 'Network & Grow' : 'Professional Networking Events'}`,
+      headline: `Join Alma Links - ${platform === 'facebook' ? 'Network & Grow' : 'Professional Networking Events'}`,
       body: platform === 'facebook' 
         ? `Connect with like-minded entrepreneurs over fine wine and meaningful conversations. Build lasting business relationships in an elegant setting. 🍷✨`
-        : `Exclusive networking events for entrepreneurs. Join Wine & Grind for meaningful business connections in a sophisticated atmosphere.`,
+        : `Exclusive networking events for entrepreneurs. Join Alma Links for meaningful business connections in a sophisticated atmosphere.`,
       platform,
       createdAt: new Date().toISOString()
     };
@@ -165,7 +165,7 @@ const AdGenerator: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `wine-grind-ads-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `alma-links-ads-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -181,7 +181,7 @@ const AdGenerator: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <AdminHeader 
         title="Ad Generator" 
-        subtitle="Create AI-powered video and image ads for Wine & Grind events"
+        subtitle="Create AI-powered video and image ads for Alma Links events"
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-12">
@@ -257,15 +257,15 @@ const AdGenerator: React.FC = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
-              <Facebook className="w-6 h-6 text-blue-600" />
+              <Facebook className="w-6 h-6 text-brand-light" />
               <h2 className="text-xl font-semibold text-gray-900">Facebook Ads</h2>
-              <span className="px-2.5 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+              <span className="px-2.5 py-1 bg-blue-50 text-blue-800 text-xs rounded-full">
                 {facebookAds.length} ads
               </span>
             </div>
             <button
               onClick={() => generateAdCopy('facebook')}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create Facebook Ad
@@ -297,7 +297,7 @@ const AdGenerator: React.FC = () => {
               <p className="text-gray-600 mb-4">Create your first Facebook ad to get started</p>
               <button
                 onClick={() => generateAdCopy('facebook')}
-                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center px-6 py-3 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Facebook Ad
@@ -466,7 +466,7 @@ const AdCard: React.FC<AdCardProps> = ({
         <div className="flex items-center space-x-2">
           <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
             ad.platform === 'facebook' 
-              ? 'bg-blue-100 text-blue-800' 
+              ? 'bg-blue-50 text-blue-800' 
               : 'bg-green-100 text-green-800'
           }`}>
             {ad.platform === 'facebook' ? 'Facebook' : 'Google'}
@@ -532,7 +532,7 @@ const AdCard: React.FC<AdCardProps> = ({
                   <button
                     type="button"
                     onClick={generateBasicPrompt}
-                    className="text-xs text-purple-600 hover:text-purple-700 flex items-center"
+                    className="text-xs text-brand-dark hover:text-purple-700 flex items-center"
                   >
                     <Lightbulb className="w-3 h-3 mr-1" />
                     Basic
@@ -540,7 +540,7 @@ const AdCard: React.FC<AdCardProps> = ({
                   <button
                     type="button"
                     onClick={regenerateSmartPrompt}
-                    className="text-xs text-purple-600 hover:text-purple-700 flex items-center"
+                    className="text-xs text-brand-dark hover:text-purple-700 flex items-center"
                   >
                     <RefreshCw className="w-3 h-3 mr-1" />
                     Smart
@@ -563,7 +563,7 @@ const AdCard: React.FC<AdCardProps> = ({
               <button
                 onClick={() => onGenerateImage(ad.id, editData.imagePrompt)}
                 disabled={isGeneratingImage}
-                className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isGeneratingImage ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -583,7 +583,7 @@ const AdCard: React.FC<AdCardProps> = ({
               </button>
               <button
                 onClick={handleSave}
-                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                className="flex-1 px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors"
               >
                 Save Changes
               </button>
@@ -623,7 +623,7 @@ const AdCard: React.FC<AdCardProps> = ({
                   </p>
                   <button
                     onClick={() => setEditingAd(ad.id)}
-                    className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    className="inline-flex items-center px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors"
                   >
                     <Wand2 className="w-4 h-4 mr-2" />
                     Generate Image

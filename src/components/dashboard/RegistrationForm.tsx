@@ -74,11 +74,11 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, eventId 
   return (
     <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-700 to-blue-600 rounded-full mb-4">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-full mb-4">
           <Calendar className="h-8 w-8 text-white" />
         </div>
         <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          Register for Wine & Grind 4.0
+          Register for Alma Links 4.0
         </h2>
         <p className="text-gray-600">
           Secure your spot at our most exclusive event yet
@@ -94,7 +94,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, eventId 
             <span className="text-gray-700">June 28th, 2025</span>
           </div>
           <div className="flex items-center space-x-3">
-            <Clock className="h-5 w-5 text-blue-600" />
+            <Clock className="h-5 w-5 text-brand-light" />
             <span className="text-gray-700">18:30 - 22:00</span>
           </div>
           <div className="flex items-center space-x-3">
@@ -188,7 +188,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, eventId 
         <button
           type="submit"
           disabled={submitting}
-          className="w-full bg-gradient-to-r from-red-700 to-blue-600 text-white py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+          className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
         >
           {submitting ? (
             <>
@@ -206,7 +206,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, eventId 
 
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-500">
-          By registering, you agree to receive event updates and communications from Wine & Grind.
+          By registering, you agree to receive event updates and communications from Alma Links.
         </p>
       </div>
     </div>

@@ -1,6 +1,6 @@
 # AlmaLinks
 
-A comprehensive event management and networking platform for Wine & Grind events.
+A comprehensive event management and networking platform for Alma Links events.
 
 ## Features
 

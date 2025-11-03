@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Database Cleanup - Wine & Grind</title>
+    <title>QR Code Database Cleanup - Alma Links</title>
     <style>
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -120,8 +120,8 @@
             <label for="eventSelect">Select Event:</label>
             <select id="eventSelect">
                 <option value="">Choose an event...</option>
-                <option value="wine-grind-4">Wine & Grind 4.0</option>
-                <option value="wine-grind-3">Wine & Grind 3.0</option>
+                <option value="alma-links-4">Alma Links 4.0</option>
+                <option value="alma-links-3">Alma Links 3.0</option>
             </select>
         </div>
         
@@ -138,7 +138,7 @@
             <ul>
                 <li><strong>Dry Run First:</strong> Always run a dry run to see what will be changed</li>
                 <li><strong>Backup:</strong> This tool modifies database records</li>
-                <li><strong>Expected Format:</strong> <code>https://winengrind.com/connect?to=userId&event=eventId</code></li>
+                <li><strong>Expected Format:</strong> <code>https://almalinks.com/connect?to=userId&event=eventId</code></li>
             </ul>
         </div>
         
@@ -186,7 +186,7 @@
                     data.qrData.forEach(item => {
                         if (item.generatedQrUrl.includes('sk-') || item.generatedQrUrl.includes('API_KEY')) {
                             apiKeyCount++;
-                        } else if (!item.generatedQrUrl.startsWith('https://winengrind.com/connect')) {
+                        } else if (!item.generatedQrUrl.startsWith('https://almalinks.com/connect')) {
                             wrongFormatCount++;
                         } else {
                             correctCount++;
@@ -211,7 +211,7 @@
                         
                         if (item.generatedQrUrl.includes('sk-')) {
                             html += `   🚨 CONTAINS API KEY!\\n`;
-                        } else if (!item.generatedQrUrl.startsWith('https://winengrind.com/connect')) {
+                        } else if (!item.generatedQrUrl.startsWith('https://almalinks.com/connect')) {
                             html += `   ⚠️  Wrong format\\n`;
                         } else {
                             html += `   ✅ Correct\\n`;

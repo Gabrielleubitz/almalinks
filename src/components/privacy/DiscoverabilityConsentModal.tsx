@@ -54,7 +54,7 @@ const DiscoverabilityConsentModal: React.FC<DiscoverabilityConsentModalProps> = 
         'Balanced privacy and networking',
         'Most popular choice'
       ],
-      color: 'text-blue-600 bg-blue-100'
+      color: 'text-brand-light bg-blue-50'
     },
     {
       value: 'hidden' as DiscoverabilityLevel,
@@ -83,8 +83,8 @@ const DiscoverabilityConsentModal: React.FC<DiscoverabilityConsentModalProps> = 
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Shield className="h-6 w-6 text-blue-600" />
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <Shield className="h-6 w-6 text-brand-light" />
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-900">
@@ -106,7 +106,7 @@ const DiscoverabilityConsentModal: React.FC<DiscoverabilityConsentModalProps> = 
           {/* Info Alert */}
           <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-start space-x-3">
-              <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <Info className="h-5 w-5 text-brand-light mt-0.5 flex-shrink-0" />
               <div className="text-sm">
                 <p className="text-blue-800 font-medium mb-1">
                   New Auto-Connect Feature
@@ -142,7 +142,7 @@ const DiscoverabilityConsentModal: React.FC<DiscoverabilityConsentModalProps> = 
                         value={option.value}
                         checked={isSelected}
                         onChange={(e) => setSelectedLevel(e.target.value as DiscoverabilityLevel)}
-                        className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                        className="mt-1 h-4 w-4 text-brand-light focus:ring-blue-500 border-gray-300"
                       />
                       
                       <div className="flex-1">
@@ -154,7 +154,7 @@ const DiscoverabilityConsentModal: React.FC<DiscoverabilityConsentModalProps> = 
                             <h4 className="font-semibold text-gray-900">
                               {option.title}
                               {option.value === 'event_only' && (
-                                <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-800">
                                   Recommended
                                 </span>
                               )}
@@ -194,7 +194,7 @@ const DiscoverabilityConsentModal: React.FC<DiscoverabilityConsentModalProps> = 
               <button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="px-6 py-2 bg-gradient-to-r from-red-700 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 font-semibold disabled:opacity-50"
+                className="px-6 py-2 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white rounded-lg hover:shadow-lg transition-all duration-300 font-semibold disabled:opacity-50"
               >
                 {loading ? (
                   <div className="flex items-center space-x-2">

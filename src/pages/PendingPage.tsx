@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, CheckCircle, MessageSquare } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import logoSvg from '../assets/W&G Logo.svg';
+import logoSvg from '../assets/alma-links-logo.svg';
 
 const PendingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ const PendingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-blue-50 flex items-center justify-center px-4 relative">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-4 relative">
       {/* Logo in top left corner */}
       <div className="absolute top-6 left-6 z-10">
         <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
@@ -71,7 +71,7 @@ const PendingPage: React.FC = () => {
             
             <div className="bg-blue-50 rounded-xl p-6 text-left">
               <div className="flex items-start space-x-3">
-                <MessageSquare className="h-5 w-5 text-blue-600 flex-shrink-0 mt-1" />
+                <MessageSquare className="h-5 w-5 text-brand-light flex-shrink-0 mt-1" />
                 <div>
                   <h3 className="font-semibold text-blue-800 mb-2">Need assistance?</h3>
                   <p className="text-sm text-blue-700 mb-3">
@@ -79,7 +79,7 @@ const PendingPage: React.FC = () => {
                   </p>
                   <a 
                     href="mailto:info@almalinks.org" 
-                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    className="text-sm text-brand-light hover:text-brand-mid font-medium"
                   >
                     info@almalinks.org
                   </a>

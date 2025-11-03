@@ -19,7 +19,7 @@ const SpeakerFileItem: React.FC<SpeakerFileItemProps> = ({
     if (fileType.includes('pdf')) {
       return <FileText className="h-6 w-6 text-red-600" />;
     } else if (fileType.includes('image')) {
-      return <Image className="h-6 w-6 text-blue-600" />;
+      return <Image className="h-6 w-6 text-brand-light" />;
     } else if (fileType.includes('presentation') || fileType.includes('powerpoint')) {
       return <Presentation className="h-6 w-6 text-orange-600" />;
     } else {
@@ -103,14 +103,14 @@ const SpeakerFileItem: React.FC<SpeakerFileItemProps> = ({
             </div>
           </div>
           
-          <div className="flex items-center mt-2 text-xs font-medium text-blue-600">
+          <div className="flex items-center mt-2 text-xs font-medium text-brand-light">
             <Calendar className="h-3.5 w-3.5 mr-1" />
             <span>Event: {eventName}</span>
           </div>
           
           {/* Admin Note Indicator */}
           {file.adminNote && (
-            <div className="mt-3 flex items-center text-xs font-medium text-purple-600">
+            <div className="mt-3 flex items-center text-xs font-medium text-brand-dark">
               <MessageSquare className="h-3.5 w-3.5 mr-1" />
               <span>Has feedback from organizers</span>
             </div>
@@ -123,7 +123,7 @@ const SpeakerFileItem: React.FC<SpeakerFileItemProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors duration-200"
+            className="text-brand-light hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors duration-200"
             title="Download file"
           >
             <Download className="h-5 w-5" />

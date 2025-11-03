@@ -186,7 +186,7 @@ const UserProfilePage: React.FC = () => {
               <p className="text-gray-600 mb-8">{error || 'The user profile you\'re looking for doesn\'t exist.'}</p>
               <button
                 onClick={() => navigate(-1)}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-dark hover:bg-brand-mid"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
@@ -222,7 +222,7 @@ const UserProfilePage: React.FC = () => {
           {/* Back Button */}
           <button
             onClick={() => navigate(-1)}
-            className="inline-flex items-center text-purple-600 hover:text-purple-700 mb-8 font-medium transition-colors duration-200"
+            className="inline-flex items-center text-brand-dark hover:text-purple-700 mb-8 font-medium transition-colors duration-200"
           >
             <ChevronLeft className="h-5 w-5 mr-1" />
             Back
@@ -230,7 +230,7 @@ const UserProfilePage: React.FC = () => {
 
           {/* Profile Card */}
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-            <div className="relative h-32 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500">
+            <div className="relative h-32 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light">
               <div className="absolute inset-0 bg-black bg-opacity-20"></div>
             </div>
             
@@ -259,7 +259,7 @@ const UserProfilePage: React.FC = () => {
                       {currentUser?.uid === userId && (
                         <button
                           onClick={() => navigate('/profile/edit')}
-                          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
+                          className="inline-flex items-center px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors duration-200 text-sm font-medium"
                         >
                           <Edit3 className="h-4 w-4 mr-2" />
                           Edit Profile
@@ -270,7 +270,7 @@ const UserProfilePage: React.FC = () => {
                       {currentUser?.role === 'admin' && currentUser?.uid !== userId && (
                         <button
                           onClick={() => navigate(`/admin/users/${userId}/edit`)}
-                          className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200 text-sm font-medium"
+                          className="inline-flex items-center px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors duration-200 text-sm font-medium"
                         >
                           <Edit3 className="h-4 w-4 mr-2" />
                           Admin Edit
@@ -343,7 +343,7 @@ const UserProfilePage: React.FC = () => {
                     {profile.email && (
                       <div className="flex items-center text-gray-600">
                         <Mail className="h-5 w-5 mr-3 text-gray-400" />
-                        <a href={`mailto:${profile.email}`} className="hover:text-purple-600 transition-colors">
+                        <a href={`mailto:${profile.email}`} className="hover:text-brand-dark transition-colors">
                           {profile.email}
                         </a>
                       </div>
@@ -382,7 +382,7 @@ const UserProfilePage: React.FC = () => {
                           href={`https://linkedin.com/in/${userLinkedin.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '')}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="hover:text-purple-600 transition-colors"
+                          className="hover:text-brand-dark transition-colors"
                         >
                           LinkedIn Profile
                         </a>
@@ -396,7 +396,7 @@ const UserProfilePage: React.FC = () => {
                           href={profile.website}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="hover:text-purple-600 transition-colors"
+                          className="hover:text-brand-dark transition-colors"
                         >
                           {profile.website.replace(/^https?:\/\//, '')}
                         </a>
@@ -410,7 +410,7 @@ const UserProfilePage: React.FC = () => {
                           href={`https://twitter.com/${profile.twitter}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="hover:text-purple-600 transition-colors"
+                          className="hover:text-brand-dark transition-colors"
                         >
                           @{profile.twitter}
                         </a>

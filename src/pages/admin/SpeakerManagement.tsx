@@ -276,7 +276,7 @@ const SpeakerManagement: React.FC = () => {
               <p className="text-gray-600 mb-4">No events found</p>
               <button
                 onClick={() => navigate('/admin/events/create')}
-                className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
+                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
               >
                 <span>Create First Event</span>
               </button>
@@ -306,7 +306,7 @@ const SpeakerManagement: React.FC = () => {
               {selectedEventId && (
                 <div className="mt-4 p-4 bg-purple-50 rounded-xl border border-purple-200">
                   <div className="flex items-center space-x-3">
-                    <Calendar className="h-5 w-5 text-purple-600" />
+                    <Calendar className="h-5 w-5 text-brand-dark" />
                     <div>
                       <div className="font-semibold text-purple-900">
                         {events.find(e => e.id === selectedEventId)?.name}
@@ -331,7 +331,7 @@ const SpeakerManagement: React.FC = () => {
                 <h2 className="text-2xl font-bold text-gray-900">Event Speakers</h2>
                 <button
                   onClick={handleOpenAssignModal}
-                  className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 py-2 rounded-xl hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2"
+                  className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-4 py-2 rounded-xl hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2"
                 >
                   <Users className="h-4 w-4" />
                   <span>Assign Speaker</span>

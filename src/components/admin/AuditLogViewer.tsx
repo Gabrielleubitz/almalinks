@@ -107,13 +107,13 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({
       case 'USER_CREATED':
         return <UserPlus className="h-4 w-4 text-green-600" />;
       case 'BULK_IMPORT':
-        return <User className="h-4 w-4 text-blue-600" />;
+        return <User className="h-4 w-4 text-brand-light" />;
       case 'FORCE_PASSWORD_RESET':
         return <Key className="h-4 w-4 text-orange-600" />;
       case 'USER_DELETED':
         return <UserMinus className="h-4 w-4 text-red-600" />;
       case 'ROLE_CHANGED':
-        return <Shield className="h-4 w-4 text-purple-600" />;
+        return <Shield className="h-4 w-4 text-brand-dark" />;
       default:
         return <Activity className="h-4 w-4 text-gray-600" />;
     }
@@ -124,7 +124,7 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({
       case 'USER_CREATED':
         return 'bg-green-100 text-green-800';
       case 'BULK_IMPORT':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-50 text-blue-800';
       case 'FORCE_PASSWORD_RESET':
         return 'bg-orange-100 text-orange-800';
       case 'USER_DELETED':
@@ -210,8 +210,8 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <Activity className="h-6 w-6 text-blue-600" />
+            <div className="p-3 bg-blue-50 rounded-xl">
+              <Activity className="h-6 w-6 text-brand-light" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">Audit Logs</h2>
@@ -273,7 +273,7 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({
             <button
               onClick={() => loadLogs(true)}
               disabled={loading}
-              className="inline-flex items-center px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
+              className="inline-flex items-center px-4 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid transition-colors font-medium"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh

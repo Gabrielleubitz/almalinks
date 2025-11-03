@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, X } from 'lucide-react';
 import { Message } from './ChatWidget';
 import TypewriterText from './TypewriterText';
-import logoSvg from '../../assets/W&G Logo.svg';
+import logoSvg from '../../assets/alma-links-logo.svg';
 
 interface FluidConversationProps {
   messages: Message[];
@@ -30,7 +30,7 @@ const FluidConversation: React.FC<FluidConversationProps> = ({
     "Swirling my wine glass... I mean, processing your request 🍷",
     "Debugging this conversation with some premium wine logic...",
     "Loading knowledge... Please wait while I aerate my thoughts",
-    "Compiling insights from our wine & grind database...",
+    "Compiling insights from our Alma Links database...",
     "Fermenting the perfect response... This might take a moment",
     "Running algorithms on premium grape-sourced intelligence...",
     "Optimizing my neural networks with a splash of wine wisdom...",
@@ -116,11 +116,11 @@ const FluidConversation: React.FC<FluidConversationProps> = ({
 
   return (
     <div className="w-full h-full bg-white relative overflow-hidden">
-      {/* Wine & Grind Logo - Top Left */}
+      {/* Alma Links Logo - Top Left */}
       <div className="absolute top-6 left-6 z-10">
         <img 
           src={logoSvg}
-          alt="Wine & Grind Logo" 
+          alt="Alma Links Logo" 
           className="h-8 w-auto opacity-60 hover:opacity-100 transition-opacity duration-200"
         />
       </div>

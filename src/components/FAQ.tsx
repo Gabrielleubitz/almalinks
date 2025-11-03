@@ -82,7 +82,7 @@ const FAQ = () => {
             </p>
             <a 
               href="mailto:info@almalinks.org"
-              className="inline-flex items-center justify-center bg-gradient-to-r from-red-700 to-blue-600 text-white px-8 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
+              className="inline-flex items-center justify-center bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
             >
               Contact Us: info@almalinks.org
             </a>

@@ -146,8 +146,8 @@ const UserConnectionModal: React.FC<UserConnectionModalProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <UserPlus className="h-6 w-6 text-blue-600" />
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <UserPlus className="h-6 w-6 text-brand-light" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
@@ -319,9 +319,9 @@ const UserConnectionModal: React.FC<UserConnectionModalProps> = ({
                   </div>
                   
                   <div className="flex items-center space-x-2">
-                    <ArrowRight className="h-5 w-5 text-blue-600" />
-                    <Link2 className="h-4 w-4 text-blue-600" />
-                    <ArrowRight className="h-5 w-5 text-blue-600" />
+                    <ArrowRight className="h-5 w-5 text-brand-light" />
+                    <Link2 className="h-4 w-4 text-brand-light" />
+                    <ArrowRight className="h-5 w-5 text-brand-light" />
                   </div>
                   
                   <div className="text-center">
@@ -377,7 +377,7 @@ const UserConnectionModal: React.FC<UserConnectionModalProps> = ({
               <button
                 onClick={handleConnect}
                 disabled={connecting}
-                className="px-6 py-2 bg-gradient-to-r from-red-700 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 font-semibold disabled:opacity-50 flex items-center space-x-2"
+                className="px-6 py-2 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white rounded-lg hover:shadow-lg transition-all duration-300 font-semibold disabled:opacity-50 flex items-center space-x-2"
               >
                 {connecting ? (
                   <>

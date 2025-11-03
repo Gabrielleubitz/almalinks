@@ -152,7 +152,7 @@ const AdminAnnouncements: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <AdminHeader 
         title="Announcements" 
-        subtitle="Publish announcements to all Wine & Grind members"
+        subtitle="Publish announcements to all Alma Links members"
       />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -177,7 +177,7 @@ const AdminAnnouncements: React.FC = () => {
               Create Announcement
             </h1>
             <p className="text-gray-600">
-              Share important updates with all Wine & Grind members
+              Share important updates with all Alma Links members
             </p>
           </div>
 
@@ -356,7 +356,7 @@ const AdminAnnouncements: React.FC = () => {
                         <div className="flex space-x-2">
                           <button
                             onClick={() => handleEdit(announcement)}
-                            className="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors duration-200"
+                            className="text-brand-light hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors duration-200"
                             title="Edit announcement"
                           >
                             <Edit className="h-4 w-4" />

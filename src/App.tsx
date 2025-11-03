@@ -47,6 +47,7 @@ import ChatsPage from './pages/ChatsPage';
 import ChatViewPage from './pages/ChatViewPage';
 import DiscoverChatsPage from './pages/DiscoverChatsPage';
 import CreateChatGroup from './pages/admin/CreateChatGroup';
+import ThemePreview from './pages/ThemePreview';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AuthWrapper from './components/auth/AuthWrapper';
 import NetworkStatusIndicator from './components/ui/NetworkStatusIndicator';
@@ -77,6 +78,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/speakers" element={<SpeakersPage />} />
+        <Route path="/theme-preview" element={<ThemePreview />} />
         
         {/* Auth Routes */}
         <Route path="/login" element={<LoginPage />} />

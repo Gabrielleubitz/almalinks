@@ -94,12 +94,14 @@ export default async function handler(req, res) {
         return await getActivityStats(req, res, currentUserId);
       case 'cleanup-old-logs':
         return await cleanupOldLogs(req, res, currentUserId);
+      case 'cleanup-duplicates':
+        return await cleanupDuplicates(req, res, currentUserId);
       case 'log-activity':
         return await logActivity(req, res, currentUserId);
       default:
         return res.status(400).json({ 
           success: false, 
-          error: `Unknown action: ${action}. Available actions: get-activities, get-activity-stats, cleanup-old-logs, log-activity` 
+          error: `Unknown action: ${action}. Available actions: get-activities, get-activity-stats, cleanup-old-logs, cleanup-duplicates, log-activity` 
         });
     }
   } catch (error) {
@@ -413,6 +415,107 @@ async function cleanupOldLogs(req, res, adminId) {
   } catch (error) {
     console.error('❌ Error cleaning up activity logs:', error);
     throw error;
+  }
+}
+
+// Clean up duplicate activity logs
+async function cleanupDuplicates(req, res, adminId) {
+  try {
+    console.log('🧹 Starting duplicate cleanup process...');
+
+    // Get all activity logs ordered by timestamp
+    const query = db.collection('activity_logs')
+      .orderBy('timestamp', 'desc')
+      .limit(2000); // Process in batches for performance
+
+    const snapshot = await query.get();
+    const activities = snapshot.docs.map(doc => ({ 
+      id: doc.id, 
+      ...doc.data(),
+      docRef: doc.ref
+    }));
+
+    // Group by user, activity type, description, and timestamp (within 30 seconds)
+    const groups = new Map();
+    
+    activities.forEach(activity => {
+      // Round timestamp to 30-second intervals for grouping
+      const timestamp = activity.timestamp?.toDate?.() || new Date();
+      const roundedTime = Math.floor(timestamp.getTime() / 30000) * 30000;
+      
+      const key = `${activity.userId}-${activity.activityType}-${activity.description}-${roundedTime}`;
+      
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+      groups.get(key).push(activity);
+    });
+
+    // Find duplicates and mark for deletion (keep the first one, remove others)
+    const toDelete = [];
+    groups.forEach(group => {
+      if (group.length > 1) {
+        // Sort by timestamp and keep the earliest
+        group.sort((a, b) => {
+          const timeA = a.timestamp?.toDate?.()?.getTime() || 0;
+          const timeB = b.timestamp?.toDate?.()?.getTime() || 0;
+          return timeA - timeB;
+        });
+        
+        // Mark all but the first for deletion
+        for (let i = 1; i < group.length; i++) {
+          toDelete.push(group[i]);
+        }
+      }
+    });
+
+    console.log(`📋 Found ${toDelete.length} duplicate activities to remove`);
+
+    // Delete duplicates in batches (Firestore batch limit is 500)
+    let deletedCount = 0;
+    
+    for (let i = 0; i < toDelete.length; i += 500) {
+      const batchToDelete = toDelete.slice(i, i + 500);
+      const batch = db.batch();
+      
+      batchToDelete.forEach(activity => {
+        batch.delete(activity.docRef);
+      });
+      
+      await batch.commit();
+      deletedCount += batchToDelete.length;
+      
+      console.log(`🗑️  Deleted batch of ${batchToDelete.length} duplicates (${deletedCount}/${toDelete.length} total)`);
+    }
+
+    // Log admin activity
+    await logServerActivity(
+      adminId,
+      req.body.adminEmail || 'admin@example.com',
+      req.body.adminName || 'Admin',
+      'admin_action',
+      `Cleaned up ${deletedCount} duplicate activity logs`,
+      { 
+        duplicatesFound: toDelete.length,
+        deletedCount,
+        totalActivitiesProcessed: activities.length
+      },
+      req
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully removed ${deletedCount} duplicate activities`,
+      duplicateCount: deletedCount,
+      totalProcessed: activities.length
+    });
+
+  } catch (error) {
+    console.error('❌ Error cleaning up duplicates:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to cleanup duplicate activities'
+    });
   }
 }
 

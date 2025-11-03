@@ -46,7 +46,7 @@ const ManualSearch: React.FC<ManualSearchProps> = ({ onSearch, searching }) => {
             <button
               onClick={handleSearch}
               disabled={searching || !searchEmail.trim()}
-              className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              className="bg-brand-dark text-white px-6 py-3 rounded-xl hover:bg-brand-mid transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
               {searching ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

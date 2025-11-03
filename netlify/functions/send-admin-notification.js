@@ -95,9 +95,9 @@ exports.handler = async (event, context) => {
 
     // Admin email addresses
     const adminEmails = [
-      'admin@winengrind.com',
-      'gabriel@winengrind.com', 
-      'info@winengrind.com'
+      'admin@almalinks.com',
+      'gabriel@almalinks.com', 
+      'info@almalinks.com'
     ];
 
     // Send email via Mailjet
@@ -105,15 +105,15 @@ exports.handler = async (event, context) => {
       Messages: [
         {
           From: {
-            Email: "info@winengrind.com",
-            Name: "Wine & Grind System"
+            Email: "info@almalinks.com",
+            Name: "Alma Links System"
           },
           To: adminEmails.map(adminEmail => ({ Email: adminEmail })),
-          Subject: "New Registration Pending Approval - Wine & Grind",
+          Subject: "New Registration Pending Approval - Alma Links",
           TextPart: `
 🔔 New Registration Pending Approval
 
-A new user has registered for Wine & Grind and needs approval:
+A new user has registered for Alma Links and needs approval:
 
 Name: ${name}
 Email: ${email}
@@ -121,11 +121,11 @@ Phone: ${phone}
 Work: ${work}
 
 Please review and approve/reject this registration in the admin panel:
-https://winengrind.com/admin
+https://almalinks.com/admin
 
 Time: ${new Date().toLocaleString()}
 
-– Wine & Grind System
+– Alma Links System
           `,
           HTMLPart: `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
@@ -133,7 +133,7 @@ Time: ${new Date().toLocaleString()}
     <h1 style="color: #C8102E;">🔔 New Registration Pending</h1>
   </div>
   
-  <p><strong>A new user has registered for Wine & Grind and needs approval:</strong></p>
+  <p><strong>A new user has registered for Alma Links and needs approval:</strong></p>
   
   <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 20px 0;">
     <table style="width: 100%;">
@@ -157,12 +157,12 @@ Time: ${new Date().toLocaleString()}
   </div>
   
   <div style="text-align: center; margin: 30px 0;">
-    <a href="https://winengrind.com/admin" style="background: linear-gradient(135deg, #C8102E 0%, #0070FF 100%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block;">Review in Admin Panel</a>
+    <a href="https://almalinks.com/admin" style="background: linear-gradient(135deg, #C8102E 0%, #0070FF 100%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block;">Review in Admin Panel</a>
   </div>
   
   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; text-align: center;">
     <p>Registration Time: ${new Date().toLocaleString()}</p>
-    <p>Wine & Grind Admin Notification System</p>
+    <p>Alma Links Admin Notification System</p>
   </div>
 </div>
           `

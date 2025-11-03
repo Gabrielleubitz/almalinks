@@ -1,6 +1,6 @@
 import React from 'react';
 import { Mail, Linkedin, Instagram, Music, Headphones, Youtube, Send } from 'lucide-react';
-import logoSvg from '../assets/W&G Logo.svg';
+import logoSvg from '../assets/alma-links-logo.svg';
 import tiktokSvg from '../assets/tiktok-svgrepo-com.svg';
 
 const Footer = () => {
@@ -75,7 +75,7 @@ const Footer = () => {
               <Youtube className="h-5 w-5 sm:h-6 sm:w-6" />
             </a>
             <a
-              href="https://t.me/winengrind"
+              href="https://t.me/almalinks"
               className="text-gray-400 hover:text-white transition-colors duration-200"
               aria-label="Telegram"
             >

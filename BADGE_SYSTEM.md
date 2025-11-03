@@ -1,11 +1,11 @@
-# Wine & Grind Badge Generation System
+# Alma Links Badge Generation System
 
-A comprehensive lanyard badge generation system for Wine & Grind events that creates professional, printable PDFs with QR codes, attendee information, and precise crop marks.
+A comprehensive lanyard badge generation system for Alma Links events that creates professional, printable PDFs with QR codes, attendee information, and precise crop marks.
 
 ## Features
 
 - **Professional Layout**: A4 format with 2×2 grid (4 badges per page)
-- **Wine & Grind Branding**: Consistent brand colors, typography, and styling
+- **Alma Links Branding**: Consistent brand colors, typography, and styling
 - **QR Code Integration**: Automatic QR generation linking to networking profiles
 - **Crop Marks**: Precise cutting guides for professional printing
 - **Scalable**: Handles 10, 100, or 1,000+ attendees efficiently
@@ -114,7 +114,7 @@ const customFont = await pdfDoc.embedFont(fontBytes);
 - **Badge Size**: 90 × 133.5 mm each
 
 ### Badge Content
-1. **Header**: Wine & Grind branding (wine red background)
+1. **Header**: Alma Links branding (wine red background)
 2. **Name**: Large, bold typography (18pt)
 3. **Company**: Medium text from work field (12pt)
 4. **LinkedIn**: Small text if provided (10pt)  
@@ -124,7 +124,7 @@ const customFont = await pdfDoc.embedFont(fontBytes);
 ### QR Code Logic
 - **Primary**: Uses `qr_code` field if available
 - **Fallback**: Generates from `ticket_url` field
-- **Format**: Links to `winengrind.com/connect?to=userId&event=eventId`
+- **Format**: Links to `almalinks.com/connect?to=userId&event=eventId`
 - **Encoding**: High error correction, 200px resolution
 
 ## Database Schema
@@ -136,7 +136,7 @@ const customFont = await pdfDoc.embedFont(fontBytes);
   "last_name": "Cohen", 
   "company": "Acme Robotics",
   "linkedin": "linkedin.com/in/mayacohen", // Optional
-  "qr_code": "https://tickets.winengrind.com/t/abc123",
+  "qr_code": "https://tickets.almalinks.com/t/abc123",
   "email": "maya@acme.com"
 }
 ```
@@ -271,4 +271,4 @@ When making changes to the badge system:
 
 ## License
 
-Part of the Wine & Grind event management system. Internal use only.
+Part of the Alma Links event management system. Internal use only.

@@ -447,11 +447,11 @@ const AdminDashboard: React.FC = () => {
           <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-6 sm:p-8 mb-8">
             <div className="flex items-center justify-center mb-4">
               <div className="bg-purple-100 p-3 rounded-full mr-4">
-                <UserCog className="h-6 w-6 text-purple-600" />
+                <UserCog className="h-6 w-6 text-brand-dark" />
               </div>
               <div className="text-left">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-                  Welcome back, <span className="text-purple-600">{user?.displayName?.split(' ')[0] || 'Admin'}</span>! 👋
+                  Welcome back, <span className="text-brand-dark">{user?.displayName?.split(' ')[0] || 'Admin'}</span>! 👋
                 </h2>
                 <p className="text-gray-600 mt-1">Manage events, track registrations, and oversee check-ins</p>
               </div>
@@ -479,7 +479,7 @@ const AdminDashboard: React.FC = () => {
               >
                 <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
-                    <Calendar className="h-8 w-8 text-purple-600" />
+                    <Calendar className="h-8 w-8 text-brand-dark" />
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-lg font-semibold text-gray-900">Manage Events</h4>
@@ -498,7 +498,7 @@ const AdminDashboard: React.FC = () => {
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-lg font-semibold text-gray-900">Create Event</h4>
-                    <p className="text-gray-600 text-sm">Add a new Wine & Grind event</p>
+                    <p className="text-gray-600 text-sm">Add a new Alma Links event</p>
                   </div>
                 </div>
               </Link>
@@ -565,7 +565,7 @@ const AdminDashboard: React.FC = () => {
               >
                 <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
-                    <MessageSquare className="h-8 w-8 text-blue-600" />
+                    <MessageSquare className="h-8 w-8 text-brand-light" />
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-lg font-semibold text-gray-900">SMS Messages</h4>
@@ -610,7 +610,7 @@ const AdminDashboard: React.FC = () => {
               >
                 <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
-                    <Wand2 className="h-8 w-8 text-purple-600" />
+                    <Wand2 className="h-8 w-8 text-brand-dark" />
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-lg font-semibold text-gray-900">Ad Generator</h4>
@@ -631,7 +631,7 @@ const AdminDashboard: React.FC = () => {
               >
                 <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
-                    <Mic className="h-8 w-8 text-purple-600" />
+                    <Mic className="h-8 w-8 text-brand-dark" />
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-lg font-semibold text-gray-900">Speakers</h4>
@@ -646,7 +646,7 @@ const AdminDashboard: React.FC = () => {
               >
                 <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
-                    <Users className="h-8 w-8 text-blue-600" />
+                    <Users className="h-8 w-8 text-brand-light" />
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-lg font-semibold text-gray-900">Connections</h4>
@@ -706,7 +706,7 @@ const AdminDashboard: React.FC = () => {
               <p className="text-gray-600 mb-4">No events found</p>
               <Link
                 to="/admin/events/create"
-                className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
+                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
               >
                 <span>Create First Event</span>
               </Link>
@@ -736,7 +736,7 @@ const AdminDashboard: React.FC = () => {
               {selectedEvent && (
                 <div className="mt-4 p-4 bg-purple-50 rounded-xl border border-purple-200">
                   <div className="flex items-center space-x-3">
-                    <Calendar className="h-5 w-5 text-purple-600" />
+                    <Calendar className="h-5 w-5 text-brand-dark" />
                     <div>
                       <div className="font-semibold text-purple-900">{selectedEvent.name}</div>
                       <div className="text-sm text-purple-700">
@@ -755,7 +755,7 @@ const AdminDashboard: React.FC = () => {
           <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 mb-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Quick SMS</h2>
-              <MessageSquare className="h-6 w-6 text-blue-600" />
+              <MessageSquare className="h-6 w-6 text-brand-light" />
             </div>
 
             {/* SMS Error Message */}
@@ -824,7 +824,7 @@ const AdminDashboard: React.FC = () => {
             <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-200">
               <Link
                 to="/admin/sms"
-                className="text-blue-600 hover:text-blue-700 font-medium flex items-center space-x-2"
+                className="text-brand-light hover:text-blue-700 font-medium flex items-center space-x-2"
               >
                 <MessageSquare className="h-4 w-4" />
                 <span>Advanced SMS Panel</span>

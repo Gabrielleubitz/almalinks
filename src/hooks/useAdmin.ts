@@ -5,9 +5,9 @@ import { useAuth } from './useAuth';
 
 // Admin email list - in production, this should be in Firestore or Firebase Custom Claims
 const ADMIN_EMAILS = [
-  'admin@winengrind.com',
-  'gabriel@winengrind.com',
-  'info@winengrind.com',
+  'admin@almalinks.com',
+  'gabriel@almalinks.com',
+  'info@almalinks.com',
   // Add more admin emails here
 ];
 

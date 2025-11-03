@@ -75,7 +75,7 @@ const SpeakerFileDetail: React.FC<SpeakerFileDetailProps> = ({
                 href={file.fileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2"
+                className="bg-brand-dark text-white px-4 py-2 rounded-lg hover:bg-brand-mid transition-colors duration-200 flex items-center space-x-2"
               >
                 <Download className="h-4 w-4" />
                 <span>Download</span>
@@ -99,12 +99,12 @@ const SpeakerFileDetail: React.FC<SpeakerFileDetailProps> = ({
         {file.adminNote && (
           <div className="p-4 bg-purple-50 rounded-xl border border-purple-200 mb-6">
             <div className="flex items-start space-x-3">
-              <MessageSquare className="h-5 w-5 text-purple-600 flex-shrink-0 mt-1" />
+              <MessageSquare className="h-5 w-5 text-brand-dark flex-shrink-0 mt-1" />
               <div>
                 <div className="font-medium text-purple-900 mb-1">Note from Organizers</div>
                 <div className="text-purple-800">{file.adminNote}</div>
                 {file.adminNoteAt && (
-                  <div className="text-xs text-purple-600 mt-1">
+                  <div className="text-xs text-brand-dark mt-1">
                     Added {formatTimestamp(file.adminNoteAt)}
                   </div>
                 )}

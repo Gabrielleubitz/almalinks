@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Testing - Wine & Grind</title>
+    <title>QR Code Testing - Alma Links</title>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
         body {
@@ -98,7 +98,7 @@
             <div class="qr-code-display">
                 <canvas id="badge-qr"></canvas>
                 <div class="qr-value" id="badge-value">
-                    https://winengrind.com/connect?to=user123&event=wine-grind-4
+                    https://almalinks.com/connect?to=user123&event=alma-links-4
                 </div>
             </div>
             
@@ -114,7 +114,7 @@
             <div class="qr-code-display">
                 <canvas id="registration-qr"></canvas>
                 <div class="qr-value" id="registration-value">
-                    https://winengrind.com/connect?to=user123&event=wine-grind-4
+                    https://almalinks.com/connect?to=user123&event=alma-links-4
                 </div>
             </div>
             
@@ -130,7 +130,7 @@
             <div class="qr-code-display">
                 <canvas id="checkin-qr"></canvas>
                 <div class="qr-value" id="checkin-value">
-                    wine-grind-4-user123
+                    alma-links-4-user123
                 </div>
             </div>
             
@@ -165,7 +165,7 @@
         <div style="margin: 20px 0; padding: 15px; background: #f3e5f5; border-radius: 8px;">
             <h4 style="color: #7B1FA2; margin-top: 0;">🔄 QR Code Formats:</h4>
             <ul>
-                <li><strong>Connection URL:</strong> <code>https://winengrind.com/connect?to=userId&event=eventId</code></li>
+                <li><strong>Connection URL:</strong> <code>https://almalinks.com/connect?to=userId&event=eventId</code></li>
                 <li><strong>Check-in Format:</strong> <code>eventId-userId</code> (for admin scanner only)</li>
                 <li><strong>Both formats</strong> are parsed by admin QR scanner</li>
                 <li><strong>Only URLs</strong> are camera-app friendly for normal users</li>
@@ -176,10 +176,10 @@
     <script>
         // Sample data for testing
         const testUserId = 'user123';
-        const testEventId = 'wine-grind-4';
+        const testEventId = 'alma-links-4';
 
         function generateConnectionUrl(userId, eventId) {
-            return `https://winengrind.com/connect?to=${userId}&event=${eventId}`;
+            return `https://almalinks.com/connect?to=${userId}&event=${eventId}`;
         }
 
         function generateCheckinCode(userId, eventId) {

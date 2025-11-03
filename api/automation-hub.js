@@ -25,11 +25,11 @@ const REMINDER_INTERVALS = {
 const REMINDER_TEMPLATES = {
   speaker: {
     email: {
-      subject: "🎤 Speaker Reminder: Wine & Grind Event Tomorrow",
+      subject: "🎤 Speaker Reminder: Alma Links Event Tomorrow",
       content: `
         Hi {name},
         
-        This is your speaker brief for tomorrow's Wine & Grind event:
+        This is your speaker brief for tomorrow's Alma Links event:
         
         📍 Location: {location}
         🕒 Time: {time}
@@ -43,19 +43,19 @@ const REMINDER_TEMPLATES = {
         VIP entrance: Use the speaker entrance on the right side.
         
         Looking forward to your talk!
-        Wine & Grind Team
+        Alma Links Team
       `
     },
-    sms: "🎤 Speaker reminder: Wine & Grind event {time} at {location}. Arrive 30min early for tech check. Use VIP entrance. See you there!"
+    sms: "🎤 Speaker reminder: Alma Links event {time} at {location}. Arrive 30min early for tech check. Use VIP entrance. See you there!"
   },
   
   attendee: {
     email: {
-      subject: "🍷 Wine & Grind Event Tomorrow - You're All Set!",
+      subject: "🍷 Alma Links Event Tomorrow - You're All Set!",
       content: `
         Hi {name},
         
-        Get ready for an incredible Wine & Grind event tomorrow!
+        Get ready for an incredible Alma Links event tomorrow!
         
         📍 Location: {location}
         🕒 Time: {time}
@@ -69,19 +69,19 @@ const REMINDER_TEMPLATES = {
         Show your QR code at the door for quick check-in.
         
         See you there!
-        Wine & Grind Team
+        Alma Links Team
       `
     },
-    sms: "🍷 Wine & Grind event tomorrow {time} at {location}. Show QR code for quick entry. Can't wait to see you!"
+    sms: "🍷 Alma Links event tomorrow {time} at {location}. Show QR code for quick entry. Can't wait to see you!"
   },
   
   vip: {
     email: {
-      subject: "🌟 VIP Access: Wine & Grind Event Tomorrow",
+      subject: "🌟 VIP Access: Alma Links Event Tomorrow",
       content: `
         Hi {name},
         
-        Your VIP experience at Wine & Grind starts tomorrow:
+        Your VIP experience at Alma Links starts tomorrow:
         
         📍 Location: {location}
         🕒 VIP Early Access: {vip_time} (30 minutes before general admission)
@@ -95,17 +95,17 @@ const REMINDER_TEMPLATES = {
         Use the VIP entrance on the left side.
         
         Looking forward to hosting you!
-        Wine & Grind Team
+        Alma Links Team
       `
     },
-    sms: "🌟 VIP reminder: Wine & Grind event tomorrow. Early access {vip_time} via VIP entrance (left side). Premium experience awaits!"
+    sms: "🌟 VIP reminder: Alma Links event tomorrow. Early access {vip_time} via VIP entrance (left side). Premium experience awaits!"
   }
 };
 
 // POST-EVENT EMAIL TEMPLATES
 const POST_EVENT_TEMPLATES = {
   thankYou: {
-    subject: "🍷 Thank You for Joining Wine & Grind!",
+    subject: "🍷 Thank You for Joining Alma Links!",
     content: `
       Hi {name},
       
@@ -124,14 +124,14 @@ const POST_EVENT_TEMPLATES = {
       🤝 **Made New Connections?**
       Don't forget to follow up with the amazing people you met!
       
-      Looking forward to seeing you at the next Wine & Grind event.
+      Looking forward to seeing you at the next Alma Links event.
       
       Cheers,
-      The Wine & Grind Team
+      The Alma Links Team
     `
   },
   survey: {
-    subject: "📋 Quick Survey: How was Wine & Grind?",
+    subject: "📋 Quick Survey: How was Alma Links?",
     content: `
       Hi {name},
       
@@ -143,27 +143,27 @@ const POST_EVENT_TEMPLATES = {
       
       Your insights help us create better experiences for our community.
       
-      Thanks for being part of Wine & Grind!
+      Thanks for being part of Alma Links!
       
       Best,
-      Wine & Grind Team
+      Alma Links Team
     `
   },
   nps: {
-    subject: "⭐ Would you recommend Wine & Grind?",
+    subject: "⭐ Would you recommend Alma Links?",
     content: `
       Hi {name},
       
       Thanks again for joining us at "{event_name}"!
       
-      **Quick question:** On a scale of 0-10, how likely are you to recommend Wine & Grind to a friend or colleague?
+      **Quick question:** On a scale of 0-10, how likely are you to recommend Alma Links to a friend or colleague?
       
       {nps_buttons}
       
       Your feedback helps us improve and grow our community.
       
       Cheers,
-      Wine & Grind Team
+      Alma Links Team
     `
   }
 };
@@ -292,7 +292,7 @@ async function processReminders(intervalMs, reminderType) {
             
             try {
               await resend.emails.send({
-                from: 'Wine & Grind <events@wineandgrind.com>',
+                from: 'Alma Links <events@wineandgrind.com>',
                 to: registration.email,
                 subject: subject,
                 html: content.replace(/\n/g, '<br>'),
@@ -489,7 +489,7 @@ async function processPostEventAutomation() {
               .replace(/{slack_link}/g, process.env.SLACK_INVITE_URL || '#');
             
             await resend.emails.send({
-              from: 'Wine & Grind <events@wineandgrind.com>',
+              from: 'Alma Links <events@wineandgrind.com>',
               to: registration.email,
               subject: template.subject.replace(/{event_name}/g, event.name),
               html: content.replace(/\n/g, '<br>'),

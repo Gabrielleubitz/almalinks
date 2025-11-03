@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, Phone, Briefcase, ArrowRight, ArrowLeft, AlertCircle, ChevronDown, Linkedin } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import logoSvg from '../assets/W&G Logo.svg';
+import logoSvg from '../assets/alma-links-logo.svg';
 
 // Country codes data
 const COUNTRY_CODES = [
@@ -257,7 +257,7 @@ const SignupPage: React.FC = () => {
   // Show success message if registration was successful
   if (registrationSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-blue-50 flex items-center justify-center px-4 relative">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-4 relative">
         <div className="max-w-md w-full text-center">
           <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-6">
@@ -277,7 +277,7 @@ const SignupPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-blue-50 flex items-center justify-center px-4 relative">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-4 relative">
       {/* Logo in top left corner */}
       <div className="absolute top-6 left-6 z-10">
         <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
@@ -303,7 +303,7 @@ const SignupPage: React.FC = () => {
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-700 to-blue-600 rounded-full mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-full mb-4">
               <User className="h-8 w-8 text-white" />
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
@@ -552,7 +552,7 @@ const SignupPage: React.FC = () => {
             <button
               type="submit"
               disabled={isSubmitting || !isFormValid}
-              className="w-full bg-gradient-to-r from-red-700 to-blue-600 text-white py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>

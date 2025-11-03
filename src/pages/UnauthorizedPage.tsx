@@ -1,17 +1,19 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shield, AlertTriangle } from 'lucide-react';
-import logoSvg from '../assets/W&G Logo.svg';
+import logoSvg from '../assets/alma-links-logo.svg';
 
 const UnauthorizedPage: React.FC = () => {
+  const navigate = useNavigate();
+  
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-blue-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-4">
       {/* Logo in top left corner */}
       <div className="absolute top-6 left-6 z-10">
         <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
           <img 
             src={logoSvg}
-            alt="Wine & Grind Logo" 
+            alt="Alma Links Logo" 
             className="h-8 md:h-10 w-auto"
           />
         </Link>
@@ -34,13 +36,13 @@ const UnauthorizedPage: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="space-y-4">
-            <Link
-              to="/"
-              className="w-full bg-gradient-to-r from-red-700 to-blue-600 text-white py-3 px-6 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2"
+            <button
+              onClick={() => navigate(-1)}
+              className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white py-3 px-6 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2"
             >
               <ArrowLeft className="h-5 w-5" />
-              <span>Back to Home</span>
-            </Link>
+              <span>Back to Previous Page</span>
+            </button>
             
             <Link
               to="/dashboard"
@@ -56,10 +58,10 @@ const UnauthorizedPage: React.FC = () => {
             <p className="text-sm text-gray-500">
               If you believe this is an error, please contact support at{' '}
               <a 
-                href="mailto:info@winengrind.com" 
+                href="mailto:info@almalinks.com" 
                 className="text-red-600 hover:text-red-700 font-medium"
               >
-                info@winengrind.com
+                info@almalinks.com
               </a>
             </p>
           </div>

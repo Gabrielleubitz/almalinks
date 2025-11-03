@@ -47,16 +47,16 @@ const EventDetailPage: React.FC = () => {
   // Update document title when event loads
   useEffect(() => {
     if (event) {
-      document.title = `${event.name} - Wine & Grind`;
+      document.title = `${event.name} - Alma Links`;
     } else if (error) {
-      document.title = 'Event Not Found - Wine & Grind';
+      document.title = 'Event Not Found - Alma Links';
     } else {
-      document.title = 'Loading Event - Wine & Grind';
+      document.title = 'Loading Event - Alma Links';
     }
 
     // Cleanup: Reset title when component unmounts
     return () => {
-      document.title = 'Wine & Grind - Where Bold Ideas Meet Real Conversations';
+      document.title = 'Alma Links - Where Bold Ideas Meet Real Conversations';
     };
   }, [event, error]);
 
@@ -298,7 +298,7 @@ const EventDetailPage: React.FC = () => {
         canRegister: true,
         message: 'Registration is open',
         buttonText: 'Register Now',
-        buttonClass: 'bg-gradient-to-r from-red-700 to-blue-600 hover:shadow-lg'
+        buttonClass: 'bg-gradient-to-r from-brand-blue-dark to-brand-blue-light hover:shadow-lg'
       },
       'sold-out': {
         canRegister: false,
@@ -324,7 +324,7 @@ const EventDetailPage: React.FC = () => {
   };
 
   const handleApplyToSpeak = () => {
-    window.location.href = "mailto:speakers@winengrind.com?subject=Speaker Application for " + event?.name;
+    window.location.href = "mailto:speakers@almalinks.com?subject=Speaker Application for " + event?.name;
   };
 
   const isEventCompleted = event?.status === 'completed';
@@ -363,7 +363,7 @@ const EventDetailPage: React.FC = () => {
             <div className="space-y-4">
               <button
                 onClick={() => navigate('/events')}
-                className="bg-gradient-to-r from-red-700 to-blue-600 text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
+                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
               >
                 <ArrowLeft className="h-5 w-5" />
                 <span>Back to Events</span>
@@ -432,7 +432,7 @@ const EventDetailPage: React.FC = () => {
                   <span className="text-gray-700">{formattedDate.date}</span>
                 </div>
                 <div className="flex items-center space-x-3 text-lg">
-                  <Clock className="h-6 w-6 text-blue-600" />
+                  <Clock className="h-6 w-6 text-brand-light" />
                   <span className="text-gray-700">{formattedDate.time}</span>
                 </div>
                 <div className="flex items-center space-x-3 text-lg">
@@ -477,9 +477,9 @@ const EventDetailPage: React.FC = () => {
                         e.preventDefault();
                         navigate('/signup');
                       }}
-                      className="w-full bg-gradient-to-r from-red-700 to-blue-600 text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold text-lg"
+                      className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold text-lg"
                     >
-                      Join Wine & Grind to Register
+                      Join Alma Links to Register
                     </button>
                     <p className="text-center text-gray-600 text-sm">
                       Already have an account?{' '}
@@ -506,7 +506,7 @@ const EventDetailPage: React.FC = () => {
                           e.preventDefault();
                           setShowTicket(!showTicket);
                         }}
-                        className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2"
+                        className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2"
                       >
                         <Ticket className="h-5 w-5" />
                         <span>{showTicket ? 'Hide Ticket' : 'View Ticket'}</span>
@@ -516,7 +516,7 @@ const EventDetailPage: React.FC = () => {
                         href={createGoogleCalendarUrl()}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-white text-blue-600 border border-blue-200 px-6 py-3 rounded-full hover:bg-blue-50 transition-all duration-300 font-semibold flex items-center justify-center space-x-2"
+                        className="bg-white text-brand-light border border-blue-200 px-6 py-3 rounded-full hover:bg-blue-50 transition-all duration-300 font-semibold flex items-center justify-center space-x-2"
                       >
                         <CalendarPlus className="h-5 w-5" />
                         <span>Add to Google Calendar</span>
@@ -555,7 +555,7 @@ const EventDetailPage: React.FC = () => {
       {showTicket && isRegistered && registration && (
         <section className="py-16 bg-gray-50">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-gradient-to-br from-red-700 to-blue-600 rounded-3xl p-8 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-3xl p-8 text-white relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-12 -translate-x-12"></div>
               
@@ -689,7 +689,7 @@ const EventDetailPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <Clock className="h-5 w-5 text-blue-600" />
+                  <Clock className="h-5 w-5 text-brand-light" />
                   <div>
                     <div className="text-sm text-gray-500">Time</div>
                     <div className="font-medium text-gray-900">{formattedDate.time}</div>
@@ -718,7 +718,7 @@ const EventDetailPage: React.FC = () => {
                     href={createGoogleCalendarUrl()}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center space-x-2 w-full justify-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
+                    className="inline-flex items-center space-x-2 w-full justify-center bg-brand-dark text-white px-4 py-2 rounded-lg hover:bg-brand-mid transition-colors duration-200 font-medium"
                   >
                     <CalendarPlus className="h-5 w-5" />
                     <span>Add to Google Calendar</span>
