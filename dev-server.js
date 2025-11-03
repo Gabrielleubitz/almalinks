@@ -55,9 +55,11 @@ app.post('/api/admin/chats', (req, res) => {
   adminChatsHandler(req, res);
 });
 
-// User Admin API - New comprehensive user management
-app.post('/api/user-admin', (req, res) => {
-  console.log('User Admin API called:', req.body?.action);
+// User Admin API - Comprehensive user management (handles POST and GET)
+// GET requests with ?locations query param route to member locations
+app.all('/api/user-admin', (req, res) => {
+  const action = req.method === 'GET' ? 'getUserLocations' : req.body?.action;
+  console.log(`User Admin API called: ${req.method} ${action || ''}`);
   userAdminHandler(req, res);
 });
 
@@ -77,13 +79,6 @@ app.all('/api/email-service', (req, res) => {
 app.post('/api/delete-user', (req, res) => {
   console.log('Delete User API called:', req.body);
   deleteUserHandler(req, res);
-});
-
-// Users Locations API - Get all users with location data for Member Map
-// Routed through user-admin.js to consolidate functions (Vercel limit: 12 functions)
-app.get('/api/users-locations', (req, res) => {
-  console.log('Users Locations API called (via user-admin)');
-  userAdminHandler(req, res);
 });
 
 // Temporarily disabled APIs due to import issues
@@ -127,8 +122,7 @@ app.listen(PORT, () => {
   console.log('Available endpoints:');
   console.log('  - POST http://localhost:3001/api/chat');
   console.log('  - POST http://localhost:3001/api/admin/chats');
-  console.log('  - POST http://localhost:3001/api/user-admin          User management');
-  console.log('  - GET  http://localhost:3001/api/users-locations     Member map locations (via user-admin)');
+  console.log('  - ALL  http://localhost:3001/api/user-admin          User management (POST) & locations (GET)');
   console.log('  - POST http://localhost:3001/api/activity-admin      Activity tracking');
   console.log('  - ALL  http://localhost:3001/api/email-service       Consolidated email');
   console.log('  - POST http://localhost:3001/api/delete-user         Delete users');
