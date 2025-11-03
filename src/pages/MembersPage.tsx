@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Briefcase, Plus, Linkedin, User, Filter, Grid, List, ExternalLink } from 'lucide-react';
+import { Search, MapPin, Briefcase, Plus, Linkedin, User, Filter, Grid, List, ExternalLink, Map } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { UserService } from '../services/userService';
 import { ConnectionService } from '../services/connectionService';
@@ -7,6 +7,7 @@ import { UserCard as UserCardType } from '../types/user';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import MemberMap from '../components/MemberMap';
 
 interface MemberCard extends UserCardType {
   firstName?: string;
@@ -26,6 +27,7 @@ const MembersPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [connectingUsers, setConnectingUsers] = useState<Set<string>>(new Set());
+  const [showMemberMap, setShowMemberMap] = useState(false);
 
   useEffect(() => {
     loadMembers();
@@ -473,14 +475,23 @@ const MembersPage: React.FC = () => {
                     className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
                   />
                 </div>
-                
+
+                {/* View Member Map Button */}
+                <button
+                  onClick={() => setShowMemberMap(true)}
+                  className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all shadow-sm font-medium whitespace-nowrap"
+                >
+                  <Map className="h-5 w-5" />
+                  <span>View Map</span>
+                </button>
+
                 {/* View Toggle */}
                 <div className="flex bg-white rounded-2xl p-1 shadow-sm border border-gray-200">
                   <button
                     onClick={() => setViewMode('grid')}
                     className={`p-2 rounded-xl transition-all ${
-                      viewMode === 'grid' 
-                        ? 'bg-blue-600 text-white shadow-sm' 
+                      viewMode === 'grid'
+                        ? 'bg-blue-600 text-white shadow-sm'
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
@@ -489,8 +500,8 @@ const MembersPage: React.FC = () => {
                   <button
                     onClick={() => setViewMode('list')}
                     className={`p-2 rounded-xl transition-all ${
-                      viewMode === 'list' 
-                        ? 'bg-blue-600 text-white shadow-sm' 
+                      viewMode === 'list'
+                        ? 'bg-blue-600 text-white shadow-sm'
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
@@ -556,6 +567,9 @@ const MembersPage: React.FC = () => {
       </section>
 
       <Footer />
+
+      {/* Member Map Modal */}
+      <MemberMap isOpen={showMemberMap} onClose={() => setShowMemberMap(false)} />
     </div>
   );
 };

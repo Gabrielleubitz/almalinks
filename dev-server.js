@@ -2,21 +2,26 @@ import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { config } from 'dotenv';
+
+// Load environment variables FIRST before any imports that use them
+config();
+
+// Initialize Firebase Admin ONCE before importing API handlers
+import './api/firebase-init.js';
+
 import chatHandler from './api/chat.js';
 import adminChatsHandler from './api/admin/chats.js';
 import userAdminHandler from './api/user-admin.js';
 import activityAdminHandler from './api/activity-admin.js';
 import emailServiceHandler from './api/email-service.js';
 import deleteUserHandler from './api/delete-user.js';
+import usersLocationsHandler from './api/users-locations.js';
 // Temporarily disabled problematic imports
 // import systemTestHandler from './api/system-test.js';
 // import adminToolsHandler from './api/admin-tools.js';
 // import automationHubHandler from './api/automation-hub.js';
 // import sendSmsHandler from './api/send-sms.js';
 // import chatApiHandler from './api/chat-api.js';
-
-// Load environment variables from .env file
-config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -75,6 +80,12 @@ app.post('/api/delete-user', (req, res) => {
   deleteUserHandler(req, res);
 });
 
+// Users Locations API - Get all users with location data for Member Map
+app.get('/api/users-locations', (req, res) => {
+  console.log('Users Locations API called');
+  usersLocationsHandler(req, res);
+});
+
 // Temporarily disabled APIs due to import issues
 // // System Test API
 // app.all('/api/system-test', (req, res) => {
@@ -118,6 +129,7 @@ app.listen(PORT, () => {
   console.log('  - POST http://localhost:3001/api/admin/chats');
   console.log('  - POST http://localhost:3001/api/user-admin          [NEW] User management');
   console.log('  - POST http://localhost:3001/api/activity-admin      [NEW] Activity tracking');
+  console.log('  - GET  http://localhost:3001/api/users-locations     [NEW] Member map locations');
   console.log('  - ALL  http://localhost:3001/api/email-service       Consolidated email');
   console.log('  - POST http://localhost:3001/api/delete-user         Delete users');
   console.log('  - GET  http://localhost:3001/api/health              Health check');
