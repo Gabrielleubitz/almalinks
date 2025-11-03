@@ -15,7 +15,6 @@ import userAdminHandler from './api/user-admin.js';
 import activityAdminHandler from './api/activity-admin.js';
 import emailServiceHandler from './api/email-service.js';
 import deleteUserHandler from './api/delete-user.js';
-import usersLocationsHandler from './api/users-locations.js';
 // Temporarily disabled problematic imports
 // import systemTestHandler from './api/system-test.js';
 // import adminToolsHandler from './api/admin-tools.js';
@@ -81,9 +80,10 @@ app.post('/api/delete-user', (req, res) => {
 });
 
 // Users Locations API - Get all users with location data for Member Map
+// Routed through user-admin.js to consolidate functions (Vercel limit: 12 functions)
 app.get('/api/users-locations', (req, res) => {
-  console.log('Users Locations API called');
-  usersLocationsHandler(req, res);
+  console.log('Users Locations API called (via user-admin)');
+  userAdminHandler(req, res);
 });
 
 // Temporarily disabled APIs due to import issues
@@ -127,12 +127,13 @@ app.listen(PORT, () => {
   console.log('Available endpoints:');
   console.log('  - POST http://localhost:3001/api/chat');
   console.log('  - POST http://localhost:3001/api/admin/chats');
-  console.log('  - POST http://localhost:3001/api/user-admin          [NEW] User management');
-  console.log('  - POST http://localhost:3001/api/activity-admin      [NEW] Activity tracking');
-  console.log('  - GET  http://localhost:3001/api/users-locations     [NEW] Member map locations');
+  console.log('  - POST http://localhost:3001/api/user-admin          User management');
+  console.log('  - GET  http://localhost:3001/api/users-locations     Member map locations (via user-admin)');
+  console.log('  - POST http://localhost:3001/api/activity-admin      Activity tracking');
   console.log('  - ALL  http://localhost:3001/api/email-service       Consolidated email');
   console.log('  - POST http://localhost:3001/api/delete-user         Delete users');
   console.log('  - GET  http://localhost:3001/api/health              Health check');
   console.log('');
   console.log('Note: Some APIs temporarily disabled due to import issues');
+  console.log('Note: Functions consolidated to stay within Vercel Hobby limit (12 functions)');
 });

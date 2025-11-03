@@ -1,5 +1,9 @@
 # Member Map Feature - Setup Instructions
 
+## Important: Vercel Function Consolidation
+
+The Member Map API endpoint has been consolidated into `api/user-admin.js` to stay within Vercel Hobby plan's 12 function limit. The endpoint `/api/users-locations` still works the same way - it's just routed through user-admin.js internally.
+
 ## Firestore Index Required
 
 The Member Map uses an efficient query that requires a Firestore composite index:
@@ -54,7 +58,7 @@ Fields: city (!=) + country (!=)
 - ✅ Firebase Spark plan compatible
 
 **For 1,000+ users:**
-- Increase limit in `api/users-locations.js` line 33
+- Increase limit in `api/user-admin.js` getUserLocations function (line 595)
 - Consider pagination or geographic clustering
 - Upgrade to Firebase Blaze plan for higher quotas
 
