@@ -202,33 +202,39 @@ const SpeakerAwareHeader: React.FC = () => {
             >
               Members
             </button>
+
+            {/* Chats Icon with Badge */}
             <button
               onClick={() => navigate('/chats')}
-              className={`relative text-sm font-medium transition-colors duration-200 ${
+              className={`relative p-2 rounded-lg transition-all duration-200 ${
                 location.pathname === '/chats'
-                  ? 'text-brand-dark font-semibold'
-                  : 'text-gray-600 hover:text-brand-blue'
+                  ? 'text-brand-dark bg-brand-light'
+                  : 'text-gray-600 hover:text-brand-blue hover:bg-gray-50'
               }`}
+              title="Chats"
             >
-              Chats
+              <MessageCircle className="h-5 w-5" />
               {notificationCounts.unreadChats > 0 && (
-                <span className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full">
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full shadow-lg">
                   {notificationCounts.unreadChats > 99 ? '99+' : notificationCounts.unreadChats}
                 </span>
               )}
             </button>
+
+            {/* Admin Icon with Badge */}
             {isAdmin && (
               <button
                 onClick={() => navigate('/admin')}
-                className={`relative text-sm font-medium transition-colors duration-200 ${
+                className={`relative p-2 rounded-lg transition-all duration-200 ${
                   location.pathname.startsWith('/admin')
-                    ? 'text-brand-dark font-semibold'
-                    : 'text-brand-dark hover:text-brand-dark-hover'
+                    ? 'text-brand-dark bg-purple-50'
+                    : 'text-brand-dark hover:text-brand-dark-hover hover:bg-gray-50'
                 }`}
+                title="Admin Panel"
               >
-                Admin
+                <Shield className="h-5 w-5" />
                 {notificationCounts.pendingRegistrations > 0 && (
-                  <span className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-purple-500 rounded-full">
+                  <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-purple-500 rounded-full shadow-lg">
                     {notificationCounts.pendingRegistrations > 99 ? '99+' : notificationCounts.pendingRegistrations}
                   </span>
                 )}
