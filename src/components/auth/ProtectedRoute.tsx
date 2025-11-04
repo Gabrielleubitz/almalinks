@@ -85,6 +85,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
     return <Navigate to="/login" replace />;
   }
 
+  // Check if user must change password - CRITICAL CHECK
+  if (user.mustChangePassword && window.location.pathname !== '/change-password') {
+    console.log('🔐 ProtectedRoute - User must change password, redirecting to change password page');
+    return <Navigate to="/change-password" replace />;
+  }
+
   // Check role-based access
   if (requiredRole) {
     console.log('🔍 ProtectedRoute - Role check:', { 

@@ -111,7 +111,11 @@ export const useAuth = () => {
           timezone: userData.timezone || '',
           website: userData.website || '',
           twitter: userData.twitter || '',
-          skills: userData.skills || []
+          skills: userData.skills || [],
+          mustChangePassword: userData.mustChangePassword || false,
+          tempPasswordSet: userData.tempPasswordSet || false,
+          passwordResetForcedAt: userData.passwordResetForcedAt || null,
+          passwordResetForcedBy: userData.passwordResetForcedBy || null
         };
       }
       return null;
