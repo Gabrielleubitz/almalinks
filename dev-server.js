@@ -81,13 +81,6 @@ app.post('/api/delete-user', (req, res) => {
   deleteUserHandler(req, res);
 });
 
-// Users Locations API - Get all users with location data for Member Map
-// Routed through user-admin.js to consolidate functions (Vercel limit: 12 functions)
-app.get('/api/users-locations', (req, res) => {
-  console.log('Users Locations API called (via user-admin)');
-  userAdminHandler(req, res);
-});
-
 // Temporarily disabled APIs due to import issues
 // // System Test API
 // app.all('/api/system-test', (req, res) => {
@@ -129,8 +122,7 @@ app.listen(PORT, () => {
   console.log('Available endpoints:');
   console.log('  - POST http://localhost:3001/api/chat');
   console.log('  - POST http://localhost:3001/api/admin/chats');
-  console.log('  - POST http://localhost:3001/api/user-admin          User management');
-  console.log('  - GET  http://localhost:3001/api/users-locations     Member map locations (via user-admin)');
+  console.log('  - ALL  http://localhost:3001/api/user-admin          User management (POST) & locations (GET)');
   console.log('  - POST http://localhost:3001/api/activity-admin      Activity tracking');
   console.log('  - ALL  http://localhost:3001/api/email-service       Consolidated email');
   console.log('  - POST http://localhost:3001/api/delete-user         Delete users');

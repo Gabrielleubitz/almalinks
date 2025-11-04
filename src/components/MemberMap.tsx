@@ -121,7 +121,7 @@ const MemberMap: React.FC<MemberMapProps> = ({ isOpen, onClose }) => {
       setStatsText('Fetching members...');
 
       // Fetch users with location data
-      const response = await fetch('/api/users-locations');
+      const response = await fetch('/api/user-admin?locations');
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
