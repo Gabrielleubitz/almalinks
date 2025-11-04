@@ -1000,8 +1000,8 @@ export class ChatService {
    * Subscribe to chat messages in real-time
    */
   static subscribeToMessages(
-    chatId: string, 
-    userId: string, 
+    chatId: string,
+    userId: string,
     callback: (messages: ChatMessage[]) => void,
     onError?: (error: Error) => void
   ) {
@@ -1014,7 +1014,7 @@ export class ChatService {
 
     return onSnapshot(
       messagesQuery,
-      (snapshot) => {
+      async (snapshot) => {
         const messages = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
@@ -1023,12 +1023,47 @@ export class ChatService {
         // Reverse to show oldest first
         messages.reverse();
         callback(messages);
+
+        // Update lastRead timestamp when messages are loaded
+        if (messages.length > 0) {
+          await this.markChatAsRead(chatId, userId);
+        }
       },
       (error) => {
         console.error('❌ Error in messages subscription:', error);
         onError?.(error);
       }
     );
+  }
+
+  /**
+   * Mark chat as read by updating lastRead timestamp
+   */
+  static async markChatAsRead(chatId: string, userId: string): Promise<void> {
+    try {
+      // Find the chat_member document
+      const memberQuery = query(
+        collection(db, 'chat_members'),
+        where('chatId', '==', chatId),
+        where('userId', '==', userId)
+      );
+
+      const memberSnap = await getDocs(memberQuery);
+      if (memberSnap.empty) {
+        console.warn(`⚠️ Chat membership not found for user ${userId} in chat ${chatId}`);
+        return;
+      }
+
+      const memberDoc = memberSnap.docs[0];
+      await updateDoc(doc(db, 'chat_members', memberDoc.id), {
+        lastRead: Timestamp.now()
+      });
+
+      console.log(`✅ Marked chat ${chatId} as read for user ${userId}`);
+    } catch (error) {
+      console.error('❌ Error marking chat as read:', error);
+      // Don't throw error - this is a non-critical operation
+    }
   }
 
   // Private helper methods

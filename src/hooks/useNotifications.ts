@@ -45,6 +45,8 @@ export const useNotifications = (userId: string | undefined, isAdmin: boolean = 
 
     // Subscribe to unread chats count (excluding muted chats)
     const subscribeToUnreadChats = async (uid: string) => {
+      console.log('🔔 Setting up unread chats subscription for user:', uid);
+
       // Get user's chat memberships
       const membershipsQuery = query(
         collection(db, 'chat_members'),
@@ -52,6 +54,7 @@ export const useNotifications = (userId: string | undefined, isAdmin: boolean = 
       );
 
       return onSnapshot(membershipsQuery, async (snapshot) => {
+        console.log(`📊 Processing ${snapshot.docs.length} chat memberships`);
         let totalUnread = 0;
 
         for (const memberDoc of snapshot.docs) {
@@ -59,6 +62,12 @@ export const useNotifications = (userId: string | undefined, isAdmin: boolean = 
           const chatId = memberData.chatId;
           const isMuted = memberData.muted || false;
           const lastRead = memberData.lastRead?.toMillis() || 0;
+
+          console.log(`💬 Chat ${chatId}:`, {
+            isMuted,
+            lastRead: lastRead > 0 ? new Date(lastRead).toISOString() : 'never read',
+            lastReadTimestamp: lastRead
+          });
 
           // Skip muted chats
           if (isMuted) {
@@ -74,18 +83,30 @@ export const useNotifications = (userId: string | undefined, isAdmin: boolean = 
 
           try {
             const messagesSnap = await getDocs(messagesQuery);
-            const unreadInChat = messagesSnap.docs.filter(msgDoc => {
-              const msgData = msgDoc.data();
-              const msgTime = msgData.timestamp?.toMillis() || 0;
-              return msgTime > lastRead && msgData.senderId !== uid;
-            }).length;
+            console.log(`📨 Chat ${chatId} has ${messagesSnap.docs.length} total messages`);
 
+            const unreadMessages = messagesSnap.docs.filter(msgDoc => {
+              const msgData = msgDoc.data();
+              const msgTime = msgData.createdAt?.toMillis() || 0;
+              const isFromOther = msgData.userId !== uid && msgData.type !== 'system';
+              const isNewer = msgTime > lastRead;
+
+              if (isFromOther && isNewer) {
+                console.log(`  ✉️ Unread message from ${msgData.userId} at ${new Date(msgTime).toISOString()}`);
+              }
+
+              return isNewer && isFromOther;
+            });
+
+            const unreadInChat = unreadMessages.length;
+            console.log(`  📬 ${unreadInChat} unread messages in chat ${chatId}`);
             totalUnread += unreadInChat;
           } catch (error) {
             console.error(`❌ Error counting unread messages for chat ${chatId}:`, error);
           }
         }
 
+        console.log(`🔔 Total unread messages: ${totalUnread}`);
         setCounts(prev => ({
           ...prev,
           unreadChats: totalUnread,
