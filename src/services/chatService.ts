@@ -158,14 +158,39 @@ export class ChatService {
         const membersSnap = await getDocs(membersQuery);
         const memberCount = membersSnap.size;
 
-        // Get unread count (placeholder - would need read receipts)
-        const unreadCount = 0;
+        // Get unread count by comparing lastRead timestamp with message timestamps
+        let unreadCount = 0;
+        const isMuted = membership.muted || false;
+
+        // Only calculate unread if not muted (muted chats don't show notifications)
+        if (!isMuted) {
+          const lastRead = membership.lastRead?.toMillis() || 0;
+
+          // Get messages in this chat
+          const messagesQuery = query(
+            collection(db, 'chat_messages'),
+            where('chatId', '==', membership.chatId)
+          );
+
+          try {
+            const messagesSnap = await getDocs(messagesQuery);
+            unreadCount = messagesSnap.docs.filter(msgDoc => {
+              const msgData = msgDoc.data();
+              const msgTime = msgData.createdAt?.toMillis() || 0;
+              const isFromOther = msgData.userId !== userId && msgData.type !== 'system';
+              const isNewer = msgTime > lastRead;
+              return isNewer && isFromOther;
+            }).length;
+          } catch (error) {
+            console.error(`❌ Error counting unread messages for chat ${membership.chatId}:`, error);
+          }
+        }
 
         // Get last message preview
         let lastMessagePreview = 'No messages yet';
         if (chatData.lastMessage) {
-          lastMessagePreview = chatData.lastMessage.type === 'system' 
-            ? chatData.lastMessage.text 
+          lastMessagePreview = chatData.lastMessage.type === 'system'
+            ? chatData.lastMessage.text
             : `${chatData.lastMessage.text?.substring(0, 50)}...`;
         }
 

@@ -225,9 +225,16 @@ const ChatsPage: React.FC = () => {
                           {chat.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-brand-light transition-colors truncate">
-                            {chat.name}
-                          </h3>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-brand-light transition-colors truncate">
+                              {chat.name}
+                            </h3>
+                            {chat.unreadCount > 0 && (
+                              <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-2 text-xs font-bold text-white bg-red-500 rounded-full shadow-sm">
+                                {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center space-x-4 text-sm text-gray-500">
                             <div className="flex items-center space-x-1">
                               <Users className="h-4 w-4" />
@@ -257,15 +264,14 @@ const ChatsPage: React.FC = () => {
                           <span className="font-medium">Last message:</span> {chat.lastMessagePreview}
                         </p>
                       )}
-
-                      {chat.unreadCount > 0 && (
-                        <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 mt-2">
-                          {chat.unreadCount} unread
-                        </div>
-                      )}
                     </div>
 
-                    <div className="ml-4">
+                    <div className="ml-4 flex items-center gap-2">
+                      {chat.unreadCount > 0 && (
+                        <div className="text-red-500 font-semibold text-sm">
+                          {chat.unreadCount} new
+                        </div>
+                      )}
                       <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
                     </div>
                   </div>
