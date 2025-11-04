@@ -242,13 +242,14 @@ const SignupPage: React.FC = () => {
     }
   };
 
-  const isFormValid = formData.name.trim() && 
-                     formData.email.trim() && 
-                     formData.phoneNumber.trim() && 
+  const isFormValid = formData.name.trim() &&
+                     formData.email.trim() &&
+                     formData.phoneNumber.trim() &&
+                     formData.company.trim() &&
                      formData.work.trim() &&
                      formData.linkedinUsername.trim() &&
                      formData.position &&
-                     formData.password.trim() && 
+                     formData.password.trim() &&
                      formData.password.length >= 6;
 
   const displayError = validationError || error;
