@@ -226,13 +226,9 @@ const SignupPage: React.FC = () => {
         status: 'pending' // Set initial status as pending
       });
       
-      // Set success state to show message before redirect
+      // Set success state to show message
+      // The useEffect hook will handle navigation once user state updates
       setRegistrationSuccess(true);
-      
-      // Redirect to pending page after a short delay
-      setTimeout(() => {
-        navigate('/pending');
-      }, 2000);
       
     } catch (err) {
       console.error('Registration error:', err);
@@ -268,7 +264,7 @@ const SignupPage: React.FC = () => {
               Registration Successful!
             </h2>
             <p className="text-gray-600 mb-6">
-              Your account has been created and is pending admin approval. You'll be redirected to the pending page.
+              Your account has been created and is pending admin approval. Setting up your account...
             </p>
             <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto"></div>
           </div>

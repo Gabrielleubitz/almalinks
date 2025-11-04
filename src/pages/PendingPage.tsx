@@ -6,7 +6,7 @@ import logoSvg from '../assets/alma-links-logo.svg';
 
 const PendingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -16,6 +16,18 @@ const PendingPage: React.FC = () => {
       console.error('Logout error:', error);
     }
   };
+
+  // Show loading state while auth is being set up
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your account...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-4 relative">
