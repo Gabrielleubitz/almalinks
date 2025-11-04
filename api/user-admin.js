@@ -613,9 +613,10 @@ async function getUserLocations(req, res) {
 
     // EFFICIENT QUERY: Only fetch users who have BOTH city AND country
     // This dramatically reduces the number of documents we need to read
+    // Note: Using '>' instead of '!=' because Firestore only allows one != operator per query
     const usersSnapshot = await db.collection('users')
-      .where('city', '!=', null)
-      .where('country', '!=', null)
+      .where('city', '>', '')
+      .where('country', '>', '')
       .limit(1000) // Reasonable limit for most use cases
       .get();
 

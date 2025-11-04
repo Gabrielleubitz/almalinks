@@ -10,8 +10,11 @@ The Member Map uses an efficient query that requires a Firestore composite index
 
 ```
 Collection: users
-Fields: city (!=) + country (!=)
+Fields: city (Ascending) + country (Ascending)
+Query scope: Collection
 ```
+
+**Note:** The query uses `city > ''` and `country > ''` operators to check for non-empty values, which allows multiple range filters in a single query.
 
 ### How to Create the Index:
 
