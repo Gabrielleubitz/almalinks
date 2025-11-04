@@ -6,16 +6,24 @@ if (!admin.apps.length) {
   try {
     // Try to use service account key from environment variable (Vercel production)
     if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-      // Check if it's base64 encoded (more reliable for Vercel)
       let serviceAccountKey;
+      const rawKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+
       try {
-        // Try base64 decode first
-        const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_KEY, 'base64').toString('utf8');
-        serviceAccountKey = JSON.parse(decoded);
-      } catch {
-        // If base64 decode fails, try parsing as JSON directly
-        serviceAccountKey = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+        // Try parsing as JSON first
+        serviceAccountKey = JSON.parse(rawKey);
+      } catch (jsonError) {
+        // If JSON parse fails, try decoding from base64
+        try {
+          console.log('🔍 Attempting to decode base64-encoded credentials...');
+          const decodedKey = Buffer.from(rawKey, 'base64').toString('utf8');
+          serviceAccountKey = JSON.parse(decodedKey);
+          console.log('✅ Successfully decoded base64 credentials');
+        } catch (base64Error) {
+          throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is neither valid JSON nor valid base64-encoded JSON');
+        }
       }
+
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccountKey),
       });

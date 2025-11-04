@@ -4,16 +4,25 @@ let firebaseApp;
 
 function initializeFirebaseAdmin() {
   if (!firebaseApp) {
-    const key = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    if (!key) {
+    const rawKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    if (!rawKey) {
       throw new Error('Missing FIREBASE_SERVICE_ACCOUNT_KEY environment variable');
     }
 
     let serviceAccount;
     try {
-      serviceAccount = JSON.parse(key);
-    } catch (err) {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is not valid JSON');
+      // Try parsing as JSON first
+      serviceAccount = JSON.parse(rawKey);
+    } catch (jsonError) {
+      // If JSON parse fails, try decoding from base64
+      try {
+        console.log('🔍 Attempting to decode base64-encoded credentials...');
+        const decodedKey = Buffer.from(rawKey, 'base64').toString('utf8');
+        serviceAccount = JSON.parse(decodedKey);
+        console.log('✅ Successfully decoded base64 credentials');
+      } catch (base64Error) {
+        throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is neither valid JSON nor valid base64-encoded JSON');
+      }
     }
 
     firebaseApp = admin.initializeApp({
