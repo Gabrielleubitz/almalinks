@@ -3,13 +3,27 @@ import admin from 'firebase-admin';
 
 // Initialize Firebase Admin (reuse existing instance if available)
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  });
+  try {
+    // Try to use service account key from environment variable first (Vercel production)
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      const serviceAccountKey = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccountKey),
+      });
+    } else {
+      // Fallback to individual environment variables (local development)
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        }),
+      });
+    }
+  } catch (error) {
+    console.error('Failed to initialize Firebase Admin:', error);
+    throw error;
+  }
 }
 
 const db = admin.firestore();
