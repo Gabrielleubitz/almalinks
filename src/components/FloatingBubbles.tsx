@@ -233,11 +233,13 @@ const FloatingBubbles = () => {
               left: `${bubble.x}%`,
               top: `${bubble.y}%`,
               zIndex: bubble.zIndex,
+              animationName: prefersReducedMotion ? 'none' : 'floatGentle',
               animationDelay: `${bubble.animationDelay}s`,
               animationDuration: `${bubble.animationDuration}s`,
+              animationTimingFunction: 'ease-in-out',
+              animationIterationCount: 'infinite',
               opacity: expandedBubble !== null ? bubble.opacity * 0.3 : bubble.opacity,
               transform: `translate(-50%, -50%)`,
-              animation: prefersReducedMotion ? 'none' : 'floatGentle 15s ease-in-out infinite',
               willChange: prefersReducedMotion ? 'auto' : 'transform'
             }}
           />
@@ -286,8 +288,11 @@ const FloatingBubbles = () => {
                       maxHeight: '120px',
                       zIndex: profile.zIndex,
                       transform: 'translate(-50%, -50%)',
-                      animation: prefersReducedMotion ? 'none' : `randomFloat-${index} ${profile.animationDuration}s linear infinite`,
+                      animationName: prefersReducedMotion ? 'none' : `randomFloat-${index}`,
+                      animationDuration: `${profile.animationDuration}s`,
                       animationDelay: `${profile.animationDelay}s`,
+                      animationTimingFunction: 'linear',
+                      animationIterationCount: 'infinite',
                       willChange: prefersReducedMotion ? 'auto' : 'transform, opacity'
                     }}
                     onClick={() => handleBubbleClick(index)}
@@ -334,11 +339,13 @@ const FloatingBubbles = () => {
                   height: `${Math.max(20, Math.min(40, 20 + Math.random() * 20))}px`,
                   top: `${Math.random() * 100}%`,
                   right: `${Math.random() * 100}%`,
+                  animationName: prefersReducedMotion ? 'none' : 'floatGentle',
                   animationDelay: `${Math.random() * 6}s`,
                   animationDuration: `${10 + Math.random() * 5}s`,
+                  animationTimingFunction: 'ease-in-out',
+                  animationIterationCount: 'infinite',
                   zIndex: 25,
                   transform: 'translate(-50%, -50%)',
-                  animation: prefersReducedMotion ? 'none' : 'floatGentle 12s ease-in-out infinite',
                   willChange: prefersReducedMotion ? 'auto' : 'transform'
                 }}
                 aria-hidden="true"
