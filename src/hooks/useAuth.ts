@@ -138,27 +138,30 @@ export const useAuth = () => {
 
       if (!userDoc.exists()) {
         // Create new user profile
-        const newUserData = {
+        // Only include fields that have actual values to prevent overwriting with empty strings
+        const newUserData: any = {
           ...baseData,
           name: profileData?.name || firebaseUser.displayName || '',
-          phone: profileData?.phone || '',
-          company: profileData?.company || '',
-          work: profileData?.work || '',
-          linkedinUsername: profileData?.linkedinUsername || '',
-          position: profileData?.position || '',
-          profileImage: profileData?.profileImage || null,
-          bioTitle: profileData?.bioTitle || '',
-          bio: profileData?.bio || '',
-          city: profileData?.city || '',
-          country: profileData?.country || '',
-          timezone: profileData?.timezone || '',
-          website: profileData?.website || '',
-          twitter: profileData?.twitter || '',
-          skills: profileData?.skills || [],
           role: 'member',
           status: 'pending', // New users start with pending status
           createdAt: serverTimestamp()
         };
+
+        // Add optional fields only if they have values
+        if (profileData?.phone) newUserData.phone = profileData.phone;
+        if (profileData?.company) newUserData.company = profileData.company;
+        if (profileData?.work) newUserData.work = profileData.work;
+        if (profileData?.linkedinUsername) newUserData.linkedinUsername = profileData.linkedinUsername;
+        if (profileData?.position) newUserData.position = profileData.position;
+        if (profileData?.profileImage !== undefined) newUserData.profileImage = profileData.profileImage;
+        if (profileData?.bioTitle) newUserData.bioTitle = profileData.bioTitle;
+        if (profileData?.bio) newUserData.bio = profileData.bio;
+        if (profileData?.city) newUserData.city = profileData.city;
+        if (profileData?.country) newUserData.country = profileData.country;
+        if (profileData?.timezone) newUserData.timezone = profileData.timezone;
+        if (profileData?.website) newUserData.website = profileData.website;
+        if (profileData?.twitter) newUserData.twitter = profileData.twitter;
+        if (profileData?.skills && profileData.skills.length > 0) newUserData.skills = profileData.skills;
 
         console.log('📝 Creating user profile with data:', newUserData);
         console.log('📋 Profile data received:', JSON.stringify({
@@ -168,7 +171,8 @@ export const useAuth = () => {
           linkedinUsername: profileData?.linkedinUsername,
           position: profileData?.position
         }, null, 2));
-        await retryOnNetworkFailure(async () => setDoc(userDocRef, newUserData));
+        // Use merge: true to prevent race conditions from overwriting data
+        await retryOnNetworkFailure(async () => setDoc(userDocRef, newUserData, { merge: true }));
         console.log('✅ Created new user profile with pending status');
         
         // Send signup confirmation email to user

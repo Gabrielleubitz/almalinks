@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, Phone, Briefcase, ArrowRight, ArrowLeft, AlertCircle, ChevronDown, Linkedin } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, Briefcase, ArrowRight, ArrowLeft, AlertCircle, ChevronDown, Linkedin, CheckCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import logoSvg from '../assets/alma-links-logo.svg';
 
