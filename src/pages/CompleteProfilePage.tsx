@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Phone, Briefcase, ArrowRight, ArrowLeft, CheckCircle, ChevronDown } from 'lucide-react';
+import { User, Phone, Briefcase, ArrowRight, ArrowLeft, CheckCircle, ChevronDown, Building2, Linkedin } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import logoSvg from '../assets/alma-links-logo.svg';
 
@@ -42,6 +42,23 @@ const COUNTRY_CODES = [
   { code: '+57', name: 'Colombia', flag: '🇨🇴' },
 ];
 
+// Position options
+const POSITION_OPTIONS = [
+  { value: 'investor', label: 'Investor' },
+  { value: 'c_level', label: 'C-Level Executive (CEO, CTO, etc.)' },
+  { value: 'vp_level', label: 'VP Level' },
+  { value: 'director', label: 'Director' },
+  { value: 'senior_manager', label: 'Senior Manager' },
+  { value: 'manager', label: 'Manager' },
+  { value: 'senior_contributor', label: 'Senior Contributor' },
+  { value: 'individual_contributor', label: 'Individual Contributor' },
+  { value: 'junior_level', label: 'Junior Level' },
+  { value: 'founder', label: 'Founder' },
+  { value: 'consultant', label: 'Consultant' },
+  { value: 'student', label: 'Student' },
+  { value: 'other', label: 'Other' }
+];
+
 const CompleteProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { user, updateProfile, error, loading, checkProfileComplete } = useAuth();
@@ -51,6 +68,9 @@ const CompleteProfilePage: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedCountryCode, setSelectedCountryCode] = useState('+972'); // Default to Israel
   const [work, setWork] = useState('');
+  const [company, setCompany] = useState('');
+  const [linkedinUsername, setLinkedinUsername] = useState('');
+  const [position, setPosition] = useState('');
   const [profileInitialized, setProfileInitialized] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
@@ -77,25 +97,31 @@ const CompleteProfilePage: React.FC = () => {
   useEffect(() => {
     if (user && !profileInitialized) {
       console.log('🔄 Initializing profile form with user data:', user);
-      
+
       setName(user.displayName || '');
       setWork(user.work || '');
-      
+      setCompany(user.company || '');
+      setLinkedinUsername(user.linkedinUsername || '');
+      setPosition(user.position || '');
+
       // Parse existing phone number
       if (user.phone) {
         const { countryCode, phoneNumber } = parseExistingPhone(user.phone);
         setSelectedCountryCode(countryCode);
         setPhoneNumber(phoneNumber);
       }
-      
+
       setProfileInitialized(true);
 
       // Determine which fields are missing
       const missing: string[] = [];
       if (!user.displayName) missing.push('name');
       if (!user.phone) missing.push('phone');
+      if (!user.company) missing.push('company');
       if (!user.work) missing.push('work');
-      
+      if (!user.linkedinUsername) missing.push('linkedinUsername');
+      if (!user.position) missing.push('position');
+
       setMissingFields(missing);
       console.log('📝 Missing fields:', missing);
 
@@ -152,7 +178,10 @@ const CompleteProfilePage: React.FC = () => {
       switch (field) {
         case 'name': return !name.trim();
         case 'phone': return !phoneNumber.trim();
+        case 'company': return !company.trim();
         case 'work': return !work.trim();
+        case 'linkedinUsername': return !linkedinUsername.trim();
+        case 'position': return !position;
         default: return false;
       }
     });
@@ -170,11 +199,17 @@ const CompleteProfilePage: React.FC = () => {
         formattedPhone = formatPhoneNumber(selectedCountryCode, phoneNumber);
       }
 
-      console.log('📝 Updating profile with:', { name, phone: formattedPhone, work });
-      await updateProfile({ 
-        name, 
-        phone: formattedPhone, 
-        work 
+      // Format LinkedIn username (remove any linkedin.com prefix)
+      const formattedLinkedin = linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '');
+
+      console.log('📝 Updating profile with:', { name, phone: formattedPhone, company, work, linkedinUsername: formattedLinkedin, position });
+      await updateProfile({
+        name,
+        phone: formattedPhone,
+        company,
+        work,
+        linkedinUsername: formattedLinkedin,
+        position
       });
       console.log('✅ Profile updated successfully');
       navigate('/events');
@@ -189,7 +224,10 @@ const CompleteProfilePage: React.FC = () => {
     switch (field) {
       case 'name': return name.trim();
       case 'phone': return phoneNumber.trim();
+      case 'company': return company.trim();
       case 'work': return work.trim();
+      case 'linkedinUsername': return linkedinUsername.trim();
+      case 'position': return position;
       default: return true;
     }
   });
@@ -365,6 +403,94 @@ const CompleteProfilePage: React.FC = () => {
                   placeholder="e.g., CEO at TechCorp, Software Engineer, Investor"
                 />
                 {!missingFields.includes('work') && (
+                  <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-500" />
+                )}
+              </div>
+            </div>
+
+            {/* Company */}
+            <div>
+              <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
+                Company {missingFields.includes('company') && <span className="text-red-500">*</span>}
+              </label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  id="company"
+                  name="company"
+                  type="text"
+                  required={missingFields.includes('company')}
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  disabled={!missingFields.includes('company') || isSubmitting}
+                  className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 ${
+                    !missingFields.includes('company') ? 'bg-gray-50 text-gray-500' : ''
+                  }`}
+                  placeholder="e.g., TechCorp, Google, Self-employed"
+                />
+                {!missingFields.includes('company') && (
+                  <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-500" />
+                )}
+              </div>
+            </div>
+
+            {/* LinkedIn Username */}
+            <div>
+              <label htmlFor="linkedinUsername" className="block text-sm font-medium text-gray-700 mb-2">
+                LinkedIn Username {missingFields.includes('linkedinUsername') && <span className="text-red-500">*</span>}
+              </label>
+              <div className="relative">
+                <Linkedin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  id="linkedinUsername"
+                  name="linkedinUsername"
+                  type="text"
+                  required={missingFields.includes('linkedinUsername')}
+                  value={linkedinUsername}
+                  onChange={(e) => setLinkedinUsername(e.target.value)}
+                  disabled={!missingFields.includes('linkedinUsername') || isSubmitting}
+                  className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 ${
+                    !missingFields.includes('linkedinUsername') ? 'bg-gray-50 text-gray-500' : ''
+                  }`}
+                  placeholder="e.g., johndoe (without linkedin.com/in/)"
+                />
+                {!missingFields.includes('linkedinUsername') && (
+                  <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-500" />
+                )}
+              </div>
+              {linkedinUsername && missingFields.includes('linkedinUsername') && (
+                <div className="mt-2 text-sm text-gray-600">
+                  <span className="font-medium">Preview:</span> linkedin.com/in/{linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '')}
+                </div>
+              )}
+            </div>
+
+            {/* Position */}
+            <div>
+              <label htmlFor="position" className="block text-sm font-medium text-gray-700 mb-2">
+                Position {missingFields.includes('position') && <span className="text-red-500">*</span>}
+              </label>
+              <div className="relative">
+                <select
+                  id="position"
+                  name="position"
+                  required={missingFields.includes('position')}
+                  value={position}
+                  onChange={(e) => setPosition(e.target.value)}
+                  disabled={!missingFields.includes('position') || isSubmitting}
+                  className={`w-full pl-4 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 appearance-none ${
+                    !missingFields.includes('position') ? 'bg-gray-50 text-gray-500' : ''
+                  }`}
+                >
+                  <option value="" disabled>Select your position...</option>
+                  {POSITION_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                {!missingFields.includes('position') && (
                   <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-500" />
                 )}
               </div>
