@@ -217,6 +217,13 @@ const SignupPage: React.FC = () => {
       
       setIsSubmitting(true);
       console.log('📝 Attempting registration for:', formData.email);
+      console.log('📝 Profile data:', {
+        phone: formattedPhone,
+        company: formData.company,
+        work: formData.work,
+        linkedinUsername: formData.linkedinUsername,
+        position: formData.position
+      });
       await register(formData.email, formData.password, formData.name, {
         phone: formattedPhone,
         company: formData.company,

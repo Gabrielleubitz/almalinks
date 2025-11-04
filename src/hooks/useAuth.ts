@@ -159,7 +159,8 @@ export const useAuth = () => {
           status: 'pending', // New users start with pending status
           createdAt: serverTimestamp()
         };
-        
+
+        console.log('📝 Creating user profile with data:', newUserData);
         await retryOnNetworkFailure(async () => setDoc(userDocRef, newUserData));
         console.log('✅ Created new user profile with pending status');
         

@@ -16,7 +16,7 @@ import {
   Check,
   Trash2
 } from 'lucide-react';
-import { collection, getDocs, doc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useAuth } from '../../hooks/useAuth';
 import AdminHeader from '../../components/admin/AdminHeader';
@@ -169,17 +169,33 @@ const PendingRegistrations: React.FC = () => {
 
   const handleDeleteUser = async (userId: string) => {
     if (!user?.uid) return;
-    
+
     setProcessingUser(userId);
-    
+
     try {
-      // Delete user document
-      await deleteDoc(doc(db, 'users', userId));
-      
+      // Delete user from both Firebase Auth and Firestore using the API
+      const response = await fetch('/api/delete-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userIdToDelete: userId,
+          adminId: user.uid
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete user');
+      }
+
+      console.log('✅ User deleted from both Auth and Firestore');
+
       // Update local state
       setPendingUsers(prev => prev.filter(u => u.uid !== userId));
-      
-      showToast('User deleted successfully', 'success');
+
+      showToast('User deleted successfully from Auth and Firestore', 'success');
     } catch (error: any) {
       console.error('❌ Error deleting user:', error);
       showToast(error.message || 'Failed to delete user', 'error');
