@@ -618,7 +618,7 @@ const AdminDashboard: React.FC = () => {
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-lg font-semibold text-gray-900">Speakers</h4>
-                    <p className="text-gray-600 text-sm">Manage speaker files</p>
+                    <p className="text-gray-600 text-sm">Assign speakers to events</p>
                   </div>
                 </div>
               </Link>

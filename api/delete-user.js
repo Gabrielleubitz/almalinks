@@ -1,27 +1,4 @@
-import admin from 'firebase-admin';
-
-let firebaseApp;
-
-function initializeFirebaseAdmin() {
-  if (!firebaseApp) {
-    const key = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    if (!key) {
-      throw new Error('Missing FIREBASE_SERVICE_ACCOUNT_KEY environment variable');
-    }
-
-    let serviceAccount;
-    try {
-      serviceAccount = JSON.parse(key);
-    } catch (err) {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is not valid JSON');
-    }
-
-    firebaseApp = admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
-    });
-  }
-  return firebaseApp;
-}
+import admin, { db, auth } from './firebase-init.js';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -43,18 +20,14 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'You cannot delete your own account' });
     }
 
-    initializeFirebaseAdmin();
-    const firestore = admin.firestore();
-    const auth = admin.auth();
-
     // Verify admin permissions
-    const adminDoc = await firestore.collection('users').doc(adminId).get();
+    const adminDoc = await db.collection('users').doc(adminId).get();
     if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
       return res.status(403).json({ error: 'Unauthorized: Only admins can delete users' });
     }
 
     // Check if user exists in Firestore
-    const userDoc = await firestore.collection('users').doc(userIdToDelete).get();
+    const userDoc = await db.collection('users').doc(userIdToDelete).get();
     if (!userDoc.exists) {
       return res.status(404).json({ error: 'User not found in Firestore' });
     }
@@ -62,13 +35,13 @@ export default async function handler(req, res) {
     console.log(`🗑️ Admin ${adminId} deleting user ${userIdToDelete}`);
 
     // Delete user document from Firestore
-    await firestore.collection('users').doc(userIdToDelete).delete();
+    await db.collection('users').doc(userIdToDelete).delete();
     console.log('✅ User deleted from Firestore');
 
     // Delete registration if exists
-    const registrationDoc = await firestore.collection('registrations').doc(userIdToDelete).get();
+    const registrationDoc = await db.collection('registrations').doc(userIdToDelete).get();
     if (registrationDoc.exists) {
-      await firestore.collection('registrations').doc(userIdToDelete).delete();
+      await db.collection('registrations').doc(userIdToDelete).delete();
       console.log('✅ User registration deleted from Firestore');
     }
 
