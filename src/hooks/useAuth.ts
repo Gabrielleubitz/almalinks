@@ -161,6 +161,13 @@ export const useAuth = () => {
         };
 
         console.log('📝 Creating user profile with data:', newUserData);
+        console.log('📋 Profile data received:', JSON.stringify({
+          phone: profileData?.phone,
+          company: profileData?.company,
+          work: profileData?.work,
+          linkedinUsername: profileData?.linkedinUsername,
+          position: profileData?.position
+        }, null, 2));
         await retryOnNetworkFailure(async () => setDoc(userDocRef, newUserData));
         console.log('✅ Created new user profile with pending status');
         

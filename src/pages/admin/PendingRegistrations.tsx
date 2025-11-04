@@ -82,10 +82,24 @@ const PendingRegistrations: React.FC = () => {
         uid: doc.id,
         ...doc.data()
       })) as UserData[];
-      
+
       setPendingUsers(usersData);
       setFilteredUsers(usersData);
       console.log(`✅ Loaded ${usersData.length} pending users`);
+
+      // Log each user's data to debug field visibility
+      usersData.forEach(user => {
+        console.log(`📊 User ${user.uid} data:`, {
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          company: user.company,
+          work: user.work,
+          linkedinUsername: user.linkedinUsername,
+          position: user.position,
+          status: user.status
+        });
+      });
     } catch (error: any) {
       console.error('❌ Error loading pending users:', error);
       setError(error.message || 'Failed to load pending users');
