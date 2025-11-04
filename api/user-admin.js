@@ -27,7 +27,8 @@ export default async function handler(req, res) {
   }
 
   // Handle GET request for member locations (public endpoint, no auth required)
-  if (req.method === 'GET' && req.url?.includes('locations')) {
+  // Check both req.url (for dev-server) and req.query (for Vercel)
+  if (req.method === 'GET' && (req.url?.includes('locations') || req.query?.locations !== undefined)) {
     return await getUserLocations(req, res);
   }
 
