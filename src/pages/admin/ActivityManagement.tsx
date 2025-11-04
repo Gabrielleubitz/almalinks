@@ -117,7 +117,7 @@ const ActivityManagement: React.FC = () => {
           body: JSON.stringify({
             action: 'get-activities',
             filters,
-            limitCount: 50,
+            limitCount: 25, // Reduced from 50 for faster initial load
             lastDocId: reset ? null : lastDocId,
             adminEmail: user.email,
             adminName: user.displayName
@@ -162,54 +162,6 @@ const ActivityManagement: React.FC = () => {
         }
         throw fetchError;
       }
-
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to load activities');
-      }
-
-      // Deduplicate activities based on timestamp, userId, activityType, and description
-      const deduplicateActivities = (activities: ActivityLogDisplay[]) => {
-        const seen = new Set<string>();
-        return activities.filter(activity => {
-          // Handle different timestamp formats
-          let timestampKey: string;
-          try {
-            if (activity.timestamp instanceof Date) {
-              timestampKey = activity.timestamp.getTime().toString();
-            } else if (typeof activity.timestamp === 'string') {
-              timestampKey = new Date(activity.timestamp).getTime().toString();
-            } else if (activity.timestamp && typeof activity.timestamp.toDate === 'function') {
-              // Firestore Timestamp
-              timestampKey = activity.timestamp.toDate().getTime().toString();
-            } else {
-              // Fallback to string representation
-              timestampKey = String(activity.timestamp);
-            }
-          } catch (error) {
-            // If timestamp parsing fails, use the raw timestamp as string
-            timestampKey = String(activity.timestamp);
-          }
-          
-          const key = `${timestampKey}-${activity.userId}-${activity.activityType}-${activity.description}`;
-          if (seen.has(key)) {
-            return false;
-          }
-          seen.add(key);
-          return true;
-        });
-      };
-
-      if (reset) {
-        setActivities(deduplicateActivities(data.activities));
-      } else {
-        const combinedActivities = [...activities, ...data.activities];
-        setActivities(deduplicateActivities(combinedActivities));
-      }
-      
-      setHasMore(data.hasMore);
-      setLastDocId(data.lastDocId);
 
     } catch (error: any) {
       console.error('❌ Error loading activities:', error);
@@ -270,21 +222,14 @@ const ActivityManagement: React.FC = () => {
     }
   }, [user]);
 
-  // Load data on component mount - only run once when user is available
-  // TEMPORARILY DISABLED: Auto-loading to prevent quota exhaustion
-  // Load activities and stats on mount - only once
+  // Load activities and stats on mount - only once when user is available
   useEffect(() => {
-    // DISABLED: Auto-loading disabled due to quota exhaustion
-    // if (user?.uid && !hasInitialized && !error?.includes('RESOURCE_EXHAUSTED')) {
-    //   setHasInitialized(true);
-    //   loadActivities(true);
-    //   loadStats();
-    // }
     if (user?.uid && !hasInitialized) {
       setHasInitialized(true);
-      setError('⚠️ Auto-loading disabled to prevent quota exhaustion. Use "Refresh" button to load data manually.');
+      loadActivities(true);
+      loadStats();
     }
-  }, [user?.uid, hasInitialized]);
+  }, [user?.uid, hasInitialized, loadActivities, loadStats]);
 
   // Load activities when filters change (but not on initial load)
   useEffect(() => {
@@ -327,17 +272,43 @@ const ActivityManagement: React.FC = () => {
     setFilters({});
   };
 
+  // Format page path for display
+  const formatPagePath = (page?: string): string => {
+    if (!page) return 'N/A';
+
+    // Common page mappings
+    const pageNames: { [key: string]: string } = {
+      '/dashboard': 'Dashboard',
+      '/events': 'Events',
+      '/members': 'Members',
+      '/chats': 'Chats',
+      '/profile': 'Profile',
+      '/admin': 'Admin',
+    };
+
+    // Check for exact matches
+    if (pageNames[page]) return pageNames[page];
+
+    // Check for partial matches
+    for (const [path, name] of Object.entries(pageNames)) {
+      if (page.startsWith(path)) return name;
+    }
+
+    // Return cleaned path
+    return page.replace(/^\//, '').split('/')[0] || 'Unknown';
+  };
+
   // Export activities (basic CSV export)
   const exportActivities = () => {
     const csvContent = [
-      ['Timestamp', 'User', 'Email', 'Activity Type', 'Description', 'IP Address', 'User Agent'].join(','),
+      ['Timestamp', 'User', 'Email', 'Activity Type', 'Description', 'Page/Location', 'User Agent'].join(','),
       ...activities.map(activity => [
         formatTimestamp(activity.timestamp),
         activity.userName,
         activity.userEmail,
         activity.activityType,
         activity.description.replace(/,/g, ';'), // Replace commas to avoid CSV issues
-        activity.metadata?.ipAddress || 'N/A',
+        formatPagePath(activity.metadata?.page),
         activity.metadata?.userAgent || 'N/A'
       ].join(','))
     ].join('\n');
@@ -656,7 +627,7 @@ const ActivityManagement: React.FC = () => {
                     Description
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    IP Address
+                    Page/Location
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -712,12 +683,14 @@ const ActivityManagement: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {activity.metadata?.ipAddress || 'N/A'}
+                        <span className="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-medium">
+                          {formatPagePath(activity.metadata?.page)}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <button
                           onClick={() => setSelectedActivity(activity)}
-                          className="text-brand-light hover:text-brand-mid"
+                          className="text-brand-dark hover:text-brand-blue"
                         >
                           <Eye className="h-4 w-4" />
                         </button>

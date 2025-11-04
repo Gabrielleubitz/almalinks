@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, ArrowRight, Clock, Users, RotateCcw, User, Mail, Phone, Briefcase, Ticket, Download, Edit, Save, X, Check, AlertCircle, ChevronDown, Linkedin, Globe, Twitter } from 'lucide-react';
+import { Calendar, MapPin, ArrowRight, Clock, Users, RotateCcw, User, Mail, Phone, Briefcase, Ticket, Download, Edit, Save, X, Check, AlertCircle, ChevronDown, Linkedin, Globe, Twitter, CheckCircle, TrendingUp, MessageCircle, Compass, Map, Heart } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { EventService, EventData } from '../services/eventService';
+import { ConnectionService } from '../services/connectionService';
 import { useAuth } from '../hooks/useAuth';
 import { useActivityTracking } from '../hooks/useActivityTracking';
 import Header from '../components/Header';
@@ -71,6 +72,7 @@ const EventsPage: React.FC = () => {
   const [userRegistrations, setUserRegistrations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [registrationsLoading, setRegistrationsLoading] = useState(true);
+  const [connectionsCount, setConnectionsCount] = useState<number>(0);
   
   // Edit profile state
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -98,16 +100,87 @@ const EventsPage: React.FC = () => {
   const [profileUpdateSuccess, setProfileUpdateSuccess] = useState<string | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
-  
+
   const navigate = useNavigate();
   const { user, isAdmin, isInUserView, switchToAdminView, updateProfile } = useAuth();
+  const profileSectionRef = useRef<HTMLDivElement>(null);
+
+  // Calculate profile completion percentage
+  const calculateProfileCompletion = () => {
+    if (!user) return { percentage: 0, missingFields: [], completedFields: 0, totalFields: 0 };
+
+    const profileFields = [
+      { field: 'displayName', label: 'Full Name', value: user.displayName, required: true },
+      { field: 'email', label: 'Email Address', value: user.email, required: true },
+      { field: 'phone', label: 'Phone Number', value: user.phone, required: true },
+      { field: 'work', label: 'Job Title', value: user.work, required: true },
+      { field: 'company', label: 'Company', value: user.company, required: false },
+      { field: 'linkedinUsername', label: 'LinkedIn Profile', value: user.linkedinUsername, required: true },
+      { field: 'position', label: 'Position Level', value: user.position, required: true },
+      { field: 'profileImage', label: 'Profile Picture', value: user.profileImage, required: false },
+      { field: 'bioTitle', label: 'Professional Bio Title', value: user.bioTitle, required: false },
+      { field: 'bio', label: 'Personal Bio', value: user.bio, required: false },
+      { field: 'city', label: 'City', value: user.city, required: false },
+      { field: 'country', label: 'Country', value: user.country, required: false },
+      { field: 'timezone', label: 'Timezone', value: user.timezone, required: false },
+      { field: 'website', label: 'Website', value: user.website, required: false },
+      { field: 'twitter', label: 'Twitter/X Username', value: user.twitter, required: false },
+      { field: 'skills', label: 'Skills & Expertise', value: user.skills && user.skills.length > 0, required: false }
+    ];
+
+    const requiredFields = profileFields.filter(f => f.required);
+    const optionalFields = profileFields.filter(f => !f.required);
+
+    const completedRequired = requiredFields.filter(f => f.value && f.value.toString().trim() !== '').length;
+    const completedOptional = optionalFields.filter(f => f.value && (typeof f.value === 'boolean' ? f.value : f.value.toString().trim() !== '')).length;
+
+    const totalCompleted = completedRequired + completedOptional;
+    const totalFields = profileFields.length;
+
+    // Calculate percentage
+    const percentage = Math.round((totalCompleted / totalFields) * 100);
+
+    // Identify missing fields (prioritize required fields)
+    const missingRequired = requiredFields
+      .filter(f => !f.value || f.value.toString().trim() === '')
+      .map(f => f.label);
+
+    const missingOptional = optionalFields
+      .filter(f => !f.value || (typeof f.value === 'boolean' ? !f.value : f.value.toString().trim() === ''))
+      .map(f => f.label);
+
+    return {
+      percentage,
+      missingFields: [...missingRequired, ...missingOptional],
+      missingRequired,
+      missingOptional,
+      completedFields: totalCompleted,
+      totalFields
+    };
+  };
+
+  const profileCompletion = calculateProfileCompletion();
 
   useEffect(() => {
     loadPublicEvents();
     if (user?.uid) {
       loadUserRegistrations();
+      loadConnectionsCount();
     }
   }, [user]);
+
+  // Load user connections count
+  const loadConnectionsCount = async () => {
+    if (!user?.uid) return;
+
+    try {
+      const userConnections = await ConnectionService.getUserConnectionsLegacy(user.uid);
+      setConnectionsCount(userConnections.length);
+    } catch (error) {
+      console.error('❌ Error loading connections count:', error);
+      setConnectionsCount(0);
+    }
+  };
 
   // Initialize edit form data when user data changes
   useEffect(() => {
@@ -267,6 +340,19 @@ const EventsPage: React.FC = () => {
     setIsEditingProfile(true);
     setProfileUpdateError(null);
     setProfileUpdateSuccess(null);
+  };
+
+  // Scroll to profile section and enable editing
+  const scrollToProfile = () => {
+    setIsEditingProfile(true);
+    setProfileUpdateError(null);
+    setProfileUpdateSuccess(null);
+    setTimeout(() => {
+      profileSectionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }, 100);
   };
 
   // Cancel editing profile
@@ -577,7 +663,7 @@ const EventsPage: React.FC = () => {
             </div>
 
             {/* Quick Stats Cards */}
-            <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <div className="grid md:grid-cols-4 gap-6 mb-8">
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
@@ -589,7 +675,7 @@ const EventsPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
@@ -601,25 +687,35 @@ const EventsPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                     <Users className="h-6 w-6 text-brand-dark" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Network</p>
-                    <p className="font-semibold text-gray-900">Growing</p>
+                    <p className="text-sm text-gray-500">Total Connections</p>
+                    <p className="font-semibold text-gray-900">{connectionsCount}</p>
                   </div>
                 </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <button
+                  onClick={scrollToProfile}
+                  className="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all shadow-sm font-medium"
+                >
+                  <Edit className="h-5 w-5" />
+                  <span>Edit Profile</span>
+                </button>
               </div>
             </div>
 
             {/* Main Content Grid */}
             <div className="grid lg:grid-cols-4 gap-8">
-              
+
               {/* Profile Section - Takes 3/4 of the space */}
-              <div className="lg:col-span-3 space-y-6">
+              <div ref={profileSectionRef} className="lg:col-span-3 space-y-6">
                 <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-semibold text-gray-900">Your Profile</h2>
@@ -1399,21 +1495,37 @@ const EventsPage: React.FC = () => {
                 <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
                   <div className="space-y-3">
-                    <button 
-                      onClick={() => window.location.href = '/directory'}
-                      className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
+                    <Link
+                      to="/members"
+                      className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors group"
                     >
-                      <Users className="h-5 w-5 text-gray-500" />
-                      <span className="text-sm font-medium">Browse Members</span>
-                    </button>
-                    
-                    <button 
-                      onClick={() => window.location.href = '/events'}
-                      className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
+                      <Users className="h-5 w-5 text-gray-500 group-hover:text-brand-blue transition-colors" />
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">Browse Members</span>
+                    </Link>
+
+                    <Link
+                      to="/events"
+                      className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors group"
                     >
-                      <Calendar className="h-5 w-5 text-gray-500" />
-                      <span className="text-sm font-medium">View Events</span>
-                    </button>
+                      <Calendar className="h-5 w-5 text-gray-500 group-hover:text-brand-blue transition-colors" />
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">View Events</span>
+                    </Link>
+
+                    <Link
+                      to="/chats"
+                      className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors group"
+                    >
+                      <MessageCircle className="h-5 w-5 text-gray-500 group-hover:text-brand-blue transition-colors" />
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">My Chats</span>
+                    </Link>
+
+                    <Link
+                      to="/discover-chats"
+                      className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors group"
+                    >
+                      <Compass className="h-5 w-5 text-gray-500 group-hover:text-brand-blue transition-colors" />
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">Discover Chats</span>
+                    </Link>
                   </div>
                 </div>
 
@@ -1426,20 +1538,120 @@ const EventsPage: React.FC = () => {
                     <AnnouncementsSidebar />
                   </div>
                 </div>
+
+                {/* Support AlmaLinks Card */}
+                <div className="bg-gradient-to-br from-brand-gold to-amber-500 rounded-2xl shadow-lg p-6 border border-amber-200">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="bg-white/20 backdrop-blur-sm p-2 rounded-full">
+                      <Heart className="h-6 w-6 text-white fill-current" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white">Support Our Mission</h3>
+                  </div>
+                  <p className="text-white/90 text-sm mb-4">
+                    Help us build stronger connections and empower communities worldwide
+                  </p>
+                  <a
+                    href="https://almalinks.org/donate.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full text-center bg-white text-brand-gold font-semibold py-2.5 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-sm"
+                  >
+                    Make a Donation
+                  </a>
+                </div>
                 
                 {/* Profile Completion Card */}
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Profile Strength</h3>
+                <div className={`rounded-2xl p-6 border transition-all duration-300 ${
+                  profileCompletion.percentage === 100
+                    ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-100'
+                    : 'bg-gradient-to-br from-brand-light to-blue-50 border-blue-100'
+                }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900">Profile Strength</h3>
+                    {profileCompletion.percentage === 100 ? (
+                      <CheckCircle className="h-6 w-6 text-green-600" />
+                    ) : (
+                      <TrendingUp className="h-6 w-6 text-brand-blue" />
+                    )}
+                  </div>
+
                   <div className="flex items-center space-x-3 mb-3">
                     <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: '85%' }}
+                      <div
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          profileCompletion.percentage === 100
+                            ? 'bg-gradient-to-r from-green-500 to-emerald-600'
+                            : 'bg-gradient-to-r from-brand-blue to-brand-blue-hover'
+                        }`}
+                        style={{ width: `${profileCompletion.percentage}%` }}
                       ></div>
                     </div>
-                    <span className="text-sm font-medium text-gray-700">85%</span>
+                    <span className="text-sm font-medium text-gray-700">{profileCompletion.percentage}%</span>
                   </div>
-                  <p className="text-sm text-gray-600 mb-4">Add more details to strengthen your profile and connect with more members.</p>
+
+                  {profileCompletion.percentage === 100 ? (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-green-800">
+                        Excellent! Your profile is complete.
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        Your comprehensive profile helps you make meaningful connections with other members.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-gray-800">
+                        {profileCompletion.missingRequired && profileCompletion.missingRequired.length > 0
+                          ? 'Complete your profile to maximize networking opportunities'
+                          : 'Enhance your profile for stronger connections'}
+                      </p>
+
+                      {profileCompletion.missingRequired && profileCompletion.missingRequired.length > 0 && (
+                        <div className="bg-white rounded-lg p-3 mt-2">
+                          <p className="text-xs font-medium text-gray-700 mb-1">Required Information:</p>
+                          <ul className="text-xs text-gray-600 space-y-0.5">
+                            {profileCompletion.missingRequired.slice(0, 3).map((field, index) => (
+                              <li key={index} className="flex items-start">
+                                <span className="text-brand-blue mr-1">•</span>
+                                {field}
+                              </li>
+                            ))}
+                            {profileCompletion.missingRequired.length > 3 && (
+                              <li className="text-gray-500 italic">
+                                +{profileCompletion.missingRequired.length - 3} more required field{profileCompletion.missingRequired.length - 3 > 1 ? 's' : ''}
+                              </li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+
+                      {profileCompletion.missingOptional && profileCompletion.missingOptional.length > 0 && (
+                        <div className="bg-white rounded-lg p-3 mt-2">
+                          <p className="text-xs font-medium text-gray-700 mb-1">Optional Details:</p>
+                          <ul className="text-xs text-gray-600 space-y-0.5">
+                            {profileCompletion.missingOptional.slice(0, 3).map((field, index) => (
+                              <li key={index} className="flex items-start">
+                                <span className="text-gray-400 mr-1">•</span>
+                                {field}
+                              </li>
+                            ))}
+                            {profileCompletion.missingOptional.length > 3 && (
+                              <li className="text-gray-500 italic">
+                                +{profileCompletion.missingOptional.length - 3} more optional field{profileCompletion.missingOptional.length - 3 > 1 ? 's' : ''}
+                              </li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={scrollToProfile}
+                        className="w-full mt-3 text-xs font-medium text-white bg-brand-blue hover:bg-brand-blue-hover py-2 px-3 rounded-lg transition-colors duration-200"
+                      >
+                        Complete Profile
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1585,9 +1797,9 @@ const EventsPage: React.FC = () => {
                     Don't miss these exclusive networking opportunities
                   </p>
                 </div>
-                <Link 
+                <Link
                   to="/events"
-                  className="text-brand-light hover:text-blue-700 font-medium flex items-center space-x-2"
+                  className="text-brand-blue hover:text-brand-blue-hover font-medium flex items-center space-x-2"
                 >
                   <span>View All Events</span>
                   <ArrowRight className="h-4 w-4" />

@@ -9,7 +9,6 @@ import {
   Megaphone, 
   Mic,
   FileText,
-  Wand2,
   Settings,
   Activity,
   TrendingUp,
@@ -18,7 +17,6 @@ import {
   ChevronDown,
   UserPlus,
   Zap,
-  RefreshCw,
   Send,
   AlertCircle
 } from 'lucide-react';
@@ -603,21 +601,6 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
               </Link>
-
-              <Link
-                to="/admin/ad-generator"
-                className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    <Wand2 className="h-8 w-8 text-brand-dark" />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="text-lg font-semibold text-gray-900">Ad Generator</h4>
-                    <p className="text-gray-600 text-sm">AI-powered marketing ads</p>
-                  </div>
-                </div>
-              </Link>
             </div>
           </div>
 
@@ -669,83 +652,107 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
               </Link>
-
-              <Link
-                to="/admin/profile-sync"
-                className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    <RefreshCw className="h-8 w-8 text-teal-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="text-lg font-semibold text-gray-900">Profile Sync</h4>
-                    <p className="text-gray-600 text-sm">Fix profile picture display</p>
-                  </div>
-                </div>
-              </Link>
             </div>
           </div>
         </div>
 
-        {/* Event Selection Dropdown */}
-        <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Event Selection</h2>
-            <Calendar className="h-6 w-6 text-gray-400" />
-          </div>
-          
-          {loadingEvents ? (
-            <div className="text-center py-8">
-              <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading events...</p>
-            </div>
-          ) : events.length === 0 ? (
-            <div className="text-center py-8">
-              <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-4">No events found</p>
-              <Link
-                to="/admin/events/create"
-                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
-              >
-                <span>Create First Event</span>
-              </Link>
-            </div>
-          ) : (
-            <div>
-              <label htmlFor="event-select" className="block text-sm font-medium text-gray-700 mb-3">
-                Select Event to Manage:
-              </label>
-              <div className="relative">
-                <select
-                  id="event-select"
-                  value={selectedEventId}
-                  onChange={(e) => handleEventSelect(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 appearance-none bg-white pr-10"
-                >
-                  <option value="">Select an event...</option>
-                  {events.map(event => (
-                    <option key={event.id} value={event.id}>
-                      {event.name} - {event.location} - {formatEventDate(event.date)} ({event.status})
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+        {/* Event Selection & Registration Statistics - Combined Section */}
+        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 mb-8">
+          {/* Event Selection Header & Dropdown */}
+          <div className="p-8 border-b border-gray-100">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Event Management</h2>
+                <p className="text-sm text-gray-600 mt-1">Select an event to view statistics and manage registrations</p>
               </div>
-              
-              {selectedEvent && (
-                <div className="mt-4 p-4 bg-purple-50 rounded-xl border border-purple-200">
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="h-5 w-5 text-brand-dark" />
-                    <div>
-                      <div className="font-semibold text-purple-900">{selectedEvent.name}</div>
-                      <div className="text-sm text-purple-700">
-                        {selectedEvent.location} • {formatEventDate(selectedEvent.date)} • Status: {selectedEvent.status}
+              <Calendar className="h-6 w-6 text-brand-blue" />
+            </div>
+
+            {loadingEvents ? (
+              <div className="text-center py-8">
+                <div className="w-8 h-8 border-4 border-blue-200 border-t-brand-blue rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading events...</p>
+              </div>
+            ) : events.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 mb-4">No events found</p>
+                <Link
+                  to="/admin/events/create"
+                  className="bg-gradient-to-r from-brand-dark to-brand-blue text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
+                >
+                  <span>Create First Event</span>
+                </Link>
+              </div>
+            ) : (
+              <div>
+                <label htmlFor="event-select" className="block text-sm font-medium text-gray-700 mb-3">
+                  Select Event:
+                </label>
+                <div className="relative">
+                  <select
+                    id="event-select"
+                    value={selectedEventId}
+                    onChange={(e) => handleEventSelect(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-blue focus:border-brand-blue transition-all duration-200 appearance-none bg-white pr-10 font-medium"
+                  >
+                    <option value="">Select an event...</option>
+                    {events.map(event => (
+                      <option key={event.id} value={event.id}>
+                        {event.name} - {event.location} - {formatEventDate(event.date)} ({event.status})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                </div>
+
+                {selectedEvent && (
+                  <div className="mt-4 p-4 bg-gradient-to-r from-brand-light to-blue-50 rounded-xl border border-blue-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-white p-2 rounded-lg">
+                        <Calendar className="h-5 w-5 text-brand-blue" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-brand-dark">{selectedEvent.name}</div>
+                        <div className="text-sm text-gray-700">
+                          {selectedEvent.location} • {formatEventDate(selectedEvent.date)} • Status: {selectedEvent.status}
+                        </div>
                       </div>
                     </div>
                   </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Registration Statistics - Directly Connected Below */}
+          {selectedEventId ? (
+            <div className="p-8">
+              {loadingStats ? (
+                <div className="text-center py-12">
+                  <div className="w-8 h-8 border-4 border-blue-200 border-t-brand-blue rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading registration statistics...</p>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center space-x-2 mb-6">
+                    <TrendingUp className="h-5 w-5 text-brand-blue" />
+                    <h3 className="text-lg font-semibold text-gray-900">Registration Statistics</h3>
+                  </div>
+                  <StatsCards
+                    stats={stats}
+                    onStatClick={handleStatClick}
+                    onExportClick={handleExportExcel}
+                    selectedEventName={selectedEvent?.name}
+                  />
                 </div>
               )}
+            </div>
+          ) : events.length > 0 && (
+            <div className="p-8 text-center">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Select an Event Above</h3>
+              <p className="text-gray-600">Choose an event to view registration statistics and manage check-ins</p>
             </div>
           )}
         </div>
@@ -847,35 +854,6 @@ const AdminDashboard: React.FC = () => {
                   </>
                 )}
               </button>
-            </div>
-          </div>
-        )}
-
-        {/* Registration Stats - Only show if event is selected */}
-        {selectedEventId ? (
-          <div className="mb-8">
-            {loadingStats ? (
-              <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-                <div className="text-center">
-                  <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading registration statistics...</p>
-                </div>
-              </div>
-            ) : (
-              <StatsCards 
-                stats={stats} 
-                onStatClick={handleStatClick}
-                onExportClick={handleExportExcel}
-                selectedEventName={selectedEvent?.name}
-              />
-            )}
-          </div>
-        ) : (
-          <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 mb-8">
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Select an Event</h3>
-              <p className="text-gray-600">Choose an event from the dropdown above to view registration statistics and manage check-ins.</p>
             </div>
           </div>
         )}

@@ -158,20 +158,26 @@ export class EventService {
   static async deleteEvent(eventId: string): Promise<void> {
     try {
       console.log('🗑️ Deleting event:', eventId);
-      
+
       // First, delete all registrations for this event
       const registrationsRef = collection(db, 'events', eventId, 'registrations');
       const registrationsSnapshot = await getDocs(registrationsRef);
-      
+
       // Delete all registration documents
       const deletePromises = registrationsSnapshot.docs.map(doc => deleteDoc(doc.ref));
       await Promise.all(deletePromises);
-      
+
       console.log(`✅ Deleted ${registrationsSnapshot.size} registrations for event ${eventId}`);
-      
+
+      // Delete all connections associated with this event
+      // Import ConnectionService dynamically to avoid circular dependencies
+      const { ConnectionService } = await import('./connectionService');
+      const connectionResults = await ConnectionService.removeConnectionsForEvent(eventId);
+      console.log(`✅ Cleaned up connections: ${connectionResults.removed} removed, ${connectionResults.updated} updated`);
+
       // Then delete the event itself
       await deleteDoc(doc(db, 'events', eventId));
-      
+
       console.log('✅ Event deleted successfully:', eventId);
     } catch (error) {
       console.error('❌ Error deleting event:', error);

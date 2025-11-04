@@ -18,7 +18,19 @@ import { ActivityType, ActivityLog, ActivityFilters, ActivityStats, ActivityLogD
 export class ActivityService {
   private static sessionId: string = this.generateSessionId();
   private static recentLogs: Map<string, number> = new Map(); // Track recent logs to prevent duplicates
-  private static DUPLICATE_THRESHOLD = 5000; // 5 seconds
+  private static DUPLICATE_THRESHOLD = 30000; // 30 seconds (default)
+
+  // Activity-specific throttle periods (in milliseconds)
+  private static THROTTLE_PERIODS: Partial<Record<ActivityType, number>> = {
+    'chat_message': 300000,      // 5 minutes - only log chat activity once per 5 min per chat
+    'page_view': 600000,          // 10 minutes - if re-enabled, throttle heavily
+    'profile_update': 60000,      // 1 minute
+    'event_register': 5000,       // 5 seconds (keep tight, important action)
+    'connection_request': 5000,   // 5 seconds (keep tight, important action)
+    'login': 5000,                // 5 seconds (keep tight, important action)
+    'logout': 5000,               // 5 seconds (keep tight, important action)
+    'admin_action': 10000         // 10 seconds
+  };
 
   // Generate a unique session ID for this browser session
   private static generateSessionId(): string {
@@ -35,27 +47,32 @@ export class ActivityService {
   }
 
   // Check if this exact activity was logged recently (within threshold)
-  private static isDuplicateLog(logKey: string): boolean {
+  private static isDuplicateLog(logKey: string, activityType: ActivityType): boolean {
     const now = Date.now();
     const lastLogTime = this.recentLogs.get(logKey);
-    
-    if (lastLogTime && (now - lastLogTime) < this.DUPLICATE_THRESHOLD) {
-      return true; // This is a duplicate
+
+    // Use activity-specific throttle period, or default threshold
+    const throttlePeriod = this.THROTTLE_PERIODS[activityType] || this.DUPLICATE_THRESHOLD;
+
+    if (lastLogTime && (now - lastLogTime) < throttlePeriod) {
+      console.log(`[Throttled] ${activityType} - last logged ${Math.round((now - lastLogTime) / 1000)}s ago (throttle: ${throttlePeriod / 1000}s)`);
+      return true; // This is a duplicate/throttled
     }
-    
+
     // Update the timestamp for this log
     this.recentLogs.set(logKey, now);
-    
+
     // Clean up old entries (keep map size manageable)
     if (this.recentLogs.size > 1000) {
-      const cutoff = now - this.DUPLICATE_THRESHOLD * 2;
+      // Use the longest throttle period for cleanup (10 minutes)
+      const cutoff = now - 600000;
       for (const [key, timestamp] of this.recentLogs.entries()) {
         if (timestamp < cutoff) {
           this.recentLogs.delete(key);
         }
       }
     }
-    
+
     return false;
   }
 
@@ -132,10 +149,10 @@ export class ActivityService {
         return;
       }
 
-      // Check for duplicate logs (prevent logging the same activity within 5 seconds)
+      // Check for duplicate logs (prevent logging the same activity too frequently)
       const logKey = this.generateLogKey(userId, activityType, description);
-      if (this.isDuplicateLog(logKey)) {
-        console.log(`[DEV] Duplicate activity prevented: ${activityType} - ${description}`);
+      if (this.isDuplicateLog(logKey, activityType)) {
+        // Log is throttled (console message already shown in isDuplicateLog)
         return;
       }
 

@@ -1,14 +1,15 @@
-import { 
-  collection, 
-  doc, 
-  setDoc, 
-  getDoc, 
-  getDocs, 
-  query, 
-  where, 
-  orderBy, 
+import {
+  collection,
+  doc,
+  setDoc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
   serverTimestamp,
-  limit
+  limit,
+  deleteDoc
 } from 'firebase/firestore';
 import { db, retryOnNetworkFailure } from '../firebase/config';
 
@@ -583,11 +584,79 @@ export class ConnectionService {
   // Format LinkedIn username for display
   static formatLinkedinUrl(username: string | undefined): string {
     if (!username) return '';
-    
+
     // Remove any linkedin.com prefix if present
     const cleanUsername = username.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '');
-    
+
     // Remove trailing slash if present
     return cleanUsername.replace(/\/$/, '');
+  }
+
+  // Remove all connections associated with a deleted event
+  static async removeConnectionsForEvent(eventId: string): Promise<{ removed: number; updated: number }> {
+    try {
+      console.log(`🗑️ Removing connections for deleted event: ${eventId}`);
+
+      // Get all connections from Firestore
+      const connectionsRef = collection(db, 'connections');
+      const snapshot = await retryOnNetworkFailure(() => getDocs(connectionsRef));
+
+      let removedCount = 0;
+      let updatedCount = 0;
+      const batch: Promise<void>[] = [];
+
+      for (const connectionDoc of snapshot.docs) {
+        const connection = connectionDoc.data() as Connection;
+
+        // Check if this connection has any reasons related to the deleted event
+        const eventReasons = connection.reasons.filter(
+          reason => reason.type === 'event' && reason.eventId === eventId
+        );
+
+        if (eventReasons.length === 0) {
+          // No event-related reasons for this event, skip
+          continue;
+        }
+
+        // Remove all reasons related to this event
+        const remainingReasons = connection.reasons.filter(
+          reason => !(reason.type === 'event' && reason.eventId === eventId)
+        );
+
+        if (remainingReasons.length === 0) {
+          // No more reasons left, delete the entire connection
+          console.log(`  ✓ Deleting connection ${connectionDoc.id} (no remaining reasons)`);
+          batch.push(retryOnNetworkFailure(() => deleteDoc(connectionDoc.ref)));
+          removedCount++;
+        } else {
+          // Update connection with remaining reasons
+          console.log(`  ✓ Updating connection ${connectionDoc.id} (${remainingReasons.length} reasons remaining)`);
+          batch.push(
+            retryOnNetworkFailure(() =>
+              setDoc(connectionDoc.ref, {
+                ...connection,
+                reasons: remainingReasons,
+                updatedAt: serverTimestamp()
+              })
+            )
+          );
+          updatedCount++;
+        }
+      }
+
+      // Execute all batch operations
+      await Promise.all(batch);
+
+      console.log(`✅ Connections cleanup complete:`, {
+        removed: removedCount,
+        updated: updatedCount,
+        eventId
+      });
+
+      return { removed: removedCount, updated: updatedCount };
+    } catch (error) {
+      console.error('❌ Error removing connections for event:', error);
+      throw error;
+    }
   }
 }

@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  User, 
+import {
+  User,
   Users,
-  Settings, 
-  LogOut, 
-  Calendar, 
-  Mic, 
-  Shield, 
+  Settings,
+  LogOut,
+  Calendar,
+  Mic,
+  Shield,
   ChevronDown,
   Menu,
   X,
-  MessageCircle
+  MessageCircle,
+  Heart
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import logoSvg from '../assets/alma-links-logo.svg';
@@ -122,7 +123,16 @@ const SpeakerAwareHeader: React.FC = () => {
             </div>
             
             {/* Auth Buttons */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
+              <a
+                href="https://almalinks.org/donate.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden sm:flex items-center space-x-2 bg-gradient-to-r from-brand-gold to-amber-500 hover:from-brand-gold-hover hover:to-amber-600 text-white px-3 py-2 rounded-lg transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+              >
+                <Heart className="h-4 w-4 fill-current" />
+                <span className="text-sm">Donate</span>
+              </a>
               <button
                 onClick={() => navigate('/login')}
                 className="text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium"
@@ -131,7 +141,7 @@ const SpeakerAwareHeader: React.FC = () => {
               </button>
               <button
                 onClick={() => navigate('/signup')}
-                className="bg-brand-dark text-white px-4 py-2 rounded-lg hover:bg-brand-mid transition-colors duration-200 font-medium"
+                className="bg-brand-blue text-white px-4 py-2 rounded-lg hover:bg-brand-blue-hover transition-colors duration-200 font-medium"
               >
                 Join Now
               </button>
@@ -163,8 +173,8 @@ const SpeakerAwareHeader: React.FC = () => {
               onClick={() => navigate('/dashboard')}
               className={`text-sm font-medium transition-colors duration-200 ${
                 location.pathname === '/dashboard'
-                  ? 'text-brand-light'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-brand-dark font-semibold'
+                  : 'text-gray-600 hover:text-brand-blue'
               }`}
             >
               Dashboard
@@ -173,8 +183,8 @@ const SpeakerAwareHeader: React.FC = () => {
               onClick={() => navigate('/events')}
               className={`text-sm font-medium transition-colors duration-200 ${
                 location.pathname === '/events'
-                  ? 'text-brand-light'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-brand-dark font-semibold'
+                  : 'text-gray-600 hover:text-brand-blue'
               }`}
             >
               Events
@@ -183,8 +193,8 @@ const SpeakerAwareHeader: React.FC = () => {
               onClick={() => navigate('/members')}
               className={`text-sm font-medium transition-colors duration-200 ${
                 location.pathname === '/members'
-                  ? 'text-brand-light'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-brand-dark font-semibold'
+                  : 'text-gray-600 hover:text-brand-blue'
               }`}
             >
               Members
@@ -193,8 +203,8 @@ const SpeakerAwareHeader: React.FC = () => {
               onClick={() => navigate('/chats')}
               className={`text-sm font-medium transition-colors duration-200 ${
                 location.pathname === '/chats'
-                  ? 'text-brand-light'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-brand-dark font-semibold'
+                  : 'text-gray-600 hover:text-brand-blue'
               }`}
             >
               Chats
@@ -204,8 +214,8 @@ const SpeakerAwareHeader: React.FC = () => {
                 onClick={() => navigate('/admin')}
                 className={`text-sm font-medium transition-colors duration-200 ${
                   location.pathname.startsWith('/admin')
-                    ? 'text-brand-dark'
-                    : 'text-brand-dark hover:text-purple-700'
+                    ? 'text-brand-dark font-semibold'
+                    : 'text-brand-dark hover:text-brand-dark-hover'
                 }`}
               >
                 Admin
@@ -215,6 +225,17 @@ const SpeakerAwareHeader: React.FC = () => {
 
           {/* Right side - Profile and Actions */}
           <div className="flex items-center space-x-4">
+            {/* Donate Button */}
+            <a
+              href="https://almalinks.org/donate.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden md:flex items-center space-x-2 bg-gradient-to-r from-brand-gold to-amber-500 hover:from-brand-gold-hover hover:to-amber-600 text-white px-4 py-2 rounded-lg transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+            >
+              <Heart className="h-4 w-4 fill-current" />
+              <span className="text-sm">Donate</span>
+            </a>
+
             {/* Profile Button - Direct to Edit */}
             <button
               onClick={() => navigate('/profile/edit')}
@@ -222,9 +243,9 @@ const SpeakerAwareHeader: React.FC = () => {
             >
               <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-red-500 to-blue-500 text-white font-bold text-sm">
                 {user.profileImage ? (
-                  <img 
-                    src={user.profileImage} 
-                    alt={user.displayName || 'User'} 
+                  <img
+                    src={user.profileImage}
+                    alt={user.displayName || 'User'}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
@@ -266,10 +287,10 @@ const SpeakerAwareHeader: React.FC = () => {
           <div className="px-4 py-4 space-y-2">
             <button
               onClick={() => handleNavigation('/dashboard')}
-              className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation ${
+              className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
                 location.pathname === '/dashboard'
-                  ? 'text-blue-700 bg-blue-50'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  ? 'text-brand-dark bg-brand-light font-semibold'
+                  : 'text-gray-600 hover:text-brand-blue hover:bg-gray-50'
               }`}
             >
               <User className="h-4 w-4" />
@@ -278,10 +299,10 @@ const SpeakerAwareHeader: React.FC = () => {
 
             <button
               onClick={() => handleNavigation('/events')}
-              className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation ${
+              className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
                 location.pathname === '/events'
-                  ? 'text-blue-700 bg-blue-50'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  ? 'text-brand-dark bg-brand-light font-semibold'
+                  : 'text-gray-600 hover:text-brand-blue hover:bg-gray-50'
               }`}
             >
               <Calendar className="h-4 w-4" />
@@ -290,10 +311,10 @@ const SpeakerAwareHeader: React.FC = () => {
 
             <button
               onClick={() => handleNavigation('/members')}
-              className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation ${
+              className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
                 location.pathname === '/members'
-                  ? 'text-blue-700 bg-blue-50'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  ? 'text-brand-dark bg-brand-light font-semibold'
+                  : 'text-gray-600 hover:text-brand-blue hover:bg-gray-50'
               }`}
             >
               <Users className="h-4 w-4" />
@@ -302,10 +323,10 @@ const SpeakerAwareHeader: React.FC = () => {
 
             <button
               onClick={() => handleNavigation('/chats')}
-              className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation ${
+              className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
                 location.pathname === '/chats'
-                  ? 'text-blue-700 bg-blue-50'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  ? 'text-brand-dark bg-brand-light font-semibold'
+                  : 'text-gray-600 hover:text-brand-blue hover:bg-gray-50'
               }`}
             >
               <MessageCircle className="h-4 w-4" />
@@ -314,18 +335,29 @@ const SpeakerAwareHeader: React.FC = () => {
 
             {/* Admin Mobile Menu Item */}
             {isAdmin && (
-              <button 
+              <button
                 onClick={() => handleNavigation('/admin')}
-                className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation ${
+                className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
                   location.pathname.startsWith('/admin')
-                    ? 'text-purple-700 bg-purple-50'
-                    : 'text-brand-dark hover:text-purple-700 hover:bg-purple-50'
+                    ? 'text-brand-dark bg-brand-light font-semibold'
+                    : 'text-brand-dark hover:text-brand-dark-hover hover:bg-gray-50'
                 }`}
               >
                 <Shield className="h-4 w-4" />
                 <span>Admin Panel</span>
               </button>
             )}
+
+            {/* Donate Button (Mobile) */}
+            <a
+              href="https://almalinks.org/donate.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium bg-gradient-to-r from-brand-gold to-amber-500 hover:from-brand-gold-hover hover:to-amber-600 text-white"
+            >
+              <Heart className="h-4 w-4 fill-current" />
+              <span>Support AlmaLinks</span>
+            </a>
 
             {/* Mobile User Info */}
             <div className="border-t border-gray-200 pt-4 mt-4">

@@ -9,11 +9,21 @@ export const useActivityTracking = () => {
   const lastPageRef = useRef<string | null>(null);
 
   // Track page views when location changes
+  // DISABLED: Page view tracking generates too many activity logs
+  // To re-enable, uncomment the useEffect below
   useEffect(() => {
+    // Page view tracking is disabled to reduce Firebase quota usage
+    // This was the largest source of activity logs (every page navigation)
+    // If you need to track page views, consider implementing:
+    // 1. Session-based tracking (only first view per session)
+    // 2. Longer throttle periods (5-10 minutes between logs)
+    // 3. Only track specific high-value pages
+
+    /* ORIGINAL CODE (DISABLED):
     if (!user?.uid) return;
 
     const currentPage = window.location.pathname;
-    
+
     // Don't track the same page twice in a row
     if (lastPageRef.current === currentPage) return;
     lastPageRef.current = currentPage;
@@ -28,7 +38,7 @@ export const useActivityTracking = () => {
     ];
 
     const isTrackedPage = pagesToTrack.some(page => currentPage.startsWith(page));
-    
+
     if (isTrackedPage) {
       const pageDisplayName = getPageDisplayName(currentPage);
       ActivityService.logPageView(
@@ -38,7 +48,8 @@ export const useActivityTracking = () => {
         pageDisplayName
       );
     }
-  }, [user, window.location.pathname]);
+    */
+  }, [user]);
 
   // Helper function to get display name for pages
   const getPageDisplayName = (path: string): string => {

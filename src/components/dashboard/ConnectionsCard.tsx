@@ -494,37 +494,35 @@ const ConnectionsCard: React.FC = () => {
           <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your events...</p>
         </div>
-      ) : events.length === 0 ? (
-        <div className="text-center py-8 bg-gray-50 rounded-2xl">
-          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h4 className="text-lg font-semibold text-gray-900 mb-2">No Registered Events</h4>
-          <p className="text-gray-600 mb-4">
-            You haven't registered for any events yet. Register for an event to start making connections.
-          </p>
-          <Link
-            to="/events"
-            className="inline-flex items-center space-x-2 text-brand-light hover:text-blue-700 font-medium"
-          >
-            <span>View upcoming events</span>
-            <ChevronRight className="h-4 w-4" />
-          </Link>
-        </div>
       ) : connections.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 rounded-2xl">
           <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h4 className="text-lg font-semibold text-gray-900 mb-2">No Connections Yet</h4>
           <p className="text-gray-600 mb-4">
-            {selectedEventId === 'all' 
-              ? 'Scan QR codes from other attendees at events to build your network.'
-              : `No connections found for this event. Try selecting a different event or "All Events".`}
+            {selectedEventId === 'all'
+              ? 'Connect with other members by scanning their QR codes at events or through the Members directory.'
+              : events.length > 0
+                ? `No connections found for this event. Try selecting "All Events" to see all your connections.`
+                : 'Start by registering for events and connecting with other members.'}
           </p>
-          <Link
-            to="/events"
-            className="inline-flex items-center space-x-2 text-brand-light hover:text-blue-700 font-medium"
-          >
-            <span>View upcoming events</span>
-            <ChevronRight className="h-4 w-4" />
-          </Link>
+          <div className="flex flex-col items-center space-y-2">
+            <Link
+              to="/members"
+              className="inline-flex items-center space-x-2 text-brand-blue hover:text-brand-blue-hover font-medium"
+            >
+              <Users className="h-4 w-4" />
+              <span>Browse members</span>
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+            <Link
+              to="/events"
+              className="inline-flex items-center space-x-2 text-brand-blue hover:text-brand-blue-hover font-medium"
+            >
+              <Calendar className="h-4 w-4" />
+              <span>View upcoming events</span>
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="relative">
@@ -713,7 +711,7 @@ const ConnectionsCard: React.FC = () => {
                       {/* View Profile Button */}
                       <Link
                         to={`/profile/${partner.uid}`}
-                        className="flex items-center justify-center text-xs font-medium text-brand-dark hover:text-purple-800 bg-purple-50 hover:bg-purple-100 py-2 px-3 rounded-lg transition-colors duration-200 mt-2"
+                        className="flex items-center justify-center text-xs font-medium text-white bg-brand-dark hover:bg-brand-dark-hover py-2 px-3 rounded-lg transition-colors duration-200 mt-2"
                       >
                         <Eye className="h-3.5 w-3.5 mr-1.5" />
                         View Profile
