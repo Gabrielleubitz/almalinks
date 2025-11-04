@@ -12,9 +12,11 @@ import {
   Menu,
   X,
   MessageCircle,
-  Heart
+  Heart,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useNotifications } from '../hooks/useNotifications';
 import logoSvg from '../assets/alma-links-logo.svg';
 import ProfilePictureUploader from './profile/ProfilePictureUploader';
 
@@ -22,7 +24,8 @@ const SpeakerAwareHeader: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, isAdmin, isPending } = useAuth();
-  
+  const { counts: notificationCounts } = useNotifications(user?.uid, isAdmin);
+
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
 
@@ -201,24 +204,34 @@ const SpeakerAwareHeader: React.FC = () => {
             </button>
             <button
               onClick={() => navigate('/chats')}
-              className={`text-sm font-medium transition-colors duration-200 ${
+              className={`relative text-sm font-medium transition-colors duration-200 ${
                 location.pathname === '/chats'
                   ? 'text-brand-dark font-semibold'
                   : 'text-gray-600 hover:text-brand-blue'
               }`}
             >
               Chats
+              {notificationCounts.unreadChats > 0 && (
+                <span className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full">
+                  {notificationCounts.unreadChats > 99 ? '99+' : notificationCounts.unreadChats}
+                </span>
+              )}
             </button>
             {isAdmin && (
               <button
                 onClick={() => navigate('/admin')}
-                className={`text-sm font-medium transition-colors duration-200 ${
+                className={`relative text-sm font-medium transition-colors duration-200 ${
                   location.pathname.startsWith('/admin')
                     ? 'text-brand-dark font-semibold'
                     : 'text-brand-dark hover:text-brand-dark-hover'
                 }`}
               >
                 Admin
+                {notificationCounts.pendingRegistrations > 0 && (
+                  <span className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-purple-500 rounded-full">
+                    {notificationCounts.pendingRegistrations > 99 ? '99+' : notificationCounts.pendingRegistrations}
+                  </span>
+                )}
               </button>
             )}
           </nav>
@@ -323,28 +336,42 @@ const SpeakerAwareHeader: React.FC = () => {
 
             <button
               onClick={() => handleNavigation('/chats')}
-              className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
+              className={`flex items-center justify-between w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
                 location.pathname === '/chats'
                   ? 'text-brand-dark bg-brand-light font-semibold'
                   : 'text-gray-600 hover:text-brand-blue hover:bg-gray-50'
               }`}
             >
-              <MessageCircle className="h-4 w-4" />
-              <span>Chats</span>
+              <div className="flex items-center space-x-3">
+                <MessageCircle className="h-4 w-4" />
+                <span>Chats</span>
+              </div>
+              {notificationCounts.unreadChats > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full">
+                  {notificationCounts.unreadChats > 99 ? '99+' : notificationCounts.unreadChats}
+                </span>
+              )}
             </button>
 
             {/* Admin Mobile Menu Item */}
             {isAdmin && (
               <button
                 onClick={() => handleNavigation('/admin')}
-                className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
+                className={`flex items-center justify-between w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
                   location.pathname.startsWith('/admin')
                     ? 'text-brand-dark bg-brand-light font-semibold'
                     : 'text-brand-dark hover:text-brand-dark-hover hover:bg-gray-50'
                 }`}
               >
-                <Shield className="h-4 w-4" />
-                <span>Admin Panel</span>
+                <div className="flex items-center space-x-3">
+                  <Shield className="h-4 w-4" />
+                  <span>Admin Panel</span>
+                </div>
+                {notificationCounts.pendingRegistrations > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-purple-500 rounded-full">
+                    {notificationCounts.pendingRegistrations > 99 ? '99+' : notificationCounts.pendingRegistrations}
+                  </span>
+                )}
               </button>
             )}
 

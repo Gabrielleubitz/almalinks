@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Send, 
-  Users, 
-  Settings, 
-  UserPlus, 
+import {
+  ArrowLeft,
+  Send,
+  Users,
+  Settings,
+  UserPlus,
   Shield,
   MoreHorizontal,
   Clock,
@@ -20,10 +20,13 @@ import {
   Info,
   Phone,
   Mail,
-  Trash2
+  Trash2,
+  BellOff,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useActivityTracking } from '../hooks/useActivityTracking';
+import { toggleChatMute, getChatMuteStatus } from '../hooks/useNotifications';
 import { ChatService } from '../services/chatService';
 import { UserService } from '../services/userService';
 import { 
@@ -79,6 +82,8 @@ const ChatViewPage: React.FC = () => {
   const [nonAdminMembers, setNonAdminMembers] = useState<ChatMember[]>([]);
   const [selectedNewAdmin, setSelectedNewAdmin] = useState<string>('');
   const [appointingAdmin, setAppointingAdmin] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [mutingChat, setMutingChat] = useState(false);
 
   // Real-time subscription
   const unsubscribeRef = useRef<(() => void) | null>(null);
@@ -89,6 +94,7 @@ const ChatViewPage: React.FC = () => {
       loadPermissions();
       subscribeToMessages();
       loadUserChats();
+      loadMuteStatus();
     }
 
     return () => {
@@ -138,6 +144,34 @@ const ChatViewPage: React.FC = () => {
       setPermissions(userPermissions);
     } catch (err) {
       console.error('❌ Error loading permissions:', err);
+    }
+  };
+
+  const loadMuteStatus = async () => {
+    if (!user?.uid || !chatId) return;
+
+    try {
+      const muteStatus = await getChatMuteStatus(user.uid, chatId);
+      setIsMuted(muteStatus);
+      console.log(`🔇 Chat mute status loaded: ${muteStatus ? 'muted' : 'unmuted'}`);
+    } catch (err) {
+      console.error('❌ Error loading mute status:', err);
+    }
+  };
+
+  const handleToggleMute = async () => {
+    if (!user?.uid || !chatId) return;
+
+    try {
+      setMutingChat(true);
+      const newMuteStatus = await toggleChatMute(user.uid, chatId, isMuted);
+      setIsMuted(newMuteStatus);
+      console.log(`🔔 Chat ${newMuteStatus ? 'muted' : 'unmuted'}`);
+    } catch (err) {
+      console.error('❌ Error toggling mute:', err);
+      alert('Failed to toggle mute. Please try again.');
+    } finally {
+      setMutingChat(false);
     }
   };
 
@@ -1118,6 +1152,25 @@ const ChatViewPage: React.FC = () => {
                     </button>
                   </>
                 )}
+                {/* Mute Toggle */}
+                <button
+                  onClick={handleToggleMute}
+                  disabled={mutingChat}
+                  className="flex items-center justify-between w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  <div className="flex items-center">
+                    {isMuted ? (
+                      <Bell className="h-5 w-5 mr-3" />
+                    ) : (
+                      <BellOff className="h-5 w-5 mr-3" />
+                    )}
+                    <span>{isMuted ? 'Unmute Notifications' : 'Mute Notifications'}</span>
+                  </div>
+                  {mutingChat && (
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                  )}
+                </button>
+
                 {chat.userRole === 'admin' && (
                   <button
                     onClick={() => setShowDeleteConfirmation(true)}
