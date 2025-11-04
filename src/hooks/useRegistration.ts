@@ -170,12 +170,13 @@ export const useRegistration = () => {
         });
 
         // Send admin notification
+        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@wineandgrind.com';
         await fetch('/api/email-service', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'admin-notification',
-            email: process.env.REACT_APP_ADMIN_EMAIL || 'admin@wineandgrind.com',
+            email: adminEmail,
             subject: 'New Event Registration',
             name: finalData.name,
             userEmail: finalData.email,

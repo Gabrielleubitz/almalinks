@@ -182,8 +182,8 @@ export const useAuth = () => {
         
         // Send admin notifications for pending approval (both SMS and email)
         try {
-          // Send SMS notification
-          await fetch('/api/send-sms', {
+          // Send SMS notification (optional - fails gracefully if endpoint doesn't exist)
+          const smsResponse = await fetch('/api/send-sms', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -191,19 +191,26 @@ export const useAuth = () => {
               body: `🔔 New user pending approval: ${newUserData.name} (${newUserData.email}). Please review in admin panel.`
             })
           });
-          console.log('✅ Admin SMS notification sent for pending user');
+
+          if (smsResponse.ok) {
+            console.log('✅ Admin SMS notification sent for pending user');
+          } else {
+            console.log('⚠️ SMS notification endpoint not available (this is optional)');
+          }
         } catch (smsError) {
-          console.error('❌ Failed to send admin SMS notification:', smsError);
+          // SMS is optional, don't block registration if it fails
+          console.log('⚠️ SMS notification not sent (endpoint not available)');
         }
-        
+
         // Send email notification to admin
         try {
+          const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@wineandgrind.com';
           await fetch('/api/email-service', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               type: 'admin-notification',
-              email: process.env.REACT_APP_ADMIN_EMAIL || 'admin@wineandgrind.com',
+              email: adminEmail,
               subject: 'New User Registration - Pending Approval',
               name: newUserData.name,
               userEmail: newUserData.email,

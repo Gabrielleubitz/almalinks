@@ -3,12 +3,12 @@ const isServiceWorkerSupported = 'serviceWorker' in navigator;
 
 // Register the service worker
 export function register() {
-  if (isServiceWorkerSupported && process.env.NODE_ENV === 'production') {
+  if (isServiceWorkerSupported && import.meta.env.MODE === 'production') {
     window.addEventListener('load', () => {
       const swUrl = '/serviceWorker.js';
-      
+
       registerValidSW(swUrl);
-      
+
       // Show iOS install prompt if needed
       showIOSInstallPrompt();
     });
