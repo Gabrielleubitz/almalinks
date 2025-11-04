@@ -4,9 +4,18 @@ import admin from 'firebase-admin';
 // Initialize Firebase Admin (reuse existing instance if available)
 if (!admin.apps.length) {
   try {
-    // Try to use service account key from environment variable first (Vercel production)
+    // Try to use service account key from environment variable (Vercel production)
     if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-      const serviceAccountKey = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+      // Check if it's base64 encoded (more reliable for Vercel)
+      let serviceAccountKey;
+      try {
+        // Try base64 decode first
+        const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_KEY, 'base64').toString('utf8');
+        serviceAccountKey = JSON.parse(decoded);
+      } catch {
+        // If base64 decode fails, try parsing as JSON directly
+        serviceAccountKey = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+      }
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccountKey),
       });
