@@ -696,9 +696,9 @@ const ChatViewPage: React.FC = () => {
                 <div>
                   <button
                     onClick={() => setShowChatInfo(!showChatInfo)}
-                    className="text-left hover:text-brand-light transition-colors"
+                    className="text-left hover:text-brand-blue transition-colors"
                   >
-                    <h1 className="text-xl font-semibold text-gray-900 hover:text-brand-light transition-colors">{chat.name}</h1>
+                    <h1 className="text-xl font-semibold text-gray-900 hover:text-brand-blue transition-colors">{chat.name}</h1>
                   </button>
                   <div className="flex items-center space-x-4 text-sm text-gray-500">
                     <div className="flex items-center space-x-1">
@@ -811,7 +811,7 @@ const ChatViewPage: React.FC = () => {
                       }}
                       className="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
                     >
-                      <UserPlus className="h-5 w-5 text-brand-light mb-1" />
+                      <UserPlus className="h-5 w-5 text-brand-blue mb-1" />
                       <span className="text-xs text-gray-700">Add Member</span>
                     </button>
                   )}
@@ -861,7 +861,7 @@ const ChatViewPage: React.FC = () => {
                         setShowMembersList(!showMembersList);
                         setShowChatInfo(false);
                       }}
-                      className="text-xs text-brand-light hover:text-blue-700"
+                      className="text-xs text-brand-blue hover:text-brand-blue-hover"
                     >
                       View All
                     </button>
@@ -877,7 +877,7 @@ const ChatViewPage: React.FC = () => {
                             onClick={() => navigate(`/profile/${member.userId}`)}
                             className="text-left w-full"
                           >
-                            <p className="text-sm font-medium text-gray-900 hover:text-brand-light transition-colors cursor-pointer truncate">
+                            <p className="text-sm font-medium text-gray-900 hover:text-brand-blue transition-colors cursor-pointer truncate">
                               {member.displayName || 'Unknown User'}
                               {member.userId === user?.uid && ' (You)'}
                             </p>
@@ -892,7 +892,7 @@ const ChatViewPage: React.FC = () => {
                               chat.userRole === 'admin' && (
                                 <button
                                   onClick={() => handlePromoteMember(member.userId)}
-                                  className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-50 text-brand-light hover:bg-blue-200 transition-colors"
+                                  className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-50 text-brand-blue hover:bg-blue-200 transition-colors"
                                   title="Promote to Admin"
                                 >
                                   <Shield className="h-3 w-3 mr-1" />
@@ -949,7 +949,7 @@ const ChatViewPage: React.FC = () => {
                             {message.userId !== user.uid ? (
                               <button
                                 onClick={() => navigate(`/profile/${message.userId}`)}
-                                className="text-xs text-gray-500 mb-1 font-medium hover:text-brand-light transition-colors cursor-pointer"
+                                className="text-xs text-gray-500 mb-1 font-medium hover:text-brand-blue transition-colors cursor-pointer"
                               >
                                 {getMessageSenderName(message)}
                               </button>
@@ -1029,7 +1029,7 @@ const ChatViewPage: React.FC = () => {
                 {chat.userRole === 'admin' && (
                   <button
                     onClick={() => setShowAddMemberModal(true)}
-                    className="p-1 text-brand-light hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                    className="p-1 text-brand-blue hover:text-brand-blue-hover hover:bg-blue-50 rounded transition-colors"
                     title="Add Member"
                   >
                     <UserPlus className="h-4 w-4" />
@@ -1239,7 +1239,7 @@ const ChatViewPage: React.FC = () => {
                   type="checkbox"
                   checked={editingChat.allowRequests}
                   onChange={(e) => setEditingChat({...editingChat, allowRequests: e.target.checked})}
-                  className="h-4 w-4 text-brand-light focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-brand-blue focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="allowRequests" className="ml-2 text-sm text-gray-700">
                   Allow join requests
@@ -1310,7 +1310,7 @@ const ChatViewPage: React.FC = () => {
                       </div>
                       <button
                         onClick={() => handleAddMember(result.uid || result.id)}
-                        className="px-3 py-1 text-xs font-medium text-brand-light bg-blue-50 rounded-md hover:bg-blue-200 transition-colors"
+                        className="px-3 py-1 text-xs font-medium text-brand-blue bg-blue-50 rounded-md hover:bg-blue-200 transition-colors"
                       >
                         Add
                       </button>
@@ -1405,7 +1405,7 @@ const ChatViewPage: React.FC = () => {
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
-                <Shield className="h-6 w-6 text-brand-light" />
+                <Shield className="h-6 w-6 text-brand-blue" />
               </div>
               <div className="ml-3">
                 <h3 className="text-lg font-medium text-gray-900">Appoint New Admin</h3>
@@ -1430,7 +1430,7 @@ const ChatViewPage: React.FC = () => {
                       value={member.userId}
                       checked={selectedNewAdmin === member.userId}
                       onChange={(e) => setSelectedNewAdmin(e.target.value)}
-                      className="text-brand-light focus:ring-blue-500"
+                      className="text-brand-blue focus:ring-blue-500"
                     />
                     <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
                       {(member.displayName || 'U').charAt(0).toUpperCase()}

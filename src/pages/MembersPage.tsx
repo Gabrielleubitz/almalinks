@@ -308,14 +308,14 @@ const MembersPage: React.FC = () => {
     return (
       <div
         key={member.uid}
-        className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-200"
+        className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all duration-200 flex flex-col h-full"
       >
         {/* Avatar */}
         <div className="flex justify-center mb-4">
-          <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-100">
+          <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-100 flex-shrink-0">
             {member.avatarUrl ? (
-              <img 
-                src={member.avatarUrl} 
+              <img
+                src={member.avatarUrl}
                 alt={displayName}
                 className="w-full h-full object-cover"
               />
@@ -329,23 +329,23 @@ const MembersPage: React.FC = () => {
 
         {/* Info */}
         <div className="text-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">{displayName}</h3>
-          
+          <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-1">{displayName}</h3>
+
           {member.bioTitle && (
-            <p className="text-blue-600 font-medium text-sm mb-2">{member.bioTitle}</p>
+            <p className="text-blue-600 font-medium text-sm mb-2 line-clamp-2 leading-snug">{member.bioTitle}</p>
           )}
-          
+
           {member.company && (
-            <div className="flex items-center justify-center text-gray-600 text-sm mb-1">
-              <Briefcase className="h-4 w-4 mr-1" />
-              <span>{member.company}</span>
+            <div className="flex items-center justify-center text-gray-600 text-sm mb-2">
+              <Briefcase className="h-4 w-4 mr-1.5 flex-shrink-0" />
+              <span className="line-clamp-1">{member.company}</span>
             </div>
           )}
-          
+
           {(member.city || member.country) && (
             <div className="flex items-center justify-center text-gray-500 text-sm">
-              <MapPin className="h-4 w-4 mr-1" />
-              <span>{[member.city, member.country].filter(Boolean).join(', ')}</span>
+              <MapPin className="h-4 w-4 mr-1.5 flex-shrink-0" />
+              <span className="line-clamp-1">{[member.city, member.country].filter(Boolean).join(', ')}</span>
             </div>
           )}
         </div>
@@ -353,17 +353,17 @@ const MembersPage: React.FC = () => {
         {/* Skills Preview */}
         {member.skills && member.skills.length > 0 && (
           <div className="mb-4">
-            <div className="flex flex-wrap gap-1 justify-center">
+            <div className="flex flex-wrap gap-1.5 justify-center">
               {member.skills.slice(0, 3).map((skill, index) => (
                 <span
                   key={index}
-                  className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs"
+                  className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium"
                 >
                   {skill}
                 </span>
               ))}
               {member.skills.length > 3 && (
-                <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs">
+                <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs font-medium">
                   +{member.skills.length - 3} more
                 </span>
               )}
@@ -371,33 +371,38 @@ const MembersPage: React.FC = () => {
           </div>
         )}
 
+        {/* Spacer to push footer to bottom */}
+        <div className="flex-grow"></div>
+
         {/* Actions */}
-        <div className="flex justify-center space-x-2">
-          {/* View Profile Button */}
-          <button
-            onClick={() => window.location.href = `/profile/${member.uid}`}
-            className="p-2 text-gray-400 hover:text-blue-600 transition-colors border border-gray-200 rounded-lg hover:border-blue-200"
-            title="View Full Profile"
-          >
-            <ExternalLink className="h-5 w-5" />
-          </button>
-          {member.linkedin && (
-            <a
-              href={`https://linkedin.com/in/${member.linkedin}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 text-gray-400 hover:text-blue-600 transition-colors border border-gray-200 rounded-lg hover:border-blue-200"
-              title="LinkedIn Profile"
+        <div className="flex flex-col space-y-2 mt-auto pt-3 border-t border-gray-100">
+          <div className="flex justify-center space-x-2">
+            {/* View Profile Button */}
+            <button
+              onClick={() => window.location.href = `/profile/${member.uid}`}
+              className="p-2 text-gray-400 hover:text-brand-blue transition-colors border border-gray-200 rounded-lg hover:border-blue-200"
+              title="View Full Profile"
             >
-              <Linkedin className="h-5 w-5" />
-            </a>
-          )}
-          
+              <ExternalLink className="h-5 w-5" />
+            </button>
+            {member.linkedin && (
+              <a
+                href={`https://linkedin.com/in/${member.linkedin}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-gray-400 hover:text-brand-blue transition-colors border border-gray-200 rounded-lg hover:border-blue-200"
+                title="LinkedIn Profile"
+              >
+                <Linkedin className="h-5 w-5" />
+              </a>
+            )}
+          </div>
+
           {currentUser && !member.isConnected && !isSelf && (
             <button
               onClick={() => handleConnect(member.uid)}
               disabled={isConnecting}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              className="bg-brand-dark hover:bg-brand-dark-hover text-white px-4 py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 font-medium"
             >
               {isConnecting ? (
                 <>
@@ -412,16 +417,16 @@ const MembersPage: React.FC = () => {
               )}
             </button>
           )}
-          
+
           {member.isConnected && (
-            <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg font-medium flex items-center space-x-2">
+            <div className="bg-green-100 text-green-800 px-4 py-2.5 rounded-lg font-medium flex items-center justify-center space-x-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <span>Connected</span>
             </div>
           )}
-          
+
           {isSelf && (
-            <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-medium flex items-center space-x-2">
+            <div className="bg-blue-100 text-blue-800 px-4 py-2.5 rounded-lg font-medium flex items-center justify-center space-x-2">
               <User className="h-4 w-4" />
               <span>Your Profile</span>
             </div>
@@ -479,7 +484,7 @@ const MembersPage: React.FC = () => {
                 {/* View Member Map Button */}
                 <button
                   onClick={() => setShowMemberMap(true)}
-                  className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all shadow-sm font-medium whitespace-nowrap"
+                  className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white rounded-2xl hover:shadow-lg transition-all shadow-sm font-medium whitespace-nowrap"
                 >
                   <Map className="h-5 w-5" />
                   <span>View Map</span>

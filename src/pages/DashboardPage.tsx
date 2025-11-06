@@ -8,6 +8,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useActivityTracking } from '../hooks/useActivityTracking';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import IganiWatermark from '../components/IganiWatermark';
 import AnnouncementsSidebar from '../components/announcements/AnnouncementsSidebar';
 import ConnectionsCard from '../components/dashboard/ConnectionsCard';
 import ProfilePictureUploader from '../components/profile/ProfilePictureUploader';
@@ -667,7 +668,7 @@ const EventsPage: React.FC = () => {
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                    <User className="h-6 w-6 text-brand-light" />
+                    <User className="h-6 w-6 text-brand-blue" />
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Profile Status</p>
@@ -703,7 +704,7 @@ const EventsPage: React.FC = () => {
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <button
                   onClick={scrollToProfile}
-                  className="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all shadow-sm font-medium"
+                  className="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-4 py-3 rounded-xl hover:shadow-lg transition-all shadow-sm font-medium"
                 >
                   <Edit className="h-5 w-5" />
                   <span>Edit Profile</span>
@@ -1184,7 +1185,7 @@ const EventsPage: React.FC = () => {
                                           }));
                                           setSkillsInputValue(newSkills.join(', '));
                                         }}
-                                        className="ml-2 text-brand-light hover:text-brand-mid text-sm"
+                                        className="ml-2 text-brand-blue hover:text-brand-blue-hover text-sm"
                                         disabled={profileUpdateLoading}
                                         title="Remove skill"
                                       >
@@ -1219,7 +1220,7 @@ const EventsPage: React.FC = () => {
                             <button
                               onClick={handleSaveProfile}
                               disabled={profileUpdateLoading}
-                              className="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2 disabled:opacity-50"
+                              className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2 disabled:opacity-50"
                             >
                               {profileUpdateLoading ? (
                                 <>
@@ -1302,11 +1303,11 @@ const EventsPage: React.FC = () => {
                               <div className="text-sm text-gray-500">LinkedIn</div>
                               <div className="font-medium">
                                 {user?.linkedinUsername ? (
-                                  <a 
+                                  <a
                                     href={`https://linkedin.com/in/${formatLinkedinUrl(user.linkedinUsername)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-brand-light hover:text-brand-mid hover:underline"
+                                    className="text-brand-blue hover:text-brand-blue-hover hover:underline"
                                   >
                                     {formatLinkedinUrl(user.linkedinUsername)}
                                   </a>
@@ -1401,11 +1402,11 @@ const EventsPage: React.FC = () => {
                                 <div>
                                   <div className="text-sm text-gray-500">Website</div>
                                   <div className="font-medium">
-                                    <a 
+                                    <a
                                       href={user.website}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-brand-light hover:text-brand-mid hover:underline"
+                                      className="text-brand-blue hover:text-brand-blue-hover hover:underline"
                                     >
                                       {user.website.replace(/^https?:\/\//, '')}
                                     </a>
@@ -1420,11 +1421,11 @@ const EventsPage: React.FC = () => {
                                 <div>
                                   <div className="text-sm text-gray-500">Twitter/X</div>
                                   <div className="font-medium">
-                                    <a 
+                                    <a
                                       href={`https://twitter.com/${user.twitter}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-brand-light hover:text-brand-mid hover:underline"
+                                      className="text-brand-blue hover:text-brand-blue-hover hover:underline"
                                     >
                                       @{user.twitter}
                                     </a>
@@ -1770,9 +1771,9 @@ const EventsPage: React.FC = () => {
                   <p className="text-gray-600 mb-6">
                     You haven't registered for any events yet. Discover amazing networking opportunities!
                   </p>
-                  <button 
+                  <button
                     onClick={() => window.location.href = '/events'}
-                    className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-medium"
+                    className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-medium"
                   >
                     Explore Events
                   </button>
@@ -1850,7 +1851,7 @@ const EventsPage: React.FC = () => {
                           <span>{formatDate(event.date).date}</span>
                         </div>
                         <div className="flex items-center space-x-3 text-gray-600">
-                          <Clock className="h-5 w-5 text-brand-light" />
+                          <Clock className="h-5 w-5 text-brand-blue" />
                           <span>{formatDate(event.date).time}</span>
                         </div>
                         <div className="flex items-center space-x-3 text-gray-600">
@@ -1995,6 +1996,9 @@ const EventsPage: React.FC = () => {
       )}
 
       <Footer />
+
+      {/* Igani Watermark */}
+      <IganiWatermark position="bottom-right" size="sm" opacity={0.25} />
     </div>
   );
 };

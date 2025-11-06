@@ -226,7 +226,7 @@ const ChatsPage: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-brand-light transition-colors truncate">
+                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-brand-blue transition-colors truncate">
                               {chat.name}
                             </h3>
                             {chat.unreadCount > 0 && (

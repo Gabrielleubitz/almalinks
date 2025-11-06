@@ -27,6 +27,7 @@ import { db } from '../../firebase/config';
 import AdminHeader from '../../components/admin/AdminHeader';
 import StatsCards from '../../components/admin/StatsCards';
 import UserListModal from '../../components/admin/UserListModal';
+import IganiWatermark from '../../components/IganiWatermark';
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -869,6 +870,9 @@ const AdminDashboard: React.FC = () => {
         eventId={selectedEventId}
         onUserUpdate={handleUserUpdate}
       />
+
+      {/* Igani Watermark */}
+      <IganiWatermark position="bottom-right" size="sm" opacity={0.3} />
     </div>
   );
 };

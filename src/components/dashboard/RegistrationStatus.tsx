@@ -326,7 +326,7 @@ const RegistrationStatus: React.FC = () => {
               </div>
               <button
                 onClick={downloadQRCode}
-                className="inline-flex items-center space-x-2 text-brand-light hover:text-blue-700 text-sm font-medium"
+                className="inline-flex items-center space-x-2 text-brand-blue hover:text-brand-blue-hover text-sm font-medium"
               >
                 <Download className="h-4 w-4" />
                 <span>Download QR Code</span>
@@ -344,7 +344,7 @@ const RegistrationStatus: React.FC = () => {
               <span className="text-gray-700">June 28th, 2025</span>
             </div>
             <div className="flex items-center space-x-3">
-              <Clock className="h-5 w-5 text-brand-light" />
+              <Clock className="h-5 w-5 text-brand-blue" />
               <span className="text-gray-700">18:30 - 22:00</span>
             </div>
             <div className="flex items-center space-x-3">
@@ -359,7 +359,7 @@ const RegistrationStatus: React.FC = () => {
               href={createGoogleCalendarUrl(registration)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center space-x-2 bg-white text-brand-light hover:text-blue-700 hover:bg-blue-50 border border-blue-200 px-4 py-2 rounded-lg transition-colors duration-200 font-medium"
+              className="inline-flex items-center space-x-2 bg-white text-brand-blue hover:text-brand-blue-hover hover:bg-blue-50 border border-blue-200 px-4 py-2 rounded-lg transition-colors duration-200 font-medium"
             >
               <CalendarPlus className="h-5 w-5" />
               <span>Add to Google Calendar</span>

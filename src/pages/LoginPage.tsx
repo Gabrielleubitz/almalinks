@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import logoSvg from '../assets/alma-links-logo.svg';
+import IganiWatermark from '../components/IganiWatermark';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -415,6 +416,9 @@ const LoginPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Igani Watermark */}
+      <IganiWatermark position="bottom-center" size="sm" opacity={0.3} />
     </div>
   );
 };

@@ -363,7 +363,7 @@ const ProfileEditPage: React.FC = () => {
           {/* Profile Picture Section - IDENTICAL TO ADMIN */}
           <div className="mb-8 p-6 border border-gray-200 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Camera className="h-5 w-5 mr-2 text-brand-light" />
+              <Camera className="h-5 w-5 mr-2 text-brand-blue" />
               Profile Picture
             </h3>
             
@@ -405,7 +405,7 @@ const ProfileEditPage: React.FC = () => {
             {/* Basic Information Section */}
             <div className="p-6 border border-gray-200 rounded-xl">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <User className="h-5 w-5 mr-2 text-brand-light" />
+                <User className="h-5 w-5 mr-2 text-brand-blue" />
                 Basic Information
               </h3>
               <ProfileBasicsStep
@@ -419,7 +419,7 @@ const ProfileEditPage: React.FC = () => {
             {/* About & Professional Section */}
             <div className="p-6 border border-gray-200 rounded-xl">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Briefcase className="h-5 w-5 mr-2 text-brand-light" />
+                <Briefcase className="h-5 w-5 mr-2 text-brand-blue" />
                 About & Professional
               </h3>
               <AboutYouStep
@@ -433,7 +433,7 @@ const ProfileEditPage: React.FC = () => {
             {/* Contact & Location Section */}
             <div className="p-6 border border-gray-200 rounded-xl">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <MapPin className="h-5 w-5 mr-2 text-brand-light" />
+                <MapPin className="h-5 w-5 mr-2 text-brand-blue" />
                 Contact & Location
               </h3>
               <ContactLocationStep
@@ -447,7 +447,7 @@ const ProfileEditPage: React.FC = () => {
             {/* Privacy Settings Section */}
             <div className="p-6 border border-gray-200 rounded-xl">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Shield className="h-5 w-5 mr-2 text-brand-light" />
+                <Shield className="h-5 w-5 mr-2 text-brand-blue" />
                 Privacy Settings
               </h3>
               <PrivacyStep

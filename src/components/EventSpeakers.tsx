@@ -102,12 +102,12 @@ const EventSpeakers: React.FC<EventSpeakersProps> = ({
               
               {speaker.linkedIn && (
                 <div className="flex items-center text-sm">
-                  <Linkedin className="h-3.5 w-3.5 mr-1.5 text-brand-light" />
-                  <a 
+                  <Linkedin className="h-3.5 w-3.5 mr-1.5 text-brand-blue" />
+                  <a
                     href={speaker.linkedIn.startsWith('http') ? speaker.linkedIn : `https://linkedin.com/in/${speaker.linkedIn}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-brand-light hover:text-brand-mid hover:underline"
+                    className="text-brand-blue hover:text-brand-blue-hover hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
                     LinkedIn Profile

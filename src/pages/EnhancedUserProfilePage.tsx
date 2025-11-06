@@ -355,7 +355,7 @@ const EnhancedUserProfilePage: React.FC = () => {
                 <div className="bg-white rounded-2xl shadow-lg p-8">
                   <div className="flex items-center space-x-3 mb-6">
                     <div className="p-2 bg-blue-50 rounded-lg">
-                      <User className="h-6 w-6 text-brand-light" />
+                      <User className="h-6 w-6 text-brand-blue" />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900">About</h2>
                   </div>
@@ -468,7 +468,7 @@ const EnhancedUserProfilePage: React.FC = () => {
                 <div className="bg-white rounded-2xl shadow-lg p-6">
                   <div className="flex items-center space-x-3 mb-6">
                     <div className="p-2 bg-blue-50 rounded-lg">
-                      <Globe className="h-6 w-6 text-brand-light" />
+                      <Globe className="h-6 w-6 text-brand-blue" />
                     </div>
                     <h3 className="text-xl font-bold text-gray-900">Links</h3>
                   </div>
@@ -481,9 +481,9 @@ const EnhancedUserProfilePage: React.FC = () => {
                         rel="noopener noreferrer"
                         className="flex items-center space-x-3 p-3 bg-blue-50 rounded-xl hover:bg-blue-50 transition-colors duration-200 group"
                       >
-                        <Linkedin className="h-5 w-5 text-brand-light" />
-                        <span className="text-blue-700 font-medium group-hover:text-brand-mid">LinkedIn Profile</span>
-                        <ExternalLink className="h-4 w-4 text-blue-500 group-hover:text-brand-light" />
+                        <Linkedin className="h-5 w-5 text-brand-blue" />
+                        <span className="text-blue-700 font-medium group-hover:text-brand-blue-hover">LinkedIn Profile</span>
+                        <ExternalLink className="h-4 w-4 text-blue-500 group-hover:text-brand-blue" />
                       </a>
                     )}
                     

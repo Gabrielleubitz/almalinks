@@ -83,15 +83,15 @@ const PendingPage: React.FC = () => {
             
             <div className="bg-blue-50 rounded-xl p-6 text-left">
               <div className="flex items-start space-x-3">
-                <MessageSquare className="h-5 w-5 text-brand-light flex-shrink-0 mt-1" />
+                <MessageSquare className="h-5 w-5 text-brand-blue flex-shrink-0 mt-1" />
                 <div>
                   <h3 className="font-semibold text-blue-800 mb-2">Need assistance?</h3>
                   <p className="text-sm text-blue-700 mb-3">
                     If you have any questions or need to update your information, please contact us:
                   </p>
-                  <a 
-                    href="mailto:info@almalinks.org" 
-                    className="text-sm text-brand-light hover:text-brand-mid font-medium"
+                  <a
+                    href="mailto:info@almalinks.org"
+                    className="text-sm text-brand-blue hover:text-brand-blue-hover font-medium"
                   >
                     info@almalinks.org
                   </a>

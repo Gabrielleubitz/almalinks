@@ -150,7 +150,7 @@ const SpeakerFileUploader: React.FC<SpeakerFileUploaderProps> = ({
           <button
             onClick={handleUpload}
             disabled={uploading || !selectedFile || !fileDescription.trim() || !selectedEventId || speakerEvents.length === 0}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {uploading ? (
               <>

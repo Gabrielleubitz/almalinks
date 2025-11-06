@@ -296,7 +296,7 @@ const SignupWizard: React.FC<SignupWizardProps> = ({
                 type="button"
                 onClick={nextStep}
                 disabled={isLoading}
-                className="inline-flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white rounded-xl hover:shadow-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

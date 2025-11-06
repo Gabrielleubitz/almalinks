@@ -432,7 +432,7 @@ const EventDetailPage: React.FC = () => {
                   <span className="text-gray-700">{formattedDate.date}</span>
                 </div>
                 <div className="flex items-center space-x-3 text-lg">
-                  <Clock className="h-6 w-6 text-brand-light" />
+                  <Clock className="h-6 w-6 text-brand-blue" />
                   <span className="text-gray-700">{formattedDate.time}</span>
                 </div>
                 <div className="flex items-center space-x-3 text-lg">
@@ -516,7 +516,7 @@ const EventDetailPage: React.FC = () => {
                         href={createGoogleCalendarUrl()}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-white text-brand-light border border-blue-200 px-6 py-3 rounded-full hover:bg-blue-50 transition-all duration-300 font-semibold flex items-center justify-center space-x-2"
+                        className="bg-white text-brand-blue border border-blue-200 px-6 py-3 rounded-full hover:bg-blue-50 transition-all duration-300 font-semibold flex items-center justify-center space-x-2"
                       >
                         <CalendarPlus className="h-5 w-5" />
                         <span>Add to Google Calendar</span>
@@ -689,7 +689,7 @@ const EventDetailPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <Clock className="h-5 w-5 text-brand-light" />
+                  <Clock className="h-5 w-5 text-brand-blue" />
                   <div>
                     <div className="text-sm text-gray-500">Time</div>
                     <div className="font-medium text-gray-900">{formattedDate.time}</div>

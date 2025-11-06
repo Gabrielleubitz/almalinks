@@ -167,7 +167,7 @@ const UpcomingEvent = () => {
 
                     <div className="flex items-center space-x-4">
                       <div className="flex-shrink-0">
-                        <Clock className="h-8 w-8 text-brand-light" />
+                        <Clock className="h-8 w-8 text-brand-blue" />
                       </div>
                       <div>
                         <div className="font-semibold text-gray-900">Time?</div>
@@ -192,7 +192,7 @@ const UpcomingEvent = () => {
                       <div className="flex flex-col items-center justify-center space-y-4">
                         <div className="flex items-center space-x-3">
                           <Calendar className="h-6 w-6 text-red-700" />
-                          <Clock className="h-6 w-6 text-brand-light" />
+                          <Clock className="h-6 w-6 text-brand-blue" />
                           <MapPin className="h-6 w-6 text-red-700" />
                         </div>
                         <p className="text-lg font-medium text-gray-800">Sign up to see event details</p>

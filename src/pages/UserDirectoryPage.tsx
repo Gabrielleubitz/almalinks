@@ -270,7 +270,7 @@ const UserDirectoryPage: React.FC = () => {
                   <button
                     onClick={() => setViewMode('grid')}
                     className={`p-2 rounded-md transition-colors duration-200 ${
-                      viewMode === 'grid' ? 'bg-white text-brand-light shadow-sm' : 'text-gray-600'
+                      viewMode === 'grid' ? 'bg-white text-brand-blue shadow-sm' : 'text-gray-600'
                     }`}
                   >
                     <Grid className="h-5 w-5" />
@@ -278,7 +278,7 @@ const UserDirectoryPage: React.FC = () => {
                   <button
                     onClick={() => setViewMode('list')}
                     className={`p-2 rounded-md transition-colors duration-200 ${
-                      viewMode === 'list' ? 'bg-white text-brand-light shadow-sm' : 'text-gray-600'
+                      viewMode === 'list' ? 'bg-white text-brand-blue shadow-sm' : 'text-gray-600'
                     }`}
                   >
                     <List className="h-5 w-5" />
@@ -335,7 +335,7 @@ const UserDirectoryPage: React.FC = () => {
                                 removeSkillFilter(skill.value);
                               }
                             }}
-                            className="rounded border-gray-300 text-brand-light focus:ring-blue-500"
+                            className="rounded border-gray-300 text-brand-blue focus:ring-blue-500"
                           />
                           <span className="text-sm text-gray-700">
                             {skill.label} ({skill.count})
@@ -417,7 +417,7 @@ const UserDirectoryPage: React.FC = () => {
                             <span>{skill}</span>
                             <button
                               onClick={() => removeSkillFilter(skill)}
-                              className="text-brand-light hover:text-brand-mid"
+                              className="text-brand-blue hover:text-brand-blue-hover"
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -547,7 +547,7 @@ const UserDirectoryPage: React.FC = () => {
                             to={`/profile/${userCard.uid}`}
                             className="block"
                           >
-                            <h3 className="font-bold text-gray-900 truncate group-hover:text-brand-light transition-colors duration-200">
+                            <h3 className="font-bold text-gray-900 truncate group-hover:text-brand-blue transition-colors duration-200">
                               {userCard.displayName}
                             </h3>
                             {(userCard.title || userCard.company) && (
@@ -638,7 +638,7 @@ const UserDirectoryPage: React.FC = () => {
                         
                         <div className="flex-1 min-w-0">
                           <Link to={`/profile/${userCard.uid}`}>
-                            <h3 className="font-bold text-gray-900 group-hover:text-brand-light transition-colors duration-200 mb-1">
+                            <h3 className="font-bold text-gray-900 group-hover:text-brand-blue transition-colors duration-200 mb-1">
                               {userCard.displayName}
                             </h3>
                           </Link>

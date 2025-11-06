@@ -244,7 +244,7 @@ const EventsPage: React.FC = () => {
                           <span className="font-medium text-sm sm:text-base">{formatDate(event.date)}</span>
                         </div>
                         <div className="flex items-center space-x-2 sm:space-x-3 text-gray-600">
-                          <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-brand-light flex-shrink-0" />
+                          <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-brand-blue flex-shrink-0" />
                           <span className="font-medium text-sm sm:text-base">{formatTime(event.date)}</span>
                         </div>
                         {event.location && (

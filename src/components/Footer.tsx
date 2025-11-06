@@ -2,6 +2,7 @@ import React from 'react';
 import { Mail, Linkedin, Instagram, Music, Headphones, Youtube, Send } from 'lucide-react';
 import logoSvg from '../assets/alma-links-logo.svg';
 import tiktokSvg from '../assets/tiktok-svgrepo-com.svg';
+import IganiWatermark from './IganiWatermark';
 
 const Footer = () => {
   const SpotifyIcon = () => (
@@ -90,8 +91,9 @@ const Footer = () => {
             </a>
           </div>
           
-          <div className="mt-12 pt-8 border-t border-gray-800 text-gray-500 text-sm">
+          <div className="mt-12 pt-8 border-t border-gray-800 text-gray-500 text-sm space-y-4">
             <p>&copy; 2025 AlmaLinks. All rights reserved.</p>
+            <IganiWatermark position="footer" size="md" opacity={0.5} />
           </div>
         </div>
       </div>

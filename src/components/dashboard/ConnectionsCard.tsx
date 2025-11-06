@@ -337,7 +337,7 @@ const ConnectionsCard: React.FC = () => {
           label: 'Connected by Request',
           bgColor: 'bg-blue-50',
           textColor: 'text-blue-800',
-          iconColor: 'text-brand-light'
+          iconColor: 'text-brand-blue'
         };
     }
   };
@@ -430,7 +430,7 @@ const ConnectionsCard: React.FC = () => {
     <div className="bg-white rounded-3xl shadow-xl p-6 border border-gray-100">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <Users className="h-6 w-6 text-brand-light" />
+          <Users className="h-6 w-6 text-brand-blue" />
           <h3 className="text-xl font-bold text-gray-900">My Connections</h3>
         </div>
         
@@ -566,17 +566,18 @@ const ConnectionsCard: React.FC = () => {
               console.log('🎨 Rendering partner:', partner.name, 'Profile image:', partner.profileImage);
               
               return (
-                <div 
+                <div
                   key={connection.id}
-                  className="flex-shrink-0 w-64 bg-white rounded-xl border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden"
+                  className="flex-shrink-0 w-64 bg-white rounded-xl border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col"
                 >
-                  <div className="p-4">
-                    <div className="flex items-center space-x-3 mb-3">
+                  <div className="p-5 flex flex-col h-full">
+                    {/* Header Section - Avatar and Name */}
+                    <div className="flex items-start space-x-3 mb-4">
                       <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
                         {partner.profileImage ? (
-                          <img 
-                            src={partner.profileImage} 
-                            alt={partner.name} 
+                          <img
+                            src={partner.profileImage}
+                            alt={partner.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               console.error('❌ Image load error for:', partner.name, partner.profileImage);
@@ -590,134 +591,141 @@ const ConnectionsCard: React.FC = () => {
                             }}
                           />
                         ) : null}
-                        <div 
+                        <div
                           className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-lg ${partner.profileImage ? 'hidden' : 'flex'}`}
                         >
                           {partner.name.charAt(0)}
                         </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900 line-clamp-1">{partner.name}</h4>
-                        <p className="text-sm text-gray-600 line-clamp-1">{partner.work}</p>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-900 line-clamp-1 mb-1">{partner.name}</h4>
+                        <p className="text-sm text-gray-600 line-clamp-2 leading-snug">{partner.work}</p>
                       </div>
                     </div>
-                    
+
+                    {/* Position Section */}
                     {partner.position && (
-                      <div className="flex items-center text-xs text-gray-600 mb-2">
-                        <Briefcase className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
+                      <div className="flex items-center text-xs text-gray-600 mb-3">
+                        <Briefcase className="h-3.5 w-3.5 mr-1.5 text-gray-500 flex-shrink-0" />
                         <span className="line-clamp-1">{ConnectionService.formatPosition(partner.position)}</span>
                       </div>
                     )}
-                    
-                    {/* Connection Reason Badges */}
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        {(() => {
-                          const reasons = getConnectionReasons(connection);
-                          
-                          return (
-                            <div className="flex flex-wrap gap-1">
-                              {reasons.map((reason, index) => {
-                                const isAdminReason = reason.includes('Connected by Admin');
-                                const isEventReason = reason.includes('Connected by Event');
-                                const isUserReason = reason.includes('Connected by Request');
-                                
-                                let badge;
-                                if (isEventReason) {
-                                  badge = {
-                                    icon: Zap,
-                                    bgColor: 'bg-green-100',
-                                    textColor: 'text-green-800',
-                                    iconColor: 'text-green-600'
-                                  };
-                                } else if (isAdminReason) {
-                                  badge = {
-                                    icon: Shield,
-                                    bgColor: 'bg-purple-100',
-                                    textColor: 'text-purple-800',
-                                    iconColor: 'text-brand-dark'
-                                  };
-                                } else {
-                                  badge = {
-                                    icon: UserPlus,
-                                    bgColor: 'bg-blue-50',
-                                    textColor: 'text-blue-800',
-                                    iconColor: 'text-brand-light'
-                                  };
-                                }
-                                
-                                const IconComponent = badge.icon;
-                                const displayText = isAdminReason && reason.includes(':') 
-                                  ? reason.split(': ')[0] // Show just "Connected by Admin" in badge
-                                  : reason;
-                                const adminNote = isAdminReason && reason.includes(':') 
-                                  ? reason.split(': ')[1] // Extract the admin note
-                                  : null;
-                                
-                                return (
-                                  <div key={index} className="flex flex-col">
-                                    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${badge.bgColor} ${badge.textColor}`}>
-                                      <IconComponent className={`h-3 w-3 mr-1 ${badge.iconColor}`} />
-                                      {displayText}
-                                    </div>
-                                    {adminNote && (
-                                      <div className="mt-1 text-xs text-gray-600 italic line-clamp-2">
-                                        {adminNote.replace(/['"]/g, '')}
+
+                    {/* Connection Reason Badges and Event Count */}
+                    <div className="mb-3">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex-1 min-w-0">
+                          {(() => {
+                            const reasons = getConnectionReasons(connection);
+
+                            return (
+                              <div className="flex flex-wrap gap-1.5">
+                                {reasons.map((reason, index) => {
+                                  const isAdminReason = reason.includes('Connected by Admin');
+                                  const isEventReason = reason.includes('Connected by Event');
+                                  const isUserReason = reason.includes('Connected by Request');
+
+                                  let badge;
+                                  if (isEventReason) {
+                                    badge = {
+                                      icon: Zap,
+                                      bgColor: 'bg-green-100',
+                                      textColor: 'text-green-800',
+                                      iconColor: 'text-green-600'
+                                    };
+                                  } else if (isAdminReason) {
+                                    badge = {
+                                      icon: Shield,
+                                      bgColor: 'bg-purple-100',
+                                      textColor: 'text-purple-800',
+                                      iconColor: 'text-brand-dark'
+                                    };
+                                  } else {
+                                    badge = {
+                                      icon: UserPlus,
+                                      bgColor: 'bg-blue-50',
+                                      textColor: 'text-blue-800',
+                                      iconColor: 'text-brand-blue'
+                                    };
+                                  }
+
+                                  const IconComponent = badge.icon;
+                                  const displayText = isAdminReason && reason.includes(':')
+                                    ? reason.split(': ')[0] // Show just "Connected by Admin" in badge
+                                    : reason;
+                                  const adminNote = isAdminReason && reason.includes(':')
+                                    ? reason.split(': ')[1] // Extract the admin note
+                                    : null;
+
+                                  return (
+                                    <div key={index} className="flex flex-col">
+                                      <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${badge.bgColor} ${badge.textColor}`}>
+                                        <IconComponent className={`h-3 w-3 mr-1 flex-shrink-0 ${badge.iconColor}`} />
+                                        <span className="truncate">{displayText}</span>
                                       </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          );
-                        })()}
+                                      {adminNote && (
+                                        <div className="mt-1 text-xs text-gray-600 italic line-clamp-2">
+                                          {adminNote.replace(/['"]/g, '')}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                        {selectedEventId === 'all' && eventCount > 1 && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 whitespace-nowrap flex-shrink-0">
+                            {eventCount} events
+                          </span>
+                        )}
                       </div>
-                      {selectedEventId === 'all' && eventCount > 1 && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                          {eventCount} events
-                        </span>
-                      )}
+
+                      {/* Event Name */}
+                      <div className="flex items-center text-xs text-gray-600">
+                        <Calendar className="h-3.5 w-3.5 mr-1.5 text-gray-500 flex-shrink-0" />
+                        <span className="line-clamp-1">{eventName}</span>
+                      </div>
                     </div>
-                    
-                    {/* Event Name */}
-                    <div className="flex items-center text-xs text-gray-600 mb-2">
-                      <Calendar className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
-                      <span className="line-clamp-1">{eventName}</span>
-                    </div>
-                    
-                    <div className="pt-3 border-t border-gray-100 flex flex-col space-y-2">
+
+                    {/* Spacer to push footer to bottom */}
+                    <div className="flex-grow"></div>
+
+                    {/* Footer Section - Contact and Actions */}
+                    <div className="pt-3 border-t border-gray-100 space-y-2 mt-auto">
                       {partner.linkedin && (
-                        <a 
+                        <a
                           href={`https://linkedin.com/in/${ConnectionService.formatLinkedinUrl(partner.linkedin)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center text-xs text-brand-light hover:text-brand-mid hover:underline"
+                          className="flex items-center text-xs text-brand-blue hover:text-brand-blue-hover transition-colors"
                         >
-                          <Linkedin className="h-3.5 w-3.5 mr-1.5" />
+                          <Linkedin className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
                           <span className="line-clamp-1">LinkedIn Profile</span>
                         </a>
                       )}
-                      
+
                       {partner.email && (
-                        <a 
+                        <a
                           href={`mailto:${partner.email}`}
-                          className="flex items-center text-xs text-gray-600 hover:text-gray-800"
+                          className="flex items-center text-xs text-gray-600 hover:text-gray-800 transition-colors"
                         >
-                          <Mail className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
+                          <Mail className="h-3.5 w-3.5 mr-1.5 text-gray-500 flex-shrink-0" />
                           <span className="line-clamp-1">{partner.email}</span>
                         </a>
                       )}
-                      
+
                       {/* View Profile Button */}
                       <Link
                         to={`/profile/${partner.uid}`}
-                        className="flex items-center justify-center text-xs font-medium text-white bg-brand-dark hover:bg-brand-dark-hover py-2 px-3 rounded-lg transition-colors duration-200 mt-2"
+                        className="flex items-center justify-center text-xs font-medium text-white bg-brand-dark hover:bg-brand-dark-hover py-2.5 px-3 rounded-lg transition-colors duration-200 mt-3"
                       >
                         <Eye className="h-3.5 w-3.5 mr-1.5" />
                         View Profile
                       </Link>
-                      
-                      <div className="text-xs text-gray-500 mt-1">
+
+                      <div className="text-xs text-gray-500 text-center pt-2">
                         Connected on {ConnectionService.formatTimestamp(connection.timestamp)}
                       </div>
                     </div>

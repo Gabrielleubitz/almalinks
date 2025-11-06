@@ -223,7 +223,7 @@ const DiscoverChatsPage: React.FC = () => {
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="text-brand-light hover:text-blue-700 font-medium"
+                  className="text-brand-blue hover:text-brand-blue-hover font-medium"
                 >
                   Clear search
                 </button>

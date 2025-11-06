@@ -276,11 +276,11 @@ const SpeakersPage: React.FC = () => {
                       {speaker.linkedinUsername && (
                         <div className="flex items-center space-x-3 text-gray-600">
                           <Linkedin className="h-5 w-5 text-blue-500" />
-                          <a 
+                          <a
                             href={`https://linkedin.com/in/${formatLinkedinUrl(speaker.linkedinUsername)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-brand-light hover:text-brand-mid hover:underline"
+                            className="text-brand-blue hover:text-brand-blue-hover hover:underline"
                           >
                             {formatLinkedinUrl(speaker.linkedinUsername)}
                           </a>
