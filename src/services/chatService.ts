@@ -31,7 +31,8 @@ import {
   JoinRequestForm,
   ChatRateLimit,
   ChatPermissions,
-  CHAT_LIMITS
+  CHAT_LIMITS,
+  MessageReaction
 } from '../types/chat';
 
 export class ChatService {
@@ -379,7 +380,10 @@ export class ChatService {
         userId,
         type: 'user',
         text: sanitizedText,
-        createdAt: now
+        createdAt: now,
+        status: 'sent',
+        reactions: [],
+        readBy: []
       };
 
       // Add message
@@ -1045,9 +1049,31 @@ export class ChatService {
           ...doc.data()
         })) as ChatMessage[];
 
+        // Enrich messages with user profile data
+        const enrichedMessages = await Promise.all(
+          messages.map(async (message) => {
+            if (message.userId && !message.userDisplayName) {
+              try {
+                const userDoc = await getDoc(doc(db, 'users', message.userId));
+                if (userDoc.exists()) {
+                  const userData = userDoc.data();
+                  return {
+                    ...message,
+                    userDisplayName: userData.name || userData.displayName,
+                    userProfileImage: userData.profileImage || userData.avatarUrl
+                  };
+                }
+              } catch (error) {
+                console.error('Error loading user data for message:', error);
+              }
+            }
+            return message;
+          })
+        );
+
         // Reverse to show oldest first
-        messages.reverse();
-        callback(messages);
+        enrichedMessages.reverse();
+        callback(enrichedMessages);
 
         // Update lastRead timestamp when messages are loaded
         if (messages.length > 0) {
@@ -1146,5 +1172,112 @@ export class ChatService {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#x27;')
       .trim();
+  }
+
+  /**
+   * Add or toggle a reaction to a message
+   */
+  static async toggleReaction(
+    chatId: string,
+    messageId: string,
+    userId: string,
+    emoji: string
+  ): Promise<void> {
+    try {
+      // Verify user is a member
+      const isUserMember = await this.isUserMember(chatId, userId);
+      if (!isUserMember) {
+        throw new Error('User is not a member of this chat');
+      }
+
+      const messageRef = doc(db, 'chat_messages', messageId);
+      const messageDoc = await getDoc(messageRef);
+
+      if (!messageDoc.exists()) {
+        throw new Error('Message not found');
+      }
+
+      const messageData = messageDoc.data() as ChatMessage;
+      const reactions = messageData.reactions || [];
+      
+      // Check if user already reacted with this emoji
+      const existingReactionIndex = reactions.findIndex(
+        r => r.userId === userId && r.emoji === emoji
+      );
+
+      if (existingReactionIndex >= 0) {
+        // Remove reaction
+        reactions.splice(existingReactionIndex, 1);
+      } else {
+        // Add reaction
+        // Get user display name
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        const userData = userDoc.data();
+        
+        reactions.push({
+          emoji,
+          userId,
+          userDisplayName: userData?.name || userData?.displayName || 'Unknown User',
+          createdAt: Timestamp.now()
+        });
+      }
+
+      await updateDoc(messageRef, {
+        reactions
+      });
+
+    } catch (error) {
+      console.error('❌ Error toggling reaction:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Mark message as read
+   */
+  static async markMessageAsRead(
+    chatId: string,
+    messageId: string,
+    userId: string
+  ): Promise<void> {
+    try {
+      const messageRef = doc(db, 'chat_messages', messageId);
+      const messageDoc = await getDoc(messageRef);
+
+      if (!messageDoc.exists()) {
+        return;
+      }
+
+      const messageData = messageDoc.data() as ChatMessage;
+      const readBy = messageData.readBy || [];
+
+      if (!readBy.includes(userId)) {
+        readBy.push(userId);
+        await updateDoc(messageRef, {
+          readBy
+        });
+
+        // Update message status if it's the sender checking
+        if (messageData.userId && messageData.userId !== userId) {
+          // This is someone else's message, update their status
+          const allMembers = await this.getChatMembers(chatId);
+          const allMemberIds = allMembers.map(m => m.userId);
+          const allRead = allMemberIds.every(id => id === messageData.userId || readBy.includes(id));
+          
+          if (allRead && messageData.status !== 'read') {
+            await updateDoc(messageRef, {
+              status: 'read'
+            });
+          } else if (messageData.status === 'sent') {
+            await updateDoc(messageRef, {
+              status: 'delivered'
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error marking message as read:', error);
+      // Don't throw - this is a non-critical operation
+    }
   }
 }

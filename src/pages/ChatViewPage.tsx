@@ -42,6 +42,8 @@ import { UserCard } from '../types/user';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import MessageBubble from '../components/chat/MessageBubble';
+import { formatMessageTime, shouldGroupMessages } from '../utils/dateUtils';
 
 const ChatViewPage: React.FC = () => {
   const { chatId } = useParams<{ chatId: string }>();
@@ -105,7 +107,12 @@ const ChatViewPage: React.FC = () => {
   }, [user?.uid, chatId]);
 
   useEffect(() => {
-    scrollToBottom();
+    // Auto-scroll to bottom when new messages arrive
+    setTimeout(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }, 100);
   }, [messages]);
 
   const loadChat = async () => {
@@ -550,7 +557,45 @@ const ChatViewPage: React.FC = () => {
     if (message.userId === user?.uid) return 'You';
     
     const member = chat?.members.find(m => m.userId === message.userId);
-    return member?.displayName || 'Unknown User';
+    return member?.displayName || message.userDisplayName || 'Unknown User';
+  };
+
+  const getMessageSenderAvatar = (message: ChatMessage): string | undefined => {
+    if (!message.userId || message.userId === user?.uid) return undefined;
+    const member = chat?.members.find(m => m.userId === message.userId);
+    return member?.profileImage || member?.avatarUrl || message.userProfileImage;
+  };
+
+  const handleReaction = async (messageId: string, emoji: string) => {
+    if (!user?.uid || !chatId) return;
+    try {
+      await ChatService.toggleReaction(chatId, messageId, user.uid, emoji);
+    } catch (error) {
+      console.error('Failed to toggle reaction:', error);
+    }
+  };
+
+  const handleEditMessage = (messageId: string) => {
+    const message = messages.find(m => m.id === messageId);
+    if (message && message.userId === user?.uid) {
+      setMessageText(message.text);
+      // TODO: Implement message editing
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!user?.uid || !chatId) return;
+    const message = messages.find(m => m.id === messageId);
+    if (message && message.userId === user.uid) {
+      if (confirm('Are you sure you want to delete this message?')) {
+        try {
+          // TODO: Implement message deletion
+          console.log('Delete message:', messageId);
+        } catch (error) {
+          console.error('Failed to delete message:', error);
+        }
+      }
+    }
   };
 
   if (!user) {
@@ -918,80 +963,72 @@ const ChatViewPage: React.FC = () => {
 
         {/* Messages and Sidebars Container */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Messages Area */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 px-4 sm:px-6 lg:px-8 overflow-y-auto">
-              <div className="max-w-4xl mx-auto">
+          {/* Messages Area - WhatsApp Style */}
+          <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
+            <div className="flex-1 px-4 sm:px-6 lg:px-8 overflow-y-auto bg-gray-50 relative">
+              {/* Subtle pattern overlay */}
+              <div className="absolute inset-0 opacity-[0.03]" style={{
+                backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23000000\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+                backgroundRepeat: 'repeat',
+                backgroundSize: '60px 60px',
+                pointerEvents: 'none'
+              }} />
+              <div className="max-w-4xl mx-auto relative z-10">
                 {/* Messages List */}
-                <div className="py-6 space-y-4">
+                <div className="py-4 space-y-1">
                   {messages.length === 0 && (
                     <div className="text-center py-12">
                       <p className="text-gray-500">No messages yet. Start the conversation!</p>
                     </div>
                   )}
                   
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.type === 'system' ? 'justify-center' : 'justify-start'}`}
-                    >
-                      {message.type === 'system' ? (
-                        <div className="bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded-full max-w-md text-center">
-                          {message.text}
-                        </div>
-                      ) : (
-                        <div className={`max-w-md ${message.userId === user.uid ? 'ml-auto' : ''}`}>
-                          <div className={`rounded-2xl px-4 py-3 ${
-                            message.userId === user.uid 
-                              ? 'bg-brand-dark text-white' 
-                              : 'bg-white border border-gray-200 text-gray-900'
-                          }`}>
-                            {message.userId !== user.uid ? (
-                              <button
-                                onClick={() => navigate(`/profile/${message.userId}`)}
-                                className="text-xs text-gray-500 mb-1 font-medium hover:text-brand-blue transition-colors cursor-pointer"
-                              >
-                                {getMessageSenderName(message)}
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => navigate(`/profile/${message.userId}`)}
-                                className="text-xs text-gray-300 mb-1 font-medium hover:text-blue-400 transition-colors cursor-pointer"
-                              >
-                                You
-                              </button>
-                            )}
-                            <p className="text-sm leading-relaxed">{message.text}</p>
-                          </div>
-                          <div className={`mt-1 text-xs text-gray-500 ${
-                            message.userId === user.uid ? 'text-right' : 'text-left'
-                          }`}>
-                            <div className="flex items-center space-x-1">
-                              <Clock className="h-3 w-3" />
-                              <span>{formatMessageTime(message.createdAt)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                  {messages.map((message, index) => {
+                    const isOwnMessage = message.userId === user?.uid;
+                    const prevMessage = index > 0 ? messages[index - 1] : null;
+                    const showAvatar = !prevMessage || !shouldGroupMessages(prevMessage, message, user?.uid || '');
+                    const showName = !prevMessage || prevMessage.userId !== message.userId || prevMessage.type === 'system';
+                    const senderName = getMessageSenderName(message);
+                    const senderAvatar = getMessageSenderAvatar(message);
+
+                    return (
+                      <MessageBubble
+                        key={message.id}
+                        message={message}
+                        isOwnMessage={isOwnMessage}
+                        showAvatar={showAvatar}
+                        showName={showName}
+                        senderName={senderName}
+                        senderAvatar={senderAvatar}
+                        onReaction={handleReaction}
+                        onEdit={handleEditMessage}
+                        onDelete={handleDeleteMessage}
+                        onProfileClick={(userId) => navigate(`/profile/${userId}`)}
+                        currentUserId={user?.uid || ''}
+                      />
+                    );
+                  })}
                   <div ref={messagesEndRef} />
                 </div>
               </div>
             </div>
 
-            {/* Message Composer */}
+            {/* Message Composer - WhatsApp Style */}
             {permissions?.canSendMessages && (
-              <div className="bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-4 flex-shrink-0">
+              <div className="bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-3 flex-shrink-0">
                 <div className="max-w-4xl mx-auto">
-                  <form onSubmit={handleSendMessage} className="flex space-x-4">
-                    <div className="flex-1">
+                  <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+                    <div className="flex-1 bg-gray-100 rounded-3xl px-4 py-2.5 flex items-center">
                       <textarea
                         value={messageText}
-                        onChange={(e) => setMessageText(e.target.value)}
-                        placeholder="Type your message..."
+                        onChange={(e) => {
+                          setMessageText(e.target.value);
+                          // Auto-resize textarea
+                          e.target.style.height = 'auto';
+                          e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                        }}
+                        placeholder="Type a message"
                         rows={1}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                        className="w-full bg-transparent border-0 focus:ring-0 focus:outline-none resize-none text-sm text-gray-900 placeholder-gray-500 max-h-[120px] overflow-y-auto"
                         disabled={sending}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
@@ -1004,14 +1041,13 @@ const ChatViewPage: React.FC = () => {
                     <button
                       type="submit"
                       disabled={!messageText.trim() || sending}
-                      className="px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                      className="w-10 h-10 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white rounded-full hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center flex-shrink-0 shadow-lg"
                     >
                       {sending ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <Send className="h-4 w-4" />
+                        <Send className="h-5 w-5" />
                       )}
-                      <span>Send</span>
                     </button>
                   </form>
                 </div>

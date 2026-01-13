@@ -44,6 +44,11 @@ export interface ChatMessage {
   createdAt: any; // Firestore timestamp
   editedAt?: any; // Firestore timestamp
   deleted?: boolean;
+  reactions?: MessageReaction[]; // Reactions to this message
+  readBy?: string[]; // User IDs who have read this message
+  status?: 'sending' | 'sent' | 'delivered' | 'read'; // Message status
+  userDisplayName?: string; // Cached display name
+  userProfileImage?: string; // Cached profile image
 }
 
 export interface ChatMessageMeta {
@@ -53,6 +58,13 @@ export interface ChatMessageMeta {
   targetId?: string; // User who was affected
   previousRole?: string; // For role changes
   newRole?: string; // For role changes
+}
+
+export interface MessageReaction {
+  emoji: string; // Emoji character
+  userId: string; // User who reacted
+  userDisplayName?: string; // Cached display name
+  createdAt: any; // Firestore timestamp
 }
 
 // UI-specific interfaces
