@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, setPersistence, browserLocalPersistence, sendPasswordResetEmail } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, setPersistence, browserLocalPersistence, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, linkWithCredential, getAdditionalUserInfo } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, retryOnNetworkFailure } from '../firebase/config';
 import { ActivityService } from '../services/activityService';
@@ -28,6 +28,8 @@ export interface AuthUser {
   tempPasswordSet?: boolean;
   passwordResetForcedAt?: any;
   passwordResetForcedBy?: string;
+  googleLinked?: boolean;
+  googleEmail?: string;
 }
 
 export interface ProfileData {
@@ -115,7 +117,9 @@ export const useAuth = () => {
           mustChangePassword: userData.mustChangePassword || false,
           tempPasswordSet: userData.tempPasswordSet || false,
           passwordResetForcedAt: userData.passwordResetForcedAt || null,
-          passwordResetForcedBy: userData.passwordResetForcedBy || null
+          passwordResetForcedBy: userData.passwordResetForcedBy || null,
+          googleLinked: userData.googleLinked || false,
+          googleEmail: userData.googleEmail || null
         };
       }
       return null;
@@ -647,6 +651,160 @@ export const useAuth = () => {
     }
   };
 
+  // Google sign-in provider
+  const googleProvider = new GoogleAuthProvider();
+  googleProvider.setCustomParameters({
+    prompt: 'select_account'
+  });
+
+  // Sign in with Google
+  const signInWithGoogle = async () => {
+    try {
+      setError(null);
+      setLoading(true);
+      console.log('🔐 Attempting Google sign-in');
+      
+      // Ensure local persistence is set
+      await setPersistence(auth, browserLocalPersistence);
+      
+      // Sign in with Google popup
+      const result = await retryOnNetworkFailure(async () => {
+        return signInWithPopup(auth, googleProvider);
+      });
+      
+      console.log('✅ Google sign-in successful:', result.user.email);
+      
+      const additionalUserInfo = getAdditionalUserInfo(result);
+      const isNewUser = additionalUserInfo?.isNewUser;
+      
+      // Check if Firestore profile exists
+      const userProfile = await getUserProfile(result.user.uid);
+      
+      if (!userProfile) {
+        // Create new user profile from Google account
+        console.log('📝 Creating new user profile from Google account');
+        await createOrUpdateUserProfile(result.user, {
+          name: result.user.displayName || '',
+          profileImage: result.user.photoURL || null
+        });
+        
+        // Mark as Google linked for new accounts
+        const userRef = doc(db, 'users', result.user.uid);
+        await updateDoc(userRef, {
+          googleLinked: true,
+          googleEmail: result.user.email
+        });
+      } else {
+        // Existing profile - mark Google as linked and update info if needed
+        console.log('📝 Updating existing user profile with Google account info');
+        const userRef = doc(db, 'users', result.user.uid);
+        await updateDoc(userRef, {
+          googleLinked: true,
+          googleEmail: result.user.email,
+          ...(result.user.photoURL && !userProfile.profileImage && { profileImage: result.user.photoURL }),
+          ...(result.user.displayName && !userProfile.displayName && { name: result.user.displayName })
+        });
+      }
+      
+      // The onAuthStateChanged listener will handle role fetching and navigation
+    } catch (err: any) {
+      console.error('❌ Google sign-in failed:', err.code, err.message);
+      
+      if (err.code === 'auth/popup-closed-by-user') {
+        setError('Sign-in was cancelled. Please try again.');
+      } else if (err.code === 'auth/popup-blocked') {
+        setError('Popup was blocked. Please allow popups and try again.');
+      } else if (err.code === 'auth/network-request-failed') {
+        setError('Network error. Please check your connection and try again.');
+        setNetworkError(true);
+      } else {
+        const friendlyMessage = getAuthErrorMessage(err.code);
+        setError(friendlyMessage);
+      }
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Link Google account to existing account
+  const linkGoogleAccount = async () => {
+    try {
+      setError(null);
+      setLoading(true);
+      
+      if (!auth.currentUser) {
+        throw new Error('You must be logged in to link a Google account');
+      }
+      
+      const currentUser = auth.currentUser;
+      const currentUid = currentUser.uid;
+      const currentEmail = currentUser.email;
+      
+      if (!currentEmail) {
+        throw new Error('Current account does not have an email address');
+      }
+      
+      console.log('🔗 Linking Google account to existing account:', currentEmail);
+      
+      // Sign in with Google popup
+      const result = await retryOnNetworkFailure(async () => {
+        return signInWithPopup(auth, googleProvider);
+      });
+      
+      // Check if the UID matches (same account) or email matches
+      if (result.user.uid === currentUid || result.user.email?.toLowerCase() === currentEmail.toLowerCase()) {
+        // Same account - Firebase automatically uses the same account when emails match
+        // Update user profile to mark Google as linked
+        const userRef = doc(db, 'users', currentUid);
+        await updateDoc(userRef, {
+          googleLinked: true,
+          googleEmail: result.user.email,
+          ...(result.user.photoURL && { profileImage: result.user.photoURL })
+        });
+        
+        console.log('✅ Google account linked successfully');
+        return true;
+      } else {
+        // Different account - need to restore original session
+        // The auth state listener will handle restoring the session
+        // But we should inform the user
+        throw new Error(`Google account email (${result.user.email}) does not match your current account email (${currentEmail}). Please use a Google account with the same email address.`);
+      }
+    } catch (err: any) {
+      console.error('❌ Failed to link Google account:', err.code, err.message);
+      
+      if (err.code === 'auth/credential-already-in-use') {
+        setError('This Google account is already linked to another account.');
+      } else if (err.code === 'auth/popup-closed-by-user') {
+        setError('Linking was cancelled. Please try again.');
+      } else if (err.code === 'auth/popup-blocked') {
+        setError('Popup was blocked. Please allow popups and try again.');
+      } else if (err.message && err.message.includes('does not match')) {
+        setError(err.message);
+      } else {
+        const friendlyMessage = getAuthErrorMessage(err.code);
+        setError(friendlyMessage);
+      }
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Check if Google account is linked
+  const isGoogleLinked = async (): Promise<boolean> => {
+    try {
+      if (!auth.currentUser) return false;
+      
+      const userProfile = await getUserProfile(auth.currentUser.uid);
+      return userProfile ? (userProfile as any).googleLinked === true : false;
+    } catch (error) {
+      console.error('❌ Error checking Google link status:', error);
+      return false;
+    }
+  };
+
   // Computed values with explicit logging
   const isAdmin = user?.role === 'admin';
   const isMember = user?.role === 'member';
@@ -678,6 +836,9 @@ export const useAuth = () => {
     register,
     logout,
     resetPassword,
+    signInWithGoogle,
+    linkGoogleAccount,
+    isGoogleLinked,
     isAdmin,
     isMember,
     isPending,
