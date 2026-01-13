@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Clock, Check, CheckCheck, Smile, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import { ChatMessage, MessageReaction } from '../../types/chat';
 import { formatMessageTime } from '../../utils/dateUtils';
@@ -15,6 +15,8 @@ interface MessageBubbleProps {
   onDelete?: (messageId: string) => void;
   onProfileClick?: (userId: string) => void;
   currentUserId: string;
+  openReactionPickerId?: string | null;
+  onReactionPickerOpen?: (messageId: string | null) => void;
 }
 
 const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🔥', '👏'];
@@ -30,11 +32,34 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   onEdit,
   onDelete,
   onProfileClick,
-  currentUserId
+  currentUserId,
+  openReactionPickerId,
+  onReactionPickerOpen
 }) => {
-  const [showReactionPicker, setShowReactionPicker] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const bubbleRef = useRef<HTMLDivElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  
+  const showReactionPicker = openReactionPickerId === message.id;
+
+  // Close picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        pickerRef.current &&
+        !pickerRef.current.contains(event.target as Node) &&
+        bubbleRef.current &&
+        !bubbleRef.current.contains(event.target as Node)
+      ) {
+        onReactionPickerOpen?.(null);
+      }
+    };
+
+    if (showReactionPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showReactionPicker, onReactionPickerOpen]);
 
   if (message.type === 'system') {
     return (
@@ -94,11 +119,32 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     }
   };
 
+  // Calculate position for reaction picker
+  const bubbleElementRef = useRef<HTMLDivElement>(null);
+  
+  const getReactionPickerPosition = () => {
+    if (!bubbleElementRef.current) return {};
+    const rect = bubbleElementRef.current.getBoundingClientRect();
+    return {
+      top: `${rect.top - 60}px`,
+      left: isOwnMessage ? `${rect.right - 200}px` : `${rect.left}px`,
+      right: isOwnMessage ? 'auto' : 'auto'
+    };
+  };
+
   return (
     <div
-      className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} my-1 group`}
+      className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} my-0.5 group`}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={() => {
+        setHovered(false);
+        // Close reaction picker when leaving message area
+        if (showReactionPicker) {
+          setTimeout(() => {
+            onReactionPickerOpen?.(null);
+          }, 200);
+        }
+      }}
     >
       <div className={`flex items-end gap-2 max-w-[70%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
         {/* Avatar */}
@@ -128,28 +174,31 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           )}
 
           {/* Message Bubble */}
-          <div className="relative">
+          <div className="relative" ref={(el) => {
+            bubbleRef.current = el;
+            bubbleElementRef.current = el;
+          }}>
             <div
-              className={`px-4 py-2 rounded-2xl shadow-sm ${
+              className={`px-3 py-1.5 rounded-lg shadow-sm ${
                 isOwnMessage
-                  ? 'bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white rounded-tr-sm'
-                  : 'bg-white text-gray-900 border border-gray-100 rounded-tl-sm'
+                  ? 'bg-[#DCF8C6] text-gray-900 rounded-tr-none'
+                  : 'bg-white text-gray-900 shadow-sm rounded-tl-none'
               }`}
             >
               <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.text}</p>
               
               {/* Message Footer */}
-              <div className={`flex items-center gap-1.5 mt-1 ${
+              <div className={`flex items-center gap-1.5 mt-0.5 ${
                 isOwnMessage ? 'justify-end' : 'justify-start'
               }`}>
-                <span className={`text-xs ${
-                  isOwnMessage ? 'text-white/70' : 'text-gray-500'
+                <span className={`text-[10px] ${
+                  isOwnMessage ? 'text-gray-600' : 'text-gray-500'
                 }`}>
                   {formatMessageTime(message.createdAt)}
                 </span>
                 {message.editedAt && (
-                  <span className={`text-xs italic ${
-                    isOwnMessage ? 'text-white/60' : 'text-gray-400'
+                  <span className={`text-[10px] italic ${
+                    isOwnMessage ? 'text-gray-600' : 'text-gray-400'
                   }`}>
                     edited
                   </span>
@@ -158,20 +207,20 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               </div>
             </div>
 
-            {/* Reactions */}
+            {/* Reactions - Below message */}
             {message.reactions && message.reactions.length > 0 && (
-              <div className={`flex flex-wrap gap-1 mt-1 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+              <div className={`flex flex-wrap gap-1 mt-0.5 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
                 {Object.entries(reactionCounts).map(([emoji, count]) => (
                   <button
                     key={emoji}
                     onClick={() => onReaction?.(message.id, emoji)}
-                    className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 ${
+                    className={`px-1.5 py-0.5 rounded-full text-[10px] flex items-center gap-0.5 ${
                       message.reactions?.some(r => r.emoji === emoji && r.userId === currentUserId)
                         ? 'bg-blue-100 text-blue-700 border border-blue-300'
                         : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
                     }`}
                   >
-                    <span>{emoji}</span>
+                    <span className="text-xs">{emoji}</span>
                     <span>{count}</span>
                   </button>
                 ))}
@@ -180,10 +229,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
             {/* Action Buttons (shown on hover) */}
             {hovered && (
-              <div className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} -top-8 flex items-center gap-1 bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-10`}>
+              <div className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} -top-9 flex items-center gap-1 bg-white rounded-lg shadow-xl border border-gray-200 p-1 z-30`}>
                 {onReaction && (
                   <button
-                    onClick={() => setShowReactionPicker(!showReactionPicker)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onReactionPickerOpen?.(showReactionPicker ? null : message.id);
+                    }}
                     className="p-1.5 hover:bg-gray-100 rounded transition-colors"
                     title="Add reaction"
                   >
@@ -193,7 +245,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 {isOwnMessage && onEdit && (
                   <button
                     onClick={() => {
-                      setShowMenu(false);
                       onEdit(message.id);
                     }}
                     className="p-1.5 hover:bg-gray-100 rounded transition-colors"
@@ -205,7 +256,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 {isOwnMessage && onDelete && (
                   <button
                     onClick={() => {
-                      setShowMenu(false);
                       onDelete(message.id);
                     }}
                     className="p-1.5 hover:bg-red-50 rounded transition-colors"
@@ -217,17 +267,28 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               </div>
             )}
 
-            {/* Reaction Picker */}
+            {/* Reaction Picker - Positioned to stay on screen */}
             {showReactionPicker && (
-              <div className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} -top-12 bg-white rounded-lg shadow-xl border border-gray-200 p-2 flex gap-1 z-20`}>
+              <div 
+                ref={pickerRef}
+                className={`absolute ${
+                  isOwnMessage ? 'left-0' : 'right-0'
+                } -top-14 bg-white rounded-2xl shadow-2xl border border-gray-200 p-2 flex gap-1 z-40`}
+                style={{
+                  // Ensure it doesn't go off screen
+                  maxWidth: 'calc(100vw - 2rem)',
+                  transform: isOwnMessage ? 'none' : 'translateX(0)'
+                }}
+              >
                 {REACTION_EMOJIS.map((emoji) => (
                   <button
                     key={emoji}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       onReaction?.(message.id, emoji);
-                      setShowReactionPicker(false);
+                      onReactionPickerOpen?.(null);
                     }}
-                    className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded transition-colors text-lg"
+                    className="w-9 h-9 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors text-lg hover:scale-125"
                   >
                     {emoji}
                   </button>

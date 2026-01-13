@@ -86,6 +86,7 @@ const ChatViewPage: React.FC = () => {
   const [appointingAdmin, setAppointingAdmin] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [mutingChat, setMutingChat] = useState(false);
+  const [openReactionPickerId, setOpenReactionPickerId] = useState<string | null>(null);
 
   // Real-time subscription
   const unsubscribeRef = useRef<(() => void) | null>(null);
@@ -600,78 +601,74 @@ const ChatViewPage: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-        <Header />
-        <div className="pt-20 pb-16 flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign In Required</h2>
-            <p className="text-gray-600">Please sign in to access chats.</p>
-          </div>
+      <div className="h-screen bg-[#E5DDD5] flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign In Required</h2>
+          <p className="text-gray-600">Please sign in to access chats.</p>
         </div>
-        <Footer />
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-        <Header />
-        <div className="pt-20 pb-16 flex items-center justify-center">
-          <LoadingSpinner size="lg" color="border-blue-600" />
-        </div>
-        <Footer />
+      <div className="h-screen bg-[#E5DDD5] flex items-center justify-center">
+        <LoadingSpinner size="lg" color="border-[#0B2B6B]" />
       </div>
     );
   }
 
   if (error || !chat) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-        <Header />
-        <div className="pt-20 pb-16">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Chat Not Found</h2>
-              <p className="text-gray-600 mb-8">{error || 'The chat you\'re looking for doesn\'t exist or you don\'t have access.'}</p>
-              <button
-                onClick={() => navigate('/chats')}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-dark hover:bg-brand-mid"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Chats
-              </button>
-            </div>
-          </div>
+      <div className="h-screen bg-[#E5DDD5] flex items-center justify-center">
+        <div className="text-center max-w-md px-4">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Chat Not Found</h2>
+          <p className="text-gray-600 mb-8">{error || 'The chat you\'re looking for doesn\'t exist or you don\'t have access.'}</p>
+          <button
+            onClick={() => navigate('/chats')}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#0B2B6B] hover:bg-[#1E56B3]"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Chats
+          </button>
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="h-screen bg-gradient-to-br from-gray-50 to-white flex flex-col overflow-hidden">
-      <Header />
-      
-      <div className="flex-1 flex overflow-hidden pt-20">
-        {/* Left Sidebar - Chats List */}
+    <div className="h-screen bg-[#E5DDD5] flex flex-col overflow-hidden">
+      {/* WhatsApp-style Chat Layout - Full Screen */}
+      <div className="flex-1 flex overflow-hidden h-full">
+        {/* Left Sidebar - Chats List (WhatsApp Style) */}
         {showChatSidebar && (
-          <div className="w-80 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
-            <div className="p-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Your Chats</h2>
-              <p className="text-sm text-gray-500">{userChats.length} chat{userChats.length === 1 ? '' : 's'}</p>
+          <div className="w-80 bg-white flex flex-col overflow-hidden border-r border-gray-200">
+            {/* Sidebar Header */}
+            <div className="bg-[#F0F2F5] px-4 py-3 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-gray-900">Chats</h2>
+                <button
+                  onClick={() => navigate('/chats')}
+                  className="p-2 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
+                  title="New Chat"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                </button>
+              </div>
             </div>
+            
+            {/* Chats List */}
             <div className="flex-1 overflow-y-auto">
               {userChats.map((chatItem) => (
                 <button
                   key={chatItem.id}
                   onClick={() => navigate(`/chats/${chatItem.id}`)}
-                  className={`w-full p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left ${
-                    chatItem.id === chatId ? 'bg-blue-50 border-l-4 border-l-blue-600' : ''
+                  className={`w-full p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left ${
+                    chatItem.id === chatId ? 'bg-[#F0F2F5]' : ''
                   }`}
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#0B2B6B] to-[#2E7FEF] rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                       {chatItem.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -680,19 +677,19 @@ const ChatViewPage: React.FC = () => {
                           {chatItem.name}
                         </h3>
                         {chatItem.lastActivity && (
-                          <span className="text-xs text-gray-400 ml-2 flex-shrink-0">
+                          <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
                             {formatLastActivity(chatItem.lastActivity)}
                           </span>
                         )}
                       </div>
                       {chatItem.lastMessagePreview && (
-                        <p className="text-xs text-gray-500 truncate">
+                        <p className="text-xs text-gray-600 truncate">
                           {chatItem.lastMessagePreview}
                         </p>
                       )}
                     </div>
                     {chatItem.unreadCount > 0 && (
-                      <div className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
+                      <div className="bg-[#25D366] text-white text-xs rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center flex-shrink-0 font-medium">
                         {chatItem.unreadCount}
                       </div>
                     )}
@@ -700,8 +697,8 @@ const ChatViewPage: React.FC = () => {
                 </button>
               ))}
               {userChats.length === 0 && (
-                <div className="p-4 text-center text-gray-500 text-sm">
-                  <MessageCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                <div className="p-8 text-center text-gray-500 text-sm">
+                  <MessageCircle className="h-12 w-12 mx-auto mb-3 text-gray-400" />
                   <p>No chats yet</p>
                 </div>
               )}
@@ -709,60 +706,35 @@ const ChatViewPage: React.FC = () => {
           </div>
         )}
 
-        {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Chat Header */}
-          <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 flex-shrink-0">
-            <div className="max-w-6xl mx-auto">
-              <div className="flex items-center justify-between py-4">
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => setShowChatSidebar(!showChatSidebar)}
-                    className="text-gray-600 hover:text-gray-900 transition-colors"
-                    title="Toggle Chats Sidebar"
-                  >
-                    <Menu className="h-5 w-5" />
-                  </button>
-                  
-                  <button
-                    onClick={() => navigate('/chats')}
-                    className="text-gray-600 hover:text-gray-900 transition-colors"
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                  </button>
+        {/* Main Chat Area - WhatsApp Style */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-white">
+          {/* Chat Header - Premium WhatsApp Style */}
+          <div className="bg-[#F0F2F5] border-b border-gray-200 px-4 py-2.5 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <button
+                  onClick={() => setShowChatSidebar(!showChatSidebar)}
+                  className="p-2 text-gray-600 hover:bg-gray-200 rounded-full transition-colors flex-shrink-0"
+                  title="Toggle Chats"
+                >
+                  <Menu className="h-5 w-5" />
+                </button>
                 
                 <button
                   onClick={() => setShowChatInfo(!showChatInfo)}
-                  className="hover:shadow-lg hover:scale-105 transition-all duration-200"
+                  className="flex items-center space-x-3 flex-1 min-w-0 hover:bg-gray-200 rounded-lg px-2 py-1.5 transition-colors"
                 >
-                  {renderChatIcon('medium')}
-                </button>
-                
-                <div>
-                  <button
-                    onClick={() => setShowChatInfo(!showChatInfo)}
-                    className="text-left hover:text-brand-blue transition-colors"
-                  >
-                    <h1 className="text-xl font-semibold text-gray-900 hover:text-brand-blue transition-colors">{chat.name}</h1>
-                  </button>
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
-                    <div className="flex items-center space-x-1">
-                      <Users className="h-4 w-4" />
-                      <span>{chat.memberCount} member{chat.memberCount === 1 ? '' : 's'}</span>
-                    </div>
-                    {chat.userRole && (
-                      <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        chat.userRole === 'admin' ? 'text-brand-dark bg-purple-100' : 'text-gray-600 bg-gray-100'
-                      }`}>
-                        {chat.userRole === 'admin' && <Shield className="h-3 w-3 mr-1" />}
-                        {chat.userRole === 'admin' ? 'Admin' : 'Member'}
-                      </div>
-                    )}
+                  <div className="flex-shrink-0">
+                    {renderChatIcon('medium')}
                   </div>
-                </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <h1 className="text-base font-semibold text-gray-900 truncate">{chat.name}</h1>
+                    <p className="text-xs text-gray-600 truncate">{chat.memberCount} member{chat.memberCount === 1 ? '' : 's'}</p>
+                  </div>
+                </button>
               </div>
               
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1 flex-shrink-0">
                 <button
                   onClick={() => {
                     setShowMembersList(!showMembersList);
@@ -771,7 +743,7 @@ const ChatViewPage: React.FC = () => {
                       setShowRequests(false);
                     }
                   }}
-                  className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
                   title="View Members"
                 >
                   <Users className="h-5 w-5" />
@@ -786,11 +758,11 @@ const ChatViewPage: React.FC = () => {
                         setShowSettings(false);
                       }
                     }}
-                    className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="relative p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
                     title="Join Requests"
                   >
                     <UserPlus className="h-5 w-5" />
-                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-[#25D366] text-white text-[10px] rounded-full flex items-center justify-center font-medium">
                       {pendingRequests.length}
                     </span>
                   </button>
@@ -804,7 +776,7 @@ const ChatViewPage: React.FC = () => {
                       setShowRequests(false);
                     }
                   }}
-                  className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
                   title="Chat Settings"
                 >
                   <Settings className="h-5 w-5" />
@@ -963,19 +935,20 @@ const ChatViewPage: React.FC = () => {
 
         {/* Messages and Sidebars Container */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Messages Area - WhatsApp Style */}
-          <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
-            <div className="flex-1 px-4 sm:px-6 lg:px-8 overflow-y-auto bg-gray-50 relative">
-              {/* Subtle pattern overlay */}
-              <div className="absolute inset-0 opacity-[0.03]" style={{
-                backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23000000\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
-                backgroundRepeat: 'repeat',
-                backgroundSize: '60px 60px',
-                pointerEvents: 'none'
-              }} />
-              <div className="max-w-4xl mx-auto relative z-10">
+          {/* Messages Area - Premium WhatsApp Style */}
+          <div className="flex-1 flex flex-col overflow-hidden bg-[#E5DDD5] relative">
+            {/* WhatsApp-style background pattern */}
+            <div className="absolute inset-0 opacity-[0.04]" style={{
+              backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23000000\'%3E%3Cpath d=\'M50 50h50v50H50z\'/%3E%3C/g%3E%3C/svg%3E")',
+              backgroundRepeat: 'repeat',
+              backgroundSize: '100px 100px',
+              pointerEvents: 'none'
+            }} />
+            
+            <div className="flex-1 px-4 sm:px-6 lg:px-8 overflow-y-auto relative z-10">
+              <div className="max-w-4xl mx-auto">
                 {/* Messages List */}
-                <div className="py-4 space-y-1">
+                <div className="py-2 space-y-0.5">
                   {messages.length === 0 && (
                     <div className="text-center py-12">
                       <p className="text-gray-500">No messages yet. Start the conversation!</p>
@@ -1004,6 +977,8 @@ const ChatViewPage: React.FC = () => {
                         onDelete={handleDeleteMessage}
                         onProfileClick={(userId) => navigate(`/profile/${userId}`)}
                         currentUserId={user?.uid || ''}
+                        openReactionPickerId={openReactionPickerId}
+                        onReactionPickerOpen={setOpenReactionPickerId}
                       />
                     );
                   })}
@@ -1012,45 +987,43 @@ const ChatViewPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Message Composer - WhatsApp Style */}
+            {/* Message Composer - Premium WhatsApp Style with Alma Links Branding */}
             {permissions?.canSendMessages && (
-              <div className="bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-3 flex-shrink-0">
-                <div className="max-w-4xl mx-auto">
-                  <form onSubmit={handleSendMessage} className="flex items-end gap-2">
-                    <div className="flex-1 bg-gray-100 rounded-3xl px-4 py-2.5 flex items-center">
-                      <textarea
-                        value={messageText}
-                        onChange={(e) => {
-                          setMessageText(e.target.value);
-                          // Auto-resize textarea
-                          e.target.style.height = 'auto';
-                          e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-                        }}
-                        placeholder="Type a message"
-                        rows={1}
-                        className="w-full bg-transparent border-0 focus:ring-0 focus:outline-none resize-none text-sm text-gray-900 placeholder-gray-500 max-h-[120px] overflow-y-auto"
-                        disabled={sending}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSendMessage(e);
-                          }
-                        }}
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={!messageText.trim() || sending}
-                      className="w-10 h-10 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white rounded-full hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center flex-shrink-0 shadow-lg"
-                    >
-                      {sending ? (
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Send className="h-5 w-5" />
-                      )}
-                    </button>
-                  </form>
-                </div>
+              <div className="bg-[#F0F2F5] border-t border-gray-200 px-4 py-2.5 flex-shrink-0 relative z-10">
+                <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+                  <div className="flex-1 bg-white rounded-2xl px-4 py-2 flex items-center shadow-sm">
+                    <textarea
+                      value={messageText}
+                      onChange={(e) => {
+                        setMessageText(e.target.value);
+                        // Auto-resize textarea
+                        e.target.style.height = 'auto';
+                        e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
+                      }}
+                      placeholder="Type a message"
+                      rows={1}
+                      className="w-full bg-transparent border-0 focus:ring-0 focus:outline-none resize-none text-sm text-gray-900 placeholder-gray-500 max-h-[100px] overflow-y-auto"
+                      disabled={sending}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage(e);
+                        }
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={!messageText.trim() || sending}
+                    className="w-10 h-10 bg-[#0B2B6B] text-white rounded-full hover:bg-[#1E56B3] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center flex-shrink-0 shadow-md"
+                  >
+                    {sending ? (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Send className="h-5 w-5" />
+                    )}
+                  </button>
+                </form>
               </div>
             )}
           </div>
@@ -1230,11 +1203,6 @@ const ChatViewPage: React.FC = () => {
         {/* End Messages and Sidebars Container */}
       </div>
       {/* End Main Chat Area */}
-    </div>
-    {/* End flex container with sidebar */}
-
-      {/* Footer outside main scrolling area - optional, can be removed for full screen chat */}
-      {/* <Footer /> */}
       
       {/* Edit Chat Modal */}
       {showEditModal && chat && chat.userRole === 'admin' && (
