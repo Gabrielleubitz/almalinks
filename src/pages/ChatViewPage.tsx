@@ -724,10 +724,10 @@ const ChatViewPage: React.FC = () => {
           </div>
         )}
 
-        {/* Main Chat Area - Premium WhatsApp Style */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-white">
-          {/* Chat Header - Premium Design */}
-          <div className="bg-[#F0F2F5] border-b border-gray-300 px-4 py-3 flex-shrink-0 shadow-sm">
+        {/* Main Chat Area - Premium WhatsApp Style - Unified Design */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-[#E5DDD5]">
+          {/* Chat Header - Unified with Chat Area */}
+          <div className="bg-[#F0F2F5] px-4 py-3 flex-shrink-0">
             <div className="flex items-center justify-between h-14">
               <div className="flex items-center space-x-3 flex-1 min-w-0">
                 <button
@@ -963,7 +963,7 @@ const ChatViewPage: React.FC = () => {
               pointerEvents: 'none'
             }} />
             
-            <div className="flex-1 px-2 sm:px-4 overflow-y-auto relative z-10">
+            <div className="flex-1 px-2 sm:px-4 overflow-y-auto relative z-10" style={{ overflowX: 'hidden' }}>
               <div className="max-w-4xl mx-auto">
                 {/* Messages List */}
                 <div className="py-4 space-y-1">

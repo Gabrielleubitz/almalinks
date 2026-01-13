@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Clock, Check, CheckCheck, Smile, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import { ChatMessage, MessageReaction } from '../../types/chat';
 import { formatMessageTime } from '../../utils/dateUtils';
@@ -37,10 +38,52 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   onReactionPickerOpen
 }) => {
   const [hovered, setHovered] = useState(false);
+  const [pickerPosition, setPickerPosition] = useState<{ top: number; left: number } | null>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   
   const showReactionPicker = openReactionPickerId === message.id;
+
+  // Calculate picker position when it opens
+  useEffect(() => {
+    if (showReactionPicker && bubbleRef.current) {
+      const rect = bubbleRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const pickerWidth = 280; // Approximate width of picker
+      const pickerHeight = 60; // Approximate height of picker
+      
+      let left: number;
+      let top: number;
+      
+      if (isOwnMessage) {
+        // For own messages, align to right edge of bubble
+        left = Math.min(rect.right - pickerWidth, viewportWidth - pickerWidth - 16);
+        left = Math.max(16, left); // Ensure it doesn't go off left edge
+      } else {
+        // For other messages, align to left edge of bubble
+        left = Math.max(rect.left, 16);
+        left = Math.min(left, viewportWidth - pickerWidth - 16); // Ensure it doesn't go off right edge
+      }
+      
+      // Position above the message bubble
+      top = rect.top - pickerHeight - 8;
+      
+      // If it would go off top, position below instead
+      if (top < 16) {
+        top = rect.bottom + 8;
+      }
+      
+      // Ensure it doesn't go off bottom
+      if (top + pickerHeight > viewportHeight - 16) {
+        top = viewportHeight - pickerHeight - 16;
+      }
+      
+      setPickerPosition({ top, left });
+    } else {
+      setPickerPosition(null);
+    }
+  }, [showReactionPicker, isOwnMessage]);
 
   // Close picker when clicking outside
   useEffect(() => {
@@ -119,18 +162,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     }
   };
 
-  // Calculate position for reaction picker
-  const bubbleElementRef = useRef<HTMLDivElement>(null);
-  
-  const getReactionPickerPosition = () => {
-    if (!bubbleElementRef.current) return {};
-    const rect = bubbleElementRef.current.getBoundingClientRect();
-    return {
-      top: `${rect.top - 60}px`,
-      left: isOwnMessage ? `${rect.right - 200}px` : `${rect.left}px`,
-      right: isOwnMessage ? 'auto' : 'auto'
-    };
-  };
 
   return (
     <div
@@ -267,17 +298,24 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               </div>
             )}
 
-            {/* Reaction Picker - Positioned to stay on screen */}
-            {showReactionPicker && (
+            {/* Reaction Picker - Portal to body to avoid overflow issues */}
+            {showReactionPicker && pickerPosition && createPortal(
               <div 
                 ref={pickerRef}
-                className={`absolute ${
-                  isOwnMessage ? 'left-0' : 'right-0'
-                } -top-14 bg-white rounded-2xl shadow-2xl border border-gray-200 p-2 flex gap-1 z-40`}
+                className="fixed bg-white rounded-2xl shadow-2xl border border-gray-200 p-2 flex gap-1 z-50"
                 style={{
-                  // Ensure it doesn't go off screen
-                  maxWidth: 'calc(100vw - 2rem)',
-                  transform: isOwnMessage ? 'none' : 'translateX(0)'
+                  top: `${pickerPosition.top}px`,
+                  left: `${pickerPosition.left}px`,
+                  width: '280px'
+                }}
+                onMouseEnter={() => {
+                  // Keep open when hovering
+                }}
+                onMouseLeave={() => {
+                  // Close when mouse leaves
+                  setTimeout(() => {
+                    onReactionPickerOpen?.(null);
+                  }, 200);
                 }}
               >
                 {REACTION_EMOJIS.map((emoji) => (
@@ -288,12 +326,19 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                       onReaction?.(message.id, emoji);
                       onReactionPickerOpen?.(null);
                     }}
-                    className="w-9 h-9 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors text-lg hover:scale-125"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                    className="w-9 h-9 flex items-center justify-center hover:bg-gray-100 rounded-full transition-all text-lg"
                   >
                     {emoji}
                   </button>
                 ))}
-              </div>
+              </div>,
+              document.body
             )}
           </div>
         </div>
