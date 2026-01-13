@@ -661,9 +661,11 @@ const ChatViewPage: React.FC = () => {
   }
 
   return (
-    <div className="fixed inset-0 bg-[#E5DDD5] flex flex-col overflow-hidden" style={{ height: '100vh', width: '100vw' }}>
-      {/* WhatsApp-style Chat Layout - Full Screen */}
-      <div className="flex-1 flex overflow-hidden h-full w-full">
+    <div className="min-h-screen bg-white flex flex-col">
+      <Header />
+      <div className="flex-1 flex overflow-hidden pt-20" style={{ height: 'calc(100vh - 80px)' }}>
+        {/* Chat Layout */}
+        <div className="flex-1 flex overflow-hidden h-full w-full">
         {/* Left Sidebar - Chats List (Premium WhatsApp Style) */}
         {showChatSidebar && (
           <div className="w-80 bg-white flex flex-col overflow-hidden border-r border-gray-300 shadow-sm">
@@ -1181,6 +1183,7 @@ const ChatViewPage: React.FC = () => {
           )}
         </div>
       </div>
+    </div>
       
       {/* Edit Chat Modal */}
       {showEditModal && chat && chat.userRole === 'admin' && (
