@@ -518,29 +518,81 @@ async function forcePasswordReset(req, res, adminId) {
   }
 
   try {
+    // Get user info first
+    const userDoc = await db.collection('users').doc(targetUserId).get();
+    
+    if (!userDoc.exists) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'User not found' 
+      });
+    }
+
+    const userData = userDoc.data();
+    const userEmail = userData?.email;
+
+    if (!userEmail) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'User email not found' 
+      });
+    }
+
+    // Default temporary password (same as bulk import)
+    const defaultTempPassword = '12345678';
+
+    // Reset password in Firebase Auth to default temporary password
+    try {
+      // Get the user by email to get their UID in Firebase Auth
+      let firebaseAuthUser;
+      try {
+        firebaseAuthUser = await auth.getUserByEmail(userEmail);
+      } catch (authError) {
+        // If user doesn't exist in Firebase Auth, try using targetUserId directly
+        try {
+          firebaseAuthUser = await auth.getUser(targetUserId);
+        } catch (uidError) {
+          console.error('❌ User not found in Firebase Auth:', authError.message);
+          return res.status(404).json({ 
+            success: false, 
+            error: 'User not found in Firebase Auth. Please ensure the user exists.' 
+          });
+        }
+      }
+
+      // Update the password in Firebase Auth
+      await auth.updateUser(firebaseAuthUser.uid, {
+        password: defaultTempPassword
+      });
+
+      console.log(`✅ Password reset in Firebase Auth for user: ${firebaseAuthUser.uid}`);
+    } catch (authError) {
+      console.error('❌ Error resetting password in Firebase Auth:', authError);
+      // Continue with Firestore update even if Auth update fails
+      // This ensures the flag is set so user knows they need to change password
+    }
+
     // Update user profile to require password change
     await db.collection('users').doc(targetUserId).update({
       mustChangePassword: true,
+      tempPasswordSet: true, // Mark as temporary password
       passwordResetForcedAt: admin.firestore.FieldValue.serverTimestamp(),
       passwordResetForcedBy: adminId
     });
-
-    // Get user info for audit log
-    const userDoc = await db.collection('users').doc(targetUserId).get();
-    const userData = userDoc.data();
 
     // Log audit trail
     await logAuditAction(adminId, 'FORCE_PASSWORD_RESET', {
       targetUserId: targetUserId,
       targetEmail: userData?.email,
-      targetName: userData?.name
+      targetName: userData?.name,
+      passwordReset: true
     });
 
-    console.log(`🔐 Forced password reset for user: ${targetUserId}`);
+    console.log(`🔐 Forced password reset for user: ${targetUserId} (password set to default)`);
 
     return res.status(200).json({ 
       success: true,
-      message: 'User will be required to change password on next login'
+      message: 'Password has been reset to default temporary password. User will be required to change it on next login.'
     });
 
   } catch (error) {
