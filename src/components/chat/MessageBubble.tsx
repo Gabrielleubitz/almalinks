@@ -237,15 +237,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
             {/* Reactions - Below message */}
             {message.reactions && message.reactions.length > 0 && (
-              <div className={`flex flex-wrap gap-1 mt-0.5 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+              <div className={`flex flex-wrap gap-1 mt-1 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
                 {Object.entries(reactionCounts).map(([emoji, count]) => (
                   <button
                     key={emoji}
                     onClick={() => onReaction?.(message.id, emoji)}
-                    className={`px-1.5 py-0.5 rounded-full text-[10px] flex items-center gap-0.5 ${
+                    className={`px-1.5 py-0.5 rounded text-[10px] flex items-center gap-0.5 ${
                       message.reactions?.some(r => r.emoji === emoji && r.userId === currentUserId)
-                        ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                        : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
+                        ? 'bg-[#0B2B6B] bg-opacity-10 text-[#0B2B6B] border border-[#0B2B6B] border-opacity-20'
+                        : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
                     }`}
                   >
                     <span className="text-xs">{emoji}</span>
