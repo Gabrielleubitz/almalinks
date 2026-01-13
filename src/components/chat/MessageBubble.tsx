@@ -205,10 +205,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           )}
 
           {/* Message Bubble */}
-          <div className="relative" ref={(el) => {
-            bubbleRef.current = el;
-            bubbleElementRef.current = el;
-          }}>
+          <div className="relative" ref={bubbleRef}>
             <div
               className={`px-3 py-2 rounded-lg shadow-sm ${
                 isOwnMessage
