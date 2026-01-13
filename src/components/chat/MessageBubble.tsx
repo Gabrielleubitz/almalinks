@@ -179,7 +179,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             bubbleElementRef.current = el;
           }}>
             <div
-              className={`px-3 py-1.5 rounded-lg shadow-sm ${
+              className={`px-3 py-2 rounded-lg shadow-sm ${
                 isOwnMessage
                   ? 'bg-[#DCF8C6] text-gray-900 rounded-tr-none'
                   : 'bg-white text-gray-900 shadow-sm rounded-tl-none'
