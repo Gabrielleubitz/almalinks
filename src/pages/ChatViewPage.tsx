@@ -830,8 +830,18 @@ const ChatViewPage: React.FC = () => {
           </div>
 
           {/* Messages Area - Same background, continuous surface */}
-          <div className="flex-1 flex flex-col overflow-hidden bg-white">
-            <div className="flex-1 px-4 overflow-y-auto">
+          <div className="flex-1 flex flex-col overflow-hidden bg-white relative">
+            {/* Subtle background pattern with Alma Links logo */}
+            <div 
+              className="absolute inset-0 opacity-[0.018] pointer-events-none"
+              style={{
+                backgroundImage: `url('/logo.svg'), url('/favicon-32x32.png')`,
+                backgroundRepeat: 'repeat',
+                backgroundSize: '400px auto, 120px 120px',
+                backgroundPosition: '0 0, 200px 200px',
+              }}
+            />
+            <div className="flex-1 px-4 overflow-y-auto relative z-10">
               <div className="max-w-3xl mx-auto">
                 <div className="py-3 space-y-0.5">
                   {messages.length === 0 && (
