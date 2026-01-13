@@ -108,26 +108,24 @@ const ChatViewPage: React.FC = () => {
     };
   }, [user?.uid, chatId]);
 
+  // Auto-scroll to bottom when messages change or chatId changes
   useEffect(() => {
-    // Auto-scroll to bottom when new messages arrive
-    setTimeout(() => {
-      if (messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      }
-    }, 100);
-  }, [messages]);
-
-  // Auto-scroll when switching to a different chat
-  useEffect(() => {
-    if (chatId && messages.length > 0) {
-      // Small delay to ensure messages are rendered
-      setTimeout(() => {
-        if (messagesEndRef.current) {
-          messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
-        }
-      }, 150);
+    if (messages.length > 0) {
+      // Use requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end', inline: 'nearest' });
+          }
+          // Also try scrolling the messages container directly
+          const messagesContainer = messagesEndRef.current?.closest('.overflow-y-auto');
+          if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }
+        }, 200);
+      });
     }
-  }, [chatId]);
+  }, [messages, chatId]);
 
   const loadChat = async () => {
     if (!user?.uid || !chatId) return;
@@ -246,17 +244,17 @@ const ChatViewPage: React.FC = () => {
         setEditingMessageId(null);
         setMessageText('');
       } else {
-        const form: SendMessageForm = {
-          text: messageText.trim(),
-          chatId
-        };
-        
-        await ChatService.sendMessage(form, user.uid);
-        setMessageText('');
+      const form: SendMessageForm = {
+        text: messageText.trim(),
+        chatId
+      };
+      
+      await ChatService.sendMessage(form, user.uid);
+      setMessageText('');
 
-        // Log chat message activity
-        if (chat) {
-          logChatMessage(chatId, chat.name);
+      // Log chat message activity
+      if (chat) {
+        logChatMessage(chatId, chat.name);
         }
       }
       
@@ -628,10 +626,10 @@ const ChatViewPage: React.FC = () => {
   if (!user) {
     return (
       <div className="h-screen bg-[#E5DDD5] flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign In Required</h2>
-          <p className="text-gray-600">Please sign in to access chats.</p>
-        </div>
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign In Required</h2>
+            <p className="text-gray-600">Please sign in to access chats.</p>
+          </div>
       </div>
     );
   }
@@ -648,16 +646,16 @@ const ChatViewPage: React.FC = () => {
     return (
       <div className="h-screen bg-[#E5DDD5] flex items-center justify-center">
         <div className="text-center max-w-md px-4">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Chat Not Found</h2>
-          <p className="text-gray-600 mb-8">{error || 'The chat you\'re looking for doesn\'t exist or you don\'t have access.'}</p>
-          <button
-            onClick={() => navigate('/chats')}
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Chat Not Found</h2>
+              <p className="text-gray-600 mb-8">{error || 'The chat you\'re looking for doesn\'t exist or you don\'t have access.'}</p>
+              <button
+                onClick={() => navigate('/chats')}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#0B2B6B] hover:bg-[#1E56B3]"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Chats
-          </button>
-        </div>
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Chats
+              </button>
+            </div>
       </div>
     );
   }
@@ -688,7 +686,7 @@ const ChatViewPage: React.FC = () => {
                   >
                     <X className="h-5 w-5" />
                   </button>
-                </div>
+            </div>
               </div>
             </div>
             
@@ -756,13 +754,13 @@ const ChatViewPage: React.FC = () => {
           <div className="px-4 py-2.5 border-b border-gray-200 flex-shrink-0 bg-white">
             <div className="flex items-center justify-between h-12">
               <div className="flex items-center space-x-2.5 flex-1 min-w-0">
-                <button
-                  onClick={() => setShowChatSidebar(!showChatSidebar)}
+                  <button
+                    onClick={() => setShowChatSidebar(!showChatSidebar)}
                   className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
                   title="Toggle Chats"
                 >
                   <Menu className="h-4 w-4" />
-                </button>
+                  </button>
                 
                 <button
                   onClick={() => setShowChatInfo(!showChatInfo)}
@@ -770,11 +768,11 @@ const ChatViewPage: React.FC = () => {
                 >
                   <div className="flex-shrink-0">
                     {renderChatIcon('small')}
-                  </div>
+                    </div>
                   <div className="flex-1 min-w-0 text-left">
                     <h1 className="text-sm font-semibold text-gray-900 truncate">{chat.name}</h1>
                     <p className="text-xs text-gray-500 truncate">{chat.memberCount} member{chat.memberCount === 1 ? '' : 's'}</p>
-                  </div>
+                      </div>
                 </button>
               </div>
               
@@ -828,7 +826,7 @@ const ChatViewPage: React.FC = () => {
               </div>
             </div>
           </div>
-
+          
           {/* Messages Area - Same background, continuous surface */}
           <div className="flex-1 flex flex-col overflow-hidden bg-white relative">
             {/* Subtle background pattern with Alma Links logo */}
@@ -841,7 +839,7 @@ const ChatViewPage: React.FC = () => {
                 backgroundPosition: '0 0, 200px 200px',
               }}
             />
-            <div className="flex-1 px-4 overflow-y-auto relative z-10">
+            <div className="flex-1 px-4 overflow-y-auto relative z-10" id="messages-container">
               <div className="max-w-3xl mx-auto">
                 <div className="py-3 space-y-0.5">
                   {messages.length === 0 && (
@@ -1007,8 +1005,8 @@ const ChatViewPage: React.FC = () => {
                     Leave Chat
                   </button>
                 </div>
-              </div>
-            </div>
+                  </div>
+                        </div>
           )}
 
           {/* Sidebar - Members List */}
