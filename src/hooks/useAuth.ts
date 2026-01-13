@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, setPersistence, browserLocalPersistence, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, linkWithCredential, getAdditionalUserInfo } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, retryOnNetworkFailure } from '../firebase/config';
 import { ActivityService } from '../services/activityService';
 
@@ -747,28 +747,45 @@ export const useAuth = () => {
       
       console.log('🔗 Linking Google account to existing account:', currentEmail);
       
-      // Sign in with Google popup
+      // Sign in with Google popup to get the credential
       const result = await retryOnNetworkFailure(async () => {
         return signInWithPopup(auth, googleProvider);
       });
       
-      // Check if the UID matches (same account) or email matches
-      if (result.user.uid === currentUid || result.user.email?.toLowerCase() === currentEmail.toLowerCase()) {
-        // Same account - Firebase automatically uses the same account when emails match
-        // Update user profile to mark Google as linked
-        const userRef = doc(db, 'users', currentUid);
-        await updateDoc(userRef, {
-          googleLinked: true,
-          googleEmail: result.user.email,
-          ...(result.user.photoURL && { profileImage: result.user.photoURL })
-        });
-        
-        console.log('✅ Google account linked successfully');
-        return true;
+      // Check if the email matches the current account
+      if (result.user.email?.toLowerCase() === currentEmail.toLowerCase()) {
+        // Same email - Firebase automatically uses the same account when emails match
+        // The UID should be the same, but verify
+        if (result.user.uid === currentUid) {
+          // Update user profile to mark Google as linked
+          const userRef = doc(db, 'users', currentUid);
+          await updateDoc(userRef, {
+            googleLinked: true,
+            googleEmail: result.user.email,
+            ...(result.user.photoURL && { profileImage: result.user.photoURL })
+          });
+          
+          console.log('✅ Google account linked successfully');
+          return true;
+        } else {
+          // This shouldn't happen if emails match, but handle it
+          console.warn('⚠️ UID mismatch even though emails match');
+          // Still update the profile with the current UID
+          const userRef = doc(db, 'users', currentUid);
+          await updateDoc(userRef, {
+            googleLinked: true,
+            googleEmail: result.user.email
+          });
+          return true;
+        }
       } else {
-        // Different account - need to restore original session
-        // The auth state listener will handle restoring the session
-        // But we should inform the user
+        // Different email - sign out from Google account and restore original session
+        // We need to sign back in with the original credentials
+        await signOut(auth);
+        
+        // Try to restore the original session by signing in again
+        // Note: This requires the user to have their password, which they might not remember
+        // For now, we'll just show an error and let the auth state listener handle it
         throw new Error(`Google account email (${result.user.email}) does not match your current account email (${currentEmail}). Please use a Google account with the same email address.`);
       }
     } catch (err: any) {
