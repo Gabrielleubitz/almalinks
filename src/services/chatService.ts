@@ -410,6 +410,59 @@ export class ChatService {
   }
 
   /**
+   * Edit a message
+   */
+  static async editMessage(chatId: string, messageId: string, newText: string, userId: string): Promise<void> {
+    try {
+      // Verify user is a member
+      const isUserMember = await this.isUserMember(chatId, userId);
+      if (!isUserMember) {
+        throw new Error('User is not a member of this chat');
+      }
+
+      // Sanitize message
+      const sanitizedText = this.sanitizeMessage(newText);
+      if (!sanitizedText.trim()) {
+        throw new Error('Message cannot be empty');
+      }
+
+      if (sanitizedText.length > CHAT_LIMITS.MAX_MESSAGE_LENGTH) {
+        throw new Error(`Message too long (max ${CHAT_LIMITS.MAX_MESSAGE_LENGTH} characters)`);
+      }
+
+      // Get the message to verify ownership
+      const messageRef = doc(db, 'chat_messages', messageId);
+      const messageDoc = await getDoc(messageRef);
+
+      if (!messageDoc.exists()) {
+        throw new Error('Message not found');
+      }
+
+      const messageData = messageDoc.data() as ChatMessage;
+      
+      // Verify the user owns this message
+      if (messageData.userId !== userId) {
+        throw new Error('You can only edit your own messages');
+      }
+
+      // Verify the message belongs to this chat
+      if (messageData.chatId !== chatId) {
+        throw new Error('Message does not belong to this chat');
+      }
+
+      // Update the message
+      await updateDoc(messageRef, {
+        text: sanitizedText,
+        editedAt: Timestamp.now()
+      });
+
+    } catch (error) {
+      console.error('❌ Error editing message:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Create a join request
    */
   static async createJoinRequest(form: JoinRequestForm, userId: string): Promise<ChatRequest> {

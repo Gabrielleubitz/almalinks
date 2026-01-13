@@ -87,6 +87,7 @@ const ChatViewPage: React.FC = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [mutingChat, setMutingChat] = useState(false);
   const [openReactionPickerId, setOpenReactionPickerId] = useState<string | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
 
   // Real-time subscription
   const unsubscribeRef = useRef<(() => void) | null>(null);
@@ -115,6 +116,18 @@ const ChatViewPage: React.FC = () => {
       }
     }, 100);
   }, [messages]);
+
+  // Auto-scroll when switching to a different chat
+  useEffect(() => {
+    if (chatId && messages.length > 0) {
+      // Small delay to ensure messages are rendered
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+        }
+      }, 150);
+    }
+  }, [chatId]);
 
   const loadChat = async () => {
     if (!user?.uid || !chatId) return;
@@ -226,21 +239,29 @@ const ChatViewPage: React.FC = () => {
 
     try {
       setSending(true);
-      const form: SendMessageForm = {
-        text: messageText.trim(),
-        chatId
-      };
       
-      await ChatService.sendMessage(form, user.uid);
-      setMessageText('');
+      // If editing a message, update it instead of sending new one
+      if (editingMessageId) {
+        await ChatService.editMessage(chatId, editingMessageId, messageText.trim(), user.uid);
+        setEditingMessageId(null);
+        setMessageText('');
+      } else {
+        const form: SendMessageForm = {
+          text: messageText.trim(),
+          chatId
+        };
+        
+        await ChatService.sendMessage(form, user.uid);
+        setMessageText('');
 
-      // Log chat message activity
-      if (chat) {
-        logChatMessage(chatId, chat.name);
+        // Log chat message activity
+        if (chat) {
+          logChatMessage(chatId, chat.name);
+        }
       }
       
     } catch (err: any) {
-      console.error('❌ Error sending message:', err);
+      console.error('❌ Error sending/editing message:', err);
       alert(err.message || 'Failed to send message');
     } finally {
       setSending(false);
@@ -580,8 +601,13 @@ const ChatViewPage: React.FC = () => {
     const message = messages.find(m => m.id === messageId);
     if (message && message.userId === user?.uid) {
       setMessageText(message.text);
-      // TODO: Implement message editing
+      setEditingMessageId(messageId);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setMessageText('');
   };
 
   const handleDeleteMessage = async (messageId: string) => {
@@ -849,6 +875,17 @@ const ChatViewPage: React.FC = () => {
             {/* Message Input - Anchored to bottom, part of the surface */}
             {permissions?.canSendMessages && (
               <div className="px-4 py-3 border-t border-gray-200 flex-shrink-0 bg-white">
+                {editingMessageId && (
+                  <div className="mb-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700 flex items-center justify-between max-w-3xl mx-auto">
+                    <span>Editing message</span>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
                 <form onSubmit={handleSendMessage} className="flex items-end gap-2 max-w-3xl mx-auto">
                   <div className="flex-1 bg-gray-50 rounded-lg px-3 py-2 flex items-center border border-gray-200">
                     <textarea
@@ -858,7 +895,7 @@ const ChatViewPage: React.FC = () => {
                         e.target.style.height = 'auto';
                         e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
                       }}
-                      placeholder="Type a message"
+                      placeholder={editingMessageId ? "Edit your message" : "Type a message"}
                       rows={1}
                       className="w-full bg-transparent border-0 focus:ring-0 focus:outline-none resize-none text-sm text-gray-900 placeholder-gray-400 max-h-[100px] overflow-y-auto leading-relaxed"
                       disabled={sending}
@@ -866,6 +903,9 @@ const ChatViewPage: React.FC = () => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
                           handleSendMessage(e);
+                        }
+                        if (e.key === 'Escape' && editingMessageId) {
+                          handleCancelEdit();
                         }
                       }}
                     />
