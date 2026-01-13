@@ -72,13 +72,44 @@ export default async function handler(req, res) {
   try {
     const { message, isUserLoggedIn, conversationHistory } = req.body;
 
-    // Validate required fields
-    if (!message) {
+    // SECURITY: Validate and sanitize input
+    if (!message || typeof message !== 'string') {
       return res.status(400).json({ 
         success: false, 
         error: 'Missing required field: message' 
       });
     }
+
+    // SECURITY: Sanitize message to prevent XSS and injection attacks
+    const sanitizedMessage = message
+      .trim()
+      .substring(0, 2000) // Limit length to prevent abuse
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
+      .replace(/javascript:/gi, '') // Remove javascript: protocol
+      .replace(/on\w+\s*=/gi, ''); // Remove event handlers
+
+    if (!sanitizedMessage || sanitizedMessage.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid message content' 
+      });
+    }
+
+    // SECURITY: Validate conversationHistory if provided
+    if (conversationHistory && !Array.isArray(conversationHistory)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid conversation history format' 
+      });
+    }
+
+    // SECURITY: Limit conversation history size to prevent abuse
+    const limitedHistory = conversationHistory 
+      ? conversationHistory.slice(-20).map(msg => ({
+          role: msg.role === 'user' || msg.role === 'assistant' ? msg.role : 'user',
+          content: String(msg.content || '').substring(0, 2000)
+        }))
+      : [];
 
     // Get OpenAI API key from environment variables
     const openaiApiKey = process.env.OPENAI_API_KEY;
@@ -103,14 +134,15 @@ export default async function handler(req, res) {
     // Build comprehensive system prompt with site knowledge
     const systemPrompt = buildSystemPrompt(eventsData, isUserLoggedIn);
 
-    // Prepare conversation messages
+    // Prepare conversation messages with sanitized input
     const messages = [
       { role: "system", content: systemPrompt },
-      ...(conversationHistory || []),
-      { role: "user", content: message }
+      ...limitedHistory,
+      { role: "user", content: sanitizedMessage }
     ];
 
-    console.log(`🤖 Processing chat message for Alma Links: "${message.substring(0, 50)}..."`);
+    // SECURITY: Log sanitized message (not original) to prevent log injection
+    console.log(`🤖 Processing chat message for Alma Links: "${sanitizedMessage.substring(0, 50)}..."`);
 
     // Call OpenAI API
     const response = await openai.chat.completions.create({

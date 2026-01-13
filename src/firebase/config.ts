@@ -4,43 +4,52 @@ import { getFirestore, enableIndexedDbPersistence, connectFirestoreEmulator } fr
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 
-// Get Firebase config from environment variables
+// Get Firebase config from environment variables - REQUIRED for security
+// All values must be provided via environment variables in production
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyC6cvhqnPB04oiCnfI2eYRfZ8Wsdxojcb4",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "alma-links-test.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "alma-links-test",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "alma-links-test.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "993488312241",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:993488312241:web:7fc18f59d3ec9457afcf90",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-CBHYZHPBSC"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
+
+// Validate that all required config values are present
+const requiredConfigKeys = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
+const missingKeys = requiredConfigKeys.filter(key => !firebaseConfig[key as keyof typeof firebaseConfig]);
+
+if (missingKeys.length > 0) {
+  const errorMessage = `Missing required Firebase configuration: ${missingKeys.join(', ')}. Please set VITE_FIREBASE_${missingKeys.map(k => k.toUpperCase()).join(', VITE_FIREBASE_')} environment variables.`;
+  console.error('❌ Firebase configuration error:', errorMessage);
+  if (import.meta.env.PROD) {
+    throw new Error(errorMessage);
+  }
+}
 
 // Check if we're running in a secure context
 const isSecureContext = window.isSecureContext;
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const isHttps = window.location.protocol === 'https:';
 
-// Log environment information
-console.log('🔐 Firebase initialization - Environment info:', {
-  isSecureContext,
-  isLocalhost,
-  isHttps,
-  hostname: window.location.hostname,
-  protocol: window.location.protocol
-});
-
-// Initialize Firebase
-console.log('🔥 Initializing Firebase with config:', {
-  apiKey: firebaseConfig.apiKey,
-  authDomain: firebaseConfig.authDomain,
-  projectId: firebaseConfig.projectId,
-  storageBucket: firebaseConfig.storageBucket
-});
+// Log environment information (only in development)
+if (import.meta.env.DEV) {
+  console.log('🔐 Firebase initialization - Environment info:', {
+    isSecureContext,
+    isLocalhost,
+    isHttps,
+    hostname: window.location.hostname,
+    protocol: window.location.protocol
+  });
+}
 
 const app = initializeApp(firebaseConfig);
 
-// Expose Firebase app and auth to window for debugging
-if (typeof window !== 'undefined') {
+// SECURITY: Do not expose Firebase app/auth to window object in production
+// This prevents unauthorized access to Firebase instances
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  // Only expose in development for debugging
   (window as any).__app = app;
   (window as any).__auth = getAuth(app);
 }
@@ -57,7 +66,9 @@ export const storage = getStorage(app);
 // Set persistence to local (stays logged in until explicitly logged out)
 setPersistence(auth, browserLocalPersistence)
   .then(() => {
-    console.log('✅ Firebase Auth persistence set to local storage');
+    if (import.meta.env.DEV) {
+      console.log('✅ Firebase Auth persistence set to local storage');
+    }
   })
   .catch((error) => {
     console.error('❌ Firebase Auth persistence setup failed:', error);
@@ -66,13 +77,19 @@ setPersistence(auth, browserLocalPersistence)
 // Enable Firestore offline persistence
 enableIndexedDbPersistence(db)
   .then(() => {
-    console.log('✅ Firestore offline persistence enabled');
+    if (import.meta.env.DEV) {
+      console.log('✅ Firestore offline persistence enabled');
+    }
   })
   .catch((error) => {
     if (error.code === 'failed-precondition') {
-      console.warn('⚠️ Firestore persistence failed: Multiple tabs open');
+      if (import.meta.env.DEV) {
+        console.warn('⚠️ Firestore persistence failed: Multiple tabs open');
+      }
     } else if (error.code === 'unimplemented') {
-      console.warn('⚠️ Firestore persistence failed: Browser not supported');
+      if (import.meta.env.DEV) {
+        console.warn('⚠️ Firestore persistence failed: Browser not supported');
+      }
     } else {
       console.error('❌ Firestore persistence error:', error);
     }
@@ -92,12 +109,16 @@ export const analytics = typeof window !== 'undefined' ? isSupported().then(yes 
 // Network status monitoring
 let isOnline = navigator.onLine;
 window.addEventListener('online', () => {
-  console.log('🌐 App is back online');
+  if (import.meta.env.DEV) {
+    console.log('🌐 App is back online');
+  }
   isOnline = true;
 });
 
 window.addEventListener('offline', () => {
-  console.log('🔌 App is offline');
+  if (import.meta.env.DEV) {
+    console.log('🔌 App is offline');
+  }
   isOnline = false;
 });
 
@@ -114,7 +135,9 @@ export const retryOnNetworkFailure = async (fn: () => Promise<any>, maxRetries =
     } catch (error: any) {
       if (error.code === 'auth/network-request-failed' || error.code === 'unavailable') {
         retries++;
-        console.log(`🔄 Network request failed, retrying (${retries}/${maxRetries})...`);
+        if (import.meta.env.DEV) {
+          console.log(`🔄 Network request failed, retrying (${retries}/${maxRetries})...`);
+        }
         
         if (retries >= maxRetries) {
           throw error;

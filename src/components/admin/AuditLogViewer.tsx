@@ -60,7 +60,7 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/user-admin', {
+      const response = await fetch('/api/user-admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -3,14 +3,19 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from './useAuth';
 
-// Admin email list - in production, this should be in Firestore or Firebase Custom Claims
-const ADMIN_EMAILS = [
-  'admin@almalinks.com',
-  'gabriel@almalinks.com',
-  'info@almalinks.com',
-  // Add more admin emails here
-];
-
+/**
+ * useAdmin Hook - Checks if the current user has admin privileges
+ * 
+ * SECURITY: Admin status is determined by the 'role' field in the user's Firestore document.
+ * This role is set by administrators and stored securely in Firestore.
+ * Firebase Custom Claims are also set server-side for additional security.
+ * 
+ * The role check is performed in this order:
+ * 1. Check user.role from Firestore (already loaded by useAuth)
+ * 2. Fallback to Firestore document if role not in user object
+ * 
+ * This ensures admin status is always verified against the database, not hardcoded values.
+ */
 export const useAdmin = () => {
   const { user, loading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -18,25 +23,44 @@ export const useAdmin = () => {
 
   useEffect(() => {
     const checkAdminStatus = async () => {
-      if (authLoading) return;
+      if (authLoading) {
+        setLoading(true);
+        return;
+      }
       
-      if (!user?.email) {
+      if (!user?.uid) {
         setIsAdmin(false);
         setLoading(false);
         return;
       }
 
       try {
-        console.log('🔍 Checking admin status for:', user.email);
-        
-        // Check if user email is in admin list
-        const isAdminEmail = ADMIN_EMAILS.includes(user.email.toLowerCase());
-        
-        if (isAdminEmail) {
-          console.log('✅ User is admin:', user.email);
+        // Primary check: Use role from user object (already loaded from Firestore by useAuth)
+        if (user.role === 'admin') {
           setIsAdmin(true);
+          setLoading(false);
+          return;
+        }
+
+        // Fallback: If role not in user object, check Firestore directly
+        // This is a security measure to ensure we always verify against the database
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const hasAdminRole = userData.role === 'admin';
+          
+          if (import.meta.env.DEV) {
+            console.log('🔍 Admin status check:', {
+              uid: user.uid,
+              email: user.email,
+              role: userData.role,
+              isAdmin: hasAdminRole
+            });
+          }
+          
+          setIsAdmin(hasAdminRole);
         } else {
-          console.log('❌ User is not admin:', user.email);
           setIsAdmin(false);
         }
       } catch (error) {

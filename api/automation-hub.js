@@ -169,20 +169,12 @@ const POST_EVENT_TEMPLATES = {
 };
 
 // UTILITY FUNCTIONS
-function getUserRole(registration, eventSpeakers = []) {
+function getUserRole(registration) {
   if (registration.badgeRole) {
     return {
       role: registration.badgeRole.toLowerCase(),
       display: registration.badgeRole,
       color: getRoleColor(registration.badgeRole.toLowerCase())
-    };
-  }
-  
-  if (eventSpeakers.some(speaker => speaker.userId === registration.userId)) {
-    return {
-      role: 'speaker',
-      display: 'Speaker',
-      color: '#7C3AED'
     };
   }
   
@@ -213,7 +205,6 @@ function getUserRole(registration, eventSpeakers = []) {
 function getRoleColor(role) {
   const colors = {
     'admin': '#DC2626',
-    'speaker': '#7C3AED',
     'vip': '#F59E0B',
     'sponsor': '#059669',
     'investor': '#0EA5E9',
@@ -279,11 +270,8 @@ async function processReminders(intervalMs, reminderType) {
           reg.status === 'confirmed' && !reg.checkedIn
         );
         
-        const eventDetails = await EventService.getEventById(event.id);
-        const eventSpeakers = eventDetails?.speakers || [];
-        
         for (const registration of confirmedRegistrations) {
-          const role = getUserRole(registration, eventSpeakers);
+          const role = getUserRole(registration);
           const template = REMINDER_TEMPLATES[role.role]?.email;
           
           if (template) {

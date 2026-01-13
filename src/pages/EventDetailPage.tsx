@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Clock, ArrowLeft, Users, CheckCircle, AlertCircle, Ticket, Download, User, Mic, Linkedin, Briefcase, CalendarPlus } from 'lucide-react';
+import { Calendar, MapPin, Clock, ArrowLeft, Users, CheckCircle, AlertCircle, Ticket, Download, User, Linkedin, Briefcase, CalendarPlus } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { EventService, EventData } from '../services/eventService';
-import { SpeakerService, EventSpeaker } from '../services/speakerService';
 import { useAuth } from '../hooks/useAuth';
 import { useActivityTracking } from '../hooks/useActivityTracking';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import EventSpeakers from '../components/EventSpeakers';
 import EventPositionChart from '../components/analytics/EventPositionChart';
 import ReviewSection from '../components/reviews/ReviewSection';
 
@@ -19,7 +17,6 @@ const EventDetailPage: React.FC = () => {
   const { logEventRegistration } = useActivityTracking();
   
   const [event, setEvent] = useState<EventData | null>(null);
-  const [speakers, setSpeakers] = useState<EventSpeaker[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
@@ -74,31 +71,6 @@ const EventDetailPage: React.FC = () => {
       if (eventData) {
         setEvent(eventData);
         console.log('✅ Event loaded:', eventData.name);
-        
-        // Load speakers separately using inline method (bypassing cache issues)
-        try {
-          console.log('🔍 Loading speakers for event:', eventData.id);
-          const { collection, getDocs } = await import('firebase/firestore');
-          const { db } = await import('../firebase/config');
-          
-          const speakersRef = collection(db, 'speakers');
-          const allSnapshot = await getDocs(speakersRef);
-          console.log('📊 Found', allSnapshot.docs.length, 'total speakers');
-          
-          const allSpeakers = allSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          
-          const eventSpeakers = allSpeakers.filter(speaker => speaker.eventId === eventData.id);
-          console.log('✅ Found', eventSpeakers.length, 'speakers for this event');
-          
-          setSpeakers(eventSpeakers as EventSpeaker[]);
-        } catch (speakerError) {
-          console.error('❌ Error loading event speakers:', speakerError);
-          // Don't fail the whole page if speakers fail to load
-          setSpeakers([]);
-        }
         
         // Check registration status if user is logged in
         if (user?.uid) {
@@ -383,7 +355,6 @@ const EventDetailPage: React.FC = () => {
 
   const statusInfo = getStatusInfo(event.status);
   const formattedDate = formatDate(event.date);
-  const hasSpeakers = speakers && speakers.length > 0;
 
   return (
     <div className="min-h-screen bg-white">
@@ -444,13 +415,6 @@ const EventDetailPage: React.FC = () => {
                   <span className="text-gray-700">Exclusive Event</span>
                 </div>
                 
-                {/* Speaker Badge */}
-                {hasSpeakers && (
-                  <div className="flex items-center space-x-3 text-lg">
-                    <Mic className="h-6 w-6 text-orange-600" />
-                    <span className="text-gray-700">{speakers.length} {speakers.length === 1 ? 'Speaker' : 'Speakers'}</span>
-                  </div>
-                )}
               </div>
 
               {/* Status Messages */}
@@ -651,32 +615,6 @@ const EventDetailPage: React.FC = () => {
 
           {/* Sidebar */}
           <div className="md:col-span-1 space-y-8">
-            {/* Event Speakers */}
-            {hasSpeakers ? (
-              <EventSpeakers 
-                speakers={speakers} 
-                className="bg-gradient-to-br from-red-50 to-blue-50"
-              />
-            ) : (
-              /* Speaker Application CTA */
-              <div className="bg-gradient-to-br from-red-50 to-blue-50 rounded-2xl p-6 border border-gray-100">
-                <div className="flex items-center space-x-3 mb-4">
-                  <Mic className="h-5 w-5 text-red-700" />
-                  <h3 className="text-lg font-bold text-gray-900">Become a Speaker</h3>
-                </div>
-                <p className="text-gray-700 mb-4">
-                  Interested in sharing your expertise at this event? Apply to become a speaker and showcase your knowledge to our exclusive audience.
-                </p>
-                <button
-                  onClick={handleApplyToSpeak}
-                  className="inline-flex items-center space-x-2 text-red-600 hover:text-red-700 font-medium"
-                >
-                  <span>Apply now</span>
-                  <ArrowLeft className="h-4 w-4 rotate-180" />
-                </button>
-              </div>
-            )}
-
             {/* Event Details Summary */}
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Event Details</h3>

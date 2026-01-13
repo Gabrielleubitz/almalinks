@@ -30,8 +30,8 @@ service cloud.firestore {
     
     // Events collection
     match /events/{eventId} {
-      // Anyone can read public events
-      allow read: if true;
+      // Only authenticated users can read events
+      allow read: if isAuthenticated();
       // Only admins can create/update/delete events
       allow write: if isAdmin();
       

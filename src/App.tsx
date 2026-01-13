@@ -5,13 +5,11 @@ import Hero from './components/Hero';
 import About from './components/About';
 import MarqueeDemo from './components/MarqueeDemo';
 import InThePress from './components/InThePress';
-import Speakers from './components/Speakers';
 import FloatingBubbles from './components/FloatingBubbles';
 import UpcomingEvent from './components/UpcomingEvent';
 import FAQ from './components/FAQ';
 import Footer from './components/Footer';
 import ChatWidget from './components/chat/ChatWidget';
-import SpeakersPage from './pages/SpeakersPage';
 import DashboardPage from './pages/DashboardPage';
 import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
@@ -28,7 +26,6 @@ import AdminAnnouncements from './pages/admin/AdminAnnouncements';
 import AddEvent from './pages/admin/AddEvent';
 import EditEvent from './pages/admin/EditEvent';
 import EventManagement from './pages/admin/EventManagement';
-import SpeakerManagement from './pages/admin/SpeakerManagement';
 import UserManagement from './pages/admin/UserManagement';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import PendingRegistrations from './pages/admin/PendingRegistrations';
@@ -63,7 +60,6 @@ const HomePage = () => (
     <About />
     <MarqueeDemo />
     <InThePress />
-    <Speakers />
     <FloatingBubbles />
     <UpcomingEvent />
     <FAQ />
@@ -78,7 +74,6 @@ function App() {
       <ActivityTracker />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/speakers" element={<SpeakersPage />} />
         <Route path="/theme-preview" element={<ThemePreview />} />
         
         {/* Auth Routes */}
@@ -229,14 +224,6 @@ function App() {
           element={
             <ProtectedRoute requiredRole="admin">
               <EditEvent />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/speakers" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <SpeakerManagement />
             </ProtectedRoute>
           } 
         />

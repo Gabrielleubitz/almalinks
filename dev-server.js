@@ -28,11 +28,32 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = 3001;
 
-// Enable CORS
+// SECURITY: Enable CORS with origin validation
+const allowedOrigins = [
+  'https://almalinks.com',
+  'https://www.almalinks.com',
+  'https://alma-links-test.web.app',
+  'https://alma-links-test.firebaseapp.com',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:3001'
+];
+
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+  const isAllowedOrigin = origin && allowedOrigins.includes(origin);
+  
+  // Set CORS headers with origin validation
+  res.header('Access-Control-Allow-Origin', isAllowedOrigin ? origin : allowedOrigins[0]);
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Security headers
+  res.header('X-Content-Type-Options', 'nosniff');
+  res.header('X-Frame-Options', 'DENY');
+  res.header('X-XSS-Protection', '1; mode=block');
+  res.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);

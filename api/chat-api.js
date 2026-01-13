@@ -677,14 +677,31 @@ export const rejectJoinRequest = async (req, res) => {
 
 // Express app setup (if this is the main file)
 export default async (req, res) => {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // SECURITY: Restrict CORS to allowed origins only
+  const allowedOrigins = [
+    'https://almalinks.com',
+    'https://www.almalinks.com',
+    'https://alma-links-test.web.app',
+    'https://alma-links-test.firebaseapp.com',
+    ...(process.env.NODE_ENV === 'development' ? ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'] : [])
+  ];
+  
+  const origin = req.headers.origin;
+  const isAllowedOrigin = origin && allowedOrigins.includes(origin);
+  
+  // Set CORS headers with origin validation
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', isAllowedOrigin ? origin : allowedOrigins[0]);
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
+    'Content-Type, Authorization, X-Requested-With'
   );
+  
+  // Security headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();

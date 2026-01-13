@@ -41,7 +41,7 @@ interface UserData {
   uid: string;
   email: string;
   name: string;
-  role: 'member' | 'admin' | 'speaker';
+  role: 'member' | 'admin';
   createdAt?: any;
   profileImage?: string | null;
   phone?: string;
@@ -322,8 +322,6 @@ const UserManagement: React.FC = () => {
     switch (role) {
       case 'admin':
         return <Shield className="h-4 w-4 text-brand-dark" />;
-      case 'speaker':
-        return <Mic className="h-4 w-4 text-orange-600" />;
       default:
         return <UserIcon className="h-4 w-4 text-brand-light" />;
     }
@@ -333,8 +331,6 @@ const UserManagement: React.FC = () => {
     switch (role) {
       case 'admin':
         return 'bg-purple-100 text-purple-800';
-      case 'speaker':
-        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-blue-50 text-blue-800';
     }
@@ -562,7 +558,6 @@ const UserManagement: React.FC = () => {
                             >
                               <option value="member">Member</option>
                               <option value="admin">Admin</option>
-                              <option value="speaker">Speaker</option>
                             </select>
                             <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                             
@@ -668,7 +663,6 @@ const UserManagement: React.FC = () => {
               <h4 className="font-medium text-gray-900 mb-2">User Roles:</h4>
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• <strong>Member:</strong> Regular users who can register for events and access their dashboard</li>
-                <li>• <strong>Speaker:</strong> Users who can upload presentation materials and access the speaker dashboard</li>
                 <li>• <strong>Admin:</strong> Full access to all admin features including user management</li>
               </ul>
             </div>

@@ -24,7 +24,7 @@ interface BulkUserImportProps {
 interface CSVUser {
   email: string;
   name: string;
-  role?: 'member' | 'admin' | 'speaker';
+  role?: 'member' | 'admin';
   phone?: string;
   company?: string;
   work?: string;
@@ -47,7 +47,7 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
 }) => {
   const [dragActive, setDragActive] = useState(false);
   const [csvData, setCsvData] = useState<CSVUser[]>([]);
-  const [defaultTempPassword, setDefaultTempPassword] = useState('');
+  const [defaultTempPassword, setDefaultTempPassword] = useState('12345678');
   const [isImporting, setIsImporting] = useState(false);
   const [importResults, setImportResults] = useState<ImportResults | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -210,7 +210,7 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
 
   const copyPassword = async () => {
     try {
-      await navigator.clipboard.writeText(defaultTempPassword);
+      await navigator.clipboard.writeText('12345678');
       showToast('Password copied to clipboard', 'success');
     } catch (error) {
       showToast('Failed to copy password', 'error');
@@ -218,15 +218,17 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
   };
 
   const handleImport = async () => {
-    if (!defaultTempPassword || defaultTempPassword.length < 8) {
-      showToast('Please set a valid temporary password (at least 8 characters)', 'error');
+    // Ensure password is always 12345678 for bulk imports
+    const importPassword = '12345678';
+    if (!importPassword || importPassword.length < 8) {
+      showToast('Invalid password configuration', 'error');
       return;
     }
 
     setIsImporting(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/user-admin', {
+      const response = await fetch('/api/user-admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -235,7 +237,7 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
           action: 'bulk-import',
           adminId: adminId,
           users: csvData,
-          defaultTempPassword: defaultTempPassword
+          defaultTempPassword: '12345678'
         })
       });
 
@@ -259,7 +261,7 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
 
   const resetImport = () => {
     setCsvData([]);
-    setDefaultTempPassword('');
+    setDefaultTempPassword('12345678');
     setImportResults(null);
     setCurrentStep('upload');
   };
@@ -412,7 +414,7 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
                 <h4 className="font-semibold text-gray-900 mb-3">CSV Requirements:</h4>
                 <ul className="text-sm text-gray-600 space-y-1">
                   <li>• <strong>Required columns:</strong> email, name</li>
-                  <li>• <strong>Optional columns:</strong> role (member/admin/speaker), phone, company, work, position, linkedinUsername</li>
+                  <li>• <strong>Optional columns:</strong> role (member/admin), phone, company, work, position, linkedinUsername</li>
                   <li>• <strong>Format:</strong> First row must contain column headers</li>
                   <li>• <strong>Encoding:</strong> UTF-8 recommended</li>
                   <li>• <strong>Limit:</strong> Maximum 1000 users per import</li>
@@ -429,45 +431,40 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
                 <h4 className="font-semibold text-yellow-900 mb-3">Temporary Password</h4>
                 <p className="text-sm text-yellow-700 mb-3">
-                  All users will receive the same temporary password and must change it on first login.
+                  All users will receive the password <strong>12345678</strong> and must change it on first login.
                 </p>
                 
                 <div className="flex space-x-3 mb-3">
                   <div className="flex-1 relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
-                      value={defaultTempPassword}
-                      onChange={(e) => setDefaultTempPassword(e.target.value)}
-                      className="w-full pr-20 pl-4 py-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                      placeholder="Enter temporary password (min 8 characters)"
+                      value="12345678"
+                      readOnly
+                      className="w-full pr-20 pl-4 py-3 border border-yellow-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
+                      placeholder="Temporary password for all users"
                     />
                     <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex space-x-1">
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="p-1 text-gray-400 hover:text-gray-600"
+                        title={showPassword ? 'Hide password' : 'Show password'}
                       >
                         {showPassword ? <X className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
-                      {defaultTempPassword && (
-                        <button
-                          type="button"
-                          onClick={copyPassword}
-                          className="p-1 text-gray-400 hover:text-gray-600"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={copyPassword}
+                        className="p-1 text-gray-400 hover:text-gray-600"
+                        title="Copy password"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={generatePassword}
-                    className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center space-x-2"
-                  >
-                    <Shuffle className="h-4 w-4" />
-                    <span>Generate</span>
-                  </button>
+                  <div className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg flex items-center space-x-2">
+                    <span className="text-sm font-medium">Fixed Password</span>
+                  </div>
                 </div>
               </div>
 
@@ -646,4 +643,5 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
   );
 };
 
+export default BulkUserImport;
 export default BulkUserImport;

@@ -37,6 +37,17 @@ firebase-debug.*.log
 .firebase/
 wine-and-grind-firebase-adminsdk-*.json
 alma-links-*-firebase-adminsdk-*.json
+*-firebase-adminsdk-*.json
+**/firebase-adminsdk-*.json
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.*.json
+!firebase.json
+!netlify.toml
+!vercel.json
+!cors.json
 
 # Netlify
 .netlify/

@@ -24,7 +24,7 @@ const AdminSMS: React.FC = () => {
   
   const [events, setEvents] = useState<EventData[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>('');
-  const [recipientGroup, setRecipientGroup] = useState<'all' | 'registered' | 'pending' | 'speaker' | 'custom'>('all');
+  const [recipientGroup, setRecipientGroup] = useState<'all' | 'registered' | 'pending' | 'custom'>('all');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingEvents, setLoadingEvents] = useState(true);
@@ -182,10 +182,6 @@ const AdminSMS: React.FC = () => {
         // Use selected users
         filteredUsers = allUsers.filter(user => selectedUsers.has(user.userId || user.id));
       } else {
-        // Get event details to access speakers array
-        const eventDetails = await EventService.getEventById(selectedEventId);
-        const eventSpeakers = eventDetails?.speakers || [];
-        
         // Get registrations for the selected event
         const registrations = await EventService.getEventRegistrations(selectedEventId);
         filteredUsers = registrations;
@@ -200,12 +196,6 @@ const AdminSMS: React.FC = () => {
             break;
           case 'pending':
             filteredUsers = registrations.filter(reg => reg.status === 'pending');
-            break;
-          case 'speaker':
-            // Filter to only include users who are in the event's speakers array
-            filteredUsers = registrations.filter(reg => 
-              eventSpeakers.some((speaker: any) => speaker.userId === reg.userId)
-            );
             break;
         }
       }
@@ -419,7 +409,6 @@ const AdminSMS: React.FC = () => {
       all: 'All Users',
       registered: 'Registered (Not Checked In)',
       pending: 'Pending Users',
-      speaker: 'Speakers',
       custom: 'Custom Selection'
     };
     return labels[group as keyof typeof labels] || group;
@@ -588,7 +577,6 @@ const AdminSMS: React.FC = () => {
                   <option value="all">All Users</option>
                   <option value="registered">Registered (Not Checked In)</option>
                   <option value="pending">Pending Users</option>
-                  <option value="speaker">Speakers</option>
                   <option value="custom">Custom Selection</option>
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />

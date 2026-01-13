@@ -149,10 +149,10 @@ async function createUser(req, res, adminId) {
   }
 
   // Validate role
-  if (!['member', 'admin', 'speaker'].includes(role)) {
+  if (!['member', 'admin'].includes(role)) {
     return res.status(400).json({ 
       success: false, 
-      error: 'Invalid role. Must be: member, admin, or speaker' 
+      error: 'Invalid role. Must be: member or admin' 
     });
   }
 

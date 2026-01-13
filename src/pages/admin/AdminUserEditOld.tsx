@@ -243,7 +243,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       console.log('🎯 Specific fields - bio:', formData.bio, 'phone:', formData.phone, 'company:', formData.company);
       
       // Call the user update API
-      const response = await fetch('http://localhost:3001/api/user-admin', {
+      const response = await fetch('/api/user-admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -309,8 +309,6 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
     switch (role) {
       case 'admin':
         return <Shield className="h-4 w-4 text-brand-dark" />;
-      case 'speaker':
-        return <Mic className="h-4 w-4 text-orange-600" />;
       default:
         return <User className="h-4 w-4 text-brand-light" />;
     }
@@ -320,8 +318,6 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
     switch (role) {
       case 'admin':
         return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'speaker':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
       default:
         return 'bg-blue-50 text-blue-800 border-blue-200';
     }
@@ -498,8 +494,8 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
           {/* User Role Selection */}
           <div className="mb-8 p-6 border border-gray-200 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">User Role</h3>
-            <div className="grid grid-cols-3 gap-3">
-              {(['member', 'speaker', 'admin'] as const).map((role) => (
+            <div className="grid grid-cols-2 gap-3">
+              {(['member', 'admin'] as const).map((role) => (
                 <button
                   key={role}
                   type="button"

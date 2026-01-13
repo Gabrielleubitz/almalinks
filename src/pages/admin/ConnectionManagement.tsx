@@ -10,9 +10,16 @@ const ConnectionManagement: React.FC = () => {
 
   const handleExportStats = async () => {
     try {
+      // TODO: Implement export functionality
       // This would export connection statistics to CSV
       // Implementation would depend on your requirements
-      alert('Export functionality would be implemented here');
+      console.log('Export functionality not yet implemented');
+      // For now, show a user-friendly message
+      const shouldProceed = window.confirm('Export functionality is not yet implemented. Would you like to be notified when it becomes available?');
+      if (shouldProceed) {
+        // Could integrate with a notification system here
+        console.log('User requested export notification');
+      }
     } catch (error) {
       console.error('❌ Error exporting stats:', error);
     }
@@ -20,7 +27,7 @@ const ConnectionManagement: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      <AdminHeader />
+      <AdminHeader title="Connection Management" />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Navigation */}

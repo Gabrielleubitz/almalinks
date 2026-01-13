@@ -7,7 +7,6 @@ import {
   MessageCircle,
   UserCog, 
   Megaphone, 
-  Mic,
   FileText,
   Settings,
   Activity,
@@ -51,7 +50,7 @@ const AdminDashboard: React.FC = () => {
   
   // SMS state
   const [smsMessage, setSmsMessage] = useState('');
-  const [smsRecipientGroup, setSmsRecipientGroup] = useState<'all' | 'registered' | 'pending' | 'speaker'>('all');
+  const [smsRecipientGroup, setSmsRecipientGroup] = useState<'all' | 'registered' | 'pending'>('all');
   const [smsRecipientCount, setSmsRecipientCount] = useState(0);
   const [smsLoading, setSmsLoading] = useState(false);
   const [smsError, setSmsError] = useState<string | null>(null);
@@ -78,7 +77,8 @@ const AdminDashboard: React.FC = () => {
 
     loadEvents();
     loadPendingCount();
-  }, [selectedEventId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
   // Update SMS recipient count when event or group changes
   useEffect(() => {
@@ -233,13 +233,6 @@ const AdminDashboard: React.FC = () => {
           break;
         case 'pending':
           filteredUsers = registrations.filter(reg => reg.status === 'pending');
-          break;
-        case 'speaker':
-          const selectedEvent = events.find(e => e.id === selectedEventId);
-          const eventSpeakers = selectedEvent?.speakers || [];
-          filteredUsers = registrations.filter(reg => 
-            eventSpeakers.some((speaker: any) => speaker.userId === reg.userId)
-          );
           break;
       }
 
@@ -610,22 +603,7 @@ const AdminDashboard: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">🎯 Event Tools</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               <Link
-                to="/admin/speakers"
-                className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    <Mic className="h-8 w-8 text-brand-dark" />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="text-lg font-semibold text-gray-900">Speakers</h4>
-                    <p className="text-gray-600 text-sm">Assign speakers to events</p>
-                  </div>
-                </div>
-              </Link>
-
-              <Link
-                to="/admin/users"
+                to="/admin/connections"
                 className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift"
               >
                 <div className="flex items-center space-x-4">
@@ -799,7 +777,6 @@ const AdminDashboard: React.FC = () => {
                     <option value="all">All Users</option>
                     <option value="registered">Registered (Not Checked In)</option>
                     <option value="pending">Pending Users</option>
-                    <option value="speaker">Speakers</option>
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
                 </div>

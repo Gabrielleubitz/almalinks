@@ -137,7 +137,7 @@ const UserCreationForm: React.FC<UserCreationFormProps> = ({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/user-admin', {
+      const response = await fetch('/api/user-admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -198,8 +198,6 @@ const UserCreationForm: React.FC<UserCreationFormProps> = ({
     switch (role) {
       case 'admin':
         return <Shield className="h-4 w-4 text-brand-dark" />;
-      case 'speaker':
-        return <Mic className="h-4 w-4 text-orange-600" />;
       default:
         return <UserIcon className="h-4 w-4 text-brand-light" />;
     }
@@ -209,8 +207,6 @@ const UserCreationForm: React.FC<UserCreationFormProps> = ({
     switch (role) {
       case 'admin':
         return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'speaker':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
       default:
         return 'bg-blue-50 text-blue-800 border-blue-200';
     }
@@ -337,8 +333,8 @@ const UserCreationForm: React.FC<UserCreationFormProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   User Role *
                 </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {(['member', 'speaker', 'admin'] as const).map((role) => (
+                <div className="grid grid-cols-2 gap-3">
+                  {(['member', 'admin'] as const).map((role) => (
                     <button
                       key={role}
                       type="button"
