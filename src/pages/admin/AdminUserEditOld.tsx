@@ -59,7 +59,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
     profileVisibility: 'event_only'
   });
   
-  const [userRole, setUserRole] = useState<'member' | 'admin' | 'speaker'>('member');
+  const [userRole, setUserRole] = useState<'member' | 'admin'>('member');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});

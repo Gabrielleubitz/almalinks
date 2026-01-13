@@ -119,8 +119,8 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
             user.name = value;
             break;
           case 'role':
-            if (value && ['member', 'admin', 'speaker'].includes(value.toLowerCase())) {
-              user.role = value.toLowerCase() as 'member' | 'admin' | 'speaker';
+            if (value && ['member', 'admin'].includes(value.toLowerCase())) {
+              user.role = value.toLowerCase() as 'member' | 'admin';
             }
             break;
           case 'phone':
@@ -643,5 +643,4 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
   );
 };
 
-export default BulkUserImport;
 export default BulkUserImport;

@@ -106,12 +106,6 @@ const AdminSMS: React.FC = () => {
         // Get all registrations for the event
         const registrations = await EventService.getEventRegistrations(selectedEventId);
         
-        // Get event details to access speakers array
-        const eventDetails = await EventService.getEventById(selectedEventId);
-        const eventSpeakers = eventDetails?.speakers || [];
-        
-        console.log('📊 Event speakers:', eventSpeakers);
-        
         filteredUsers = registrations;
 
         switch (recipientGroup) {
@@ -123,13 +117,6 @@ const AdminSMS: React.FC = () => {
             break;
           case 'pending':
             filteredUsers = registrations.filter(reg => reg.status === 'pending');
-            break;
-          case 'speaker':
-            // Filter registrations to only include users who are in the event's speakers array
-            filteredUsers = registrations.filter(reg => 
-              eventSpeakers.some((speaker: any) => speaker.userId === reg.userId)
-            );
-            console.log('🎯 Filtered speaker registrations:', filteredUsers);
             break;
         }
       }

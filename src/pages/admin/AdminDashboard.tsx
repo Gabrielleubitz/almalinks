@@ -178,13 +178,6 @@ const AdminDashboard: React.FC = () => {
         case 'pending':
           filteredUsers = registrations.filter(reg => reg.status === 'pending');
           break;
-        case 'speaker':
-          const selectedEvent = events.find(e => e.id === selectedEventId);
-          const eventSpeakers = selectedEvent?.speakers || [];
-          filteredUsers = registrations.filter(reg => 
-            eventSpeakers.some((speaker: any) => speaker.userId === reg.userId)
-          );
-          break;
       }
 
       // Filter out users without phone numbers

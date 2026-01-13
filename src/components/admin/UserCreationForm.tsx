@@ -28,7 +28,7 @@ interface UserCreationFormProps {
 interface FormData {
   email: string;
   name: string;
-  role: 'member' | 'admin' | 'speaker';
+  role: 'member' | 'admin';
   tempPassword: string;
   phone: string;
   company: string;

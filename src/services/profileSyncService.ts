@@ -22,9 +22,8 @@ export class ProfileSyncService {
     try {
       // Run all sync operations in parallel for better performance
       await Promise.all([
-        this.syncConnectionsProfileImage(userId, newProfileImageUrl),
-        this.syncSpeakerAssignmentsProfileImage(userId, newProfileImageUrl),
-        this.syncEventSpeakersProfileImage(userId, newProfileImageUrl)
+        this.syncConnectionsProfileImage(userId, newProfileImageUrl)
+        // Speaker-related syncs removed - speakers functionality has been removed
       ]);
       
       console.log('✅ Profile image sync completed successfully');
@@ -86,82 +85,20 @@ export class ProfileSyncService {
 
   /**
    * 🎤 Update profile image in speaker assignments
+   * NOTE: Speakers functionality has been removed - this method is now a no-op
    */
   private static async syncSpeakerAssignmentsProfileImage(userId: string, profileImageUrl: string | null): Promise<void> {
-    console.log('🎤 Syncing profile image in speaker assignments...');
-    
-    try {
-      const batch = writeBatch(db);
-      let updateCount = 0;
-
-      // Get speaker assignments for this user
-      const speakerAssignmentsQuery = query(
-        collection(db, 'speakerAssignments'),
-        where('speakerId', '==', userId)
-      );
-      
-      const speakerAssignmentsSnapshot = await getDocs(speakerAssignmentsQuery);
-      speakerAssignmentsSnapshot.forEach(doc => {
-        batch.update(doc.ref, {
-          speakerProfileImage: profileImageUrl
-        });
-        updateCount++;
-      });
-
-      if (updateCount > 0) {
-        await batch.commit();
-        console.log(`✅ Updated profile image in ${updateCount} speaker assignments`);
-      } else {
-        console.log('📝 No speaker assignments found to update');
-      }
-    } catch (error) {
-      console.error('❌ Error syncing speaker assignments profile image:', error);
-      throw error;
-    }
+    // Speakers functionality removed - no-op
+    return Promise.resolve();
   }
 
   /**
    * 📅 Update profile image in event speakers arrays
+   * NOTE: Speakers functionality has been removed - this method is now a no-op
    */
   private static async syncEventSpeakersProfileImage(userId: string, profileImageUrl: string | null): Promise<void> {
-    console.log('📅 Syncing profile image in event speakers...');
-    
-    try {
-      // Get all events where user is a speaker
-      const eventsSnapshot = await getDocs(collection(db, 'events'));
-      const batch = writeBatch(db);
-      let updateCount = 0;
-
-      for (const eventDoc of eventsSnapshot.docs) {
-        const eventData = eventDoc.data();
-        const speakers = eventData.speakers || [];
-        
-        // Find speaker in the array
-        const speakerIndex = speakers.findIndex((speaker: any) => speaker.userId === userId);
-        
-        if (speakerIndex >= 0) {
-          // Update the speaker's profile image
-          speakers[speakerIndex].profileImage = profileImageUrl;
-          
-          batch.update(eventDoc.ref, {
-            speakers: speakers
-          });
-          
-          updateCount++;
-          console.log(`📝 Found speaker in event: ${eventData.name}`);
-        }
-      }
-
-      if (updateCount > 0) {
-        await batch.commit();
-        console.log(`✅ Updated profile image in ${updateCount} event speakers arrays`);
-      } else {
-        console.log('📝 No event speakers found to update');
-      }
-    } catch (error) {
-      console.error('❌ Error syncing event speakers profile image:', error);
-      throw error;
-    }
+    // Speakers functionality removed - no-op
+    return Promise.resolve();
   }
 
   /**
@@ -192,9 +129,8 @@ export class ProfileSyncService {
 
       // Sync all data types
       await Promise.all([
-        this.syncConnectionsFullData(userId, profileData),
-        this.syncSpeakerAssignmentsFullData(userId, profileData),
-        this.syncEventSpeakersFullData(userId, profileData)
+        this.syncConnectionsFullData(userId, profileData)
+        // Speaker-related syncs removed - speakers functionality has been removed
       ]);
 
       console.log('✅ Full profile data sync completed successfully');
@@ -264,81 +200,20 @@ export class ProfileSyncService {
 
   /**
    * 🎤 Sync full profile data in speaker assignments
+   * NOTE: Speakers functionality has been removed - this method is now a no-op
    */
   private static async syncSpeakerAssignmentsFullData(userId: string, profileData: any): Promise<void> {
-    console.log('🎤 Syncing full profile data in speaker assignments...');
-    
-    try {
-      const batch = writeBatch(db);
-      let updateCount = 0;
-
-      const speakerAssignmentsQuery = query(
-        collection(db, 'speakerAssignments'),
-        where('speakerId', '==', userId)
-      );
-      
-      const speakerAssignmentsSnapshot = await getDocs(speakerAssignmentsQuery);
-      speakerAssignmentsSnapshot.forEach(doc => {
-        batch.update(doc.ref, {
-          speakerName: profileData.name,
-          speakerEmail: profileData.email,
-          speakerProfileImage: profileData.profileImage
-        });
-        updateCount++;
-      });
-
-      if (updateCount > 0) {
-        await batch.commit();
-        console.log(`✅ Updated full profile data in ${updateCount} speaker assignments`);
-      }
-    } catch (error) {
-      console.error('❌ Error syncing speaker assignments full data:', error);
-      throw error;
-    }
+    // Speakers functionality removed - no-op
+    return Promise.resolve();
   }
 
   /**
    * 📅 Sync full profile data in event speakers
+   * NOTE: Speakers functionality has been removed - this method is now a no-op
    */
   private static async syncEventSpeakersFullData(userId: string, profileData: any): Promise<void> {
-    console.log('📅 Syncing full profile data in event speakers...');
-    
-    try {
-      const eventsSnapshot = await getDocs(collection(db, 'events'));
-      const batch = writeBatch(db);
-      let updateCount = 0;
-
-      for (const eventDoc of eventsSnapshot.docs) {
-        const eventData = eventDoc.data();
-        const speakers = eventData.speakers || [];
-        
-        const speakerIndex = speakers.findIndex((speaker: any) => speaker.userId === userId);
-        
-        if (speakerIndex >= 0) {
-          // Update the speaker's full data
-          speakers[speakerIndex] = {
-            ...speakers[speakerIndex],
-            name: profileData.name,
-            email: profileData.email,
-            profileImage: profileData.profileImage
-          };
-          
-          batch.update(eventDoc.ref, {
-            speakers: speakers
-          });
-          
-          updateCount++;
-        }
-      }
-
-      if (updateCount > 0) {
-        await batch.commit();
-        console.log(`✅ Updated full profile data in ${updateCount} event speakers`);
-      }
-    } catch (error) {
-      console.error('❌ Error syncing event speakers full data:', error);
-      throw error;
-    }
+    // Speakers functionality removed - no-op
+    return Promise.resolve();
   }
 
   /**

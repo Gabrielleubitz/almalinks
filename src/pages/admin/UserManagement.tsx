@@ -155,7 +155,7 @@ const UserManagement: React.FC = () => {
       
       // Update local state
       const updatedUsers = users.map(u => 
-        u.uid === uid ? { ...u, role: newRole as 'member' | 'admin' | 'speaker' } : u
+        u.uid === uid ? { ...u, role: newRole as 'member' | 'admin' } : u
       );
       setUsers(updatedUsers);
       
