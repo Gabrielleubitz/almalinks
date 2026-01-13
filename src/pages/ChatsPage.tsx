@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, Users, Clock, ChevronRight, Plus, Search, Compass } from 'lucide-react';
+import { MessageCircle, Users, Clock, Search, Compass, Plus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { ChatService } from '../services/chatService';
 import { ChatListItem } from '../types/chat';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const ChatsPage: React.FC = () => {
@@ -86,90 +84,94 @@ const ChatsPage: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-        <Header />
-        <div className="pt-20 pb-16 flex items-center justify-center">
-          <div className="text-center">
-            <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign In Required</h2>
-            <p className="text-gray-600">Please sign in to access chats.</p>
-          </div>
+      <div className="fixed inset-0 bg-white flex items-center justify-center">
+        <div className="text-center">
+          <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign In Required</h2>
+          <p className="text-sm text-gray-500">Please sign in to access chats.</p>
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      <Header />
-      
-      <div className="pt-20 pb-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Page Header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Your Chats</h1>
-                <p className="text-gray-600">
-                  {chats.length === 0 
-                    ? "You're not in any chats yet" 
-                    : `You're in ${chats.length} chat${chats.length === 1 ? '' : 's'}`
-                  }
-                </p>
-              </div>
-              
+    <div className="fixed inset-0 bg-white flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">Chats</h1>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {chats.length === 0 
+                ? "No chats yet" 
+                : `${chats.length} chat${chats.length === 1 ? '' : 's'}`
+              }
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/discover-chats')}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[#0B2B6B] bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+            >
+              <Compass className="h-4 w-4" />
+              <span>Discover</span>
+            </button>
+            {user.role === 'admin' && (
               <button
-                onClick={() => navigate('/discover-chats')}
-                className="flex items-center space-x-2 px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors"
+                onClick={() => navigate('/admin/chats/create')}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-[#0B2B6B] hover:bg-[#1E56B3] rounded-lg transition-colors"
               >
-                <Compass className="h-4 w-4" />
-                <span>Discover Chats</span>
+                <Plus className="h-4 w-4" />
+                <span>New Chat</span>
               </button>
-            </div>
-
-            {/* Search Bar */}
-            {chats.length > 0 && (
-              <div className="mt-6">
-                <div className="relative max-w-md">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search chats..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  />
-                </div>
-              </div>
             )}
           </div>
+        </div>
 
+        {/* Search Bar */}
+        {chats.length > 0 && (
+          <div className="max-w-5xl mx-auto mt-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search chats..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#0B2B6B] focus:border-transparent transition-all"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Content Area */}
+      <div className="flex-1 overflow-y-auto bg-white">
+        <div className="max-w-5xl mx-auto px-6 py-6">
           {/* Loading State */}
           {loading && (
-            <div className="flex items-center justify-center py-12">
-              <LoadingSpinner size="lg" color="border-blue-600" />
+            <div className="flex items-center justify-center py-20">
+              <LoadingSpinner size="lg" color="border-[#0B2B6B]" />
             </div>
           )}
 
           {/* Error State */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <MessageCircle className="h-5 w-5 text-red-400" />
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <MessageCircle className="h-5 w-5 text-red-500" />
+                  <div>
+                    <h3 className="text-sm font-medium text-red-900">Error loading chats</h3>
+                    <p className="text-xs text-red-700 mt-0.5">{error}</p>
+                  </div>
                 </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">Error loading chats</h3>
-                  <p className="mt-1 text-sm text-red-700">{error}</p>
-                </div>
-              </div>
-              <div className="mt-4">
                 <button
                   onClick={loadChats}
-                  className="text-sm font-medium text-red-600 hover:text-red-500"
+                  className="text-sm font-medium text-red-600 hover:text-red-700 px-3 py-1.5 rounded hover:bg-red-100 transition-colors"
                 >
-                  Try again
+                  Retry
                 </button>
               </div>
             </div>
@@ -177,17 +179,19 @@ const ChatsPage: React.FC = () => {
 
           {/* Empty State */}
           {!loading && !error && chats.length === 0 && (
-            <div className="text-center py-16">
-              <MessageCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No chats yet</h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                You haven't joined any chats yet. Discover public chats you can request to join or ask an admin to add you to a chat.
+            <div className="text-center py-20">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MessageCircle className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No chats yet</h3>
+              <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
+                You haven't joined any chats yet. Discover public chats or ask an admin to add you.
               </p>
               <button
                 onClick={() => navigate('/discover-chats')}
-                className="inline-flex items-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#0B2B6B] hover:bg-[#1E56B3] rounded-lg transition-colors"
               >
-                <Compass className="h-5 w-5" />
+                <Compass className="h-4 w-4" />
                 <span>Discover Chats</span>
               </button>
             </div>
@@ -195,105 +199,94 @@ const ChatsPage: React.FC = () => {
 
           {/* Chats List */}
           {!loading && !error && filteredChats.length > 0 && (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {filteredChats.map((chat) => (
-                <div
+                <button
                   key={chat.id}
                   onClick={() => navigate(`/chats/${chat.id}`)}
-                  className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-gray-200 cursor-pointer transition-all duration-200 group"
+                  className="w-full text-left bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 hover:border-gray-300 transition-all duration-150 group"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {/* Avatar */}
+                    {chat.imageUrl ? (
+                      <img
+                        src={chat.imageUrl}
+                        alt={chat.name}
+                        className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          target.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-gradient-to-br from-[#0B2B6B] to-[#2E7FEF] rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                        {chat.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#0B2B6B] to-[#2E7FEF] rounded-full flex items-center justify-center text-white font-semibold text-sm hidden">
+                      {chat.name.charAt(0).toUpperCase()}
+                    </div>
+
+                    {/* Chat Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-3 mb-3">
-                        {chat.imageUrl ? (
-                          <img
-                            src={chat.imageUrl}
-                            alt={chat.name}
-                            className="w-10 h-10 rounded-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              target.nextElementSibling?.classList.remove('hidden');
-                            }}
-                          />
-                        ) : (
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                            {chat.name.charAt(0).toUpperCase()}
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-sm font-semibold text-gray-900 truncate group-hover:text-[#0B2B6B] transition-colors">
+                          {chat.name}
+                        </h3>
+                        {chat.unreadCount > 0 && (
+                          <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-semibold text-white bg-[#0B2B6B] rounded-full flex-shrink-0">
+                            {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-3 text-xs text-gray-500 mb-1">
+                        <div className="flex items-center gap-1">
+                          <Users className="h-3.5 w-3.5" />
+                          <span>{chat.memberCount}</span>
+                        </div>
+                        {chat.lastActivity && (
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3.5 w-3.5" />
+                            <span>{formatLastActivity(chat.lastActivity)}</span>
                           </div>
                         )}
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm hidden">
-                          {chat.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-brand-blue transition-colors truncate">
-                              {chat.name}
-                            </h3>
-                            {chat.unreadCount > 0 && (
-                              <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-2 text-xs font-bold text-white bg-red-500 rounded-full shadow-sm">
-                                {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <div className="flex items-center space-x-1">
-                              <Users className="h-4 w-4" />
-                              <span>{chat.memberCount} member{chat.memberCount === 1 ? '' : 's'}</span>
-                            </div>
-                            <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(chat.userRole)}`}>
-                              {getRoleText(chat.userRole)}
-                            </div>
-                            {chat.lastActivity && (
-                              <div className="flex items-center space-x-1">
-                                <Clock className="h-4 w-4" />
-                                <span>{formatLastActivity(chat.lastActivity)}</span>
-                              </div>
-                            )}
-                          </div>
+                        <div className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                          chat.userRole === 'admin' 
+                            ? 'text-[#0B2B6B] bg-blue-50' 
+                            : 'text-gray-600 bg-gray-100'
+                        }`}>
+                          {getRoleText(chat.userRole)}
                         </div>
                       </div>
 
-                      {chat.description && (
-                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                          {chat.description}
-                        </p>
-                      )}
-
                       {chat.lastMessagePreview && (
-                        <p className="text-gray-500 text-sm line-clamp-1">
-                          <span className="font-medium">Last message:</span> {chat.lastMessagePreview}
+                        <p className="text-xs text-gray-500 truncate">
+                          {chat.lastMessagePreview}
                         </p>
                       )}
-                    </div>
-
-                    <div className="ml-4 flex items-center gap-2">
-                      {chat.unreadCount > 0 && (
-                        <div className="text-red-500 font-semibold text-sm">
-                          {chat.unreadCount} new
-                        </div>
-                      )}
-                      <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
 
           {/* No Search Results */}
           {!loading && !error && searchQuery && filteredChats.length === 0 && chats.length > 0 && (
-            <div className="text-center py-12">
-              <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No chats found</h3>
-              <p className="text-gray-600">
-                No chats match your search for "{searchQuery}"
+            <div className="text-center py-16">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Search className="h-6 w-6 text-gray-400" />
+              </div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">No chats found</h3>
+              <p className="text-xs text-gray-500">
+                No chats match "{searchQuery}"
               </p>
             </div>
           )}
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 };
