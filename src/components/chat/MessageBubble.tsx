@@ -150,15 +150,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     
     switch (message.status) {
       case 'sending':
-        return <Clock className="h-3 w-3 text-gray-400" />;
+        return <Clock className="h-2.5 w-2.5 text-white/60" />;
       case 'sent':
-        return <Check className="h-3 w-3 text-gray-400" />;
+        return <Check className="h-2.5 w-2.5 text-white/60" />;
       case 'delivered':
-        return <CheckCheck className="h-3 w-3 text-gray-400" />;
+        return <CheckCheck className="h-2.5 w-2.5 text-white/60" />;
       case 'read':
-        return <CheckCheck className="h-3 w-3 text-blue-500" />;
+        return <CheckCheck className="h-2.5 w-2.5 text-white/80" />;
       default:
-        return <Check className="h-3 w-3 text-gray-400" />;
+        return <Check className="h-2.5 w-2.5 text-white/60" />;
     }
   };
 
@@ -198,7 +198,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           {showName && !isOwnMessage && (
             <button
               onClick={() => message.userId && onProfileClick?.(message.userId)}
-              className="text-xs text-gray-500 mb-1 px-1 hover:text-brand-blue transition-colors font-medium"
+              className="text-xs text-gray-500 mb-0.5 px-1 hover:text-[#0B2B6B] transition-colors font-medium"
             >
               {senderName || 'Unknown User'}
             </button>
@@ -207,26 +207,26 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           {/* Message Bubble */}
           <div className="relative" ref={bubbleRef}>
             <div
-              className={`px-3 py-2 rounded-lg shadow-sm ${
+              className={`px-2.5 py-1.5 rounded ${
                 isOwnMessage
-                  ? 'bg-[#DCF8C6] text-gray-900 rounded-tr-none'
-                  : 'bg-white text-gray-900 shadow-sm rounded-tl-none'
+                  ? 'bg-[#0B2B6B] text-white'
+                  : 'bg-gray-100 text-gray-900'
               }`}
             >
               <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.text}</p>
               
               {/* Message Footer */}
-              <div className={`flex items-center gap-1.5 mt-0.5 ${
+              <div className={`flex items-center gap-1.5 mt-1 ${
                 isOwnMessage ? 'justify-end' : 'justify-start'
               }`}>
                 <span className={`text-[10px] ${
-                  isOwnMessage ? 'text-gray-600' : 'text-gray-500'
+                  isOwnMessage ? 'text-white/70' : 'text-gray-500'
                 }`}>
                   {formatMessageTime(message.createdAt)}
                 </span>
                 {message.editedAt && (
                   <span className={`text-[10px] italic ${
-                    isOwnMessage ? 'text-gray-600' : 'text-gray-400'
+                    isOwnMessage ? 'text-white/60' : 'text-gray-400'
                   }`}>
                     edited
                   </span>
@@ -257,7 +257,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
             {/* Action Buttons (shown on hover) */}
             {hovered && (
-              <div className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} -top-9 flex items-center gap-1 bg-white rounded-lg shadow-xl border border-gray-200 p-1 z-30`}>
+              <div className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} -top-8 flex items-center gap-0.5 bg-white rounded border border-gray-200 shadow-lg p-0.5 z-30`}>
                 {onReaction && (
                   <button
                     onClick={(e) => {
@@ -267,7 +267,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     className="p-1.5 hover:bg-gray-100 rounded transition-colors"
                     title="Add reaction"
                   >
-                    <Smile className="h-4 w-4 text-gray-600" />
+                    <Smile className="h-3.5 w-3.5 text-gray-600" />
                   </button>
                 )}
                 {isOwnMessage && onEdit && (
@@ -278,7 +278,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     className="p-1.5 hover:bg-gray-100 rounded transition-colors"
                     title="Edit message"
                   >
-                    <Edit2 className="h-4 w-4 text-gray-600" />
+                    <Edit2 className="h-3.5 w-3.5 text-gray-600" />
                   </button>
                 )}
                 {isOwnMessage && onDelete && (
@@ -289,7 +289,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     className="p-1.5 hover:bg-red-50 rounded transition-colors"
                     title="Delete message"
                   >
-                    <Trash2 className="h-4 w-4 text-red-600" />
+                    <Trash2 className="h-3.5 w-3.5 text-red-600" />
                   </button>
                 )}
               </div>

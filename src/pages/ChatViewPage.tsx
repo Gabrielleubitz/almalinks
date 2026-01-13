@@ -724,35 +724,35 @@ const ChatViewPage: React.FC = () => {
           </div>
         )}
 
-        {/* Main Chat Area - Premium WhatsApp Style - Unified Design */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-[#E5DDD5]">
-          {/* Chat Header - Unified with Chat Area */}
-          <div className="bg-[#F0F2F5] px-4 py-3 flex-shrink-0">
-            <div className="flex items-center justify-between h-14">
-              <div className="flex items-center space-x-3 flex-1 min-w-0">
+        {/* Right Panel - Single Continuous Chat Surface */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-white">
+          {/* Chat Header - Part of the surface */}
+          <div className="px-4 py-2.5 border-b border-gray-200 flex-shrink-0 bg-white">
+            <div className="flex items-center justify-between h-12">
+              <div className="flex items-center space-x-2.5 flex-1 min-w-0">
                 <button
                   onClick={() => setShowChatSidebar(!showChatSidebar)}
-                  className="p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors flex-shrink-0"
+                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
                   title="Toggle Chats"
                 >
-                  <Menu className="h-5 w-5" />
+                  <Menu className="h-4 w-4" />
                 </button>
                 
                 <button
                   onClick={() => setShowChatInfo(!showChatInfo)}
-                  className="flex items-center space-x-3 flex-1 min-w-0 hover:bg-gray-200 rounded-lg px-3 py-2 transition-colors"
+                  className="flex items-center space-x-2.5 flex-1 min-w-0 hover:bg-gray-50 rounded px-2 py-1 transition-colors"
                 >
                   <div className="flex-shrink-0">
-                    {renderChatIcon('medium')}
+                    {renderChatIcon('small')}
                   </div>
                   <div className="flex-1 min-w-0 text-left">
-                    <h1 className="text-base font-semibold text-gray-900 truncate">{chat.name}</h1>
-                    <p className="text-xs text-gray-600 truncate">{chat.memberCount} member{chat.memberCount === 1 ? '' : 's'}</p>
+                    <h1 className="text-sm font-semibold text-gray-900 truncate">{chat.name}</h1>
+                    <p className="text-xs text-gray-500 truncate">{chat.memberCount} member{chat.memberCount === 1 ? '' : 's'}</p>
                   </div>
                 </button>
               </div>
               
-              <div className="flex items-center space-x-1 flex-shrink-0">
+              <div className="flex items-center space-x-0.5 flex-shrink-0">
                 <button
                   onClick={() => {
                     setShowMembersList(!showMembersList);
@@ -761,10 +761,10 @@ const ChatViewPage: React.FC = () => {
                       setShowRequests(false);
                     }
                   }}
-                  className="p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
+                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
                   title="View Members"
                 >
-                  <Users className="h-5 w-5" />
+                  <Users className="h-4 w-4" />
                 </button>
                 
                 {chat.userRole === 'admin' && pendingRequests.length > 0 && (
@@ -776,11 +776,11 @@ const ChatViewPage: React.FC = () => {
                         setShowSettings(false);
                       }
                     }}
-                    className="relative p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
+                    className="relative p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
                     title="Join Requests"
                   >
-                    <UserPlus className="h-5 w-5" />
-                    <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-[#25D366] text-white text-[10px] rounded-full flex items-center justify-center font-semibold shadow-sm">
+                    <UserPlus className="h-4 w-4" />
+                    <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 bg-[#0B2B6B] text-white text-[9px] rounded-full flex items-center justify-center font-medium">
                       {pendingRequests.length > 9 ? '9+' : pendingRequests.length}
                     </span>
                   </button>
@@ -794,182 +794,23 @@ const ChatViewPage: React.FC = () => {
                       setShowRequests(false);
                     }
                   }}
-                  className="p-2.5 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
+                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
                   title="Chat Settings"
                 >
-                  <Settings className="h-5 w-5" />
+                  <Settings className="h-4 w-4" />
                 </button>
               </div>
             </div>
           </div>
-          
-          {/* Chat Info Panel */}
-          {showChatInfo && (
-            <div className="bg-gray-50 border-b border-gray-200 px-4 sm:px-6 lg:px-8">
-              <div className="max-w-6xl mx-auto py-6">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center space-x-4">
-                    <button
-                      onClick={() => setShowGroupPhotoModal(true)}
-                      className="hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer"
-                    >
-                      {renderChatIcon('large')}
-                    </button>
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900">{chat.name}</h2>
-                      <p className="text-gray-600 mt-1">{chat.memberCount} member{chat.memberCount === 1 ? '' : 's'}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowChatInfo(false)}
-                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                
-                {/* Chat Description */}
-                {chat.description && (
-                  <div className="mb-6">
-                    <h3 className="text-sm font-medium text-gray-900 mb-2">About</h3>
-                    <p className="text-gray-600 text-sm leading-relaxed">{chat.description}</p>
-                  </div>
-                )}
-                
-                {/* Quick Actions */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                  {chat.userRole === 'admin' && (
-                    <button
-                      onClick={() => {
-                        setShowAddMemberModal(true);
-                        setShowChatInfo(false);
-                      }}
-                      className="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-                    >
-                      <UserPlus className="h-5 w-5 text-brand-blue mb-1" />
-                      <span className="text-xs text-gray-700">Add Member</span>
-                    </button>
-                  )}
-                  
-                  <button
-                    onClick={() => {
-                      setShowMembersList(!showMembersList);
-                      setShowChatInfo(false);
-                    }}
-                    className="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-                  >
-                    <Users className="h-5 w-5 text-green-600 mb-1" />
-                    <span className="text-xs text-gray-700">Members</span>
-                  </button>
-                  
-                  {chat.userRole === 'admin' && (
-                    <button
-                      onClick={() => {
-                        openEditModal();
-                        setShowChatInfo(false);
-                      }}
-                      className="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-                    >
-                      <Settings className="h-5 w-5 text-gray-600 mb-1" />
-                      <span className="text-xs text-gray-700">Settings</span>
-                    </button>
-                  )}
-                  
-                  <button
-                    onClick={() => {
-                      handleLeaveChat();
-                      setShowChatInfo(false);
-                    }}
-                    className="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200 hover:bg-red-50 transition-colors"
-                  >
-                    <LogOut className="h-5 w-5 text-red-600 mb-1" />
-                    <span className="text-xs text-gray-700">Leave</span>
-                  </button>
-                </div>
-                
-                {/* Members Preview */}
-                <div className="bg-white rounded-lg border border-gray-200 p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium text-gray-900">Members ({chat.memberCount})</h3>
-                    <button
-                      onClick={() => {
-                        setShowMembersList(!showMembersList);
-                        setShowChatInfo(false);
-                      }}
-                      className="text-xs text-brand-blue hover:text-brand-blue-hover"
-                    >
-                      View All
-                    </button>
-                  </div>
-                  <div className="space-y-2">
-                    {chat.members.slice(0, 4).map((member) => (
-                      <div key={member.id} className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                          {(member.displayName || 'U').charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <button
-                            onClick={() => navigate(`/profile/${member.userId}`)}
-                            className="text-left w-full"
-                          >
-                            <p className="text-sm font-medium text-gray-900 hover:text-brand-blue transition-colors cursor-pointer truncate">
-                              {member.displayName || 'Unknown User'}
-                              {member.userId === user?.uid && ' (You)'}
-                            </p>
-                          </button>
-                          <div className="flex items-center space-x-2">
-                            {member.role === 'admin' ? (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-brand-dark">
-                                <Shield className="h-3 w-3 mr-1" />
-                                Admin
-                              </span>
-                            ) : (
-                              chat.userRole === 'admin' && (
-                                <button
-                                  onClick={() => handlePromoteMember(member.userId)}
-                                  className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-50 text-brand-blue hover:bg-blue-200 transition-colors"
-                                  title="Promote to Admin"
-                                >
-                                  <Shield className="h-3 w-3 mr-1" />
-                                  Make Admin
-                                </button>
-                              )
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {chat.memberCount > 4 && (
-                      <div className="text-xs text-gray-500 pt-2">
-                        +{chat.memberCount - 4} more member{chat.memberCount - 4 === 1 ? '' : 's'}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
 
-        {/* Messages and Sidebars Container */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Messages Area - Premium WhatsApp Style */}
-          <div className="flex-1 flex flex-col overflow-hidden bg-[#E5DDD5] relative">
-            {/* WhatsApp-style background pattern */}
-            <div className="absolute inset-0 opacity-[0.03]" style={{
-              backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23000000\'%3E%3Cpath d=\'M50 50h50v50H50z\'/%3E%3C/g%3E%3C/svg%3E")',
-              backgroundRepeat: 'repeat',
-              backgroundSize: '100px 100px',
-              pointerEvents: 'none'
-            }} />
-            
-            <div className="flex-1 px-2 sm:px-4 overflow-y-auto relative z-10" style={{ overflowX: 'hidden' }}>
-              <div className="max-w-4xl mx-auto">
-                {/* Messages List */}
-                <div className="py-4 space-y-1">
+          {/* Messages Area - Same background, continuous surface */}
+          <div className="flex-1 flex flex-col overflow-hidden bg-white">
+            <div className="flex-1 px-4 overflow-y-auto">
+              <div className="max-w-3xl mx-auto">
+                <div className="py-3 space-y-0.5">
                   {messages.length === 0 && (
                     <div className="text-center py-12">
-                      <p className="text-gray-500">No messages yet. Start the conversation!</p>
+                      <p className="text-sm text-gray-400">No messages yet. Start the conversation!</p>
                     </div>
                   )}
                   
@@ -1005,22 +846,21 @@ const ChatViewPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Message Composer - Premium WhatsApp Style with Alma Links Branding */}
+            {/* Message Input - Anchored to bottom, part of the surface */}
             {permissions?.canSendMessages && (
-              <div className="bg-[#F0F2F5] border-t border-gray-300 px-4 py-3 flex-shrink-0 relative z-10 shadow-sm">
-                <form onSubmit={handleSendMessage} className="flex items-end gap-2 max-w-4xl mx-auto">
-                  <div className="flex-1 bg-white rounded-2xl px-4 py-2.5 flex items-center shadow-sm border border-gray-200">
+              <div className="px-4 py-3 border-t border-gray-200 flex-shrink-0 bg-white">
+                <form onSubmit={handleSendMessage} className="flex items-end gap-2 max-w-3xl mx-auto">
+                  <div className="flex-1 bg-gray-50 rounded-lg px-3 py-2 flex items-center border border-gray-200">
                     <textarea
                       value={messageText}
                       onChange={(e) => {
                         setMessageText(e.target.value);
-                        // Auto-resize textarea
                         e.target.style.height = 'auto';
-                        e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                        e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
                       }}
                       placeholder="Type a message"
                       rows={1}
-                      className="w-full bg-transparent border-0 focus:ring-0 focus:outline-none resize-none text-sm text-gray-900 placeholder-gray-400 max-h-[120px] overflow-y-auto leading-relaxed"
+                      className="w-full bg-transparent border-0 focus:ring-0 focus:outline-none resize-none text-sm text-gray-900 placeholder-gray-400 max-h-[100px] overflow-y-auto leading-relaxed"
                       disabled={sending}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -1033,12 +873,12 @@ const ChatViewPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={!messageText.trim() || sending}
-                    className="w-11 h-11 bg-[#0B2B6B] text-white rounded-full hover:bg-[#1E56B3] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center flex-shrink-0 shadow-md hover:shadow-lg active:scale-95"
+                    className="w-9 h-9 bg-[#0B2B6B] text-white rounded-lg hover:bg-[#1E56B3] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center flex-shrink-0"
                   >
                     {sending ? (
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
-                      <Send className="h-5 w-5" />
+                      <Send className="h-4 w-4" />
                     )}
                   </button>
                 </form>
@@ -1046,26 +886,101 @@ const ChatViewPage: React.FC = () => {
             )}
           </div>
 
+          {/* Chat Info Panel - Part of continuous surface */}
+          {showChatInfo && (
+            <div className="border-b border-gray-200 bg-white">
+              <div className="px-4 py-4">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div>
+                      {renderChatIcon('medium')}
+                    </div>
+                    <div>
+                      <h2 className="text-base font-semibold text-gray-900">{chat.name}</h2>
+                      <p className="text-xs text-gray-500 mt-0.5">{chat.memberCount} member{chat.memberCount === 1 ? '' : 's'}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowChatInfo(false)}
+                    className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                
+                {chat.description && (
+                  <div className="mb-4">
+                    <h3 className="text-xs font-medium text-gray-700 mb-1">About</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">{chat.description}</p>
+                  </div>
+                )}
+                
+                <div className="flex flex-wrap gap-2">
+                  {chat.userRole === 'admin' && (
+                    <button
+                      onClick={() => {
+                        setShowAddMemberModal(true);
+                        setShowChatInfo(false);
+                      }}
+                      className="px-3 py-1.5 text-xs font-medium text-[#0B2B6B] bg-gray-50 hover:bg-gray-100 rounded border border-gray-200 transition-colors"
+                    >
+                      Add Member
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setShowMembersList(!showMembersList);
+                      setShowChatInfo(false);
+                    }}
+                    className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded border border-gray-200 transition-colors"
+                  >
+                    View Members
+                  </button>
+                  {chat.userRole === 'admin' && (
+                    <button
+                      onClick={() => {
+                        openEditModal();
+                        setShowChatInfo(false);
+                      }}
+                      className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded border border-gray-200 transition-colors"
+                    >
+                      Settings
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      handleLeaveChat();
+                      setShowChatInfo(false);
+                    }}
+                    className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded border border-red-200 transition-colors"
+                  >
+                    Leave Chat
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Sidebar - Members List */}
           {showMembersList && (
             <div className="w-80 bg-white border-l border-gray-200 p-4 overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-sm font-semibold text-gray-900">
                   Members ({chat.memberCount})
                 </h3>
                 {chat.userRole === 'admin' && (
                   <button
                     onClick={() => setShowAddMemberModal(true)}
-                    className="p-1 text-brand-blue hover:text-brand-blue-hover hover:bg-blue-50 rounded transition-colors"
+                    className="p-1 text-[#0B2B6B] hover:bg-gray-100 rounded transition-colors"
                     title="Add Member"
                   >
                     <UserPlus className="h-4 w-4" />
                   </button>
                 )}
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {chat.members.map((member) => (
-                  <div key={member.id} className="flex items-center space-x-3 group">
+                  <div key={member.id} className="flex items-center space-x-2.5 group">
                     <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
                       {(member.displayName || 'U').charAt(0).toUpperCase()}
                     </div>
@@ -1078,9 +993,9 @@ const ChatViewPage: React.FC = () => {
                         {member.role === 'admin' ? 'Admin' : 'Member'}
                       </p>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1">
                       {member.role === 'admin' && (
-                        <Shield className="h-4 w-4 text-brand-dark" />
+                        <Shield className="h-3.5 w-3.5 text-[#0B2B6B]" />
                       )}
                       {chat.userRole === 'admin' && member.userId !== user.uid && (
                         <button
@@ -1101,17 +1016,17 @@ const ChatViewPage: React.FC = () => {
           {/* Sidebar - Join Requests */}
           {showRequests && chat.userRole === 'admin' && (
             <div className="w-80 bg-white border-l border-gray-200 p-4 overflow-y-auto">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">
                 Join Requests ({pendingRequests.length})
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {pendingRequests.length === 0 ? (
                   <p className="text-sm text-gray-500">No pending requests</p>
                 ) : (
                   pendingRequests.map((request) => (
-                    <div key={request.id} className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                    <div key={request.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      <div className="flex items-center space-x-2.5 mb-2">
+                        <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center">
                           {request.userDisplayName.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1125,7 +1040,7 @@ const ChatViewPage: React.FC = () => {
                       </div>
                       
                       {request.message && (
-                        <p className="text-sm text-gray-600 mb-3">
+                        <p className="text-xs text-gray-600 mb-2">
                           "{request.message}"
                         </p>
                       )}
@@ -1133,13 +1048,13 @@ const ChatViewPage: React.FC = () => {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleApproveRequest(request.id)}
-                          className="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+                          className="flex-1 px-2.5 py-1.5 bg-[#0B2B6B] text-white text-xs rounded hover:bg-[#1E56B3] transition-colors"
                         >
                           Approve
                         </button>
                         <button
                           onClick={() => handleRejectRequest(request.id)}
-                          className="flex-1 px-3 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+                          className="flex-1 px-2.5 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
                         >
                           Reject
                         </button>
@@ -1154,17 +1069,17 @@ const ChatViewPage: React.FC = () => {
           {/* Sidebar - Settings */}
           {showSettings && (
             <div className="w-80 bg-white border-l border-gray-200 p-4 overflow-y-auto">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">
                 Chat Settings
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {chat.userRole === 'admin' && (
                   <>
                     <button
                       onClick={openEditModal}
-                      className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors"
                     >
-                      <Edit3 className="h-5 w-5 mr-3" />
+                      <Edit3 className="h-4 w-4 mr-2" />
                       <span>Edit Chat</span>
                     </button>
                     <button
@@ -1172,55 +1087,52 @@ const ChatViewPage: React.FC = () => {
                         setShowAddMemberModal(true);
                         setShowSettings(false);
                       }}
-                      className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors"
                     >
-                      <UserPlus className="h-5 w-5 mr-3" />
+                      <UserPlus className="h-4 w-4 mr-2" />
                       <span>Add Member</span>
                     </button>
                   </>
                 )}
-                {/* Mute Toggle */}
                 <button
                   onClick={handleToggleMute}
                   disabled={mutingChat}
-                  className="flex items-center justify-between w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                  className="flex items-center justify-between w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors disabled:opacity-50"
                 >
                   <div className="flex items-center">
                     {isMuted ? (
-                      <Bell className="h-5 w-5 mr-3" />
+                      <Bell className="h-4 w-4 mr-2" />
                     ) : (
-                      <BellOff className="h-5 w-5 mr-3" />
+                      <BellOff className="h-4 w-4 mr-2" />
                     )}
-                    <span>{isMuted ? 'Unmute Notifications' : 'Mute Notifications'}</span>
+                    <span>{isMuted ? 'Unmute' : 'Mute'}</span>
                   </div>
                   {mutingChat && (
-                    <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                    <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
                   )}
                 </button>
 
                 {chat.userRole === 'admin' && (
                   <button
                     onClick={() => setShowDeleteConfirmation(true)}
-                    className="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded transition-colors"
                   >
-                    <Trash2 className="h-5 w-5 mr-3" />
+                    <Trash2 className="h-4 w-4 mr-2" />
                     <span>Delete Chat</span>
                   </button>
                 )}
                 <button
                   onClick={handleLeaveChat}
-                  className="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded transition-colors"
                 >
-                  <LogOut className="h-5 w-5 mr-3" />
+                  <LogOut className="h-4 w-4 mr-2" />
                   <span>Leave Chat</span>
                 </button>
               </div>
             </div>
           )}
         </div>
-        {/* End Messages and Sidebars Container */}
       </div>
-      {/* End Main Chat Area */}
       
       {/* Edit Chat Modal */}
       {showEditModal && chat && chat.userRole === 'admin' && (
