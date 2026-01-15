@@ -16,8 +16,8 @@ import {
   Check,
   Trash2
 } from 'lucide-react';
-import { collection, getDocs, doc, updateDoc, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../firebase/config';
+import { collection, getDocs, doc, updateDoc, query, where, orderBy, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { db, auth } from '../../firebase/config';
 import { useAuth } from '../../hooks/useAuth';
 import AdminHeader from '../../components/admin/AdminHeader';
 import Toast from '../../components/ui/Toast';
@@ -60,32 +60,227 @@ const PendingRegistrations: React.FC = () => {
   const [confirmReject, setConfirmReject] = useState<string | null>(null);
 
   useEffect(() => {
-    loadPendingUsers();
+    // Use realtime listener for immediate updates when new signups occur
+    const unsubscribe = subscribeToPendingRequests();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
     filterUsers();
   }, [searchTerm, pendingUsers]);
 
-  const loadPendingUsers = async () => {
+  // Realtime listener for pending join requests
+  const subscribeToPendingRequests = () => {
     try {
       setLoading(true);
-      const usersRef = collection(db, 'users');
+      
+      // Log Firebase project info for debugging
+      const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+      console.log('🔍 DEBUG: Firebase Project ID:', projectId);
+      console.log('🔍 DEBUG: Current user UID:', auth.currentUser?.uid);
+      console.log('🔍 DEBUG: Current user email:', auth.currentUser?.email);
+      
+      console.log('👂 Setting up realtime listener for pending join requests');
+      console.log('📋 Query: collection="joinRequests", where status == "pending", orderBy createdAt desc');
+      
+      const requestsRef = collection(db, 'joinRequests');
       const q = query(
-        usersRef, 
+        requestsRef,
         where('status', '==', 'pending'),
         orderBy('createdAt', 'desc')
       );
-      const snapshot = await getDocs(q);
       
-      const usersData = snapshot.docs.map(doc => ({
-        uid: doc.id,
-        ...doc.data()
-      })) as UserData[];
+      console.log('✅ Query created, setting up onSnapshot listener...');
+      console.log('🔍 DEBUG: Query details:', {
+        collection: 'joinRequests',
+        filters: [{ field: 'status', operator: '==', value: 'pending' }],
+        orderBy: { field: 'createdAt', direction: 'desc' }
+      });
+
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          console.log('📥 Received update from joinRequests listener:', snapshot.size, 'pending requests');
+          console.log('🔍 DEBUG: Snapshot metadata:', {
+            fromCache: snapshot.metadata.fromCache,
+            hasPendingWrites: snapshot.metadata.hasPendingWrites
+          });
+          
+          if (snapshot.empty) {
+            console.warn('⚠️ WARNING: Query returned empty results. Possible causes:');
+            console.warn('   1. No pending requests exist in joinRequests collection');
+            console.warn('   2. Security rules blocking read access');
+            console.warn('   3. Query filters not matching any documents');
+            console.warn('   4. Wrong Firebase project/environment');
+          }
+          
+          const pendingRequests = snapshot.docs.map(doc => {
+            const data = doc.data();
+            console.log(`🔍 DEBUG: Document ${doc.id}:`, {
+              status: data.status,
+              email: data.email,
+              name: data.name,
+              createdAt: data.createdAt ? 'present' : 'missing',
+              createdAtType: data.createdAt ? typeof data.createdAt : 'none'
+            });
+            return {
+              uid: doc.id,
+              ...data
+            };
+          });
+
+          // Convert join requests to UserData format for compatibility
+          const usersData: UserData[] = pendingRequests.map((request: any) => ({
+            uid: request.uid,
+            email: request.email || '',
+            name: request.name || request.displayName || '',
+            displayName: request.displayName || request.name || '',
+            phone: request.phone || '',
+            company: request.company || '',
+            work: request.work || '',
+            linkedinUsername: request.linkedinUsername || '',
+            position: request.position || '',
+            status: 'pending' as const,
+            createdAt: request.createdAt,
+            profileImage: null // Join requests don't have profile images yet
+          }));
+
+          console.log(`✅ Updated pending requests list: ${usersData.length} requests`);
+          
+          // Log each request for debugging
+          usersData.forEach(user => {
+            console.log(`📊 Join Request ${user.uid}:`, {
+              name: user.name,
+              email: user.email,
+              phone: user.phone,
+              company: user.company,
+              work: user.work,
+              linkedinUsername: user.linkedinUsername,
+              position: user.position
+            });
+          });
+
+          setPendingUsers(usersData);
+          setFilteredUsers(usersData);
+          setLoading(false);
+          setError(null);
+        },
+        (error) => {
+          console.error('❌ Error in joinRequests listener:', error);
+          console.error('❌ Error details:', {
+            code: error.code,
+            message: error.message,
+            stack: error.stack
+          });
+          
+          // Check for permission errors
+          if (error.code === 'permission-denied') {
+            const errorMsg = 'Permission denied: Admin cannot read joinRequests. Check Firestore security rules.';
+            setError(errorMsg);
+            console.error('🚫 PERMISSION DENIED ERROR:');
+            console.error('   The admin user does not have permission to read joinRequests collection.');
+            console.error('   Expected rule: allow read on joinRequests/{requestId} if isAdmin()');
+            console.error('   Current user UID:', auth.currentUser?.uid);
+            console.error('   Check if user has admin role in users/{uid} document');
+            return;
+          }
+          
+          // Check if it's an index error
+          if (error.code === 'failed-precondition' || error.message?.includes('index')) {
+            const errorMessage = error.message || '';
+            const indexLinkMatch = errorMessage.match(/https:\/\/console\.firebase\.google\.com[^\s]+/);
+            
+            setError(
+              `Firestore index required. ${indexLinkMatch ? 'Click the link in console to create it automatically, or' : 'Please'} create an index for joinRequests: status (Ascending), createdAt (Descending).`
+            );
+            console.error('📋 Index required. Create index in Firebase Console for:');
+            console.error('   Collection: joinRequests');
+            console.error('   Fields: status (Ascending), createdAt (Descending)');
+            if (indexLinkMatch) {
+              console.error('🔗 Index creation link:', indexLinkMatch[0]);
+            }
+            
+            // Fallback: Try loading once without orderBy if index is missing
+            console.log('🔄 Attempting fallback: loading without orderBy...');
+            loadPendingUsersFallback();
+          } else {
+            setError('Unable to load pending requests. Please refresh the page or contact support if the issue persists.');
+            // Fallback: Try loading once
+            console.log('🔄 Attempting fallback: loading once...');
+            loadPendingUsersFallback();
+          }
+        }
+      );
+
+      return unsubscribe;
+    } catch (error: any) {
+      console.error('❌ Error setting up pending requests listener:', error);
+      setError('Unable to load pending requests. Please refresh the page.');
+      setLoading(false);
+      return null;
+    }
+  };
+
+  // Fallback function if realtime listener fails (e.g., missing index)
+  const loadPendingUsersFallback = async () => {
+    try {
+      console.log('🔄 Fallback: Loading pending requests without realtime listener...');
+      const { JoinRequestService } = await import('../../services/joinRequestService');
+      const pendingRequests = await JoinRequestService.getPendingRequests();
+      
+      const usersData: UserData[] = pendingRequests.map(request => ({
+        uid: request.uid,
+        email: request.email || '',
+        name: request.name || request.displayName || '',
+        displayName: request.displayName || request.name || '',
+        phone: request.phone || '',
+        company: request.company || '',
+        work: request.work || '',
+        linkedinUsername: request.linkedinUsername || '',
+        position: request.position || '',
+        status: 'pending' as const,
+        createdAt: request.createdAt,
+        profileImage: null
+      }));
 
       setPendingUsers(usersData);
       setFilteredUsers(usersData);
-      console.log(`✅ Loaded ${usersData.length} pending users`);
+      setLoading(false);
+      console.log(`✅ Fallback loaded ${usersData.length} pending requests`);
+    } catch (error: any) {
+      console.error('❌ Fallback load also failed:', error);
+      setError('Unable to load pending requests. Please refresh the page or contact support if the issue persists.');
+      setLoading(false);
+    }
+  };
+
+  // Legacy function kept for compatibility (not used with realtime listener)
+  const loadPendingUsers = async () => {
+    try {
+      setLoading(true);
+      // Load from joinRequests collection instead of users
+      const { JoinRequestService } = await import('../../services/joinRequestService');
+      const pendingRequests = await JoinRequestService.getPendingRequests();
+      
+      // Convert join requests to UserData format for compatibility
+      const usersData: UserData[] = pendingRequests.map(request => ({
+        uid: request.uid,
+        email: request.email,
+        name: request.name || request.displayName || '',
+        displayName: request.displayName || request.name || '',
+        phone: request.phone || '',
+        company: request.company || '',
+        work: request.work || '',
+        linkedinUsername: request.linkedinUsername || '',
+        position: request.position || '',
+        status: 'pending' as const
+      }));
+
+      setPendingUsers(usersData);
+      setFilteredUsers(usersData);
+      console.log(`✅ Loaded ${usersData.length} pending join requests`);
 
       // Log each user's data to debug field visibility
       usersData.forEach(user => {
@@ -102,7 +297,7 @@ const PendingRegistrations: React.FC = () => {
       });
     } catch (error: any) {
       console.error('❌ Error loading pending users:', error);
-      setError(error.message || 'Failed to load pending users');
+      setError('Unable to load pending users. Please refresh the page.');
     } finally {
       setLoading(false);
     }
@@ -130,12 +325,9 @@ const PendingRegistrations: React.FC = () => {
     setProcessingUser(userId);
     
     try {
-      const userRef = doc(db, 'users', userId);
-      await updateDoc(userRef, { 
-        status: 'approved',
-        approvedAt: serverTimestamp(),
-        approvedBy: user.uid
-      });
+      // Use JoinRequestService to approve and create user document
+      const { JoinRequestService } = await import('../../services/joinRequestService');
+      await JoinRequestService.approveRequest(userId, user.uid);
       
       // Send SMS notification
       await sendApprovalSMS(userId);
@@ -149,7 +341,7 @@ const PendingRegistrations: React.FC = () => {
       showToast(`User approved successfully and notifications sent`, 'success');
     } catch (error: any) {
       console.error('❌ Error approving user:', error);
-      showToast(error.message || 'Failed to approve user', 'error');
+      showToast('Failed to approve user. Please try again.', 'error');
     } finally {
       setProcessingUser(null);
     }
@@ -161,20 +353,103 @@ const PendingRegistrations: React.FC = () => {
     setProcessingUser(userId);
     
     try {
-      const userRef = doc(db, 'users', userId);
-      await updateDoc(userRef, { 
-        status: 'rejected',
-        rejectedAt: serverTimestamp(),
-        rejectedBy: user.uid
-      });
+      console.log('🗑️ Starting reject and delete process for user:', userId);
+      console.log('🔍 Using server-side endpoint (Firebase Admin SDK required for Auth deletion)');
       
-      // Update local state
+      // IMPORTANT: This MUST be done server-side because:
+      // 1. Client-side code cannot delete Firebase Auth users (security restriction)
+      // 2. Only Admin SDK has permissions to delete Auth accounts
+      // 3. This is the ONLY way to free the email for re-signup
+      const { JoinRequestService } = await import('../../services/joinRequestService');
+      const result = await JoinRequestService.rejectAndDeleteUser(userId, user.uid);
+      
+      console.log('✅ Reject and delete completed successfully');
+      console.log('✅ Deletion results:', result);
+      
+      // Update local state - remove from pending list immediately
       setPendingUsers(prev => prev.filter(u => u.uid !== userId));
+      setFilteredUsers(prev => prev.filter(u => u.uid !== userId));
       
-      showToast('User rejected successfully', 'success');
+      // Show detailed success message based on deletion results
+      const successMessage = result.details?.authUserDeleted 
+        ? 'User rejected and fully purged. They can now re-apply with the same email.'
+        : 'User rejected. Some cleanup operations had warnings - check console for details.';
+      showToast(successMessage, 'success');
+      
+      // Log what was deleted for admin visibility
+      if (result.deletedFrom && result.deletedFrom.length > 0) {
+        console.log('✅ Deleted from collections:', result.deletedFrom);
+      }
+      if (result.email) {
+        console.log(`✅ Email ${result.email} should now be available for re-signup`);
+      }
+      
+      // Verify critical deletion
+      if (!result.details?.authUserDeleted) {
+        console.error('⚠️ WARNING: Firebase Auth user was NOT deleted!');
+        console.error('⚠️ User will NOT be able to re-signup with the same email.');
+        showToast('Warning: Auth deletion may have failed. Check console for details.', 'error');
+      }
     } catch (error: any) {
       console.error('❌ Error rejecting user:', error);
-      showToast(error.message || 'Failed to reject user', 'error');
+      console.error('❌ Full error object:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        unknownAction: error.unknownAction,
+        permissionError: error.permissionError
+      });
+      
+      // Determine error message based on error type
+      let errorMessage = error.message || 'Failed to reject user. Please check console for details.';
+      
+      // Check if this is an "Unknown action" error (backend doesn't support the action)
+      if (error.unknownAction || error.message?.includes('Unknown action') || 
+          error.message?.includes("doesn't support reject-and-delete-user") ||
+          error.message?.includes('Backend not updated/deployed')) {
+        const availableActions = (error as any).availableActions || 'unknown';
+        errorMessage = 'Backend not updated/deployed: reject-and-delete-user action missing. ' +
+                      'The backend code needs to be redeployed. ' +
+                      `Available actions on server: ${availableActions}`;
+        
+        console.error('🚫 UNKNOWN ACTION ERROR DETECTED');
+        console.error('🚫 The backend does not recognize the "reject-and-delete-user" action.');
+        console.error('🚫 This means the backend code needs to be updated or redeployed.');
+        console.error('🚫 The action should be added to the switch statement in api/user-admin.js');
+        console.error('🚫 Received action:', (error as any).receivedAction || 'reject-and-delete-user');
+        console.error('🚫 Available actions on server:', availableActions);
+        console.error('🚫 DEPLOYMENT REQUIRED: Redeploy api/user-admin.js with the reject-and-delete-user case');
+      }
+      // Check if this is a permission error from the server
+      else if (error.permissionError || error.message?.includes('permission') || error.message?.includes('Backend lacks permission')) {
+        errorMessage = 'Reject failed: Backend lacks permission to delete Auth users. ' +
+                      'Service account needs "Firebase Authentication Admin" role. ' +
+                      'See console for details.';
+        
+        console.error('🚫 PERMISSION ERROR DETECTED');
+        console.error('🚫 The service account running the backend does not have permission to delete Firebase Auth users.');
+        console.error('🚫 Required action: Grant "Firebase Authentication Admin" role to the service account.');
+        console.error('🚫 See FIREBASE_AUTH_DELETION_PERMISSIONS.md for setup instructions.');
+      } 
+      // Check if this is a project configuration error
+      else if (error.message?.includes('project') || error.message?.includes('Project ID')) {
+        errorMessage = 'Reject failed: Firebase project configuration error. ' +
+                      'Verify backend is using the correct Firebase project. ' +
+                      'See console for details.';
+        
+        console.error('🚫 PROJECT CONFIGURATION ERROR');
+        console.error('🚫 The backend may be using a different Firebase project than the frontend.');
+        console.error('🚫 Verify FIREBASE_PROJECT_ID matches the frontend project.');
+      }
+      
+      showToast(errorMessage, 'error');
+      
+      // Also log to console for admin debugging
+      console.error('🚫 Admin: Rejection failed. User may still exist in Firebase Auth.');
+      if (!error.unknownAction) {
+        console.error('🚫 Admin: Check server logs and verify Firebase Admin SDK is properly configured.');
+        console.error('🚫 Admin: Verify service account has permissions to delete Auth users.');
+      }
     } finally {
       setProcessingUser(null);
       setConfirmReject(null);
@@ -212,7 +487,7 @@ const PendingRegistrations: React.FC = () => {
       showToast('User deleted successfully from Auth and Firestore', 'success');
     } catch (error: any) {
       console.error('❌ Error deleting user:', error);
-      showToast(error.message || 'Failed to delete user', 'error');
+      showToast('Failed to delete user. Please try again.', 'error');
     } finally {
       setProcessingUser(null);
       setConfirmReject(null);

@@ -4,9 +4,12 @@ import admin from 'firebase-admin';
 // Initialize Firebase Admin (reuse existing instance if available)
 if (!admin.apps.length) {
   try {
+    let serviceAccountKey;
+    let projectId;
+    let clientEmail;
+    
     // Try to use service account key from environment variable (Vercel production)
     if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-      let serviceAccountKey;
       const rawKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
       try {
@@ -23,22 +26,39 @@ if (!admin.apps.length) {
           throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is neither valid JSON nor valid base64-encoded JSON');
         }
       }
+      
+      projectId = serviceAccountKey.project_id;
+      clientEmail = serviceAccountKey.client_email;
 
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccountKey),
       });
     } else {
       // Fallback to individual environment variables (local development)
+      projectId = process.env.FIREBASE_PROJECT_ID;
+      clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+      
       admin.initializeApp({
         credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          projectId: projectId,
+          clientEmail: clientEmail,
           privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
         }),
       });
     }
+    
+    // Log initialization details for debugging
+    console.log('✅ Firebase Admin SDK initialized');
+    console.log(`📋 Project ID: ${projectId || admin.app().options.projectId || 'NOT SET'}`);
+    console.log(`📧 Service Account: ${clientEmail || 'NOT SET'}`);
+    console.log(`🌍 GCLOUD_PROJECT: ${process.env.GCLOUD_PROJECT || 'NOT SET'}`);
+    console.log(`🔑 FIREBASE_PROJECT_ID: ${process.env.FIREBASE_PROJECT_ID || 'NOT SET'}`);
   } catch (error) {
-    console.error('Failed to initialize Firebase Admin:', error);
+    console.error('❌ Failed to initialize Firebase Admin:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack
+    });
     throw error;
   }
 }
@@ -91,6 +111,9 @@ export default async function handler(req, res) {
       });
     }
 
+    // Log the action being processed (for debugging)
+    console.log(`🔍 Processing admin action: ${action} by admin ${adminId}`);
+    
     switch (action) {
       case 'create-user':
         return await createUser(req, res, adminId);
@@ -102,10 +125,19 @@ export default async function handler(req, res) {
         return await updateUser(req, res, adminId);
       case 'get-audit-logs':
         return await getAuditLogs(req, res, adminId);
+      case 'get-capabilities':
+        return await getCapabilities(req, res, adminId);
+      case 'reject-and-delete-user':
+        console.log('✅ Action "reject-and-delete-user" recognized, calling rejectAndDeleteUser function');
+        return await rejectAndDeleteUser(req, res, adminId);
       default:
+        console.error(`❌ Unknown action received: ${action}`);
+        console.error(`❌ Available actions: create-user, bulk-import, force-password-reset, update-user, get-audit-logs, reject-and-delete-user`);
         return res.status(400).json({ 
           success: false, 
-          error: `Unknown action: ${action}. Available actions: create-user, bulk-import, force-password-reset, update-user, get-audit-logs` 
+          error: `Unknown action: ${action}. Available actions: create-user, bulk-import, force-password-reset, update-user, get-audit-logs, reject-and-delete-user`,
+          receivedAction: action,
+          availableActions: ['create-user', 'bulk-import', 'force-password-reset', 'update-user', 'get-audit-logs', 'reject-and-delete-user']
         });
     }
   } catch (error) {
@@ -192,7 +224,7 @@ async function createUser(req, res, adminId) {
       createdBy: adminId,
       tempPasswordSet: true,
       mustChangePassword: true,
-      status: 'active',
+      status: 'approved', // Admin-created users are immediately approved
       ...(phone && { phone: phone.trim() }),
       ...(company && { company: company.trim() }),
       ...(work && { work: work.trim() }),
@@ -358,7 +390,7 @@ async function bulkImport(req, res, adminId) {
           createdBy: adminId,
           tempPasswordSet: true,
           mustChangePassword: true,
-          status: 'active',
+          status: 'approved', // Bulk imported users are immediately approved
           importedAt: admin.firestore.FieldValue.serverTimestamp(),
           ...(phone && { phone: phone.trim() }),
           ...(company && { company: company.trim() }),
@@ -639,6 +671,54 @@ async function getAuditLogs(req, res, adminId) {
   }
 }
 
+// Get server capabilities and version info
+async function getCapabilities(req, res, adminId) {
+  try {
+    const projectId = admin.apps.length > 0 ? admin.app().options.projectId : 'NOT SET';
+    const serviceAccountEmail = process.env.FIREBASE_CLIENT_EMAIL || 
+                               (admin.apps.length > 0 && typeof admin.app().options.credential === 'object'
+                                 ? 'Service account from credential' 
+                                 : 'NOT SET');
+    
+    // Get file modification time as a simple version indicator
+    // In production, this will be the deployment time
+    const buildTime = process.env.VERCEL ? new Date().toISOString() : 
+                     (process.env.BUILD_TIME || new Date().toISOString());
+    
+    const availableActions = [
+      'create-user',
+      'bulk-import',
+      'force-password-reset',
+      'update-user',
+      'get-audit-logs',
+      'get-capabilities',
+      'reject-and-delete-user'
+    ];
+
+    return res.status(200).json({
+      success: true,
+      capabilities: {
+        version: buildTime,
+        projectId: projectId,
+        serviceAccount: serviceAccountEmail,
+        availableActions: availableActions,
+        firebaseAdminInitialized: admin.apps.length > 0,
+        authAvailable: !!auth,
+        firestoreAvailable: !!db
+      },
+      serverInfo: {
+        environment: process.env.NODE_ENV || 'unknown',
+        platform: process.env.VERCEL ? 'Vercel' : 
+                  (process.env.NETLIFY ? 'Netlify' : 'Unknown'),
+        region: process.env.VERCEL_REGION || process.env.AWS_REGION || 'unknown'
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error getting capabilities:', error);
+    throw error;
+  }
+}
+
 // Helper function to log audit actions
 async function logAuditAction(adminId, action, details = {}) {
   try {
@@ -724,6 +804,347 @@ async function getUserLocations(req, res) {
       success: false,
       error: 'Failed to fetch users with locations',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}
+
+/**
+ * Reject a join request and delete the user completely from the system
+ * 
+ * IMPORTANT: This MUST be done server-side using Firebase Admin SDK because:
+ * 1. Client-side code cannot delete Firebase Auth users (security restriction)
+ * 2. Only Admin SDK has the permissions to delete Auth accounts
+ * 3. This is the ONLY way to free the email for re-signup
+ * 
+ * This function performs a complete purge:
+ * 1. Deletes joinRequests/{uid} document
+ * 2. Deletes users/{uid} document (if exists)
+ * 3. Deletes registrations/{uid} document (if exists)
+ * 4. Deletes all event registrations (if any)
+ * 5. Deletes Firebase Auth user account (CRITICAL - frees email)
+ * 
+ * After this operation, the user can sign up again with the same email.
+ * 
+ * @param {Object} req - Request object
+ * @param {Object} res - Response object
+ * @param {string} adminId - Admin user ID
+ */
+async function rejectAndDeleteUser(req, res, adminId) {
+  // Extract and validate uid from request body
+  const { uid } = req.body;
+
+  console.log('🔍 rejectAndDeleteUser function called');
+  console.log('🔍 Request body keys:', Object.keys(req.body));
+  console.log('🔍 Request body:', { uid, adminId, action: req.body.action });
+  console.log('🔍 Admin ID:', adminId);
+  console.log('🔍 User UID to delete:', uid);
+
+  // Validate uid is provided
+  if (!uid) {
+    console.error('❌ Missing UID in request body');
+    console.error('❌ Full request body:', req.body);
+    return res.status(400).json({
+      success: false,
+      error: 'User UID is required',
+      receivedBody: req.body
+    });
+  }
+
+  // Validate uid is a string
+  if (typeof uid !== 'string' || uid.trim() === '') {
+    console.error('❌ Invalid UID format:', typeof uid, uid);
+    return res.status(400).json({
+      success: false,
+      error: 'User UID must be a non-empty string',
+      receivedUid: uid,
+      uidType: typeof uid
+    });
+  }
+
+  try {
+    console.log(`🗑️ Admin ${adminId} rejecting and purging user ${uid}`);
+    console.log(`🔍 Starting comprehensive user purge...`);
+
+    // Get user email from Auth before deletion (for logging and potential email-based cleanup)
+    let userEmail = null;
+    try {
+      const authUser = await auth.getUser(uid);
+      userEmail = authUser.email;
+      console.log(`📧 User email: ${userEmail}`);
+    } catch (getUserError) {
+      console.warn(`⚠️ Could not fetch Auth user (may not exist): ${getUserError.message}`);
+    }
+
+    const deletionResults = {
+      joinRequestDeleted: false,
+      userDocDeleted: false,
+      registrationsDeleted: false,
+      eventRegistrationsDeleted: 0,
+      authUserDeleted: false,
+      errors: [],
+      deletedCollections: []
+    };
+
+    // Step 1: Delete join request document
+    // NOTE: We delete directly (don't update to rejected first) since we're doing a full purge
+    try {
+      const joinRequestRef = db.collection('joinRequests').doc(uid);
+      const joinRequestDoc = await joinRequestRef.get();
+      
+      if (joinRequestDoc.exists) {
+        // Delete directly - full purge, no need to mark as rejected
+        await joinRequestRef.delete();
+        deletionResults.joinRequestDeleted = true;
+        deletionResults.deletedCollections.push('joinRequests');
+        console.log('✅ Join request deleted from Firestore');
+      } else {
+        console.log('ℹ️ Join request document not found (may have been deleted already)');
+      }
+    } catch (joinRequestError) {
+      const errorMsg = `Failed to delete join request: ${joinRequestError.message}`;
+      console.error('❌', errorMsg);
+      console.error('❌ Join request deletion error details:', {
+        code: joinRequestError.code,
+        message: joinRequestError.message,
+        stack: joinRequestError.stack
+      });
+      deletionResults.errors.push(errorMsg);
+    }
+
+    // Step 2: Delete user document (if exists)
+    try {
+      const userRef = db.collection('users').doc(uid);
+      const userDoc = await userRef.get();
+      
+      if (userDoc.exists) {
+        await userRef.delete();
+        deletionResults.userDocDeleted = true;
+        deletionResults.deletedCollections.push('users');
+        console.log('✅ User document deleted from Firestore');
+      } else {
+        console.log('ℹ️ User document not found (expected for pending requests)');
+      }
+    } catch (userDocError) {
+      const errorMsg = `Failed to delete user document: ${userDocError.message}`;
+      console.error('❌', errorMsg);
+      deletionResults.errors.push(errorMsg);
+    }
+
+    // Step 2b: Delete from registrations collection (if exists)
+    // This collection stores event registrations at the root level
+    try {
+      const registrationRef = db.collection('registrations').doc(uid);
+      const registrationDoc = await registrationRef.get();
+      
+      if (registrationDoc.exists) {
+        await registrationRef.delete();
+        deletionResults.registrationsDeleted = true;
+        deletionResults.deletedCollections.push('registrations');
+        console.log('✅ Registration document deleted from Firestore');
+      }
+    } catch (registrationError) {
+      const errorMsg = `Failed to delete registration: ${registrationError.message}`;
+      console.error('❌', errorMsg);
+      deletionResults.errors.push(errorMsg);
+    }
+
+    // Step 2c: Delete from all event registrations subcollections
+    // events/{eventId}/registrations/{uid}
+    try {
+      const eventsSnapshot = await db.collection('events').get();
+      let eventRegistrationsDeleted = 0;
+      
+      for (const eventDoc of eventsSnapshot.docs) {
+        const eventId = eventDoc.id;
+        const eventRegRef = db.collection('events').doc(eventId).collection('registrations').doc(uid);
+        const eventRegDoc = await eventRegRef.get();
+        
+        if (eventRegDoc.exists) {
+          await eventRegRef.delete();
+          eventRegistrationsDeleted++;
+          console.log(`✅ Deleted registration from event: ${eventId}`);
+        }
+      }
+      
+      if (eventRegistrationsDeleted > 0) {
+        deletionResults.eventRegistrationsDeleted = eventRegistrationsDeleted;
+        deletionResults.deletedCollections.push(`events/*/registrations (${eventRegistrationsDeleted} events)`);
+        console.log(`✅ Deleted ${eventRegistrationsDeleted} event registration(s)`);
+      }
+    } catch (eventRegError) {
+      const errorMsg = `Failed to delete event registrations: ${eventRegError.message}`;
+      console.error('❌', errorMsg);
+      deletionResults.errors.push(errorMsg);
+    }
+
+    // Step 3: Delete Firebase Auth user (most important - allows re-signup)
+    // This is the CRITICAL step - without this, the email remains "taken" in Firebase Auth
+    try {
+      const currentProjectId = admin.apps.length > 0 ? admin.app().options.projectId : 'NOT SET';
+      const serviceAccountEmail = admin.apps.length > 0 && admin.app().options.credential 
+        ? (typeof admin.app().options.credential === 'object' && 'getAccessToken' in admin.app().options.credential
+            ? 'Service account from credential' 
+            : 'Unknown')
+        : 'NOT SET';
+      
+      console.log(`🔍 Attempting to delete Firebase Auth user: ${uid}`);
+      console.log(`🔍 Auth instance available: ${auth ? 'yes' : 'no'}`);
+      console.log(`🔍 Admin app initialized: ${admin.apps.length > 0 ? 'yes' : 'no'}`);
+      console.log(`🔍 Admin app project ID: ${currentProjectId}`);
+      console.log(`🔍 Environment GCLOUD_PROJECT: ${process.env.GCLOUD_PROJECT || 'NOT SET'}`);
+      console.log(`🔍 Environment FIREBASE_PROJECT_ID: ${process.env.FIREBASE_PROJECT_ID || 'NOT SET'}`);
+      console.log(`🔍 Service account: ${serviceAccountEmail}`);
+      
+      if (!auth) {
+        throw new Error('Firebase Auth instance is not available. Check Admin SDK initialization.');
+      }
+      
+      // Verify we're using the correct project
+      if (currentProjectId === 'NOT SET' || !currentProjectId) {
+        throw new Error('Firebase project ID is not set. Check FIREBASE_PROJECT_ID or service account configuration.');
+      }
+      
+      // Verify user exists before deletion (for better error messages)
+      try {
+        const verifyUser = await auth.getUser(uid);
+        console.log(`🔍 Auth user exists: ${verifyUser.email}`);
+      } catch (verifyError) {
+        if (verifyError.code === 'auth/user-not-found') {
+          console.log('ℹ️ Auth user not found (may have been deleted already)');
+          deletionResults.authUserDeleted = true; // Consider it successful
+          // Skip deletion, user already gone
+        } else {
+          throw verifyError;
+        }
+      }
+      
+      // Only delete if user exists
+      if (!deletionResults.authUserDeleted) {
+        await auth.deleteUser(uid);
+        deletionResults.authUserDeleted = true;
+        console.log('✅ User deleted from Firebase Auth successfully');
+        
+        // Verify deletion succeeded
+        try {
+          await auth.getUser(uid);
+          // If we get here, deletion failed (user still exists)
+          throw new Error('Auth user still exists after deletion attempt');
+        } catch (verifyDeleteError) {
+          if (verifyDeleteError.code === 'auth/user-not-found') {
+            console.log('✅ Verified: Auth user successfully deleted (user-not-found as expected)');
+            console.log(`✅ Email ${userEmail || '(unknown)'} should now be available for re-signup`);
+          } else {
+            console.warn('⚠️ Could not verify Auth deletion:', verifyDeleteError.message);
+          }
+        }
+      }
+    } catch (authError) {
+      const errorMsg = `Failed to delete Auth user: ${authError.message}`;
+      const currentProjectId = admin.apps.length > 0 ? admin.app().options.projectId : 'NOT SET';
+      
+      console.error('❌ Auth deletion error:', {
+        code: authError.code,
+        message: authError.message,
+        stack: authError.stack,
+        projectId: currentProjectId,
+        uid: uid
+      });
+      deletionResults.errors.push(errorMsg);
+
+      // If Auth deletion fails, this is critical - user cannot re-signup
+      if (authError.code === 'auth/user-not-found') {
+        console.log('ℹ️ Auth user not found (may have been deleted already)');
+        deletionResults.authUserDeleted = true; // Consider it successful if already gone
+      } else if (authError.code === 'auth/insufficient-permission' || 
+                 authError.message?.includes('permission') ||
+                 authError.message?.includes('Permission denied')) {
+        // Permission error - provide clear guidance
+        const serviceAccountEmail = process.env.FIREBASE_CLIENT_EMAIL || 
+                                   (admin.apps.length > 0 && typeof admin.app().options.credential === 'object' 
+                                     ? 'Check service account in FIREBASE_SERVICE_ACCOUNT_KEY' 
+                                     : 'NOT SET');
+        
+        console.error('🚫 PERMISSION ERROR: Service account lacks permission to delete Auth users');
+        console.error('🚫 Service account:', serviceAccountEmail);
+        console.error('🚫 Project ID:', currentProjectId);
+        console.error('🚫 Required role: Firebase Authentication Admin');
+        console.error('🚫 How to fix: Grant "Firebase Authentication Admin" role to service account in IAM');
+        
+        return res.status(403).json({
+          success: false,
+          error: 'Backend lacks permission to delete Firebase Auth users. Service account needs "Firebase Authentication Admin" role.',
+          details: deletionResults,
+          permissionError: true,
+          serviceAccount: serviceAccountEmail,
+          projectId: currentProjectId,
+          requiredRole: 'Firebase Authentication Admin',
+          fixInstructions: 'Grant "Firebase Authentication Admin" role to the service account in Google Cloud IAM',
+          authErrorCode: authError.code,
+          authErrorMessage: authError.message
+        });
+      } else {
+        // For other errors, return error with detailed information
+        console.error('🚫 CRITICAL: Auth deletion failed. User cannot re-signup with same email.');
+        console.error('🚫 Error details:', {
+          code: authError.code,
+          message: authError.message,
+          uid: uid,
+          projectId: currentProjectId
+        });
+        
+        return res.status(500).json({
+          success: false,
+          error: `Failed to delete Firebase Auth user: ${authError.message}. User may not be able to re-signup with the same email. Please check server logs.`,
+          details: deletionResults,
+          partialSuccess: deletionResults.joinRequestDeleted || deletionResults.userDocDeleted,
+          authErrorCode: authError.code,
+          authErrorMessage: authError.message,
+          projectId: currentProjectId
+        });
+      }
+    }
+
+    // If we got here, at least Auth deletion succeeded (or user was already gone)
+    if (deletionResults.errors.length > 0) {
+      // Some Firestore deletions may have failed, but Auth deletion succeeded
+      return res.status(200).json({
+        success: true,
+        message: 'User rejected and deleted. Some cleanup operations had warnings.',
+        details: deletionResults,
+        warnings: deletionResults.errors
+      });
+    }
+
+    // Final summary
+    const deletedCount = [
+      deletionResults.joinRequestDeleted,
+      deletionResults.userDocDeleted,
+      deletionResults.registrationsDeleted,
+      deletionResults.eventRegistrationsDeleted > 0,
+      deletionResults.authUserDeleted
+    ].filter(Boolean).length;
+
+    console.log(`✅ Purge complete. Deleted from ${deletedCount} location(s):`, deletionResults.deletedCollections);
+    console.log(`✅ Auth user deleted: ${deletionResults.authUserDeleted ? 'YES' : 'NO'}`);
+    if (userEmail) {
+      console.log(`✅ Email ${userEmail} should now be available for re-signup`);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'User rejected and completely purged from the system. They can now re-apply with the same email.',
+      details: deletionResults,
+      email: userEmail, // Include email for admin reference
+      deletedFrom: deletionResults.deletedCollections
+    });
+
+  } catch (error) {
+    console.error('❌ Error rejecting and purging user:', error);
+    console.error('❌ Error stack:', error.stack);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Internal server error',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
