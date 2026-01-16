@@ -81,8 +81,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
 
   // Check if user is rejected
   if (isRejected) {
-    console.log('❌ ProtectedRoute - User is rejected');
-    return <Navigate to="/login" replace />;
+    console.log('❌ ProtectedRoute - User is rejected, redirecting to re-request access');
+    return <Navigate to="/re-request-access" replace />;
   }
 
   // Check if user must change password - CRITICAL CHECK
@@ -110,6 +110,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
     if (requiredRole === 'member' && !isMember && !isAdmin) {
       console.log('❌ ProtectedRoute - Member access required but user has no valid role');
       return <Navigate to="/unauthorized" replace />;
+    }
+    
+    // For member routes, also check that user is approved (not pending or rejected)
+    if (requiredRole === 'member' && !isApproved && !isAdmin) {
+      console.log('❌ ProtectedRoute - Member access required but user is not approved');
+      return <Navigate to="/pending" replace />;
     }
   }
 

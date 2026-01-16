@@ -433,9 +433,13 @@ const EventManagement: React.FC = () => {
                       <Eye className="h-4 w-4" />
                       <span>View</span>
                     </Link>
+                    {/* Edit Event Link - Route must match /admin/events/:eventId/edit defined in App.tsx */}
                     <Link
-                      to={`/admin/${event.id}/edit`}
+                      to={`/admin/events/${event.id}/edit`}
                       className="flex-1 bg-green-100 text-green-700 px-3 py-2 rounded-lg hover:bg-green-200 transition-colors duration-200 font-medium text-center flex items-center justify-center space-x-2 text-sm"
+                      onClick={() => {
+                        console.log('🔧 Edit Event clicked - Navigating to:', `/admin/events/${event.id}/edit`);
+                      }}
                     >
                       <Edit className="h-4 w-4" />
                       <span>Edit</span>

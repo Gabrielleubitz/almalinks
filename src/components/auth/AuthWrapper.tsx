@@ -19,8 +19,8 @@ const AuthWrapper: React.FC = () => {
       }
       
       if (isRejected) {
-        console.log('❌ AuthWrapper - User is rejected, redirecting to login');
-        navigate('/login', { replace: true });
+        console.log('❌ AuthWrapper - User is rejected, redirecting to re-request access');
+        navigate('/re-request-access', { replace: true });
         return;
       }
       

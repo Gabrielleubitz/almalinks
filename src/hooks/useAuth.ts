@@ -122,6 +122,43 @@ export const useAuth = () => {
           googleEmail: userData.googleEmail || null
         };
       }
+      
+      // If no user document exists, check join request status
+      console.log('⚠️ No user document found, checking join request...');
+      const { JoinRequestService } = await import('../services/joinRequestService');
+      const joinRequest = await JoinRequestService.getJoinRequest(uid);
+      
+      if (joinRequest) {
+        // Return minimal profile with status from join request
+        return {
+          uid,
+          email: joinRequest.email || null,
+          displayName: joinRequest.displayName || joinRequest.name || null,
+          role: 'member',
+          status: joinRequest.status, // pending, approved, or rejected
+          phone: joinRequest.phone || '',
+          company: joinRequest.company || '',
+          work: joinRequest.work || '',
+          linkedinUsername: joinRequest.linkedinUsername || '',
+          position: joinRequest.position || '',
+          profileImage: null,
+          bioTitle: joinRequest.bioTitle || '',
+          bio: joinRequest.bio || '',
+          city: joinRequest.city || '',
+          country: joinRequest.country || '',
+          timezone: joinRequest.timezone || '',
+          website: joinRequest.website || '',
+          twitter: joinRequest.twitter || '',
+          skills: joinRequest.skills || [],
+          mustChangePassword: false,
+          tempPasswordSet: false,
+          passwordResetForcedAt: null,
+          passwordResetForcedBy: null,
+          googleLinked: false,
+          googleEmail: null
+        };
+      }
+      
       return null;
     } catch (error) {
       console.error('❌ Error fetching user profile:', error);
@@ -141,43 +178,47 @@ export const useAuth = () => {
       };
 
       if (!userDoc.exists()) {
-        // Create new user profile
-        // Only include fields that have actual values to prevent overwriting with empty strings
-        const newUserData: any = {
-          ...baseData,
+        // NEW BEHAVIOR: Create join request instead of user document
+        // User documents are only created when admin approves
+        console.log('📝 New user detected - creating join request instead of user document');
+        
+        const { JoinRequestService } = await import('../services/joinRequestService');
+        
+        // Create join request with all provided data
+        const joinRequestData = {
+          email: firebaseUser.email || '',
           name: profileData?.name || firebaseUser.displayName || '',
-          role: 'member',
-          status: 'pending', // New users start with pending status
-          createdAt: serverTimestamp()
-        };
-
-        // Add optional fields only if they have values
-        if (profileData?.phone) newUserData.phone = profileData.phone;
-        if (profileData?.company) newUserData.company = profileData.company;
-        if (profileData?.work) newUserData.work = profileData.work;
-        if (profileData?.linkedinUsername) newUserData.linkedinUsername = profileData.linkedinUsername;
-        if (profileData?.position) newUserData.position = profileData.position;
-        if (profileData?.profileImage !== undefined) newUserData.profileImage = profileData.profileImage;
-        if (profileData?.bioTitle) newUserData.bioTitle = profileData.bioTitle;
-        if (profileData?.bio) newUserData.bio = profileData.bio;
-        if (profileData?.city) newUserData.city = profileData.city;
-        if (profileData?.country) newUserData.country = profileData.country;
-        if (profileData?.timezone) newUserData.timezone = profileData.timezone;
-        if (profileData?.website) newUserData.website = profileData.website;
-        if (profileData?.twitter) newUserData.twitter = profileData.twitter;
-        if (profileData?.skills && profileData.skills.length > 0) newUserData.skills = profileData.skills;
-
-        console.log('📝 Creating user profile with data:', newUserData);
-        console.log('📋 Profile data received:', JSON.stringify({
+          displayName: profileData?.name || firebaseUser.displayName || '',
           phone: profileData?.phone,
           company: profileData?.company,
           work: profileData?.work,
           linkedinUsername: profileData?.linkedinUsername,
-          position: profileData?.position
-        }, null, 2));
-        // Use merge: true to prevent race conditions from overwriting data
-        await retryOnNetworkFailure(async () => setDoc(userDocRef, newUserData, { merge: true }));
-        console.log('✅ Created new user profile with pending status');
+          position: profileData?.position,
+          bioTitle: profileData?.bioTitle,
+          bio: profileData?.bio,
+          city: profileData?.city,
+          country: profileData?.country,
+          timezone: profileData?.timezone,
+          website: profileData?.website,
+          twitter: profileData?.twitter,
+          skills: profileData?.skills
+        };
+
+        const createdRequest = await JoinRequestService.createJoinRequest(firebaseUser.uid, joinRequestData);
+        console.log('✅ Created join request (user document will be created on approval):', {
+          uid: firebaseUser.uid,
+          email: createdRequest.email,
+          name: createdRequest.name,
+          status: createdRequest.status
+        });
+        
+        // Verify the join request was created
+        const verifyRequest = await JoinRequestService.getJoinRequest(firebaseUser.uid);
+        if (verifyRequest) {
+          console.log('✅ Verified join request exists in Firestore');
+        } else {
+          console.error('❌ WARNING: Join request verification failed - request not found after creation');
+        }
         
         // Send signup confirmation email to user
         try {
@@ -186,8 +227,8 @@ export const useAuth = () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               type: 'signup',
-              email: newUserData.email,
-              name: newUserData.name
+              email: joinRequestData.email,
+              name: joinRequestData.name
             })
           });
           console.log('✅ Signup confirmation email sent to user');
@@ -203,7 +244,7 @@ export const useAuth = () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               to: '+972584477757',
-              body: `🔔 New user pending approval: ${newUserData.name} (${newUserData.email}). Please review in admin panel.`
+              body: `🔔 New user pending approval: ${joinRequestData.name} (${joinRequestData.email}). Please review in admin panel.`
             })
           });
 
@@ -227,10 +268,10 @@ export const useAuth = () => {
               type: 'admin-notification',
               email: adminEmail,
               subject: 'New User Registration - Pending Approval',
-              name: newUserData.name,
-              userEmail: newUserData.email,
-              phone: newUserData.phone || 'Not provided',
-              work: `${newUserData.work || 'Not provided'} at ${newUserData.company || 'Not provided'}`
+              name: joinRequestData.name,
+              userEmail: joinRequestData.email,
+              phone: joinRequestData.phone || 'Not provided',
+              work: `${joinRequestData.work || 'Not provided'} at ${joinRequestData.company || 'Not provided'}`
             })
           });
           console.log('✅ Admin email notification sent for pending user');
@@ -238,32 +279,39 @@ export const useAuth = () => {
           console.error('❌ Failed to send admin email notification:', emailError);
         }
         
-        return newUserData;
+        // Return null since no user document exists yet
+        return null;
       } else {
-        // Update existing user profile
+        // Update existing user profile (only if user document exists - i.e., approved)
         const existingData = userDoc.data();
-        const updatedData = {
-          ...baseData,
-          ...(profileData?.name && { name: profileData.name }),
-          ...(profileData?.phone && { phone: profileData.phone }),
-          ...(profileData?.company && { company: profileData.company }),
-          ...(profileData?.work && { work: profileData.work }),
-          ...(profileData?.linkedinUsername && { linkedinUsername: profileData.linkedinUsername }),
-          ...(profileData?.position && { position: profileData.position }),
-          ...(profileData?.profileImage !== undefined && { profileImage: profileData.profileImage }),
-          ...(profileData?.bioTitle !== undefined && { bioTitle: profileData.bioTitle }),
-          ...(profileData?.bio !== undefined && { bio: profileData.bio }),
-          ...(profileData?.city !== undefined && { city: profileData.city }),
-          ...(profileData?.country !== undefined && { country: profileData.country }),
-          ...(profileData?.timezone !== undefined && { timezone: profileData.timezone }),
-          ...(profileData?.website !== undefined && { website: profileData.website }),
-          ...(profileData?.twitter !== undefined && { twitter: profileData.twitter }),
-          ...(profileData?.skills !== undefined && { skills: profileData.skills })
+        const updatedData: any = {
+          ...baseData
         };
         
-        await retryOnNetworkFailure(async () => setDoc(userDocRef, updatedData, { merge: true }));
+        // Only include fields that are defined (not undefined)
+        if (profileData?.name) updatedData.name = profileData.name;
+        if (profileData?.phone) updatedData.phone = profileData.phone;
+        if (profileData?.company) updatedData.company = profileData.company;
+        if (profileData?.work) updatedData.work = profileData.work;
+        if (profileData?.linkedinUsername) updatedData.linkedinUsername = profileData.linkedinUsername;
+        if (profileData?.position) updatedData.position = profileData.position;
+        if (profileData?.profileImage !== undefined) updatedData.profileImage = profileData.profileImage;
+        if (profileData?.bioTitle !== undefined && profileData.bioTitle !== null) updatedData.bioTitle = profileData.bioTitle;
+        if (profileData?.bio !== undefined && profileData.bio !== null) updatedData.bio = profileData.bio;
+        if (profileData?.city !== undefined && profileData.city !== null) updatedData.city = profileData.city;
+        if (profileData?.country !== undefined && profileData.country !== null) updatedData.country = profileData.country;
+        if (profileData?.timezone !== undefined && profileData.timezone !== null) updatedData.timezone = profileData.timezone;
+        if (profileData?.website !== undefined && profileData.website !== null) updatedData.website = profileData.website;
+        if (profileData?.twitter !== undefined && profileData.twitter !== null) updatedData.twitter = profileData.twitter;
+        if (profileData?.skills !== undefined && profileData.skills !== null) updatedData.skills = profileData.skills;
+        
+        // Sanitize to remove any undefined values (safety check)
+        const { sanitizeForFirestore } = await import('../utils/firestoreHelpers');
+        const sanitizedData = sanitizeForFirestore(updatedData);
+        
+        await retryOnNetworkFailure(async () => setDoc(userDocRef, sanitizedData, { merge: true }));
         console.log('✅ Updated user profile');
-        return { ...existingData, ...updatedData };
+        return { ...existingData, ...sanitizedData };
       }
     } catch (error) {
       console.error('❌ Error creating/updating user profile:', error);
@@ -376,30 +424,77 @@ export const useAuth = () => {
           let userProfile = await getUserProfile(firebaseUser.uid);
           
           if (!userProfile) {
-            // If no Firestore profile exists, create one from Firebase Auth data
-            console.log('📝 Creating missing Firestore profile from Firebase Auth data');
-            const userData = await createOrUpdateUserProfile(firebaseUser);
-            userProfile = {
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              displayName: userData.name || firebaseUser.displayName,
-              role: userData.role || 'member',
-              status: userData.status || 'pending',
-              phone: userData.phone || '',
-              company: userData.company || '',
-              work: userData.work || '',
-              linkedinUsername: userData.linkedinUsername || '',
-              position: userData.position || '',
-              profileImage: userData.profileImage || null,
-              bioTitle: userData.bioTitle || '',
-              bio: userData.bio || '',
-              city: userData.city || '',
-              country: userData.country || '',
-              timezone: userData.timezone || '',
-              website: userData.website || '',
-              twitter: userData.twitter || '',
-              skills: userData.skills || []
-            };
+            // If no Firestore profile exists, check if join request exists first
+            // IMPORTANT: Do NOT auto-create join requests on login - user must explicitly re-request
+            // This prevents rejected users from auto-creating new requests
+            const { JoinRequestService } = await import('../services/joinRequestService');
+            const existingJoinRequest = await JoinRequestService.getJoinRequest(firebaseUser.uid);
+            
+            if (existingJoinRequest) {
+              // Join request exists - use it to build profile
+              console.log('📝 Found existing join request, using it for profile');
+              userProfile = {
+                uid: firebaseUser.uid,
+                email: existingJoinRequest.email || firebaseUser.email,
+                displayName: existingJoinRequest.displayName || existingJoinRequest.name || firebaseUser.displayName,
+                role: 'member',
+                status: existingJoinRequest.status, // pending, approved, or rejected
+                phone: existingJoinRequest.phone || '',
+                company: existingJoinRequest.company || '',
+                work: existingJoinRequest.work || '',
+                linkedinUsername: existingJoinRequest.linkedinUsername || '',
+                position: existingJoinRequest.position || '',
+                profileImage: null,
+                bioTitle: existingJoinRequest.bioTitle || '',
+                bio: existingJoinRequest.bio || '',
+                city: existingJoinRequest.city || '',
+                country: existingJoinRequest.country || '',
+                timezone: existingJoinRequest.timezone || '',
+                website: existingJoinRequest.website || '',
+                twitter: existingJoinRequest.twitter || '',
+                skills: existingJoinRequest.skills || [],
+                mustChangePassword: false,
+                tempPasswordSet: false,
+                passwordResetForcedAt: null,
+                passwordResetForcedBy: null,
+                googleLinked: false,
+                googleEmail: null
+              };
+            } else {
+              // No join request and no user doc - this is unusual
+              // Do NOT auto-create anything - user must explicitly sign up or re-request
+              console.log('⚠️ No user profile or join request found. User must sign up or re-request access.');
+              console.log('⚠️ NOT auto-creating join request - user must do this explicitly');
+              
+              // Create minimal profile from Auth data only (no Firestore writes)
+              userProfile = {
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                displayName: firebaseUser.displayName,
+                role: 'member',
+                status: 'pending', // Will be determined by routing logic
+                phone: '',
+                company: '',
+                work: '',
+                linkedinUsername: '',
+                position: '',
+                profileImage: null,
+                bioTitle: '',
+                bio: '',
+                city: '',
+                country: '',
+                timezone: '',
+                website: '',
+                twitter: '',
+                skills: [],
+                mustChangePassword: false,
+                tempPasswordSet: false,
+                passwordResetForcedAt: null,
+                passwordResetForcedBy: null,
+                googleLinked: false,
+                googleEmail: null
+              };
+            }
           }
           
           console.log('✅ Setting auth user with profile:', userProfile);

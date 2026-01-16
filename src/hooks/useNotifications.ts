@@ -116,9 +116,10 @@ export const useNotifications = (userId: string | undefined, isAdmin: boolean = 
     };
 
     // Subscribe to pending registrations count (admin only)
+    // Now uses joinRequests collection instead of users
     const subscribeToPendingRegistrations = async () => {
       const pendingQuery = query(
-        collection(db, 'users'),
+        collection(db, 'joinRequests'),
         where('status', '==', 'pending')
       );
 

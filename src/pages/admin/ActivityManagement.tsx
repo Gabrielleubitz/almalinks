@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Activity,
   Filter,
@@ -16,7 +17,8 @@ import {
   Eye,
   AlertTriangle,
   MessageCircle,
-  X
+  X,
+  ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { ActivityLogDisplay, ActivityFilters, ActivityStats, ActivityType } from '../../types/activity';
@@ -408,6 +410,17 @@ const ActivityManagement: React.FC = () => {
       <AdminHeader title="Activity Management" />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back Button */}
+        <div className="mb-8">
+          <Link
+            to="/admin"
+            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            <span>Back to Admin Tools</span>
+          </Link>
+        </div>
+
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">

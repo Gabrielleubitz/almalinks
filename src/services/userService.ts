@@ -59,7 +59,7 @@ export class UserService {
         profileImage: null,
         profileVisibility: normalizedProfile.profileVisibility,
         role: 'member',
-        status: 'active',
+        status: 'approved', // UserService.createUser is only used for admin-created users
         createdAt: now,
         updatedAt: now,
         joinedAt: now,
@@ -194,9 +194,14 @@ export class UserService {
     try {
       console.log('📋 Getting user directory with filters:', filters);
       
-      let q = query(collection(db, 'users'), orderBy('updatedAt', 'desc'));
+      // Start with approved users only - this is the base filter
+      let q = query(
+        collection(db, 'users'),
+        where('status', '==', 'approved'),
+        orderBy('updatedAt', 'desc')
+      );
       
-      // Apply basic filters
+      // Apply additional filters
       if (filters.country) {
         q = query(q, where('country', '==', filters.country));
       }
@@ -313,31 +318,76 @@ export class UserService {
   }
   
   /**
-   * Get all users for the Members directory page (NO privacy filtering)
+   * Get all users for the Members directory page
+   * Only returns approved users (status === 'approved')
    */
   static async getAllMembersForDirectory(
     viewerUid: string | null,
     viewerRole: string | undefined
   ): Promise<UserCard[]> {
     try {
-      console.log('👥 Getting ALL users for members directory (admin view)');
+      console.log('👥 Getting approved members for directory');
+      console.log('👤 Viewer:', { uid: viewerUid, role: viewerRole });
       
-      // Get ALL users - no filtering at all
-      const q = query(
-        collection(db, 'users'), 
-        orderBy('updatedAt', 'desc')
-        // Removed limit to get ALL users
-      );
+      let approvedUsers: UserProfile[] = [];
       
-      const snapshot = await retryOnNetworkFailure(() => getDocs(q));
-      const allUsers = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
+      // Try with composite index first (status + updatedAt)
+      try {
+        const q = query(
+          collection(db, 'users'),
+          where('status', '==', 'approved'),
+          orderBy('updatedAt', 'desc')
+        );
+        
+        const snapshot = await retryOnNetworkFailure(() => getDocs(q));
+        approvedUsers = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
+        console.log(`👥 Found ${approvedUsers.length} approved users (with index)`);
+      } catch (indexError: any) {
+        // If index is missing, try fallback query without orderBy
+        if (indexError.code === 'failed-precondition' || indexError.message?.includes('index')) {
+          console.warn('⚠️ Composite index missing, trying fallback query without orderBy...');
+          console.warn('⚠️ Index required: users collection, fields: status (Ascending), updatedAt (Descending)');
+          
+          try {
+            const fallbackQ = query(
+              collection(db, 'users'),
+              where('status', '==', 'approved')
+            );
+            
+            const snapshot = await retryOnNetworkFailure(() => getDocs(fallbackQ));
+            approvedUsers = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
+            
+            // Sort client-side by updatedAt
+            approvedUsers.sort((a, b) => {
+              const aTime = a.updatedAt?.toDate?.()?.getTime() || a.updatedAt?.seconds || 0;
+              const bTime = b.updatedAt?.toDate?.()?.getTime() || b.updatedAt?.seconds || 0;
+              return bTime - aTime; // Descending
+            });
+            
+            console.log(`👥 Found ${approvedUsers.length} approved users (fallback, sorted client-side)`);
+          } catch (fallbackError: any) {
+            console.error('❌ Fallback query also failed:', fallbackError);
+            
+            // If permission denied, throw with helpful message
+            if (fallbackError.code === 'permission-denied') {
+              throw new Error('Permission denied: Unable to read users. Make sure you are logged in as an admin and have proper Firestore rules configured.');
+            }
+            
+            throw fallbackError;
+          }
+        } else {
+          // For other errors (e.g., permission-denied), throw with context
+          if (indexError.code === 'permission-denied') {
+            throw new Error('Permission denied: Unable to read users. Make sure you are logged in as an admin and have proper Firestore rules configured.');
+          }
+          throw indexError;
+        }
+      }
       
-      console.log(`👥 Found ${allUsers.length} TOTAL users in database`);
-      
-      // NO FILTERING - Show ALL users
+      // Process only approved users
       const memberCards: UserCard[] = [];
       
-      for (const user of allUsers) {
+      for (const user of approvedUsers) {
         console.log(`👤 Processing user: ${user.displayName || user.firstName || (user as any).name || user.uid}`);
         console.log(`   📋 Raw name data: displayName="${user.displayName}", firstName="${user.firstName}", lastName="${user.lastName}", name="${(user as any).name}"`);
         
@@ -368,6 +418,7 @@ export class UserService {
           displayName: displayName,
           firstName: firstName,
           lastName: lastName,
+          email: user.email || undefined, // Include email for autocomplete and admin uses
           title: user.title || (user as any).work || undefined, // Handle legacy 'work' field
           company: user.company,
           city: user.city,
@@ -384,12 +435,27 @@ export class UserService {
         memberCards.push(userCard);
       }
       
-      console.log(`✅ Retrieved ${memberCards.length} members for directory (showing ALL users)`);
+      console.log(`✅ Retrieved ${memberCards.length} approved members for directory`);
       return memberCards;
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error getting all members:', error);
-      return [];
+      console.error('❌ Error details:', {
+        code: error.code,
+        message: error.message,
+        stack: error.stack
+      });
+      
+      // Re-throw with context for better error handling in UI
+      if (error.message?.includes('Permission denied') || error.code === 'permission-denied') {
+        throw new Error('Permission denied: Unable to load users. Please ensure you are logged in as an admin and Firestore rules allow reading users.');
+      }
+      
+      if (error.code === 'failed-precondition' || error.message?.includes('index')) {
+        throw new Error('Missing Firestore index. The query requires an index on users collection (status, updatedAt). Check the browser console for a link to create it.');
+      }
+      
+      throw error; // Re-throw so UI can handle it
     }
   }
   

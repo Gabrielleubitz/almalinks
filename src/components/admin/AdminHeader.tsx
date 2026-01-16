@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Shield, User, RotateCcw, LogOut, Calendar } from 'lucide-react';
+import { Shield, User, RotateCcw, LogOut, Calendar } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import logoSvg from '../../assets/alma-links-logo.svg';
 
@@ -89,14 +89,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title, subtitle }) => {
             >
               <LogOut className="h-5 w-5" />
               <span className="hidden sm:inline">Logout</span>
-            </button>
-
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center space-x-2 text-gray-600 hover:text-red-600 transition-colors duration-200"
-            >
-              <ArrowLeft className="h-5 w-5" />
-              <span>Back to Previous Page</span>
             </button>
           </div>
         </div>

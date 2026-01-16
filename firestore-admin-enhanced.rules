@@ -7,9 +7,17 @@ service cloud.firestore {
       return request.auth != null;
     }
     
+    // Check if user is admin (works for queries - no resource required)
+    function isAdminForQuery() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Check if user is admin (works for document operations - resource may exist)
     function isAdmin() {
       return isAuthenticated() && 
-             resource != null && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
@@ -23,10 +31,13 @@ service cloud.firestore {
 
     function hasRole(role) {
       return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
     }
 
     // Users collection - Enhanced for admin user management
+    // IMPORTANT: User documents are ONLY created when admin approves join requests
+    // Regular signups create joinRequests, not user documents
     match /users/{userId} {
       // Allow read if authenticated and (owner, admin, or approved user)
       allow read: if isAuthenticated() && (
@@ -35,19 +46,9 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved'
       );
       
-      // Allow create for new signups (self-registration) or admin creation
-      allow create: if (
-        // Self-registration
-        (isOwner(userId) && 
-         request.resource.data.email == request.auth.token.email &&
-         !request.resource.data.keys().hasAny(['role']) // Regular users can't set role on creation
-        ) ||
-        // Admin creation (via server-side API only)
-        (isAdmin() && 
-         request.resource.data.createdBy == request.auth.uid &&
-         request.resource.data.keys().hasAll(['role', 'createdBy']) // Admin-created users have these fields
-        )
-      );
+      // Only admins can create user documents (when approving join requests)
+      // Regular users cannot create their own user documents
+      allow create: if isAdmin();
       
       // Allow update if owner (for profile) or admin (for all fields)
       allow update: if (
@@ -79,6 +80,27 @@ service cloud.firestore {
     match /password_resets/{token} {
       // No direct client access - handled by server-side functions
       allow read, write: if false;
+    }
+
+    // Join requests collection - for pending user signups
+    match /joinRequests/{requestId} {
+      // Users can read their own join request, admins can read all join requests
+      allow read: if isAuthenticated() && (
+        isOwner(requestId) || 
+        isAdminForQuery()
+      );
+      
+      // Users can create their own join request (on signup)
+      allow create: if isAuthenticated() && 
+                      isOwner(requestId) &&
+                      request.resource.data.uid == request.auth.uid &&
+                      request.resource.data.status == 'pending';
+      
+      // Only admins can update join requests (approve/reject)
+      allow update: if isAdmin();
+      
+      // Only admins can delete join requests
+      allow delete: if isAdmin();
     }
 
     // Registrations collection (for events)

@@ -28,26 +28,38 @@ const EditEvent: React.FC = () => {
 
   // Load event data on component mount
   useEffect(() => {
+    console.log('🔧 EditEvent - Component mounted with eventId:', eventId);
     if (eventId) {
       loadEvent();
+    } else {
+      console.error('❌ EditEvent - No eventId provided in route params');
+      setError('Event ID is missing from the URL');
+      setLoading(false);
     }
   }, [eventId]);
 
   const loadEvent = async () => {
     if (!eventId) {
+      console.error('❌ EditEvent - loadEvent called without eventId');
       setError('Event ID is required');
       setLoading(false);
       return;
     }
 
     try {
+      console.log('🔄 EditEvent - Loading event with ID:', eventId);
       setLoading(true);
+      setError(null);
       const event = await EventService.getEventById(eventId);
       
       if (!event) {
-        setError('Event not found');
+        console.error('❌ EditEvent - Event not found for ID:', eventId);
+        setError(`Event not found. The event with ID "${eventId}" does not exist.`);
+        setLoading(false);
         return;
       }
+
+      console.log('✅ EditEvent - Event loaded successfully:', event.name);
 
       setOriginalEvent(event);
       

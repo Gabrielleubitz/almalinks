@@ -51,3 +51,4 @@ alma-links-*-firebase-adminsdk-*.json
 
 # Netlify
 .netlify/
+.vercel

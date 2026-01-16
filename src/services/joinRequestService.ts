@@ -514,10 +514,14 @@ export class JoinRequestService {
 
   /**
    * Reject a join request
-   * NOTE: This method is deprecated. Use rejectAndDeleteUser via API endpoint instead.
-   * The API endpoint properly deletes the Firebase Auth user, allowing re-signup.
    * 
-   * @deprecated Use the server-side rejectAndDeleteUser endpoint instead
+   * Updates the join request status to 'rejected'. This removes it from the pending list.
+   * The user can log in again and the system will create a new pending request if needed.
+   * 
+   * Note: This does NOT delete the Firebase Auth user, allowing them to log in again.
+   * 
+   * @param uid - User UID to reject
+   * @param rejectedBy - Admin user ID performing the rejection
    */
   static async rejectRequest(
     uid: string,
@@ -525,15 +529,15 @@ export class JoinRequestService {
   ): Promise<void> {
     try {
       console.log('❌ Rejecting join request for:', uid);
-      console.warn('⚠️ Using deprecated rejectRequest method. Consider using server-side rejectAndDeleteUser endpoint.');
       
-      // Get the join request
+      // Get the join request to verify it exists
       const request = await this.getJoinRequest(uid);
       if (!request) {
         throw new Error('Join request not found');
       }
 
-      // Update join request status
+      // Update join request status to 'rejected'
+      // This removes it from the pending list (which filters by status === 'pending')
       const requestRef = doc(db, 'joinRequests', uid);
       await retryOnNetworkFailure(() => updateDoc(requestRef, {
         status: 'rejected',
@@ -541,18 +545,8 @@ export class JoinRequestService {
         rejectedBy
       }));
 
-      // Ensure no user document exists (delete if it does - legacy cleanup)
-      const userRef = doc(db, 'users', uid);
-      const userDoc = await retryOnNetworkFailure(() => getDoc(userRef));
-      
-      if (userDoc.exists()) {
-        console.log('⚠️ Found legacy user document for rejected user, deleting...');
-        await retryOnNetworkFailure(() => deleteDoc(userRef));
-        console.log('✅ Legacy user document deleted');
-      }
-
-      console.log('✅ Join request rejected and user document ensured not to exist');
-      console.warn('⚠️ NOTE: Firebase Auth user was NOT deleted. User cannot re-signup with same email.');
+      console.log('✅ Join request rejected successfully');
+      console.log('ℹ️ User can log in again to submit a new request');
     } catch (error) {
       console.error('❌ Error rejecting join request:', error);
       throw error;
@@ -632,9 +626,10 @@ export class JoinRequestService {
         throw new Error(`Server returned invalid JSON: ${text.substring(0, 200)}`);
       }
 
-      if (!response.ok || !data.success) {
+      // Check for HTTP errors (4xx, 5xx) - these are always failures
+      if (!response.ok) {
         // Log detailed error information
-        console.error('❌ Reject and delete failed:', {
+        console.error('❌ Reject and delete failed (HTTP error):', {
           status: response.status,
           error: data.error,
           details: data.details,
@@ -677,46 +672,52 @@ export class JoinRequestService {
           throw permissionError;
         }
         
-        // Check if Auth deletion failed (critical)
-        if (data.details && !data.details.authUserDeleted) {
-          throw new Error(
-            `Failed to delete Firebase Auth user: ${data.error || 'Unknown error'}. ` +
-            `The user may not be able to re-signup with the same email. ` +
-            `Please check server logs for details.`
-          );
-        }
-        
+        // For HTTP errors, throw with the error message from server
+        throw new Error(data.error || `Server returned error status ${response.status}`);
+      }
+
+      // HTTP 200/204 means success - check JSON success indicators
+      // Treat as success if: ok: true OR success: true (backend may use either)
+      const isSuccess = response.ok && (data.ok === true || data.success === true);
+      
+      if (!isSuccess) {
+        // Explicit failure in JSON (ok: false or success: false)
+        console.error('❌ Reject and delete failed (success: false):', {
+          ok: data.ok,
+          success: data.success,
+          error: data.error,
+          details: data.details
+        });
         throw new Error(data.error || 'Failed to reject and delete user');
       }
 
-      // Verify deletion results
+      // Success! Log deletion results for debugging
       if (data.details) {
         console.log('✅ Deletion results:', {
           joinRequestDeleted: data.details.joinRequestDeleted,
           userDocDeleted: data.details.userDocDeleted,
-          authUserDeleted: data.details.authUserDeleted
+          registrationsDeleted: data.details.registrationsDeleted,
+          eventRegistrationsDeleted: data.details.eventRegistrationsDeleted,
+          authUserDeleted: data.details.authUserDeleted,
+          errors: data.details.errors?.length || 0
         });
-        
-        if (!data.details.authUserDeleted) {
-          console.error('⚠️ WARNING: Firebase Auth user was NOT deleted!');
-          throw new Error('Firebase Auth user deletion failed. User cannot re-signup with the same email.');
-        }
       }
 
-      console.log('✅ User rejected and deleted successfully:', data.message);
+      console.log('✅ User rejected and deleted successfully:', data.message || 'Operation completed');
       
-      // Log warnings if any
+      // Log warnings if any (but don't fail - these are non-blocking)
       if (data.warnings && data.warnings.length > 0) {
-        console.warn('⚠️ Warnings during deletion:', data.warnings);
+        console.warn('⚠️ Warnings during deletion (non-blocking):', data.warnings);
       }
       
       // Return the data so the UI can use it
       return {
-        success: data.success,
-        message: data.message,
-        details: data.details,
+        success: true, // Always true at this point
+        message: data.message || 'User rejected and deleted successfully',
+        details: data.details || {},
         email: data.email,
-        deletedFrom: data.deletedFrom
+        deletedFrom: data.deletedFrom,
+        warnings: data.warnings || []
       };
     } catch (error: any) {
       console.error('❌ Error rejecting and deleting user:', error);

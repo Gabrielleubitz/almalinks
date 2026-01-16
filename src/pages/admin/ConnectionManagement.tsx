@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Download, Settings } from 'lucide-react';
 import AdminHeader from '../../components/admin/AdminHeader';
@@ -7,6 +7,33 @@ import AdminConnectionWidget from '../../components/admin/AdminConnectionWidget'
 
 const ConnectionManagement: React.FC = () => {
   const [activeView, setActiveView] = useState<'overview' | 'management'>('overview');
+
+  // Scroll to top synchronously before paint to prevent visible scroll jump
+  useLayoutEffect(() => {
+    // Capture scroll position before reset
+    const scrollBefore = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
+    
+    // Reset all possible scroll positions (order matters for compatibility)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+    
+    // Verify scroll was reset
+    const scrollAfter = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
+    
+    // Dev-only console log for verification
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[ConnectionManagement] Scroll reset:', {
+        target: 'window',
+        scrollBefore,
+        scrollAfter,
+        success: scrollAfter === 0,
+        windowScrollY: window.scrollY,
+        docElementScrollTop: document.documentElement.scrollTop,
+        bodyScrollTop: document.body.scrollTop
+      });
+    }
+  }, []);
 
   const handleExportStats = async () => {
     try {

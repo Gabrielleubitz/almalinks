@@ -657,17 +657,16 @@ const UserManagement: React.FC = () => {
 
         {/* Information Box */}
         <div className="mt-8 bg-gray-50 rounded-2xl p-6">
-          <h3 className="font-semibold text-gray-900 mb-3">👥 User Management Information:</h3>
           <div className="grid md:grid-cols-3 gap-6">
             <div>
-              <h4 className="font-medium text-gray-900 mb-2">User Roles:</h4>
+              <h4 className="font-semibold text-gray-900 mb-2">👥 User Management Information:</h4>
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• <strong>Member:</strong> Regular users who can register for events and access their dashboard</li>
                 <li>• <strong>Admin:</strong> Full access to all admin features including user management</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-medium text-gray-900 mb-2">User Actions:</h4>
+              <h4 className="font-semibold text-gray-900 mb-2">User Actions:</h4>
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• <strong>👁 View Profile:</strong> Click on any user row to view detailed profile information</li>
                 <li>• <strong>✏️ Edit User:</strong> Use the green edit button to modify user profile, role, and information</li>
@@ -678,7 +677,7 @@ const UserManagement: React.FC = () => {
               </ul>
             </div>
             <div>
-              <h4 className="font-medium text-gray-900 mb-2">Admin Tools:</h4>
+              <h4 className="font-semibold text-gray-900 mb-2">Admin Tools:</h4>
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• <strong>➕ Create User:</strong> Add new users with temporary passwords (no email invitation required)</li>
                 <li>• <strong>📤 Bulk Import:</strong> Import multiple users from CSV file with automatic credential generation</li>
@@ -688,8 +687,8 @@ const UserManagement: React.FC = () => {
             </div>
           </div>
           <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="md:col-span-1">
                 <h4 className="font-medium text-gray-900 mb-2">Security Notes:</h4>
                 <ul className="text-sm text-gray-600 space-y-1">
                   <li>• Role changes take effect immediately and are logged</li>
@@ -698,7 +697,7 @@ const UserManagement: React.FC = () => {
                   <li>• Temporary passwords must be changed on first login</li>
                 </ul>
               </div>
-              <div>
+              <div className="md:col-span-1 md:col-start-2">
                 <h4 className="font-medium text-gray-900 mb-2">Bulk Import Requirements:</h4>
                 <ul className="text-sm text-gray-600 space-y-1">
                   <li>• CSV format with email and name columns required</li>

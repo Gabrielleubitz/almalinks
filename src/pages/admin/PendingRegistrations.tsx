@@ -13,8 +13,7 @@ import {
   Briefcase, 
   Linkedin,
   ChevronDown,
-  Check,
-  Trash2
+  Check
 } from 'lucide-react';
 import { collection, getDocs, doc, updateDoc, query, where, orderBy, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../firebase/config';
@@ -353,146 +352,30 @@ const PendingRegistrations: React.FC = () => {
     setProcessingUser(userId);
     
     try {
-      console.log('🗑️ Starting reject and delete process for user:', userId);
-      console.log('🔍 Using server-side endpoint (Firebase Admin SDK required for Auth deletion)');
+      console.log('❌ Rejecting join request for user:', userId);
       
-      // IMPORTANT: This MUST be done server-side because:
-      // 1. Client-side code cannot delete Firebase Auth users (security restriction)
-      // 2. Only Admin SDK has permissions to delete Auth accounts
-      // 3. This is the ONLY way to free the email for re-signup
       const { JoinRequestService } = await import('../../services/joinRequestService');
-      const result = await JoinRequestService.rejectAndDeleteUser(userId, user.uid);
+      await JoinRequestService.rejectRequest(userId, user.uid);
       
-      console.log('✅ Reject and delete completed successfully');
-      console.log('✅ Deletion results:', result);
+      console.log('✅ Join request rejected successfully');
       
       // Update local state - remove from pending list immediately
       setPendingUsers(prev => prev.filter(u => u.uid !== userId));
       setFilteredUsers(prev => prev.filter(u => u.uid !== userId));
       
-      // Show detailed success message based on deletion results
-      const successMessage = result.details?.authUserDeleted 
-        ? 'User rejected and fully purged. They can now re-apply with the same email.'
-        : 'User rejected. Some cleanup operations had warnings - check console for details.';
-      showToast(successMessage, 'success');
-      
-      // Log what was deleted for admin visibility
-      if (result.deletedFrom && result.deletedFrom.length > 0) {
-        console.log('✅ Deleted from collections:', result.deletedFrom);
-      }
-      if (result.email) {
-        console.log(`✅ Email ${result.email} should now be available for re-signup`);
-      }
-      
-      // Verify critical deletion
-      if (!result.details?.authUserDeleted) {
-        console.error('⚠️ WARNING: Firebase Auth user was NOT deleted!');
-        console.error('⚠️ User will NOT be able to re-signup with the same email.');
-        showToast('Warning: Auth deletion may have failed. Check console for details.', 'error');
-      }
+      // Show success message
+      showToast('User rejected. They can log in again to submit a new request.', 'success');
     } catch (error: any) {
       console.error('❌ Error rejecting user:', error);
-      console.error('❌ Full error object:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-        unknownAction: error.unknownAction,
-        permissionError: error.permissionError
-      });
       
-      // Determine error message based on error type
-      let errorMessage = error.message || 'Failed to reject user. Please check console for details.';
-      
-      // Check if this is an "Unknown action" error (backend doesn't support the action)
-      if (error.unknownAction || error.message?.includes('Unknown action') || 
-          error.message?.includes("doesn't support reject-and-delete-user") ||
-          error.message?.includes('Backend not updated/deployed')) {
-        const availableActions = (error as any).availableActions || 'unknown';
-        errorMessage = 'Backend not updated/deployed: reject-and-delete-user action missing. ' +
-                      'The backend code needs to be redeployed. ' +
-                      `Available actions on server: ${availableActions}`;
-        
-        console.error('🚫 UNKNOWN ACTION ERROR DETECTED');
-        console.error('🚫 The backend does not recognize the "reject-and-delete-user" action.');
-        console.error('🚫 This means the backend code needs to be updated or redeployed.');
-        console.error('🚫 The action should be added to the switch statement in api/user-admin.js');
-        console.error('🚫 Received action:', (error as any).receivedAction || 'reject-and-delete-user');
-        console.error('🚫 Available actions on server:', availableActions);
-        console.error('🚫 DEPLOYMENT REQUIRED: Redeploy api/user-admin.js with the reject-and-delete-user case');
-      }
-      // Check if this is a permission error from the server
-      else if (error.permissionError || error.message?.includes('permission') || error.message?.includes('Backend lacks permission')) {
-        errorMessage = 'Reject failed: Backend lacks permission to delete Auth users. ' +
-                      'Service account needs "Firebase Authentication Admin" role. ' +
-                      'See console for details.';
-        
-        console.error('🚫 PERMISSION ERROR DETECTED');
-        console.error('🚫 The service account running the backend does not have permission to delete Firebase Auth users.');
-        console.error('🚫 Required action: Grant "Firebase Authentication Admin" role to the service account.');
-        console.error('🚫 See FIREBASE_AUTH_DELETION_PERMISSIONS.md for setup instructions.');
-      } 
-      // Check if this is a project configuration error
-      else if (error.message?.includes('project') || error.message?.includes('Project ID')) {
-        errorMessage = 'Reject failed: Firebase project configuration error. ' +
-                      'Verify backend is using the correct Firebase project. ' +
-                      'See console for details.';
-        
-        console.error('🚫 PROJECT CONFIGURATION ERROR');
-        console.error('🚫 The backend may be using a different Firebase project than the frontend.');
-        console.error('🚫 Verify FIREBASE_PROJECT_ID matches the frontend project.');
-      }
-      
+      const errorMessage = error.message || 'Failed to reject user. Please try again.';
       showToast(errorMessage, 'error');
-      
-      // Also log to console for admin debugging
-      console.error('🚫 Admin: Rejection failed. User may still exist in Firebase Auth.');
-      if (!error.unknownAction) {
-        console.error('🚫 Admin: Check server logs and verify Firebase Admin SDK is properly configured.');
-        console.error('🚫 Admin: Verify service account has permissions to delete Auth users.');
-      }
     } finally {
       setProcessingUser(null);
       setConfirmReject(null);
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!user?.uid) return;
-
-    setProcessingUser(userId);
-
-    try {
-      // Delete user from both Firebase Auth and Firestore using the API
-      const response = await fetch('/api/delete-user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userIdToDelete: userId,
-          adminId: user.uid
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete user');
-      }
-
-      console.log('✅ User deleted from both Auth and Firestore');
-
-      // Update local state
-      setPendingUsers(prev => prev.filter(u => u.uid !== userId));
-
-      showToast('User deleted successfully from Auth and Firestore', 'success');
-    } catch (error: any) {
-      console.error('❌ Error deleting user:', error);
-      showToast('Failed to delete user. Please try again.', 'error');
-    } finally {
-      setProcessingUser(null);
-      setConfirmReject(null);
-    }
-  };
 
   const sendApprovalSMS = async (userId: string) => {
     try {
@@ -851,14 +734,6 @@ const PendingRegistrations: React.FC = () => {
                                 <X className="h-5 w-5" />
                                 <span>Reject</span>
                               </button>
-                              <button
-                                onClick={() => handleDeleteUser(userData.uid)}
-                                disabled={processingUser === userData.uid}
-                                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center justify-center space-x-2 disabled:opacity-50"
-                              >
-                                <Trash2 className="h-5 w-5" />
-                                <span>Delete</span>
-                              </button>
                             </>
                           )}
                         </div>
@@ -875,8 +750,7 @@ const PendingRegistrations: React.FC = () => {
             <h3 className="font-semibold text-gray-900 mb-3">👥 Registration Approval Process:</h3>
             <ul className="text-sm text-gray-600 space-y-2">
               <li>• <strong>Approve:</strong> Grants access to the platform and sends an SMS notification</li>
-              <li>• <strong>Reject:</strong> Marks the user as rejected but keeps their data for reference</li>
-              <li>• <strong>Delete:</strong> Completely removes the user from the database</li>
+              <li>• <strong>Reject:</strong> Marks the request as rejected. The user can log in again to submit a new request</li>
               <li>• <strong>LinkedIn:</strong> Review the user's LinkedIn profile before approving</li>
               <li>• <strong>SMS Notification:</strong> Approved users receive an SMS notification automatically</li>
             </ul>

@@ -42,7 +42,7 @@ export interface UserProfile {
   
   // System fields
   role: 'member' | 'admin';
-  status: 'active' | 'pending' | 'suspended';
+  status: 'approved' | 'pending' | 'rejected' | 'active' | 'suspended'; // 'approved' is the canonical approved status
   createdAt: any; // Firestore timestamp
   updatedAt: any; // Firestore timestamp
   joinedAt?: any; // Firestore timestamp

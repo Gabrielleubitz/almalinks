@@ -51,6 +51,7 @@ const ChatViewPage: React.FC = () => {
   const { user } = useAuth();
   const { logChatMessage } = useActivityTracking();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   
   const [chat, setChat] = useState<ChatWithMembers | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -108,21 +109,25 @@ const ChatViewPage: React.FC = () => {
     };
   }, [user?.uid, chatId]);
 
+  // Prevent body scrolling when on chat page
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   // Auto-scroll to bottom when messages change or chatId changes
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length > 0 && messagesContainerRef.current) {
       // Use requestAnimationFrame to ensure DOM is updated
       requestAnimationFrame(() => {
         setTimeout(() => {
-          if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end', inline: 'nearest' });
+          // Scroll the messages container directly to the bottom
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
           }
-          // Also try scrolling the messages container directly
-          const messagesContainer = messagesEndRef.current?.closest('.overflow-y-auto');
-          if (messagesContainer) {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-          }
-        }, 200);
+        }, 100);
       });
     }
   }, [messages, chatId]);
@@ -489,7 +494,12 @@ const ChatViewPage: React.FC = () => {
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   };
 
   const renderChatIcon = (size: 'small' | 'medium' | 'large' | 'extra-large' = 'medium') => {
@@ -661,7 +671,7 @@ const ChatViewPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="h-screen bg-white flex flex-col overflow-hidden">
       <Header />
       <div className="flex-1 flex overflow-hidden pt-20" style={{ height: 'calc(100vh - 80px)' }}>
         {/* Chat Layout */}
@@ -841,7 +851,11 @@ const ChatViewPage: React.FC = () => {
                 backgroundPosition: '0 0, 200px 200px',
               }}
             />
-            <div className="flex-1 px-4 overflow-y-auto relative z-10" id="messages-container">
+            <div 
+              ref={messagesContainerRef}
+              className="flex-1 px-4 overflow-y-auto relative z-10" 
+              id="messages-container"
+            >
               <div className="max-w-3xl mx-auto">
                 <div className="py-3 space-y-0.5">
                   {messages.length === 0 && (

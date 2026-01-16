@@ -52,31 +52,53 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
       const viewportHeight = window.innerHeight;
       const pickerWidth = 280; // Approximate width of picker
       const pickerHeight = 60; // Approximate height of picker
+      const gap = 12; // Gap between message and picker
+      const margin = 16; // Minimum margin from viewport edges
       
       let left: number;
       let top: number;
       
-      if (isOwnMessage) {
-        // For own messages, align to right edge of bubble
-        left = Math.min(rect.right - pickerWidth, viewportWidth - pickerWidth - 16);
-        left = Math.max(16, left); // Ensure it doesn't go off left edge
+      // Try positioning to the right side of the message bubble first
+      const rightSideLeft = rect.right + gap;
+      const spaceOnRight = viewportWidth - rect.right;
+      
+      // Check if there's enough space on the right (picker width + gap + margin)
+      const enoughSpaceOnRight = spaceOnRight >= pickerWidth + gap + margin;
+      
+      if (enoughSpaceOnRight) {
+        // Position to the right of the message bubble (preferred)
+        left = rightSideLeft;
+        // Ensure it doesn't go off right edge
+        if (left + pickerWidth > viewportWidth - margin) {
+          left = viewportWidth - pickerWidth - margin;
+        }
       } else {
-        // For other messages, align to left edge of bubble
-        left = Math.max(rect.left, 16);
-        left = Math.min(left, viewportWidth - pickerWidth - 16); // Ensure it doesn't go off right edge
+        // Not enough space on right, position to the left instead
+        left = rect.left - pickerWidth - gap;
+        // Ensure it doesn't go off left edge
+        if (left < margin) {
+          left = margin;
+        }
+        // If even left positioning would be cut off, fall back to right with constraint
+        if (left < margin && rect.right + gap + margin < viewportWidth) {
+          left = rect.right + gap;
+          if (left + pickerWidth > viewportWidth - margin) {
+            left = viewportWidth - pickerWidth - margin;
+          }
+        }
       }
       
-      // Position above the message bubble
-      top = rect.top - pickerHeight - 8;
+      // Vertically align to the top of the message bubble
+      top = rect.top;
       
-      // If it would go off top, position below instead
-      if (top < 16) {
-        top = rect.bottom + 8;
+      // If it would go off top, adjust to stay within viewport
+      if (top < margin) {
+        top = margin;
       }
       
-      // Ensure it doesn't go off bottom
-      if (top + pickerHeight > viewportHeight - 16) {
-        top = viewportHeight - pickerHeight - 16;
+      // If it would go off bottom, adjust to stay within viewport
+      if (top + pickerHeight > viewportHeight - margin) {
+        top = Math.max(margin, viewportHeight - pickerHeight - margin);
       }
       
       setPickerPosition({ top, left });
@@ -257,7 +279,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
             {/* Action Buttons (shown on hover) */}
             {hovered && (
-              <div className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} -top-8 flex items-center gap-0.5 bg-white rounded border border-gray-200 shadow-lg p-0.5 z-30`}>
+              <div className="absolute top-1/2 -translate-y-1/2 flex items-center gap-0.5 bg-white rounded border border-gray-200 shadow-lg p-0.5 z-30 whitespace-nowrap" style={{ left: '100%', marginLeft: '8px' }}>
                 {onReaction && (
                   <button
                     onClick={(e) => {

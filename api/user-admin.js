@@ -1,40 +1,284 @@
 // User Admin API - Create, manage, and import users with temporary passwords
 import admin from 'firebase-admin';
+import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
+import { resolve, dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+// Load environment variables from .env.local and .env (for local dev and vercel dev)
+// This ensures GOOGLE_APPLICATION_CREDENTIALS is available when using vercel dev
+// Note: In Vercel production, env vars are loaded automatically, but vercel dev may need help
+// We try to load .env.local if it exists - this is safe because:
+// - In Vercel production, the file won't exist, so nothing loads
+// - In vercel dev, the file exists locally and should be loaded
+// - In local dev, the file exists and should be loaded
+try {
+  // Use dynamic import for dotenv (it's in devDependencies, might not be available in production)
+  const dotenvModule = await import('dotenv');
+  const { fileURLToPath } = await import('url');
+  const { dirname, join } = await import('path');
+  
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const projectRoot = resolve(__dirname, '..');
+  
+  // Try .env.local first, then .env
+  const envLocalPath = join(projectRoot, '.env.local');
+  const envPath = join(projectRoot, '.env');
+  
+  if (existsSync(envLocalPath)) {
+    dotenvModule.config({ path: envLocalPath });
+    console.log(`📁 Loaded environment from: ${envLocalPath}`);
+  } else if (existsSync(envPath)) {
+    dotenvModule.config({ path: envPath });
+    console.log(`📁 Loaded environment from: ${envPath}`);
+  } else {
+    // In production, this is expected - env vars come from platform
+    if (process.env.NODE_ENV === 'development' || !process.env.VERCEL) {
+      console.log('ℹ️ No .env.local or .env file found - relying on system environment variables');
+    }
+  }
+} catch (dotenvError) {
+  // dotenv might not be available (e.g., in production where it's not installed)
+  // This is expected in production where env vars are set by the platform
+  if (process.env.NODE_ENV === 'development' || !process.env.VERCEL) {
+    console.warn('⚠️ Could not load dotenv (this is okay if env vars are set another way):', dotenvError.message);
+  }
+}
+
+// Helper function to resolve credential file path with multiple fallbacks
+function resolveCredentialFilePath(credentialsPath) {
+  const __filename = fileURLToPath(import.meta.url);
+  const __fileDir = dirname(__filename);
+  const projectRootFromApi = resolve(__fileDir, '..'); // Go up from api/ to project root
+  const cwd = process.cwd();
+  
+  const candidatePaths = [];
+  
+  // If absolute path, use it directly
+  if (credentialsPath.startsWith('/')) {
+    candidatePaths.push(credentialsPath);
+  } else {
+    // Try resolving from process.cwd() (current working directory)
+    candidatePaths.push(resolve(cwd, credentialsPath));
+    
+    // Try resolving from project root (where api/ directory is)
+    candidatePaths.push(resolve(projectRootFromApi, credentialsPath));
+    
+    // Try with __dirname fallback (from api/ directory)
+    candidatePaths.push(resolve(__fileDir, '..', credentialsPath.replace(/^\.\//, '')));
+  }
+  
+  // Additional fallback: if path ends with a directory, try common filenames
+  if (credentialsPath.endsWith('/') || credentialsPath.endsWith('/secrets')) {
+    const dirPath = credentialsPath.endsWith('/') ? credentialsPath.slice(0, -1) : credentialsPath;
+    candidatePaths.push(resolve(cwd, dirPath, 'serviceAccount.json'));
+    candidatePaths.push(resolve(projectRootFromApi, dirPath, 'serviceAccount.json'));
+  }
+  
+  // Fallback: try secrets directory with common filename
+  if (credentialsPath.includes('secrets')) {
+    candidatePaths.push(resolve(projectRootFromApi, 'secrets', 'serviceAccount.json'));
+    candidatePaths.push(resolve(cwd, 'secrets', 'serviceAccount.json'));
+  }
+  
+  // Remove duplicates
+  const uniquePaths = [...new Set(candidatePaths)];
+  
+  return uniquePaths;
+}
+
+// Helper function to find first existing credential file
+function findCredentialFile(credentialsPath) {
+  const candidatePaths = resolveCredentialFilePath(credentialsPath);
+  const checkedPaths = [];
+  
+  console.log(`🔍 Searching for credential file. Candidates:`);
+  
+  for (const candidatePath of candidatePaths) {
+    checkedPaths.push({ path: candidatePath, exists: existsSync(candidatePath) });
+    console.log(`  - ${candidatePath} ${existsSync(candidatePath) ? '✅ EXISTS' : '❌ missing'}`);
+    
+    if (existsSync(candidatePath)) {
+      // If it's a directory, try to find a JSON file in it
+      try {
+        const stats = statSync(candidatePath);
+        if (stats.isDirectory()) {
+          const files = readdirSync(candidatePath);
+          const jsonFiles = files.filter(f => f.endsWith('.json') && f.includes('firebase'));
+          if (jsonFiles.length > 0) {
+            const foundFile = join(candidatePath, jsonFiles[0]);
+            console.log(`  ✅ Found JSON file in directory: ${foundFile}`);
+            return { path: foundFile, checkedPaths };
+          }
+        } else {
+          // It's a file, return it
+          console.log(`  ✅ Using credential file: ${candidatePath}`);
+          return { path: candidatePath, checkedPaths };
+        }
+      } catch (statError) {
+        // Continue to next candidate
+        continue;
+      }
+    }
+  }
+  
+  // If no file found, try to find any firebase admin SDK JSON file in secrets directory
+  const secretsDirs = [
+    resolve(process.cwd(), 'secrets'),
+    resolve(dirname(fileURLToPath(import.meta.url)), '..', 'secrets')
+  ];
+  
+  for (const secretsDir of secretsDirs) {
+    if (existsSync(secretsDir)) {
+      try {
+        const files = readdirSync(secretsDir);
+        const jsonFiles = files.filter(f => 
+          f.endsWith('.json') && 
+          (f.includes('firebase-adminsdk') || f === 'serviceAccount.json')
+        );
+        if (jsonFiles.length > 0) {
+          const foundFile = join(secretsDir, jsonFiles[0]);
+          console.log(`  ✅ Found Firebase credential file in secrets directory: ${foundFile}`);
+          checkedPaths.push({ path: foundFile, exists: true });
+          return { path: foundFile, checkedPaths };
+        }
+      } catch (readError) {
+        // Continue
+      }
+    }
+  }
+  
+  return { path: null, checkedPaths };
+}
+
+// Store credential file resolution info for diagnostics
+let credentialFileInfo = {
+  resolvedPath: null,
+  fileExists: false,
+  checkedPaths: []
+};
 
 // Initialize Firebase Admin (reuse existing instance if available)
 if (!admin.apps.length) {
   try {
+    // Safe logging before initialization (no secrets)
+    console.log('🔍 Firebase Admin initialization check:');
+    console.log(`  - FIREBASE_SERVICE_ACCOUNT_KEY set: ${!!process.env.FIREBASE_SERVICE_ACCOUNT_KEY}`);
+    console.log(`  - GOOGLE_APPLICATION_CREDENTIALS set: ${!!process.env.GOOGLE_APPLICATION_CREDENTIALS}`);
+    console.log(`  - Admin apps already initialized: ${admin.apps.length > 0}`);
+    
     let serviceAccountKey;
     let projectId;
     let clientEmail;
+    let credentialSource = 'unknown';
+    let credentialFilePath = null;
+    let checkedPaths = [];
     
-    // Try to use service account key from environment variable (Vercel production)
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+    // Priority 1: GOOGLE_APPLICATION_CREDENTIALS (file path) - safest for local dev
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      credentialSource = 'GOOGLE_APPLICATION_CREDENTIALS (file)';
+      const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+      
+      console.log(`📋 Using credentials from: ${credentialSource}`);
+      console.log(`📁 Original path from env: ${credentialsPath}`);
+      
+      // Try to find the credential file using multiple strategies
+      const fileResult = findCredentialFile(credentialsPath);
+      credentialFilePath = fileResult.path;
+      checkedPaths = fileResult.checkedPaths;
+      
+      // Store for diagnostics
+      credentialFileInfo.resolvedPath = credentialFilePath;
+      credentialFileInfo.fileExists = !!credentialFilePath;
+      credentialFileInfo.checkedPaths = checkedPaths;
+      
+      if (!credentialFilePath) {
+        const errorMsg = `Credential file not found. Expected at: ${credentialsPath}. Please confirm the file exists.`;
+        console.error(`❌ ${errorMsg}`);
+        console.error(`   Checked ${checkedPaths.length} candidate paths, none exist.`);
+        throw new Error(errorMsg);
+      }
+      
+      try {
+        const fileContent = readFileSync(credentialFilePath, 'utf8');
+        serviceAccountKey = JSON.parse(fileContent);
+        
+        // Validate required fields
+        if (!serviceAccountKey.project_id || !serviceAccountKey.client_email || !serviceAccountKey.private_key) {
+          throw new Error(`Service account file at ${credentialFilePath} is missing required fields (project_id, client_email, or private_key)`);
+        }
+        
+        projectId = serviceAccountKey.project_id;
+        clientEmail = serviceAccountKey.client_email;
+        
+        console.log(`✅ Successfully loaded service account from file: ${credentialFilePath}`);
+        console.log(`📋 Project ID: ${projectId}`);
+        console.log(`📧 Service Account Email: ${clientEmail}`);
+        
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccountKey),
+        });
+      } catch (fileError) {
+        if (fileError.code === 'ENOENT' || fileError.message.includes('not found')) {
+          console.error(`❌ Service account file not found at: ${credentialFilePath}`);
+          throw new Error(`Credential file not found. Expected at: ${credentialFilePath}. Please confirm the file exists.`);
+        } else if (fileError instanceof SyntaxError) {
+          console.error(`❌ Service account file is not valid JSON: ${fileError.message}`);
+          throw new Error(`Service account file at ${credentialFilePath} is not valid JSON: ${fileError.message}`);
+        } else {
+          console.error(`❌ Failed to read service account file: ${fileError.message}`);
+          throw fileError; // Re-throw if it's our validation error
+        }
+      }
+    } 
+    // Priority 2: FIREBASE_SERVICE_ACCOUNT_KEY (JSON string or base64-encoded JSON)
+    // Only use this if GOOGLE_APPLICATION_CREDENTIALS is not set
+    else if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      credentialSource = 'FIREBASE_SERVICE_ACCOUNT_KEY (env var)';
+      console.log(`📋 Using credentials from: ${credentialSource}`);
+      
       const rawKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
       try {
-        // Try parsing as JSON first
-        serviceAccountKey = JSON.parse(rawKey);
-      } catch (jsonError) {
-        // If JSON parse fails, try decoding from base64
-        try {
+        // Try parsing as JSON first (if it starts with {)
+        if (rawKey.trim().startsWith('{')) {
+          serviceAccountKey = JSON.parse(rawKey);
+          console.log('✅ Parsed FIREBASE_SERVICE_ACCOUNT_KEY as JSON');
+        } else {
+          // Try decoding from base64
           console.log('🔍 Attempting to decode base64-encoded credentials...');
           const decodedKey = Buffer.from(rawKey, 'base64').toString('utf8');
           serviceAccountKey = JSON.parse(decodedKey);
           console.log('✅ Successfully decoded base64 credentials');
-        } catch (base64Error) {
-          throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is neither valid JSON nor valid base64-encoded JSON');
         }
-      }
-      
-      projectId = serviceAccountKey.project_id;
-      clientEmail = serviceAccountKey.client_email;
+        
+        // Validate required fields
+        if (!serviceAccountKey.project_id || !serviceAccountKey.client_email || !serviceAccountKey.private_key) {
+          throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is missing required fields (project_id, client_email, or private_key)');
+        }
+        
+        projectId = serviceAccountKey.project_id;
+        clientEmail = serviceAccountKey.client_email;
 
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccountKey),
-      });
-    } else {
-      // Fallback to individual environment variables (local development)
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccountKey),
+        });
+      } catch (parseError) {
+        console.error(`❌ Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY: ${parseError.message}`);
+        
+        // If GOOGLE_APPLICATION_CREDENTIALS is also set, suggest using it instead
+        if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+          throw new Error(`FIREBASE_SERVICE_ACCOUNT_KEY is invalid (${parseError.message}). Since GOOGLE_APPLICATION_CREDENTIALS is also set, unset FIREBASE_SERVICE_ACCOUNT_KEY to use the file-based credentials.`);
+        }
+        
+        throw new Error(`FIREBASE_SERVICE_ACCOUNT_KEY is neither valid JSON nor valid base64-encoded JSON: ${parseError.message}`);
+      }
+    }
+    // Priority 3: Individual environment variables (fallback)
+    else if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+      credentialSource = 'Individual env vars (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY)';
+      console.log(`📋 Using credentials from: ${credentialSource}`);
+      
       projectId = process.env.FIREBASE_PROJECT_ID;
       clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
       
@@ -46,25 +290,58 @@ if (!admin.apps.length) {
         }),
       });
     }
+    // No credentials found
+    else {
+      const errorMsg = 'Firebase Admin credentials not found. Set one of:\n' +
+        '  - GOOGLE_APPLICATION_CREDENTIALS (path to service account JSON file) - RECOMMENDED for local dev\n' +
+        '  - FIREBASE_SERVICE_ACCOUNT_KEY (JSON string or base64-encoded JSON)\n' +
+        '  - FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY (individual env vars)';
+      
+      console.error('❌', errorMsg);
+      throw new Error(errorMsg);
+    }
     
-    // Log initialization details for debugging
-    console.log('✅ Firebase Admin SDK initialized');
-    console.log(`📋 Project ID: ${projectId || admin.app().options.projectId || 'NOT SET'}`);
+    // Verify initialization succeeded
+    if (!admin.apps.length) {
+      throw new Error('Firebase Admin initialization appeared to succeed but no app was created');
+    }
+    
+    // Get actual project ID from initialized app
+    const actualProjectId = admin.app().options.projectId;
+    
+    // Log successful initialization details for debugging
+    console.log('✅ Firebase Admin SDK initialized successfully');
+    console.log(`📋 Credential source: ${credentialSource}`);
+    console.log(`📋 Project ID: ${actualProjectId || projectId || 'NOT SET'}`);
     console.log(`📧 Service Account: ${clientEmail || 'NOT SET'}`);
-    console.log(`🌍 GCLOUD_PROJECT: ${process.env.GCLOUD_PROJECT || 'NOT SET'}`);
-    console.log(`🔑 FIREBASE_PROJECT_ID: ${process.env.FIREBASE_PROJECT_ID || 'NOT SET'}`);
   } catch (error) {
-    console.error('❌ Failed to initialize Firebase Admin:', error);
+    console.error('❌ Failed to initialize Firebase Admin:', error.message);
     console.error('❌ Error details:', {
       message: error.message,
-      stack: error.stack
+      code: error.code,
+      // Don't log stack in production to avoid exposing paths
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
-    throw error;
+    // Don't throw here - let the handler catch it and return proper error response
+    // This prevents the entire module from crashing
   }
 }
 
-const db = admin.firestore();
-const auth = admin.auth();
+// Initialize Firestore and Auth only if Admin SDK is initialized
+let db = null;
+let auth = null;
+
+if (admin.apps.length > 0) {
+  try {
+    db = admin.firestore();
+    auth = admin.auth();
+    console.log('✅ Firestore and Auth instances initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize Firestore/Auth:', error.message);
+  }
+} else {
+  console.warn('⚠️ Firebase Admin not initialized - Firestore and Auth unavailable');
+}
 
 // In-memory cache for member locations (public endpoint)
 let cachedLocations = null;
@@ -77,17 +354,101 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true });
   }
 
-  // Handle GET request for member locations (public endpoint, no auth required)
-  // Check both req.url (for dev-server) and req.query (for Vercel)
-  if (req.method === 'GET' && (req.url?.includes('locations') || req.query?.locations !== undefined)) {
-    return await getUserLocations(req, res);
+  // Handle GET request for debugging/info (works even if Firebase Admin not initialized)
+  if (req.method === 'GET') {
+    // Check if this is a locations request
+    if (req.url?.includes('locations') || req.query?.locations !== undefined) {
+      // Locations endpoint needs Firebase Admin
+      if (!admin.apps.length || !db || !auth) {
+        console.error('❌ Firebase Admin not initialized - cannot fetch locations');
+        return res.status(500).json({
+          success: false,
+          error: 'Firebase Admin SDK not initialized',
+          message: 'Check server logs for credential configuration errors'
+        });
+      }
+      return await getUserLocations(req, res);
+    }
+    
+    // Regular GET request - return API info
+    const availableActions = [
+      'create-user',
+      'bulk-import',
+      'force-password-reset',
+      'update-user',
+      'get-audit-logs',
+      'get-capabilities',
+      'reject-and-delete-user'
+    ];
+    
+    const isInitialized = admin.apps.length > 0 && db && auth;
+    let projectId = null;
+    
+    if (isInitialized && admin.apps.length > 0) {
+      try {
+        projectId = admin.app().options.projectId;
+      } catch (e) {
+        console.warn('Could not get projectId from admin app:', e.message);
+      }
+    }
+    
+    // Update credential file info if GOOGLE_APPLICATION_CREDENTIALS is set but not yet resolved
+    let credentialDiagnostics = {
+      FIREBASE_SERVICE_ACCOUNT_KEY: !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY,
+      GOOGLE_APPLICATION_CREDENTIALS: process.env.GOOGLE_APPLICATION_CREDENTIALS || null,
+      GOOGLE_APPLICATION_CREDENTIALS_resolvedPath: null,
+      GOOGLE_APPLICATION_CREDENTIALS_fileExists: false,
+      GOOGLE_APPLICATION_CREDENTIALS_checkedPaths: [],
+      individualEnvVars: !!(process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY)
+    };
+    
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      // Use stored info if available, otherwise try to resolve now
+      if (credentialFileInfo.resolvedPath !== null) {
+        credentialDiagnostics.GOOGLE_APPLICATION_CREDENTIALS_resolvedPath = credentialFileInfo.resolvedPath;
+        credentialDiagnostics.GOOGLE_APPLICATION_CREDENTIALS_fileExists = credentialFileInfo.fileExists;
+        credentialDiagnostics.GOOGLE_APPLICATION_CREDENTIALS_checkedPaths = credentialFileInfo.checkedPaths;
+      } else {
+        // Try to resolve now for diagnostics (don't initialize, just check)
+        const fileResult = findCredentialFile(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+        credentialDiagnostics.GOOGLE_APPLICATION_CREDENTIALS_resolvedPath = fileResult.path;
+        credentialDiagnostics.GOOGLE_APPLICATION_CREDENTIALS_fileExists = !!fileResult.path;
+        credentialDiagnostics.GOOGLE_APPLICATION_CREDENTIALS_checkedPaths = fileResult.checkedPaths;
+      }
+    }
+    
+    return res.status(200).json({
+      ok: true,
+      availableActions,
+      firebaseAdminInitialized: isInitialized,
+      projectId: projectId,
+      message: isInitialized 
+        ? 'User Admin API is running. Use POST with action and adminId for admin operations.'
+        : 'User Admin API is running but Firebase Admin is not initialized. Check server logs for credential configuration errors.',
+      credentialSources: credentialDiagnostics
+    });
+  }
+
+  // For POST requests, Firebase Admin must be initialized
+  if (!admin.apps.length || !db || !auth) {
+    console.error('❌ Firebase Admin not initialized - cannot process request');
+    console.error(`  - admin.apps.length: ${admin.apps.length}`);
+    console.error(`  - db available: ${!!db}`);
+    console.error(`  - auth available: ${!!auth}`);
+    return res.status(500).json({
+      success: false,
+      error: 'Firebase Admin SDK not initialized',
+      message: 'Check server logs for credential configuration errors',
+      availableActions: []
+    });
   }
 
   // Only allow POST requests for admin actions
   if (req.method !== 'POST') {
     return res.status(405).json({
       success: false,
-      error: 'Method not allowed'
+      error: 'Method not allowed',
+      allowedMethods: ['GET', 'POST', 'OPTIONS']
     });
   }
 
@@ -1131,6 +1492,7 @@ async function rejectAndDeleteUser(req, res, adminId) {
     }
 
     return res.status(200).json({
+      ok: true,
       success: true,
       message: 'User rejected and completely purged from the system. They can now re-apply with the same email.',
       details: deletionResults,

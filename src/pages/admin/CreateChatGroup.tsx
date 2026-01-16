@@ -74,16 +74,51 @@ const CreateChatGroup: React.FC = () => {
   }, [isAdmin, user?.uid, navigate, authLoading]);
 
   const loadUsers = async () => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      console.warn('⚠️ Cannot load users: user not authenticated');
+      setUsersLoading(false);
+      return;
+    }
 
     try {
       setUsersLoading(true);
-      // Get all users for the admin to choose from
+      setError(null); // Clear previous errors
+      console.log('📥 Loading users for Create Chat Group...');
+      console.log('👤 Current user:', { uid: user.uid, role: user.role, isAdmin });
+      
+      // Get all approved users for the admin to choose from
       const allUsers = await UserService.getAllMembersForDirectory(user.uid, user.role);
+      
+      console.log(`✅ Loaded ${allUsers.length} users for selection`);
+      
+      if (allUsers.length === 0) {
+        console.warn('⚠️ No users found. Possible reasons:');
+        console.warn('   - No users have status === "approved"');
+        console.warn('   - Firestore query returned empty');
+        console.warn('   - Permission issue (check Firestore rules)');
+      }
+      
       setUsers(allUsers);
-    } catch (err) {
+    } catch (err: any) {
       console.error('❌ Error loading users:', err);
-      setError('Failed to load users');
+      console.error('❌ Error details:', {
+        code: err.code,
+        message: err.message,
+        stack: err.stack
+      });
+      
+      // Provide user-friendly error messages
+      let errorMessage = 'Failed to load users';
+      
+      if (err.message?.includes('Permission denied') || err.code === 'permission-denied') {
+        errorMessage = 'Permission denied: Unable to load users. Please ensure you are logged in as an admin and Firestore rules allow reading users.';
+      } else if (err.message?.includes('index') || err.code === 'failed-precondition') {
+        errorMessage = 'Missing Firestore index. The query requires a composite index. Check the browser console for a link to create it.';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setUsersLoading(false);
     }
@@ -150,13 +185,25 @@ const CreateChatGroup: React.FC = () => {
   };
 
   const filteredUsers = users.filter(user => {
+    if (!searchQuery.trim()) {
+      return true; // Show all users when search is empty
+    }
+    
     const query = searchQuery.toLowerCase();
+    const displayName = (user.displayName || '').toLowerCase();
+    const firstName = (user.firstName || '').toLowerCase();
+    const lastName = (user.lastName || '').toLowerCase();
+    const title = (user.title || '').toLowerCase();
+    const company = (user.company || '').toLowerCase();
+    const email = (user.email || '').toLowerCase();
+    
     return (
-      user.displayName.toLowerCase().includes(query) ||
-      user.firstName?.toLowerCase().includes(query) ||
-      user.lastName?.toLowerCase().includes(query) ||
-      user.title?.toLowerCase().includes(query) ||
-      user.company?.toLowerCase().includes(query)
+      displayName.includes(query) ||
+      firstName.includes(query) ||
+      lastName.includes(query) ||
+      title.includes(query) ||
+      company.includes(query) ||
+      email.includes(query)
     );
   });
 
@@ -486,6 +533,7 @@ const CreateChatGroup: React.FC = () => {
                 <h2 className="text-lg font-semibold text-gray-900">Select Members</h2>
                 <div className="text-sm text-gray-600">
                   {formData.initialAdmins.length + formData.seedMembers.length} selected
+                  {users.length > 0 && ` of ${users.length} available`}
                 </div>
               </div>
 
@@ -503,15 +551,68 @@ const CreateChatGroup: React.FC = () => {
                 </div>
               </div>
 
+              {/* Error Display */}
+              {error && (
+                <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-start space-x-2">
+                    <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-red-800 text-sm font-medium mb-1">Error loading users</p>
+                      <p className="text-red-700 text-xs">{error}</p>
+                      <p className="text-red-600 text-xs mt-2">Check the browser console for details.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Users List */}
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {usersLoading ? (
-                  <div className="flex items-center justify-center py-8">
+                  <div className="flex flex-col items-center justify-center py-8">
                     <LoadingSpinner size="md" color="border-blue-600" />
+                    <p className="text-sm text-gray-500 mt-4">Loading users...</p>
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-8">
+                    <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+                    <p className="text-gray-600 font-medium mb-2">Unable to load users</p>
+                    <p className="text-sm text-gray-500">{error}</p>
+                    <button
+                      onClick={loadUsers}
+                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                    >
+                      Retry
+                    </button>
                   </div>
                 ) : filteredUsers.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    {searchQuery ? 'No users found matching your search' : 'No users available'}
+                  <div className="text-center py-8">
+                    {searchQuery ? (
+                      <>
+                        <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600 font-medium mb-1">No users found matching your search</p>
+                        <p className="text-sm text-gray-500">Try a different search term</p>
+                      </>
+                    ) : users.length === 0 ? (
+                      <>
+                        <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600 font-medium mb-1">No users available</p>
+                        <p className="text-sm text-gray-500">
+                          No approved users found. Users must have status === 'approved' to appear here.
+                        </p>
+                        <button
+                          onClick={loadUsers}
+                          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                        >
+                          Refresh
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600 font-medium mb-1">No users match your search</p>
+                        <p className="text-sm text-gray-500">Try a different search term</p>
+                      </>
+                    )}
                   </div>
                 ) : (
                   filteredUsers.map((u) => {
@@ -521,12 +622,12 @@ const CreateChatGroup: React.FC = () => {
                     return (
                       <div key={u.uid} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                            {u.displayName.charAt(0).toUpperCase()}
+                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium text-gray-600">
+                            {(u.displayName || u.firstName || u.email || '?').charAt(0).toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900">
-                              {u.displayName}
+                              {u.displayName || u.firstName || u.email || 'Unknown User'}
                               {isCurrentUser && ' (You)'}
                             </p>
                             <p className="text-xs text-gray-500 truncate">

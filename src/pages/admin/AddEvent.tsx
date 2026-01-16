@@ -127,7 +127,7 @@ const AddEvent: React.FC = () => {
             className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
           >
             <ArrowLeft className="h-5 w-5" />
-            <span>Back to Event Management</span>
+            <span>Back to Admin Tools</span>
           </button>
         </div>
 

@@ -31,7 +31,8 @@ const LoginPage: React.FC = () => {
       if (isPending) {
         navigate('/pending');
       } else if (isRejected) {
-        setStatusMessage('Your account application was not approved. Please contact us for more information.');
+        // Redirect rejected users to re-request access page
+        navigate('/re-request-access');
       } else if (checkProfileComplete()) {
         navigate('/events');
       } else {

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { 
   Calendar, 
   Users, 
-  MessageSquare, 
+  Mail,
   MessageCircle,
   UserCog, 
   Megaphone, 
@@ -27,6 +27,8 @@ import AdminHeader from '../../components/admin/AdminHeader';
 import StatsCards from '../../components/admin/StatsCards';
 import UserListModal from '../../components/admin/UserListModal';
 import IganiWatermark from '../../components/IganiWatermark';
+import { sendAdminEmail } from '../../services/emailService';
+import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/admin/EmailRecipientAutocomplete';
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -48,13 +50,23 @@ const AdminDashboard: React.FC = () => {
   const [modalUsers, setModalUsers] = useState<any[]>([]);
   const [modalTitle, setModalTitle] = useState('');
   
-  // SMS state
-  const [smsMessage, setSmsMessage] = useState('');
-  const [smsRecipientGroup, setSmsRecipientGroup] = useState<'all' | 'registered' | 'pending'>('all');
-  const [smsRecipientCount, setSmsRecipientCount] = useState(0);
-  const [smsLoading, setSmsLoading] = useState(false);
-  const [smsError, setSmsError] = useState<string | null>(null);
-  const [smsSuccess, setSmsSuccess] = useState<string | null>(null);
+  // Email state
+  const [emailRecipients, setEmailRecipients] = useState('');
+  const [emailRecipientObjects, setEmailRecipientObjects] = useState<EmailRecipient[]>([]);
+
+  // DEV LOG: Track email recipients state changes
+  React.useEffect(() => {
+    console.log('[AdminDashboard] TO STATE NOW (emailRecipients string):', emailRecipients);
+  }, [emailRecipients]);
+
+  React.useEffect(() => {
+    console.log('[AdminDashboard] TO STATE NOW (emailRecipientObjects):', emailRecipientObjects.map(r => r.email));
+  }, [emailRecipientObjects]);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailMessage, setEmailMessage] = useState('');
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
 
   // Load events on component mount
   useEffect(() => {
@@ -80,10 +92,6 @@ const AdminDashboard: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
 
-  // Update SMS recipient count when event or group changes
-  useEffect(() => {
-    updateSmsRecipientCount();
-  }, [selectedEventId, smsRecipientGroup, registrations]);
 
   // Load stats and registrations for selected event
   useEffect(() => {
@@ -138,14 +146,12 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  // Get count of pending users
+  // Get count of pending users (from joinRequests collection)
   const getPendingUsersCount = async (): Promise<number> => {
     try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('status', '==', 'pending'));
-      const snapshot = await getDocs(q);
-      
-      return snapshot.size;
+      const { JoinRequestService } = await import('../../services/joinRequestService');
+      const pendingRequests = await JoinRequestService.getPendingRequests();
+      return pendingRequests.length;
     } catch (error) {
       console.error('❌ Error getting pending users count:', error);
       return 0;
@@ -158,135 +164,61 @@ const AdminDashboard: React.FC = () => {
     setSelectedEventId(eventId);
   };
 
-  // SMS helper functions
-  const updateSmsRecipientCount = async () => {
-    if (!selectedEventId || !registrations.length) {
-      setSmsRecipientCount(0);
+  // Email helper functions
+  const sendQuickEmail = async () => {
+    if (emailRecipientObjects.length === 0 && !emailRecipients.trim()) {
+      setEmailError('Please enter recipient email(s)');
       return;
     }
+
+    if (!emailSubject.trim() && !selectedEventId) {
+      setEmailError('Please enter a subject');
+      return;
+    }
+
+    if (!emailMessage.trim()) {
+      setEmailError('Please enter a message');
+      return;
+    }
+
+    setEmailLoading(true);
+    setEmailError(null);
+    setEmailSuccess(null);
 
     try {
-      let filteredUsers = registrations;
+      // Use recipient objects if available, otherwise parse string
+      const recipientList = emailRecipientObjects.length > 0
+        ? emailRecipientObjects.map(r => r.email)
+        : emailRecipients.split(',').map(email => email.trim()).filter(email => email);
 
-      switch (smsRecipientGroup) {
-        case 'all':
-          filteredUsers = registrations;
-          break;
-        case 'registered':
-          filteredUsers = registrations.filter(reg => !reg.checkedIn);
-          break;
-        case 'pending':
-          filteredUsers = registrations.filter(reg => reg.status === 'pending');
-          break;
+      if (recipientList.length === 0) {
+        setEmailError('Please enter at least one valid email address');
+        setEmailLoading(false);
+        return;
       }
 
-      // Filter out users without phone numbers
-      const usersWithPhones = filteredUsers.filter(user => user.phone && user.phone.trim());
-      setSmsRecipientCount(usersWithPhones.length);
-    } catch (error) {
-      console.error('❌ Error counting SMS recipients:', error);
-      setSmsRecipientCount(0);
-    }
-  };
-
-  const sendQuickSMS = async () => {
-    if (!selectedEventId) {
-      setSmsError('Please select an event');
-      return;
-    }
-
-    if (!smsMessage.trim()) {
-      setSmsError('Please enter a message');
-      return;
-    }
-
-    if (smsMessage.length > 300) {
-      setSmsError('Message must be 300 characters or less');
-      return;
-    }
-
-    if (smsRecipientCount === 0) {
-      setSmsError('No recipients found for the selected group');
-      return;
-    }
-
-    setSmsLoading(true);
-    setSmsError(null);
-    setSmsSuccess(null);
-
-    try {
-      let filteredUsers = registrations;
-
-      switch (smsRecipientGroup) {
-        case 'all':
-          filteredUsers = registrations;
-          break;
-        case 'registered':
-          filteredUsers = registrations.filter(reg => !reg.checkedIn);
-          break;
-        case 'pending':
-          filteredUsers = registrations.filter(reg => reg.status === 'pending');
-          break;
-      }
-
-      // Filter out users without phone numbers and deduplicate
-      const usersWithPhones = filteredUsers.filter(user => user.phone && user.phone.trim());
-      const uniquePhones = new Set<string>();
-      const uniqueUsers = usersWithPhones.filter(user => {
-        const normalizedPhone = user.phone.replace(/\D/g, '');
-        if (uniquePhones.has(normalizedPhone)) {
-          return false;
-        }
-        uniquePhones.add(normalizedPhone);
-        return true;
+      const result = await sendAdminEmail({
+        to: recipientList,
+        subject: emailSubject.trim() || (selectedEventId ? `Update for ${selectedEvent?.name || 'event'}` : ''),
+        message: emailMessage.trim(),
+        eventId: selectedEventId || undefined
       });
 
-      console.log(`📱 Sending SMS to ${uniqueUsers.length} unique recipients`);
-
-      let successCount = 0;
-      let failureCount = 0;
-
-      // Send SMS to each user via API endpoint
-      for (const user of uniqueUsers) {
-        try {
-          const response = await fetch('/api/send-sms', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: user.phone,
-              body: smsMessage
-            })
-          });
-
-          if (response.ok) {
-            successCount++;
-          } else {
-            failureCount++;
-          }
-        } catch (error) {
-          failureCount++;
-          console.error(`❌ Failed to send SMS to ${user.name}:`, error);
-        }
-
-        // Small delay between messages
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-
-      // Show results
-      if (successCount > 0 && failureCount === 0) {
-        setSmsSuccess(`✅ Successfully sent ${successCount} messages!`);
-        setSmsMessage(''); // Clear form on success
-      } else if (successCount > 0 && failureCount > 0) {
-        setSmsSuccess(`⚠️ Sent ${successCount} messages successfully, ${failureCount} failed.`);
+      if (result.success) {
+        setEmailSuccess('Email sent successfully! (Note: Currently stubbed - Mailchimp integration pending)');
+        // Clear form on success
+        setEmailRecipients('');
+        setEmailRecipientObjects([]);
+        setEmailSubject('');
+        setEmailMessage('');
       } else {
-        setSmsError(`❌ All ${failureCount} messages failed to send.`);
+        setEmailError(result.error || 'Failed to send email');
       }
-
     } catch (error: any) {
-      console.error('❌ SMS sending error:', error);
-      setSmsError(`Failed to send messages: ${error.message}`);
+      console.error('❌ Email sending error:', error);
+      setEmailError(`Failed to send email: ${error.message || 'Unknown error'}`);
     } finally {
-      setSmsLoading(false);
+      setEmailLoading(false);
     }
   };
 
@@ -545,16 +477,16 @@ const AdminDashboard: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">📢 Communication</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <Link
-                to="/admin/sms"
+                to="/admin/email"
                 className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift"
               >
                 <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
-                    <MessageSquare className="h-8 w-8 text-brand-light" />
+                    <Mail className="h-8 w-8 text-brand-light" />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="text-lg font-semibold text-gray-900">SMS Messages</h4>
-                    <p className="text-gray-600 text-sm">Send messages to members</p>
+                    <h4 className="text-lg font-semibold text-gray-900">Email Messages</h4>
+                    <p className="text-gray-600 text-sm">Send emails to members</p>
                   </div>
                 </div>
               </Link>
@@ -729,105 +661,116 @@ const AdminDashboard: React.FC = () => {
           )}
         </div>
 
-        {/* Quick SMS Section - Only show if event is selected */}
-        {selectedEventId && (
-          <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Quick SMS</h2>
-              <MessageSquare className="h-6 w-6 text-brand-light" />
+        {/* Quick Email Section */}
+        <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Quick Email</h2>
+            <Mail className="h-6 w-6 text-brand-light" />
+          </div>
+
+          {/* Email Error Message */}
+          {emailError && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-3">
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+              <p className="text-red-600 text-sm">{emailError}</p>
+            </div>
+          )}
+
+          {/* Email Success Message */}
+          {emailSuccess && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center space-x-3">
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+              <p className="text-green-600 text-sm">{emailSuccess}</p>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {/* To (Recipients) */}
+            <div>
+              <label htmlFor="email-recipients" className="block text-sm font-medium text-gray-700 mb-2">
+                To (Email Addresses) *
+              </label>
+              <EmailRecipientAutocomplete
+                id="email-recipients"
+                value={emailRecipients}
+                onChange={(newValue) => {
+                  console.log('[AdminDashboard] onChange called with:', newValue);
+                  setEmailRecipients(newValue);
+                }}
+                onRecipientsChange={(recipientObjs) => {
+                  console.log('[AdminDashboard] onRecipientsChange called with:', recipientObjs.map(r => r.email));
+                  setEmailRecipientObjects(recipientObjs);
+                }}
+                placeholder="Start typing to search members or enter email addresses..."
+                disabled={emailLoading}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Type to search approved members, or enter email addresses (comma-separated). Select from suggestions or paste multiple emails.
+              </p>
             </div>
 
-            {/* SMS Error Message */}
-            {smsError && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-3">
-                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-                <p className="text-red-600 text-sm">{smsError}</p>
-              </div>
-            )}
-
-            {/* SMS Success Message */}
-            {smsSuccess && (
-              <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center space-x-3">
-                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-                <p className="text-green-600 text-sm">{smsSuccess}</p>
-              </div>
-            )}
-
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Recipient Group Selection */}
-              <div>
-                <label htmlFor="sms-group" className="block text-sm font-medium text-gray-700 mb-2">
-                  Recipient Group
-                </label>
-                <div className="relative">
-                  <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <select
-                    id="sms-group"
-                    value={smsRecipientGroup}
-                    onChange={(e) => setSmsRecipientGroup(e.target.value as any)}
-                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none"
-                  >
-                    <option value="all">All Users</option>
-                    <option value="registered">Registered (Not Checked In)</option>
-                    <option value="pending">Pending Users</option>
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
-                </div>
-                <div className="mt-2 text-sm text-gray-600">
-                  📊 {smsRecipientCount} recipients
-                </div>
-              </div>
-
-              {/* Message Input */}
-              <div>
-                <label htmlFor="sms-message" className="block text-sm font-medium text-gray-700 mb-2">
-                  Message ({smsMessage.length}/300)
-                </label>
-                <textarea
-                  id="sms-message"
-                  value={smsMessage}
-                  onChange={(e) => setSmsMessage(e.target.value)}
-                  rows={3}
-                  maxLength={300}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
-                  placeholder="Enter your message..."
-                />
-                <div className={`mt-2 text-sm ${smsMessage.length > 280 ? 'text-red-600' : 'text-gray-500'}`}>
-                  {300 - smsMessage.length} characters remaining
-                </div>
-              </div>
+            {/* Subject */}
+            <div>
+              <label htmlFor="email-subject" className="block text-sm font-medium text-gray-700 mb-2">
+                Subject {selectedEventId ? '(Optional)' : '*'}
+              </label>
+              <input
+                id="email-subject"
+                type="text"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                placeholder={selectedEventId ? `Update for ${selectedEvent?.name || 'event'}` : 'Enter email subject'}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                required={!selectedEventId}
+              />
             </div>
 
-            {/* Send Button */}
-            <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-200">
-              <Link
-                to="/admin/sms"
-                className="text-brand-light hover:text-blue-700 font-medium flex items-center space-x-2"
-              >
-                <MessageSquare className="h-4 w-4" />
-                <span>Advanced SMS Panel</span>
-              </Link>
-              
-              <button
-                onClick={sendQuickSMS}
-                disabled={smsLoading || smsRecipientCount === 0 || !smsMessage.trim()}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-              >
-                {smsLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Sending...</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4" />
-                    <span>Send to {smsRecipientCount}</span>
-                  </>
-                )}
-              </button>
+            {/* Message Body */}
+            <div>
+              <label htmlFor="email-message" className="block text-sm font-medium text-gray-700 mb-2">
+                Message Body *
+              </label>
+              <textarea
+                id="email-message"
+                value={emailMessage}
+                onChange={(e) => setEmailMessage(e.target.value)}
+                rows={4}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                placeholder="Enter your email message here..."
+                required
+              />
             </div>
           </div>
-        )}
+
+          {/* Send Button */}
+          <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-200">
+            <Link
+              to="/admin/email"
+              className="text-brand-light hover:text-blue-700 font-medium flex items-center space-x-2"
+            >
+              <Mail className="h-4 w-4" />
+              <span>Advanced Email Panel</span>
+            </Link>
+            
+            <button
+              onClick={sendQuickEmail}
+              disabled={emailLoading || (emailRecipientObjects.length === 0 && !emailRecipients.trim()) || !emailMessage.trim() || (!emailSubject.trim() && !selectedEventId)}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              {emailLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Sending...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  <span>Send Email</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* User List Modal */}

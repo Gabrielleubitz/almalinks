@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -53,6 +53,33 @@ const SystemTestPage: React.FC = () => {
   const [isRunningTests, setIsRunningTests] = useState(false);
   const [runningTest, setRunningTest] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Scroll to top synchronously before paint to prevent visible scroll jump
+  useLayoutEffect(() => {
+    // Capture scroll position before reset
+    const scrollBefore = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
+    
+    // Reset all possible scroll positions (order matters for compatibility)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+    
+    // Verify scroll was reset
+    const scrollAfter = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
+    
+    // Dev-only console log for verification
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[SystemTestPage] Scroll reset:', {
+        target: 'window',
+        scrollBefore,
+        scrollAfter,
+        success: scrollAfter === 0,
+        windowScrollY: window.scrollY,
+        docElementScrollTop: document.documentElement.scrollTop,
+        bodyScrollTop: document.body.scrollTop
+      });
+    }
+  }, []);
   
   // Add a test result to the list
   const addTestResult = (result: TestResult) => {
