@@ -1216,14 +1216,11 @@ export class ChatService {
   }
 
   private static sanitizeMessage(text: string): string {
-    // Basic sanitization - remove HTML tags and trim
+    // Sanitize: Remove HTML tags only, preserve plain text characters
+    // Do NOT HTML-escape text since we render as plain text content (not HTML)
+    // Store and transmit messages as raw UTF-8 plain text
     return text
-      .replace(/<[^>]*>/g, '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;')
+      .replace(/<[^>]*>/g, '') // Remove HTML tags for security
       .trim();
   }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -50,8 +50,10 @@ const ChatViewPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { logChatMessage } = useActivityTracking();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Refs for deterministic scroll to bottom
+  const containerRef = useRef<HTMLDivElement | null>(null); // Scrollable chat box element
+  const bottomRef = useRef<HTMLDivElement | null>(null); // Sentinel at bottom of messages
   
   const [chat, setChat] = useState<ChatWithMembers | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -95,6 +97,10 @@ const ChatViewPage: React.FC = () => {
 
   useEffect(() => {
     if (user?.uid && chatId) {
+      // Clear messages immediately when chatId changes to ensure clean state
+      // This ensures the scroll effect can properly detect the new chat
+      setMessages([]);
+      
       loadChat();
       loadPermissions();
       subscribeToMessages();
@@ -117,20 +123,66 @@ const ChatViewPage: React.FC = () => {
     };
   }, []);
 
-  // Auto-scroll to bottom when messages change or chatId changes
-  useEffect(() => {
-    if (messages.length > 0 && messagesContainerRef.current) {
-      // Use requestAnimationFrame to ensure DOM is updated
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          // Scroll the messages container directly to the bottom
-          if (messagesContainerRef.current) {
-            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-          }
-        }, 100);
+  // Deterministic scroll to bottom function
+  const scrollToBottom = () => {
+    if (!containerRef.current || !chatId) return;
+
+    const container = containerRef.current;
+    const beforeScrollTop = container.scrollTop;
+    const scrollHeight = container.scrollHeight;
+    const clientHeight = container.clientHeight;
+
+    // Prefer scrolling via bottom sentinel element
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ block: 'end', behavior: 'auto' });
+    } else if (container) {
+      // Fallback: scroll container directly
+      container.scrollTop = container.scrollHeight;
+    }
+
+    const afterScrollTop = container.scrollTop;
+
+    // Dev-only debug logs
+    if (import.meta.env.DEV) {
+      console.log('[chat-scroll]', {
+        chatId,
+        messagesLength: messages.length,
+        lastMessageId: messages.length > 0 ? messages[messages.length - 1]?.id : null,
+        scrollHeight,
+        clientHeight,
+        beforeScrollTop,
+        afterScrollTop,
+        scrolled: afterScrollTop !== beforeScrollTop,
+        containerClassName: container.className,
+        containerId: container.id,
+        hasBottomRef: !!bottomRef.current
       });
     }
-  }, [messages, chatId]);
+  };
+
+  // Deterministic scroll using useLayoutEffect (runs synchronously after render)
+  // Scrolls the chat box to bottom when chatId changes or messages render
+  useLayoutEffect(() => {
+    if (!chatId || !containerRef.current) return;
+
+    // Wait for two frames to ensure messages are fully rendered
+    // Use a ref to track raf2 so cleanup can access it
+    let raf2: number | null = null;
+    
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        scrollToBottom();
+      });
+    });
+
+    // Cleanup both RAFs on unmount/chatId change
+    return () => {
+      cancelAnimationFrame(raf1);
+      if (raf2 !== null) {
+        cancelAnimationFrame(raf2);
+      }
+    };
+  }, [chatId, messages.length]); // Run on EVERY chatId change AND when messages.length changes
 
   const loadChat = async () => {
     if (!user?.uid || !chatId) return;
@@ -493,15 +545,6 @@ const ChatViewPage: React.FC = () => {
     }
   };
 
-  const scrollToBottom = () => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTo({
-        top: messagesContainerRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
-    }
-  };
-
   const renderChatIcon = (size: 'small' | 'medium' | 'large' | 'extra-large' = 'medium') => {
     const sizeClasses = {
       small: 'w-8 h-8 text-xs',
@@ -852,9 +895,10 @@ const ChatViewPage: React.FC = () => {
               }}
             />
             <div 
-              ref={messagesContainerRef}
+              ref={containerRef}
               className="flex-1 px-4 overflow-y-auto relative z-10" 
               id="messages-container"
+              data-testid="chat-scroll-box"
             >
               <div className="max-w-3xl mx-auto">
                 <div className="py-3 space-y-0.5">
@@ -891,7 +935,7 @@ const ChatViewPage: React.FC = () => {
                       />
                     );
                   })}
-                  <div ref={messagesEndRef} />
+                  <div ref={bottomRef} data-testid="chat-bottom" />
                 </div>
               </div>
             </div>

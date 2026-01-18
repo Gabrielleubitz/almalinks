@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { CheckCircle, AlertCircle, ArrowLeft, UserPlus, Loader } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { ConnectionService } from '../services/connectionService';
+import { ConnectionRequestService } from '../services/connectionRequestService';
 import { EventService } from '../services/eventService';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -14,10 +15,12 @@ const ConnectPage: React.FC = () => {
   const { user, loading: authLoading, isPending } = useAuth();
   
   const [loading, setLoading] = useState(true);
-  const [connecting, setConnecting] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+  const [pending, setPending] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [targetUser, setTargetUser] = useState<any | null>(null);
+  const [requestId, setRequestId] = useState<string | null>(null);
   const [connectionId, setConnectionId] = useState<string | null>(null);
   
   // Parse the target user ID from the URL
@@ -30,10 +33,12 @@ const ConnectPage: React.FC = () => {
     const handleConnection = async () => {
       // Reset state
       setLoading(true);
-      setConnecting(false);
+      setRequesting(false);
+      setPending(false);
       setSuccess(false);
       setError(null);
       setTargetUser(null);
+      setRequestId(null);
       setConnectionId(null);
       
       try {
@@ -105,23 +110,36 @@ const ConnectPage: React.FC = () => {
           return;
         }
         
-        // Create connection
-        setConnecting(true);
-        const newConnectionId = await ConnectionService.createConnection(
-          user.uid,
-          targetUserId,
-          eventId
+        // Check if pending request already exists (sent by this user)
+        const sentRequests = await ConnectionRequestService.getSentRequests(user.uid);
+        const existingRequest = sentRequests.find(
+          req => (req.toUid === targetUserId || req.targetId === targetUserId) && req.status === 'pending'
         );
         
-        setConnectionId(newConnectionId);
-        setSuccess(true);
+        if (existingRequest) {
+          setRequestId(existingRequest.id);
+          setPending(true);
+          setLoading(false);
+          return;
+        }
+        
+        // Create connection request (not immediate connection)
+        setRequesting(true);
+        const newRequestId = await ConnectionRequestService.sendConnectionRequest(
+          user.uid,
+          targetUserId,
+          { eventId }
+        );
+        
+        setRequestId(newRequestId);
+        setPending(true);
         
       } catch (err: any) {
         console.error('❌ Connection error:', err);
         setError(err.message || 'Failed to create connection. Please try again.');
       } finally {
         setLoading(false);
-        setConnecting(false);
+        setRequesting(false);
       }
     };
     
@@ -260,13 +278,34 @@ const ConnectPage: React.FC = () => {
                   </button>
                 </div>
               </div>
-            ) : connecting ? (
+            ) : pending && targetUser ? (
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-full mb-6">
+                  <UserPlus className="h-8 w-8 text-yellow-600" />
+                </div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">Connection Request Sent</h2>
+                <p className="text-xl text-gray-600 mb-6">
+                  ⏳ Your connection request to <span className="font-semibold">{targetUser.name}</span> is pending approval
+                </p>
+                <p className="text-gray-500 mb-6">
+                  {targetUser.name} will be notified and can accept or reject your request. You'll be notified once they respond.
+                </p>
+                <div className="flex justify-center space-x-4">
+                  <button
+                    onClick={() => navigate('/events')}
+                    className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
+                  >
+                    Go to Dashboard
+                  </button>
+                </div>
+              </div>
+            ) : requesting ? (
               <div className="text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full mb-6">
                   <Loader className="h-8 w-8 text-brand-light animate-spin" />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-4">Creating Connection</h2>
-                <p className="text-gray-600">Please wait while we establish your connection...</p>
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">Sending Request</h2>
+                <p className="text-gray-600">Please wait while we send your connection request...</p>
               </div>
             ) : (
               <div className="text-center">

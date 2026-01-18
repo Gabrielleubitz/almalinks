@@ -12,7 +12,7 @@ import {
   serverTimestamp,
   limit as firestoreLimit
 } from 'firebase/firestore';
-import { db, retryOnNetworkFailure } from '../firebase/config';
+import { db, retryOnNetworkFailure, auth } from '../firebase/config';
 import { nanoid } from 'nanoid';
 import { ConnectionRequest, ConnectionRequestStatus } from '../types/connection';
 import { PrivacyService } from './privacyService';
@@ -20,7 +20,7 @@ import { ConnectionService, ConnectionReason } from './connectionService';
 
 export class ConnectionRequestService {
   /**
-   * Send a connection request to another user
+   * Send a connection request to another user (via backend API)
    */
   static async sendConnectionRequest(
     fromUid: string,
@@ -31,90 +31,45 @@ export class ConnectionRequestService {
     } = {}
   ): Promise<string> {
     try {
-      // Check rate limit
-      const rateLimitCheck = await PrivacyService.checkAndIncrementRateLimit(fromUid);
-      if (!rateLimitCheck.allowed) {
-        throw new Error('Daily connection request limit reached (50/day). Please try again tomorrow.');
+      // Get authentication token
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User must be authenticated to send connection requests');
       }
 
-      // Check if users are the same
-      if (fromUid === toUid) {
-        throw new Error('Cannot send connection request to yourself');
+      const idToken = await currentUser.getIdToken();
+
+      // Call backend API to create connection request
+      const response = await fetch('/api/connection-request/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          targetId: toUid,
+          eventId: options.eventId,
+          message: options.message
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || `HTTP ${response.status}: Failed to create connection request`);
       }
 
-      // Check if connection already exists
-      const existingConnection = await ConnectionService.checkExistingConnection(
-        fromUid, toUid, options.eventId || ''
-      );
-      if (existingConnection) {
-        throw new Error('You are already connected with this user');
-      }
+      console.log('✅ Connection request sent via API:', data.requestId);
+      return data.requestId;
 
-      // Check if request already exists
-      const existingRequest = await this.checkExistingRequest(fromUid, toUid, options.eventId);
-      if (existingRequest) {
-        throw new Error('Connection request already sent to this user');
-      }
-
-      // Get sender's user data for enrichment
-      const senderDoc = await retryOnNetworkFailure(() => getDoc(doc(db, 'users', fromUid)));
-      if (!senderDoc.exists()) {
-        throw new Error('Sender user not found');
-      }
-      const senderData = senderDoc.data();
-
-      // Verify receiver exists and can be discovered
-      const receiverDoc = await retryOnNetworkFailure(() => getDoc(doc(db, 'users', toUid)));
-      if (!receiverDoc.exists()) {
-        throw new Error('Target user not found');
-      }
-
-      // Check privacy settings
-      const sharedEventIds = options.eventId ? [options.eventId] : [];
-      const canDiscover = await PrivacyService.canUserBeDiscovered(toUid, fromUid, sharedEventIds);
-      if (!canDiscover) {
-        throw new Error('This user cannot be contacted based on their privacy settings');
-      }
-
-      // Create connection request
-      const requestId = nanoid(12);
-      const request: ConnectionRequest = {
-        id: requestId,
-        fromUid,
-        toUid,
-        eventId: options.eventId,
-        message: options.message,
-        status: 'pending',
-        createdAt: new Date(),
-        
-        // Enriched sender data
-        fromName: senderData.displayName || senderData.name || 'Unknown User',
-        fromWork: senderData.work || 'Not specified',
-        fromPosition: senderData.position || '',
-        fromProfileImage: senderData.profileImage || null
-      };
-
-      // Convert to Firestore format
-      const firestoreRequest = {
-        ...request,
-        createdAt: serverTimestamp()
-      };
-
-      await retryOnNetworkFailure(() => 
-        setDoc(doc(db, 'connection_requests', requestId), firestoreRequest)
-      );
-
-      console.log('✅ Connection request sent:', requestId);
-      return requestId;
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error sending connection request:', error);
       throw error;
     }
   }
 
   /**
-   * Respond to a connection request
+   * Respond to a connection request (via backend API)
    */
   static async respondToRequest(
     requestId: string,
@@ -122,52 +77,40 @@ export class ConnectionRequestService {
     respondingUserId: string
   ): Promise<void> {
     try {
-      const requestDoc = await retryOnNetworkFailure(() => 
-        getDoc(doc(db, 'connection_requests', requestId))
-      );
-
-      if (!requestDoc.exists()) {
-        throw new Error('Connection request not found');
+      // Get authentication token
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User must be authenticated to respond to connection requests');
       }
 
-      const requestData = requestDoc.data() as ConnectionRequest & { createdAt: any };
-      
-      // Verify this user can respond to this request
-      if (requestData.toUid !== respondingUserId) {
-        throw new Error('You are not authorized to respond to this request');
-      }
+      const idToken = await currentUser.getIdToken();
 
-      // Check if already responded
-      if (requestData.status !== 'pending') {
-        throw new Error('This request has already been responded to');
-      }
-
-      // Update request status
-      await retryOnNetworkFailure(() => updateDoc(doc(db, 'connection_requests', requestId), {
-        status: response,
-        respondedAt: serverTimestamp()
-      }));
-
-      // If accepted, create the connection
-      if (response === 'accepted') {
-        const reason: Omit<ConnectionReason, 'timestamp'> = {
-          type: 'user',
+      // Call backend API to respond to request
+      const action = response === 'accepted' ? 'accept' : 'reject';
+      const apiResponse = await fetch('/api/connection-request/respond', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
           requestId,
-          context: 'user-requested connection accepted',
-          ...(requestData.eventId && { eventId: requestData.eventId })
-        };
+          action
+        })
+      });
 
-        await ConnectionService.createOrUpdateConnection(
-          requestData.fromUid, 
-          requestData.toUid, 
-          reason
-        );
+      const data = await apiResponse.json();
+
+      if (!apiResponse.ok || !data.ok) {
+        throw new Error(data.error || `HTTP ${apiResponse.status}: Failed to respond to connection request`);
+      }
+
+      console.log('✅ Connection request responded to via API:', requestId, response);
+      if (response === 'accepted' && data.connectionCreated) {
         console.log('✅ Connection created from accepted request:', requestId);
       }
 
-      console.log('✅ Connection request responded to:', requestId, response);
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error responding to connection request:', error);
       throw error;
     }

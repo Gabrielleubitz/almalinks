@@ -31,6 +31,8 @@ export interface JoinRequest {
   approvedBy?: string;
   rejectedAt?: Timestamp | Date;
   rejectedBy?: string;
+  adminNotifiedAt?: Timestamp | Date; // Timestamp when admin notification email was sent
+  userNotifiedAt?: Timestamp | Date; // Timestamp when user confirmation email was sent
   // Additional profile fields that might be provided during signup
   bioTitle?: string;
   bio?: string;
@@ -146,6 +148,55 @@ export class JoinRequestService {
       try {
         await retryOnNetworkFailure(() => setDoc(requestRef, sanitizedPayload));
         console.log('✅ Join request write succeeded');
+        
+        // Dev-only log for correlation
+        if (import.meta.env.DEV) {
+          console.log('[signup] joinRequest created', uid);
+        }
+
+        // Send user confirmation email immediately after Firestore write succeeds
+        // Call server-side endpoint which looks up joinRequest from Firestore
+        // Fire and forget - don't await to avoid blocking signup
+        try {
+          fetch('/api/notify-user-signup', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              joinRequestId: uid
+            })
+          })
+          .then(async (response) => {
+            const result = await response.json();
+            
+            // Log response in browser console
+            console.log('[signup] notify response', result);
+            
+            // Mark as notified in Firestore (non-blocking update)
+            // This includes successful sends AND rejected emails (to prevent duplicate attempts)
+            if (result.ok) {
+              try {
+                // Check if already notified before updating (prevent race conditions)
+                const currentDoc = await retryOnNetworkFailure(() => getDoc(requestRef));
+                if (currentDoc.exists() && !currentDoc.data()?.userNotifiedAt) {
+                  await retryOnNetworkFailure(() => updateDoc(requestRef, {
+                    userNotifiedAt: serverTimestamp()
+                  }));
+                }
+              } catch (updateError: any) {
+                console.warn('⚠️ Failed to update userNotifiedAt (non-blocking):', updateError.message);
+              }
+            }
+          })
+          .catch((error: any) => {
+            // Log but don't throw - signup should succeed even if email fails
+            console.warn('[signup] notify error (non-blocking):', error.message);
+          });
+        } catch (notificationError: any) {
+          // Log but don't throw - signup should succeed even if notification fails
+          console.warn('[signup] notify init error (non-blocking):', notificationError.message);
+        }
       } catch (writeError: any) {
         console.error('❌ Firestore write error:', {
           code: writeError.code,
@@ -175,22 +226,17 @@ export class JoinRequestService {
         throw writeError;
       }
       
-      console.log('✅ Join request created successfully:', {
-        uid,
-        email: joinRequest.email,
-        name: joinRequest.name,
-        status: joinRequest.status
-      });
-      
       // Verify the document was created
+      let verifyDoc;
+      let verifiedData;
       try {
-        const verifyDoc = await retryOnNetworkFailure(() => getDoc(requestRef));
+        verifyDoc = await retryOnNetworkFailure(() => getDoc(requestRef));
         if (!verifyDoc.exists()) {
           throw new Error('Join request document was not created (verification failed)');
         }
         console.log('✅ Verified join request document exists in Firestore');
         
-        const verifiedData = verifyDoc.data();
+        verifiedData = verifyDoc.data();
         console.log('📋 Verified join request data:', {
           uid: verifyDoc.id,
           email: verifiedData.email,
@@ -208,10 +254,71 @@ export class JoinRequestService {
           console.error('🚫 PERMISSION DENIED on read: Check Firestore security rules');
         }
         // Don't throw - write succeeded, verification is just for logging
+        // Use sanitized payload as fallback
+        verifiedData = sanitizedPayload;
+        verifyDoc = null; // Set to null if verification failed
+      }
+      
+      console.log('✅ Join request created successfully:', {
+        uid,
+        email: verifiedData.email,
+        name: verifiedData.name,
+        status: verifiedData.status
+      });
+
+      // Send admin notification (non-blocking)
+      // Check if already notified to prevent duplicates
+      if (!verifiedData.adminNotifiedAt) {
+        try {
+          const name = verifiedData.name || verifiedData.displayName || 'Unknown';
+          const email = verifiedData.email || '';
+          
+          console.log('📧 Sending admin notification for new signup:', { uid, name, email });
+          
+          const notificationResponse = await fetch('/api/notify-signup', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name,
+              email,
+              joinRequestId: uid
+            })
+          });
+
+          const notificationResult = await notificationResponse.json();
+          
+          if (notificationResult.ok && !notificationResult.skipped) {
+            // Mark as notified in Firestore
+            try {
+              await retryOnNetworkFailure(() => updateDoc(requestRef, {
+                adminNotifiedAt: serverTimestamp()
+              }));
+              console.log('✅ Admin notification sent and marked in Firestore');
+            } catch (updateError: any) {
+              console.warn('⚠️ Failed to update adminNotifiedAt (non-blocking):', updateError.message);
+              // Don't throw - notification was sent successfully
+            }
+          } else if (notificationResult.skipped) {
+            console.log('ℹ️ Admin notification skipped:', notificationResult.reason);
+          } else {
+            console.error('❌ Admin notification failed:', notificationResult.error);
+            // Don't throw - signup should still succeed
+          }
+        } catch (notificationError: any) {
+          // Log but don't throw - signup should succeed even if notification fails
+          console.error('❌ Error sending admin notification (non-blocking):', {
+            message: notificationError.message,
+            stack: notificationError.stack
+          });
+        }
+      } else {
+        console.log('ℹ️ Admin notification already sent (adminNotifiedAt exists)');
       }
       
       return {
-        uid: verifyDoc.id,
+        uid: verifyDoc?.id || uid,
         ...verifiedData
       } as JoinRequest;
     } catch (error) {

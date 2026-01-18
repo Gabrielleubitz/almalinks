@@ -22,6 +22,24 @@ interface MessageBubbleProps {
 
 const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🔥', '👏'];
 
+/**
+ * Decode HTML entities in message text (migration fix for legacy encoded messages)
+ * Only needed for messages that were previously stored with HTML entity encoding
+ * New messages are stored as plain UTF-8 text and don't need decoding
+ */
+function decodeHtmlEntities(text: string): string {
+  if (!text || typeof text !== 'string') return text;
+  
+  // Check if text contains HTML entities (legacy data)
+  if (!text.includes('&')) return text;
+  
+  // Use DOMParser to safely decode HTML entities
+  // This handles: &#x27;, &#39;, &apos;, &quot;, &amp;, &lt;, &gt;, etc.
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(text, 'text/html');
+  return doc.documentElement.textContent || text;
+}
+
 const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   isOwnMessage,
@@ -130,7 +148,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     return (
       <div className="flex justify-center my-4">
         <div className="bg-gray-100 text-gray-600 text-xs px-3 py-1.5 rounded-full max-w-md text-center">
-          {message.text}
+          {decodeHtmlEntities(message.text)}
         </div>
       </div>
     );
@@ -235,7 +253,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   : 'bg-gray-100 text-gray-900'
               }`}
             >
-              <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.text}</p>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                {decodeHtmlEntities(message.text)}
+              </p>
               
               {/* Message Footer */}
               <div className={`flex items-center gap-1.5 mt-1 ${

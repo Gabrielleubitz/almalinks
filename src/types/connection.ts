@@ -2,7 +2,7 @@ export type DiscoverabilityLevel = 'public' | 'event_only' | 'hidden';
 
 export type ConnectionType = 'auto' | 'manual' | 'scan';
 
-export type ConnectionRequestStatus = 'pending' | 'accepted' | 'rejected';
+export type ConnectionRequestStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled';
 
 export interface UserDiscoverabilitySettings {
   discoverability: DiscoverabilityLevel;
@@ -12,13 +12,19 @@ export interface UserDiscoverabilitySettings {
 
 export interface ConnectionRequest {
   id: string;
-  fromUid: string;
-  toUid: string;
+  requesterId: string; // User A (alias for fromUid for clarity)
+  fromUid: string; // Legacy alias for requesterId
+  targetId: string; // User B (alias for toUid for clarity)
+  toUid: string; // Legacy alias for targetId
   eventId?: string;
   message?: string;
   status: ConnectionRequestStatus;
-  createdAt: Date;
-  respondedAt?: Date;
+  createdAt: Date | any; // Firestore Timestamp or Date
+  updatedAt?: Date | any; // Firestore Timestamp or Date
+  respondedAt?: Date | any; // Firestore Timestamp or Date (deprecated, use updatedAt)
+  decisionBy?: string; // userId who accepted/rejected (target user or admin)
+  decisionRole?: 'user' | 'admin'; // role of decisionBy
+  sourceRequestId?: string; // reference to this request in connections collection
   
   // Enriched user data at time of request
   fromName: string;

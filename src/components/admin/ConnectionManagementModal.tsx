@@ -12,6 +12,8 @@ import {
   Loader,
   UserMinus
 } from 'lucide-react';
+import { doc, getDoc, getDocs, query, where } from 'firebase/firestore';
+import { db, retryOnNetworkFailure } from '../../firebase/config';
 import { ConnectionManagementService } from '../../services/connectionManagementService';
 import { EnhancedConnection } from '../../types/connection';
 
@@ -56,6 +58,13 @@ const ConnectionManagementModal: React.FC<ConnectionManagementModalProps> = ({
     message: '',
     type: 'success'
   });
+  // User profile map: userId -> { displayName, email, profileImage }
+  const [userProfileMap, setUserProfileMap] = useState<Record<string, {
+    displayName?: string;
+    name?: string;
+    email?: string;
+    profileImage?: string;
+  }>>({});
 
   // Load user connections when modal opens
   useEffect(() => {
@@ -70,11 +79,113 @@ const ConnectionManagementModal: React.FC<ConnectionManagementModalProps> = ({
     filterConnections();
   }, [connections, searchTerm, filterType]);
 
+  /**
+   * Batch load user profiles from Firestore
+   * Collects all unique user IDs from connections and admin IDs from reasons, then fetches profiles efficiently
+   */
+  const loadUserProfiles = async (connections: EnhancedConnection[]) => {
+    try {
+      // Extract all unique user IDs from connections (connection partners)
+      const userIds = new Set<string>();
+      // Also extract admin IDs from connection reasons
+      const adminIds = new Set<string>();
+      
+      connections.forEach(conn => {
+        // Extract connection partner UIDs
+        if (conn.fromUid && conn.fromUid !== userId) userIds.add(conn.fromUid);
+        if (conn.toUid && conn.toUid !== userId) userIds.add(conn.toUid);
+        
+        // Extract admin IDs from connection reasons
+        if (conn._originalConnection?.reasons) {
+          conn._originalConnection.reasons.forEach((reason: any) => {
+            if (reason.type === 'admin' && reason.adminId) {
+              adminIds.add(reason.adminId);
+            }
+          });
+        }
+      });
+
+      // Combine all user IDs (partners + admins)
+      const allUserIds = new Set([...userIds, ...adminIds]);
+
+      if (allUserIds.size === 0) {
+        console.log('[ConnectionManagementModal] No user IDs to load');
+        return {};
+      }
+
+      console.log(`[ConnectionManagementModal] Loading ${allUserIds.size} user profiles (${userIds.size} partners + ${adminIds.size} admins)`);
+
+      // Batch load user profiles (Firestore 'in' query supports up to 10 items)
+      const userIdArray = Array.from(allUserIds);
+      const BATCH_SIZE = 10;
+      const profileMap: Record<string, any> = {};
+
+      for (let i = 0; i < userIdArray.length; i += BATCH_SIZE) {
+        const batch = userIdArray.slice(i, i + BATCH_SIZE);
+        
+        // For each user ID, fetch their profile
+        const profilePromises = batch.map(async (uid) => {
+          try {
+            const userDoc = await retryOnNetworkFailure(() => getDoc(doc(db, 'users', uid)));
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              return {
+                uid,
+                profile: {
+                  displayName: userData.displayName || userData.name || undefined,
+                  name: userData.name || userData.displayName || undefined,
+                  email: userData.email || undefined,
+                  profileImage: userData.profileImage || userData.avatarUrl || undefined
+                }
+              };
+            } else {
+              console.warn(`[ConnectionManagementModal] User profile not found for UID: ${uid}`);
+              return { uid, profile: null };
+            }
+          } catch (error) {
+            console.error(`[ConnectionManagementModal] Error loading profile for ${uid}:`, error);
+            return { uid, profile: null };
+          }
+        });
+
+        const results = await Promise.all(profilePromises);
+        results.forEach(({ uid, profile }) => {
+          if (profile) {
+            profileMap[uid] = profile;
+          }
+        });
+      }
+
+      console.log(`[ConnectionManagementModal] Loaded ${Object.keys(profileMap).length} user profiles`);
+      return profileMap;
+    } catch (error) {
+      console.error('[ConnectionManagementModal] Error loading user profiles:', error);
+      return {};
+    }
+  };
+
   const loadConnections = async () => {
     try {
       setLoading(true);
       const userConnections = await ConnectionManagementService.getUserConnections(userId, 100);
+      
+      // Debug: Log connection data structure
+      if (import.meta.env.DEV && userConnections.length > 0) {
+        console.log('[ConnectionManagementModal] Sample connection:', {
+          id: userConnections[0].id,
+          fromUid: userConnections[0].fromUid,
+          toUid: userConnections[0].toUid,
+          fromName: userConnections[0].fromName,
+          toName: userConnections[0].toName,
+          hasOriginalConnection: !!userConnections[0]._originalConnection
+        });
+      }
+      
       setConnections(userConnections);
+      
+      // Batch load user profiles for all connection partners
+      const profiles = await loadUserProfiles(userConnections);
+      setUserProfileMap(profiles);
     } catch (error) {
       console.error('❌ Error loading connections:', error);
       showToast('Failed to load connections', 'error');
@@ -181,10 +292,52 @@ const ConnectionManagementModal: React.FC<ConnectionManagementModalProps> = ({
     }
   };
 
+  /**
+   * Get the other user in a connection (not the current userId)
+   * Resolves user profile from loaded profile map, with fallback to cached connection data
+   */
   const getOtherUser = (connection: EnhancedConnection) => {
-    return connection.fromUid === userId
+    const otherUid = connection.fromUid === userId ? connection.toUid : connection.fromUid;
+    const profile = userProfileMap[otherUid];
+    
+    // Debug: Log which user ID is being displayed
+    if (import.meta.env.DEV) {
+      console.log('[ConnectionManagementModal] getOtherUser:', {
+        connectionId: connection.id,
+        userId,
+        connectionFromUid: connection.fromUid,
+        connectionToUid: connection.toUid,
+        otherUid,
+        hasProfile: !!profile,
+        profileDisplayName: profile?.displayName || profile?.name,
+        connectionCachedName: connection.fromUid === userId ? connection.toName : connection.fromName
+      });
+    }
+    
+    // Prefer profile map (fresh data from Firestore), fallback to cached connection data
+    if (profile) {
+      return {
+        name: profile.displayName || profile.name || 'Unknown User',
+        email: profile.email || (connection.fromUid === userId ? connection.toEmail : connection.fromEmail) || '',
+        uid: otherUid,
+        profileImage: profile.profileImage
+      };
+    }
+    
+    // Fallback to cached data from connection
+    const fallback = connection.fromUid === userId
       ? { name: connection.toName, email: connection.toEmail, uid: connection.toUid }
       : { name: connection.fromName, email: connection.fromEmail, uid: connection.fromUid };
+    
+    // Debug: Log if profile is missing
+    if (import.meta.env.DEV && !fallback.name) {
+      console.warn(`[ConnectionManagementModal] Profile missing for UID: ${otherUid}, using fallback:`, fallback);
+    }
+    
+    return {
+      ...fallback,
+      name: fallback.name || 'Unknown User'
+    };
   };
   
   const renderConnectionReasons = (connection: any) => {
@@ -200,7 +353,10 @@ const ConnectionManagementModal: React.FC<ConnectionManagementModalProps> = ({
           if (reason.type === 'admin') {
             badgeColor = 'bg-purple-100 text-purple-800';
             label = 'Admin Created';
-            details = reason.adminId ? ` by ${reason.adminId}` : '';
+            // Resolve admin name from profile map if available
+            const adminProfile = reason.adminId ? userProfileMap[reason.adminId] : null;
+            const adminName = adminProfile?.displayName || adminProfile?.name || reason.adminId || 'Admin';
+            details = ` by ${adminName}`;
             if (reason.context) {
               details += `: "${reason.context}"`;
             }

@@ -1,0 +1,126 @@
+// POST /api/connection-request/create
+// Create a connection request (pending status)
+// Requires authentication
+import '../firebase-init.js';
+import { db, auth } from '../firebase-init.js';
+import admin from '../firebase-init.js';
+
+export default async function handler(req, res) {
+  // Only allow POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({ ok: false, error: 'Method not allowed' });
+  }
+
+  try {
+    // Verify authentication
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized: Missing or invalid token' });
+    }
+
+    const idToken = authHeader.split('Bearer ')[1];
+    let requesterId;
+    try {
+      const decodedToken = await auth.verifyIdToken(idToken);
+      requesterId = decodedToken.uid;
+    } catch (authError) {
+      console.error('[connection-request/create] Auth error:', authError.message);
+      return res.status(401).json({ ok: false, error: 'Unauthorized: Invalid token' });
+    }
+
+    // Parse request body
+    const { targetId, eventId, message } = req.body;
+
+    // Validate input
+    if (!targetId || typeof targetId !== 'string') {
+      return res.status(400).json({ ok: false, error: 'targetId is required and must be a string' });
+    }
+
+    // Prevent self-connection
+    if (requesterId === targetId) {
+      return res.status(400).json({ ok: false, error: 'Cannot send connection request to yourself' });
+    }
+
+    // Check if users exist
+    const [requesterDoc, targetDoc] = await Promise.all([
+      db.collection('users').doc(requesterId).get(),
+      db.collection('users').doc(targetId).get()
+    ]);
+
+    if (!requesterDoc.exists) {
+      return res.status(404).json({ ok: false, error: 'Requester user not found' });
+    }
+
+    if (!targetDoc.exists) {
+      return res.status(404).json({ ok: false, error: 'Target user not found' });
+    }
+
+    const requesterData = requesterDoc.data();
+    const targetData = targetDoc.data();
+
+    // Check if connection already exists
+    const connectionId = generateConnectionId(requesterId, targetId);
+    const connectionDoc = await db.collection('connections').doc(connectionId).get();
+    if (connectionDoc.exists) {
+      return res.status(409).json({ ok: false, error: 'Connection already exists between these users' });
+    }
+
+    // Check if pending/accepted request already exists
+    const existingRequestsQuery = db.collection('connection_requests')
+      .where('requesterId', '==', requesterId)
+      .where('targetId', '==', targetId)
+      .where('status', 'in', ['pending', 'accepted']);
+
+    const existingRequestsSnapshot = await existingRequestsQuery.get();
+    if (!existingRequestsSnapshot.empty) {
+      return res.status(409).json({ ok: false, error: 'Connection request already sent and not yet responded to' });
+    }
+
+    // Create connection request
+    const requestId = db.collection('connection_requests').doc().id;
+    const now = admin.firestore.FieldValue.serverTimestamp();
+
+    const requestData = {
+      id: requestId,
+      requesterId,
+      fromUid: requesterId, // Legacy alias
+      targetId,
+      toUid: targetId, // Legacy alias
+      eventId: eventId || null,
+      message: message || null,
+      status: 'pending',
+      createdAt: now,
+      updatedAt: now,
+      decisionBy: null,
+      decisionRole: null,
+      // Enriched requester data
+      fromName: requesterData.displayName || requesterData.name || 'Unknown User',
+      fromWork: requesterData.work || requesterData.company || 'Not specified',
+      fromPosition: requesterData.position || null,
+      fromProfileImage: requesterData.profileImage || requesterData.avatarUrl || null
+    };
+
+    await db.collection('connection_requests').doc(requestId).set(requestData);
+
+    console.log(`[connection-request/create] Request created: ${requestId} (${requesterId} -> ${targetId})`);
+
+    return res.status(200).json({
+      ok: true,
+      requestId,
+      status: 'pending'
+    });
+
+  } catch (error) {
+    console.error('[connection-request/create] Error:', error);
+    return res.status(500).json({
+      ok: false,
+      error: error.message || 'Internal server error'
+    });
+  }
+}
+
+// Generate consistent connection ID (same as frontend)
+function generateConnectionId(uid1, uid2) {
+  const sorted = [uid1, uid2].sort();
+  return `${sorted[0]}_${sorted[1]}`;
+}

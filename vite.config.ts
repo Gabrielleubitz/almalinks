@@ -46,12 +46,15 @@ export default defineConfig({
       'node-mailjet': 'empty-module'
     }
   },
-  // Add proxy for API routes (Vercel-compatible development)
+  // Proxy for API routes during development
+  // This allows the Vite dev server to forward /api/* requests to Vercel dev on port 3000
+  // Frontend runs on http://localhost:5173 (React Refresh works)
+  // API runs on http://localhost:3000/api/* (via vercel dev)
   server: {
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
         timeout: 30000,
