@@ -51,9 +51,9 @@ const ChatViewPage: React.FC = () => {
   const { user } = useAuth();
   const { logChatMessage } = useActivityTracking();
   
-  // Refs for deterministic scroll to bottom
-  const containerRef = useRef<HTMLDivElement | null>(null); // Scrollable chat box element
+  // Refs for scroll detection
   const bottomRef = useRef<HTMLDivElement | null>(null); // Sentinel at bottom of messages
+  const lastMessageRef = useRef<HTMLDivElement | null>(null); // Ref to the newest (last) message
   
   const [chat, setChat] = useState<ChatWithMembers | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -123,66 +123,184 @@ const ChatViewPage: React.FC = () => {
     };
   }, []);
 
-  // Deterministic scroll to bottom function
-  const scrollToBottom = () => {
-    if (!containerRef.current || !chatId) return;
+  // Helper: Find the closest scrollable ancestor of an element
+  const findScrollParent = (el: HTMLElement | null): HTMLElement | null => {
+    let cur = el;
+    while (cur) {
+      const s = window.getComputedStyle(cur);
+      const canScroll =
+        (s.overflowY === 'auto' || s.overflowY === 'scroll') &&
+        cur.scrollHeight > cur.clientHeight + 1;
+      if (canScroll) return cur;
+      cur = cur.parentElement as HTMLElement | null;
+    }
+    return null;
+  };
 
-    const container = containerRef.current;
-    const beforeScrollTop = container.scrollTop;
-    const scrollHeight = container.scrollHeight;
-    const clientHeight = container.clientHeight;
+  // Force scroll to bottom using programmatically found scroll container
+  const setBottom = () => {
+    if (!chatId) return;
 
-    // Prefer scrolling via bottom sentinel element
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ block: 'end', behavior: 'auto' });
-    } else if (container) {
-      // Fallback: scroll container directly
-      container.scrollTop = container.scrollHeight;
+    // Try to find scroll container using bottomRef first, then lastMessageRef as fallback
+    const anchorElement = bottomRef.current || lastMessageRef.current;
+    if (!anchorElement) {
+      if (import.meta.env.DEV) {
+        console.warn('[chat-scroll] No anchor element found (bottomRef or lastMessageRef)');
+      }
+      return;
     }
 
-    const afterScrollTop = container.scrollTop;
+    const scroller = findScrollParent(anchorElement);
+    if (!scroller) {
+      if (import.meta.env.DEV) {
+        console.warn('[chat-scroll] No scrollable parent found for anchor element');
+      }
+      return;
+    }
+
+    const beforeScrollTop = scroller.scrollTop;
+    const scrollHeight = scroller.scrollHeight;
+    const clientHeight = scroller.clientHeight;
+    
+    // CRITICAL: Scroll to bottom (newest message), NOT top
+    // First set scrollTop directly to ensure we're at bottom
+    scroller.scrollTop = scrollHeight;
+    
+    // Then use scrollIntoView on the newest message element (last message or bottom sentinel)
+    // This ensures the newest message is visible at the bottom
+    if (lastMessageRef.current) {
+      lastMessageRef.current.scrollIntoView({ block: 'end', behavior: 'auto' });
+    } else if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ block: 'end', behavior: 'auto' });
+    }
+    
+    const afterScrollTop = scroller.scrollTop;
 
     // Dev-only debug logs
     if (import.meta.env.DEV) {
+      const computedStyle = window.getComputedStyle(scroller);
+      const overflowY = computedStyle.overflowY;
+      const canScroll = scrollHeight > clientHeight;
+      const firstMessageId = messages.length > 0 ? messages[0]?.id : null;
+      const lastMessageId = messages.length > 0 ? messages[messages.length - 1]?.id : null;
+      const firstMessageTime = messages.length > 0 && messages[0]?.createdAt 
+        ? (messages[0].createdAt?.toDate ? messages[0].createdAt.toDate() : new Date(messages[0].createdAt))
+        : null;
+      const lastMessageTime = messages.length > 0 && messages[messages.length - 1]?.createdAt
+        ? (messages[messages.length - 1].createdAt?.toDate ? messages[messages.length - 1].createdAt.toDate() : new Date(messages[messages.length - 1].createdAt))
+        : null;
+
       console.log('[chat-scroll]', {
         chatId,
         messagesLength: messages.length,
-        lastMessageId: messages.length > 0 ? messages[messages.length - 1]?.id : null,
+        firstMessageId,
+        lastMessageId,
+        firstMessageTime: firstMessageTime?.toISOString(),
+        lastMessageTime: lastMessageTime?.toISOString(),
+        scrollerTag: scroller.tagName,
+        scrollerId: scroller.id,
+        scrollerClassName: scroller.className,
         scrollHeight,
         clientHeight,
+        canScroll,
+        overflowY,
         beforeScrollTop,
         afterScrollTop,
         scrolled: afterScrollTop !== beforeScrollTop,
-        containerClassName: container.className,
-        containerId: container.id,
-        hasBottomRef: !!bottomRef.current
+        scrolledToBottom: Math.abs(afterScrollTop - (scrollHeight - clientHeight)) < 5,
+        usedLastMessageRef: !!lastMessageRef.current,
+        usedBottomRef: !!bottomRef.current && !lastMessageRef.current
       });
+
+      // Verify message ordering: newest should be last
+      if (firstMessageTime && lastMessageTime && firstMessageTime > lastMessageTime) {
+        console.warn('[chat-scroll] WARNING: Messages appear to be newest->oldest! First message is newer than last. Check message ordering.');
+      }
+
+      // Safety check: warn if container cannot scroll
+      if (!canScroll && messages.length > 0) {
+        console.warn('[chat-scroll] Container cannot scroll! scrollHeight <= clientHeight. Check layout.');
+      }
     }
   };
 
-  // Deterministic scroll using useLayoutEffect (runs synchronously after render)
-  // Scrolls the chat box to bottom when chatId changes or messages render
+  // Deterministic scroll using useLayoutEffect with multiple attempts
+  // Scrolls the chat box to bottom (newest message) when chatId changes or messages render
   useLayoutEffect(() => {
-    if (!chatId || !containerRef.current) return;
+    if (!chatId) return;
+    
+    // Wait for messages to render - need at least bottomRef or lastMessageRef
+    if (!bottomRef.current && !lastMessageRef.current) return;
 
-    // Wait for two frames to ensure messages are fully rendered
-    // Use a ref to track raf2 so cleanup can access it
-    let raf2: number | null = null;
+    // Multi-step scroll to handle async content (fonts, images, etc.)
+    // Each step ensures we end at bottom even if content height changes
+    let timeout1: NodeJS.Timeout | null = null;
+    let timeout2: NodeJS.Timeout | null = null;
+    let timeout3: NodeJS.Timeout | null = null;
+    let watchdogTimeout: NodeJS.Timeout | null = null;
     
     const raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => {
-        scrollToBottom();
+      setBottom();
+      
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setBottom();
+        });
       });
+      
+      timeout1 = setTimeout(() => {
+        setBottom();
+        
+        timeout2 = setTimeout(() => {
+          setBottom();
+          
+          timeout3 = setTimeout(() => {
+            setBottom();
+            
+            // Watchdog: Check if scroll was reset after all attempts
+            if (import.meta.env.DEV) {
+              watchdogTimeout = setTimeout(() => {
+                const anchorElement = bottomRef.current || lastMessageRef.current;
+                if (!anchorElement) return;
+                
+                const scroller = findScrollParent(anchorElement);
+                if (scroller) {
+                  const after = scroller.scrollTop;
+                  const scrollHeight = scroller.scrollHeight;
+                  const clientHeight = scroller.clientHeight;
+                  const expectedBottom = scrollHeight - clientHeight;
+                  
+                  if (after < expectedBottom - 50) {
+                    console.warn('[chat-scroll] scroll was reset unexpectedly', {
+                      chatId,
+                      afterScrollTop: after,
+                      expectedBottom,
+                      scrollHeight,
+                      clientHeight,
+                      scrollerTag: scroller.tagName,
+                      scrollerId: scroller.id,
+                      scrollerClassName: scroller.className,
+                      usedLastMessageRef: !!lastMessageRef.current,
+                      usedBottomRef: !!bottomRef.current && !lastMessageRef.current
+                    });
+                  }
+                }
+              }, 250);
+            }
+          }, 200);
+        }, 50);
+      }, 0);
     });
 
-    // Cleanup both RAFs on unmount/chatId change
+    // Cleanup all timers and RAFs
     return () => {
       cancelAnimationFrame(raf1);
-      if (raf2 !== null) {
-        cancelAnimationFrame(raf2);
-      }
+      if (timeout1) clearTimeout(timeout1);
+      if (timeout2) clearTimeout(timeout2);
+      if (timeout3) clearTimeout(timeout3);
+      if (watchdogTimeout) clearTimeout(watchdogTimeout);
     };
-  }, [chatId, messages.length]); // Run on EVERY chatId change AND when messages.length changes
+  }, [chatId, messages.length, messages.length > 0 ? messages[messages.length - 1]?.id : null]);
 
   const loadChat = async () => {
     if (!user?.uid || !chatId) return;
@@ -883,7 +1001,8 @@ const ChatViewPage: React.FC = () => {
           </div>
           
           {/* Messages Area - Same background, continuous surface */}
-          <div className="flex-1 flex flex-col overflow-hidden bg-white relative">
+          {/* Force remount on chatId change to prevent scroll position preservation */}
+          <div key={chatId} className="flex-1 flex flex-col overflow-hidden bg-white relative">
             {/* Subtle background pattern with Alma Links logo */}
             <div 
               className="absolute inset-0 opacity-[0.018] pointer-events-none"
@@ -895,10 +1014,8 @@ const ChatViewPage: React.FC = () => {
               }}
             />
             <div 
-              ref={containerRef}
               className="flex-1 px-4 overflow-y-auto relative z-10" 
               id="messages-container"
-              data-testid="chat-scroll-box"
             >
               <div className="max-w-3xl mx-auto">
                 <div className="py-3 space-y-0.5">
@@ -915,26 +1032,32 @@ const ChatViewPage: React.FC = () => {
                     const showName = !prevMessage || prevMessage.userId !== message.userId || prevMessage.type === 'system';
                     const senderName = getMessageSenderName(message);
                     const senderAvatar = getMessageSenderAvatar(message);
+                    const isLastMessage = index === messages.length - 1; // Newest message (last in array)
 
                     return (
-                      <MessageBubble
+                      <div
                         key={message.id}
-                        message={message}
-                        isOwnMessage={isOwnMessage}
-                        showAvatar={showAvatar}
-                        showName={showName}
-                        senderName={senderName}
-                        senderAvatar={senderAvatar}
-                        onReaction={handleReaction}
-                        onEdit={handleEditMessage}
-                        onDelete={handleDeleteMessage}
-                        onProfileClick={(userId) => navigate(`/profile/${userId}`)}
-                        currentUserId={user?.uid || ''}
-                        openReactionPickerId={openReactionPickerId}
-                        onReactionPickerOpen={setOpenReactionPickerId}
-                      />
+                        ref={isLastMessage ? lastMessageRef : undefined}
+                      >
+                        <MessageBubble
+                          message={message}
+                          isOwnMessage={isOwnMessage}
+                          showAvatar={showAvatar}
+                          showName={showName}
+                          senderName={senderName}
+                          senderAvatar={senderAvatar}
+                          onReaction={handleReaction}
+                          onEdit={handleEditMessage}
+                          onDelete={handleDeleteMessage}
+                          onProfileClick={(userId) => navigate(`/profile/${userId}`)}
+                          currentUserId={user?.uid || ''}
+                          openReactionPickerId={openReactionPickerId}
+                          onReactionPickerOpen={setOpenReactionPickerId}
+                        />
+                      </div>
                     );
                   })}
+                  {/* Bottom sentinel for scroll detection - placed AFTER newest message */}
                   <div ref={bottomRef} data-testid="chat-bottom" />
                 </div>
               </div>

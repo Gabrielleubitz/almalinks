@@ -5,6 +5,8 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet.markercluster';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 interface MemberLocation {
   username: string;
@@ -120,15 +122,43 @@ const MemberMap: React.FC<MemberMapProps> = ({ isOpen, onClose }) => {
     try {
       setStatsText('Fetching members...');
 
-      // Fetch users with location data
-      const response = await fetch('/api/user-admin?locations');
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      // Query Firestore directly for users with location data
+      // Only fetch users who have both city AND country
+      const usersRef = collection(db, 'users');
+      const q = query(
+        usersRef,
+        where('city', '>', ''),
+        where('country', '>', ''),
+        limit(1000)
+      );
 
-      const users: MemberLocation[] = await response.json();
+      const snapshot = await getDocs(q);
+      const users: MemberLocation[] = [];
 
-      if (!users || users.length === 0) {
+      snapshot.forEach(doc => {
+        const userData = doc.data();
+
+        // Double-check both fields exist
+        if (userData.city && userData.country) {
+          // Construct profile URL
+          const profileUrl = `/profile/${doc.id}`;
+
+          // Use displayName, or construct from firstName/lastName, or use email
+          const username = userData.displayName ||
+                          `${userData.firstName || ''} ${userData.lastName || ''}`.trim() ||
+                          userData.email ||
+                          'Unknown User';
+
+          users.push({
+            username,
+            city: userData.city,
+            country: userData.country,
+            profileUrl
+          });
+        }
+      });
+
+      if (users.length === 0) {
         setStatsText('No members with location data found');
         return;
       }

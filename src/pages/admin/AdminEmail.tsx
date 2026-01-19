@@ -5,22 +5,31 @@ import { useAuth } from '../../hooks/useAuth';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { sendAdminEmail } from '../../services/emailService';
 import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/admin/EmailRecipientAutocomplete';
+import AudienceSelector, { RecipientMode, AudienceSelection } from '../../components/admin/AudienceSelector';
+import RecipientPreview from '../../components/admin/RecipientPreview';
+import { auth } from '../../firebase/config';
 
 const AdminEmail: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
+  // Recipient mode and selection
+  const [recipientMode, setRecipientMode] = useState<RecipientMode>('individuals');
+  const [audienceSelection, setAudienceSelection] = useState<AudienceSelection>({ mode: 'individuals' });
+  const [recipientCount, setRecipientCount] = useState<number | null>(null);
+
+  // Safeguard: Reset to 'individuals' if 'group' mode is somehow selected (shouldn't happen with excludedModes)
+  React.useEffect(() => {
+    if (recipientMode === 'group') {
+      setRecipientMode('individuals');
+      setAudienceSelection({ mode: 'individuals' });
+    }
+  }, [recipientMode]);
+  
+  // Individual recipients (for "individuals" mode)
   const [recipients, setRecipients] = useState(''); // Comma-separated emails string
   const [recipientObjects, setRecipientObjects] = useState<EmailRecipient[]>([]); // Parsed recipient objects
 
-  // DEV LOG: Track recipients state changes
-  React.useEffect(() => {
-    console.log('[AdminEmail] TO STATE NOW (recipients string):', recipients);
-  }, [recipients]);
-
-  React.useEffect(() => {
-    console.log('[AdminEmail] TO STATE NOW (recipientObjects):', recipientObjects.map(r => r.email));
-  }, [recipientObjects]);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [fromName, setFromName] = useState('Alma Links Admin'); // Optional, can be placeholder
@@ -28,13 +37,9 @@ const AdminEmail: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const validateForm = (): boolean => {
-    if (recipientObjects.length === 0 && !recipients.trim()) {
-      setError('Please enter recipient email(s)');
-      return false;
-    }
-
     if (!subject.trim()) {
       setError('Please enter a subject');
       return false;
@@ -45,59 +50,127 @@ const AdminEmail: React.FC = () => {
       return false;
     }
 
-    // Use recipient objects if available, otherwise parse string
-    const emailList = recipientObjects.length > 0
-      ? recipientObjects.map(r => r.email)
-      : recipients.split(',').map(email => email.trim()).filter(email => email);
+    // Validate based on mode
+    if (recipientMode === 'individuals') {
+      if (recipientObjects.length === 0 && !recipients.trim()) {
+        setError('Please enter recipient email(s)');
+        return false;
+      }
 
-    if (emailList.length === 0) {
-      setError('Please enter at least one valid email address');
-      return false;
-    }
+      const emailList = recipientObjects.length > 0
+        ? recipientObjects.map(r => r.email)
+        : recipients.split(',').map(email => email.trim()).filter(email => email);
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const invalidEmails = emailList.filter(email => !emailRegex.test(email));
-    
-    if (invalidEmails.length > 0) {
-      setError(`Invalid email format: ${invalidEmails.join(', ')}`);
-      return false;
+      if (emailList.length === 0) {
+        setError('Please enter at least one valid email address');
+        return false;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const invalidEmails = emailList.filter(email => !emailRegex.test(email));
+      
+      if (invalidEmails.length > 0) {
+        setError(`Invalid email format: ${invalidEmails.join(', ')}`);
+        return false;
+      }
+    } else {
+      // For audience modes, check if selection is valid
+      const hasSelection = 
+        (recipientMode === 'event' && audienceSelection.eventId) ||
+        (recipientMode === 'chat' && audienceSelection.chatId) ||
+        (recipientMode === 'location' && audienceSelection.location);
+
+      if (!hasSelection) {
+        setError(`Please select a ${recipientMode}`);
+        return false;
+      }
+
+      if (recipientCount === null || recipientCount === 0) {
+        setError('No recipients found for the selected audience');
+        return false;
+      }
     }
 
     return true;
   };
 
-  const handleSendEmail = async () => {
+  const handleSendEmail = async (confirmed = false) => {
     if (!validateForm()) return;
+
+    // Show confirmation for large sends
+    if (!confirmed && recipientCount && recipientCount > 50) {
+      setShowConfirmModal(true);
+      return;
+    }
 
     setLoading(true);
     setError(null);
     setSuccess(null);
+    setShowConfirmModal(false);
 
     try {
-      // Use recipient objects if available, otherwise parse string
-      const recipientList = recipientObjects.length > 0
-        ? recipientObjects.map(r => r.email)
-        : recipients.split(',').map(email => email.trim()).filter(email => email);
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User must be authenticated');
+      }
 
-      const result = await sendAdminEmail({
-        to: recipientList,
-        subject: subject.trim(),
-        message: message.trim(),
-        fromName: fromName.trim() || undefined,
-        replyTo: replyTo.trim() || undefined
-      });
+      const idToken = await currentUser.getIdToken();
 
-      if (result.success) {
-        setSuccess('Email sent successfully! (Note: Currently stubbed - Mailchimp integration pending)');
+      if (recipientMode === 'individuals') {
+        // Use existing sendAdminEmail for individuals
+        const recipientList = recipientObjects.length > 0
+          ? recipientObjects.map(r => r.email)
+          : recipients.split(',').map(email => email.trim()).filter(email => email);
+
+        const result = await sendAdminEmail({
+          to: recipientList,
+          subject: subject.trim(),
+          message: message.trim(),
+          fromName: fromName.trim() || undefined,
+          replyTo: replyTo.trim() || undefined
+        });
+
+        if (result.success) {
+          setSuccess(`Email sent successfully to ${recipientList.length} recipient(s)!`);
+          // Clear form on success
+          setRecipients('');
+          setRecipientObjects([]);
+          setSubject('');
+          setMessage('');
+          setReplyTo('');
+        } else {
+          setError(result.error || 'Failed to send email');
+        }
+      } else {
+        // Use bulk email API for audience modes
+        const response = await fetch('/api/send-bulk-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify({
+            mode: recipientMode,
+            ...audienceSelection,
+            subject: subject.trim(),
+            text: message.trim(),
+            fromName: fromName.trim() || undefined
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || 'Failed to send bulk email');
+        }
+
+        setSuccess(`Email sent successfully! ${data.sent} sent, ${data.failed} failed out of ${data.total} recipients.`);
+        
         // Clear form on success
-        setRecipients('');
-        setRecipientObjects([]);
         setSubject('');
         setMessage('');
-        setReplyTo('');
-      } else {
-        setError(result.error || 'Failed to send email');
+        setAudienceSelection({ mode: recipientMode });
+        setRecipientCount(null);
       }
     } catch (error: any) {
       console.error('❌ Email sending error:', error);
@@ -157,29 +230,71 @@ const AdminEmail: React.FC = () => {
           )}
 
           <form onSubmit={(e) => { e.preventDefault(); handleSendEmail(); }} className="space-y-6">
-            {/* Recipients Input */}
-            <div>
-              <label htmlFor="recipients" className="block text-sm font-medium text-gray-700 mb-2">
-                To (Email Addresses) *
-              </label>
-              <EmailRecipientAutocomplete
-                id="recipients"
-                value={recipients}
-                onChange={(newValue) => {
-                  console.log('[AdminEmail] onChange called with:', newValue);
-                  setRecipients(newValue);
+            {/* Audience Selector */}
+            <AudienceSelector
+              mode={recipientMode}
+              selection={audienceSelection}
+              onModeChange={(newMode) => {
+                setRecipientMode(newMode);
+                setAudienceSelection({ mode: newMode });
+                setRecipientCount(null);
+                // Clear individual recipients when switching modes
+                if (newMode !== 'individuals') {
+                  setRecipients('');
+                  setRecipientObjects([]);
+                }
+              }}
+              onSelectionChange={(newSelection) => {
+                setAudienceSelection(newSelection);
+              }}
+              disabled={loading}
+              excludedModes={['group']}
+            />
+
+            {/* Individual Recipients Input (only for individuals mode) */}
+            {recipientMode === 'individuals' && (
+              <div>
+                <label htmlFor="recipients" className="block text-sm font-medium text-gray-700 mb-2">
+                  To (Email Addresses) *
+                </label>
+                <EmailRecipientAutocomplete
+                  id="recipients"
+                  value={recipients}
+                  onChange={(newValue) => {
+                    setRecipients(newValue);
+                  }}
+                  onRecipientsChange={(recipientObjs) => {
+                    setRecipientObjects(recipientObjs);
+                    setRecipientCount(recipientObjs.length);
+                  }}
+                  placeholder="Start typing to search members or enter email addresses..."
+                  disabled={loading}
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Type to search approved members, or enter email addresses (comma-separated). Select from suggestions or paste multiple emails.
+                </p>
+              </div>
+            )}
+
+            {/* Recipient Preview (for audience modes) */}
+            {recipientMode !== 'individuals' && (
+              <RecipientPreview
+                mode={recipientMode}
+                selection={audienceSelection}
+                onRecipientsResolved={(count, recipients) => {
+                  setRecipientCount(count);
                 }}
-                onRecipientsChange={(recipientObjs) => {
-                  console.log('[AdminEmail] onRecipientsChange called with:', recipientObjs.map(r => r.email));
-                  setRecipientObjects(recipientObjs);
-                }}
-                placeholder="Start typing to search members or enter email addresses..."
-                disabled={loading}
               />
-              <p className="mt-2 text-xs text-gray-500">
-                Type to search approved members, or enter email addresses (comma-separated). Select from suggestions or paste multiple emails.
-              </p>
-            </div>
+            )}
+
+            {/* Recipient Count for individuals mode */}
+            {recipientMode === 'individuals' && recipientCount !== null && (
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <p className="text-sm font-medium text-gray-700">
+                  Recipients: {recipientCount}
+                </p>
+              </div>
+            )}
 
             {/* Subject Input */}
             <div>
@@ -248,7 +363,13 @@ const AdminEmail: React.FC = () => {
             <div className="flex justify-center pt-6">
               <button
                 type="submit"
-                disabled={loading || (recipientObjects.length === 0 && !recipients.trim()) || !subject.trim() || !message.trim()}
+                disabled={
+                  loading || 
+                  !subject.trim() || 
+                  !message.trim() ||
+                  (recipientMode === 'individuals' && recipientObjects.length === 0 && !recipients.trim()) ||
+                  (recipientMode !== 'individuals' && (!recipientCount || recipientCount === 0))
+                }
                 className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
                 {loading ? (
@@ -265,6 +386,38 @@ const AdminEmail: React.FC = () => {
               </button>
             </div>
           </form>
+
+          {/* Confirmation Modal for Large Sends */}
+          {showConfirmModal && recipientCount && recipientCount > 50 && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8">
+                <div className="text-center">
+                  <AlertCircle className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                    Confirm Bulk Email Send
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    You are about to send an email to <strong>{recipientCount} recipients</strong>.
+                    This action cannot be undone.
+                  </p>
+                  <div className="flex space-x-4">
+                    <button
+                      onClick={() => setShowConfirmModal(false)}
+                      className="flex-1 bg-gray-100 text-gray-700 px-6 py-3 rounded-xl hover:bg-gray-200 transition-colors font-semibold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleSendEmail(true)}
+                      className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors font-semibold"
+                    >
+                      Confirm Send
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Information Box */}
           <div className="mt-8 bg-gray-50 rounded-2xl p-6">

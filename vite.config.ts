@@ -60,14 +60,17 @@ export default defineConfig({
         timeout: 30000,
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-            console.log('API proxy error:', err.message);
+            // Only log to console, don't show user-facing error
+            console.warn('[Vite Proxy] API server not available:', err.message);
+            console.warn('[Vite Proxy] To use API endpoints, run: npm run dev:api');
             if (!res.headersSent) {
-              res.writeHead(500, {
+              res.writeHead(503, {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
               });
               res.end(JSON.stringify({ 
-                error: 'Development API server not available. Make sure to run: npm run dev:api' 
+                ok: false,
+                error: 'API endpoint temporarily unavailable. Some features may not work without the API server running.' 
               }));
             }
           });
