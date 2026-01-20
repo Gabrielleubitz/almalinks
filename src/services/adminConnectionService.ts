@@ -8,7 +8,7 @@ import {
   orderBy, 
   limit as firestoreLimit
 } from 'firebase/firestore';
-import { db, retryOnNetworkFailure } from '../firebase/config';
+import { db, retryOnNetworkFailure, auth } from '../firebase/config';
 import { ConnectionService, Connection, ConnectionReason } from './connectionService';
 import { EventService } from './eventService';
 
@@ -32,7 +32,7 @@ export interface UserConnectionStats {
 
 export class AdminConnectionService {
   /**
-   * Manually create connection between two users (admin only)
+   * Manually create connection between two users (admin only, via backend API)
    */
   static async createAdminConnection(
     fromUid: string,
@@ -41,43 +41,52 @@ export class AdminConnectionService {
     options: AdminConnectionOptions = {}
   ): Promise<string> {
     try {
-      // Validate admin permissions (you may want to add actual admin role checking here)
-      const adminDoc = await retryOnNetworkFailure(() => getDoc(doc(db, 'users', adminUid)));
-      if (!adminDoc.exists()) {
-        throw new Error('Admin user not found');
+      // Get authentication token
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('User must be authenticated to create admin connections');
       }
 
-      // Check if users exist
-      const [fromUserDoc, toUserDoc] = await Promise.all([
-        retryOnNetworkFailure(() => getDoc(doc(db, 'users', fromUid))),
-        retryOnNetworkFailure(() => getDoc(doc(db, 'users', toUid)))
-      ]);
+      const idToken = await currentUser.getIdToken();
 
-      if (!fromUserDoc.exists()) {
-        throw new Error('Source user not found');
+      // Call backend API to create admin connection
+      const response = await fetch('/api/connections/admin-create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          userIdA: fromUid,
+          userIdB: toUid,
+          eventId: options.eventId,
+          reason: options.reason || 'Admin-created connection',
+          sourceRequestId: (options as any).sourceRequestId // Pass through if provided (for accept flow)
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || `HTTP ${response.status}: Failed to create admin connection`);
       }
-      if (!toUserDoc.exists()) {
-        throw new Error('Target user not found');
+
+      // DEV log to track when admin connection creator is used
+      if (import.meta.env.DEV) {
+        console.log('[ADMIN_CONNECT_USED]', {
+          userA: fromUid,
+          userB: toUid,
+          adminUid,
+          connectionId: data.connectionId,
+          eventId: options.eventId,
+          reason: options.reason,
+          source: 'AdminConnectionService.createAdminConnection',
+          endpoint: '/api/connections/admin-create'
+        });
       }
 
-      // Create connection with admin reason
-      const reason: Omit<ConnectionReason, 'timestamp'> = {
-        type: 'admin',
-        adminId: adminUid,
-        context: options.reason || 'admin-created connection',
-        ...(options.eventId && { eventId: options.eventId })
-      };
-
-      const connectionId = await ConnectionService.createOrUpdateConnection(
-        fromUid,
-        toUid,
-        reason,
-        adminUid
-      );
-
-      // Log admin action
-      console.log('✅ Admin connection created:', {
-        connectionId,
+      console.log('✅ Admin connection created via API:', {
+        connectionId: data.connectionId,
         fromUid,
         toUid,
         adminUid,
@@ -85,9 +94,9 @@ export class AdminConnectionService {
         reason: options.reason
       });
 
-      return connectionId;
+      return data.connectionId;
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error creating admin connection:', error);
       throw error;
     }

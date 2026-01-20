@@ -19,18 +19,32 @@ export interface ConnectionRequest {
   eventId?: string;
   message?: string;
   status: ConnectionRequestStatus;
+  source?: 'user' | 'admin'; // Source of the request
   createdAt: Date | any; // Firestore Timestamp or Date
   updatedAt?: Date | any; // Firestore Timestamp or Date
+  decidedAt?: Date | any; // Firestore Timestamp or Date (when decision was made)
   respondedAt?: Date | any; // Firestore Timestamp or Date (deprecated, use updatedAt)
   decisionBy?: string; // userId who accepted/rejected (target user or admin)
   decisionRole?: 'user' | 'admin'; // role of decisionBy
   sourceRequestId?: string; // reference to this request in connections collection
+  note?: string; // Optional note/message
   
   // Enriched user data at time of request
-  fromName: string;
-  fromWork: string;
+  fromName?: string;
+  fromWork?: string;
   fromPosition?: string;
   fromProfileImage?: string;
+  
+  // Full requester profile (from API)
+  requester?: {
+    uid: string;
+    displayName?: string;
+    name?: string;
+    email?: string;
+    profileImage?: string;
+    work?: string;
+    position?: string;
+  };
 }
 
 export interface UserDirectoryEntry {

@@ -58,19 +58,21 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         timeout: 30000,
+        // Handle proxy errors - return proper error response instead of generic message
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-            // Only log to console, don't show user-facing error
-            console.warn('[Vite Proxy] API server not available:', err.message);
-            console.warn('[Vite Proxy] To use API endpoints, run: npm run dev:api');
+            console.warn('[Vite Proxy] Connection error:', err.message);
+            console.warn('[Vite Proxy] Ensure vercel dev is running: vercel dev --listen 3000');
             if (!res.headersSent) {
               res.writeHead(503, {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
               });
+              // Return a specific error that can be handled by the client
               res.end(JSON.stringify({ 
                 ok: false,
-                error: 'API endpoint temporarily unavailable. Some features may not work without the API server running.' 
+                error: `Cannot connect to API server at http://localhost:3000. Make sure 'vercel dev --listen 3000' is running.`,
+                code: 'PROXY_CONNECTION_ERROR'
               }));
             }
           });

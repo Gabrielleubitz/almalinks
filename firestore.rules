@@ -69,13 +69,30 @@ service cloud.firestore {
     
     // Connection requests collection  
     match /connection_requests/{requestId} {
-      // Users can read requests involving them
-      allow read: if isAuthenticated() && 
-        (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      // Helper to check if user is requester (supports both new and legacy fields)
+      function isRequester() {
+        return (resource.data.requesterId == request.auth.uid || resource.data.fromUid == request.auth.uid);
+      }
+      
+      // Helper to check if user is target (supports both new and legacy fields)
+      function isTarget() {
+        return (resource.data.targetId == request.auth.uid || resource.data.toUid == request.auth.uid);
+      }
+      
+      // Helper to check if user is requester in create (supports both new and legacy fields)
+      function isRequesterInCreate() {
+        return (request.resource.data.requesterId == request.auth.uid || request.resource.data.fromUid == request.auth.uid);
+      }
+      
+      // Users can read requests involving them (as requester or target)
+      allow read: if isAuthenticated() && (isRequester() || isTarget());
+      
       // Users can create requests from themselves
-      allow create: if isAuthenticated() && request.resource.data.fromUid == request.auth.uid;
-      // Users can update requests sent to them (accept/reject)
-      allow update: if isAuthenticated() && resource.data.toUid == request.auth.uid;
+      allow create: if isAuthenticated() && isRequesterInCreate();
+      
+      // Users can update requests sent to them (accept/reject) - supports both field names
+      allow update: if isAuthenticated() && isTarget();
+      
       // Admins can manage all requests
       allow write: if isAdmin();
     }

@@ -87,6 +87,7 @@ export default async function handler(req, res) {
       transaction.update(requestRef, {
         status: newStatus,
         updatedAt: now,
+        decidedAt: now,
         decisionBy: currentUserId,
         decisionRole: isAdmin ? 'admin' : 'user'
       });
@@ -110,11 +111,17 @@ export default async function handler(req, res) {
           const targetUserData = targetDoc.data();
 
           // Create connection document
+          const connectionId = generateConnectionId(requestData.requesterId, requestData.targetId);
           const connectionData = {
             uid1: requestData.requesterId,
             uid2: requestData.targetId,
+            userA: requestData.requesterId,
+            userB: requestData.targetId,
+            userIds: [requestData.requesterId, requestData.targetId].sort(), // Sorted for deduplication
             updatedAt: now,
             createdAt: now,
+            createdBy: requestData.requesterId, // Original requester
+            source: 'user', // Created from user request
             sourceRequestId: requestId,
             reasons: [{
               type: 'user',

@@ -89,10 +89,13 @@ export default async function handler(req, res) {
       eventId: eventId || null,
       message: message || null,
       status: 'pending',
+      source: 'user', // Indicates this is a user-initiated request
       createdAt: now,
       updatedAt: now,
+      decidedAt: null,
       decisionBy: null,
       decisionRole: null,
+      note: message || null,
       // Enriched requester data
       fromName: requesterData.displayName || requesterData.name || 'Unknown User',
       fromWork: requesterData.work || requesterData.company || 'Not specified',

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Briefcase, Plus, Linkedin, User, Filter, Grid, List, ExternalLink, Map } from 'lucide-react';
+import { Search, MapPin, Briefcase, Plus, Linkedin, User, Filter, Grid, List, ExternalLink, Map, Check, X, Clock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { UserService } from '../services/userService';
 import { ConnectionService } from '../services/connectionService';
+import { ConnectionRequestService } from '../services/connectionRequestService';
+import { ConnectionRequest } from '../types/connection';
 import { UserCard as UserCardType } from '../types/user';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -28,21 +30,52 @@ const MembersPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [connectingUsers, setConnectingUsers] = useState<Set<string>>(new Set());
   const [showMemberMap, setShowMemberMap] = useState(false);
+  
+  // Connection requests state
+  const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
+  const [sentRequestIds, setSentRequestIds] = useState<Set<string>>(new Set()); // Track which users we've sent requests to
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [respondingToRequest, setRespondingToRequest] = useState<string | null>(null);
 
   useEffect(() => {
     loadMembers();
+    if (currentUser?.uid) {
+      loadIncomingRequests();
+      loadSentRequests();
+      
+      // DEV: Debug recent requests
+      if (import.meta.env.DEV) {
+        ConnectionRequestService.getRecentRequests(20).catch(err => {
+          console.warn('[debug] Could not load recent requests:', err);
+        });
+      }
+    }
   }, [currentUser]);
 
   useEffect(() => {
-    filterMembers();
+    // Always filter members when search query or members list changes
+    // Initialize filteredMembers even if members is empty
+    if (!searchQuery.trim()) {
+      setFilteredMembers(members);
+    } else {
+      filterMembers();
+    }
+    
+    if (import.meta.env.DEV) {
+      console.log(`📊 filteredMembers.length: ${filteredMembers.length}`);
+      console.log(`📊 members.length: ${members.length}`);
+    }
   }, [searchQuery, members]);
 
   const loadMembers = async () => {
     try {
       setLoading(true);
-      console.log('👥 === LOADING ALL MEMBERS (ADMIN MODE) ===');
-      console.log(`👤 Current user: ${currentUser?.displayName} (${currentUser?.uid})`);
-      console.log(`🎭 User role: ${currentUser?.role}`);
+      
+      if (import.meta.env.DEV) {
+        console.log('👥 === LOADING ALL MEMBERS ===');
+        console.log(`👤 Current user: ${currentUser?.displayName} (${currentUser?.uid})`);
+        console.log(`🎭 User role: ${currentUser?.role}`);
+      }
       
       // Get ALL users - no filtering
       const allUsers = await UserService.getAllMembersForDirectory(
@@ -50,17 +83,17 @@ const MembersPage: React.FC = () => {
         currentUser?.role
       );
 
-      console.log(`📊 Raw users from service: ${allUsers.length}`);
-      
-      // Debug: Check if bio data is being received
-      allUsers.forEach(user => {
-        if (user.bio) {
-          console.log(`👤 User ${user.displayName} has bio: ${user.bio.substring(0, 50)}...`);
-        }
-      });
-      console.log('👥 First few users:', allUsers.slice(0, 3).map(u => ({ uid: u.uid, name: u.displayName, status: u.profileVisibility })));
+      if (import.meta.env.DEV) {
+        console.log(`📊 Raw users from service: ${allUsers.length}`);
+        console.log('👥 First few users:', allUsers.slice(0, 3).map(u => ({ 
+          uid: u.uid.substring(0, 8), 
+          name: u.displayName || u.firstName || 'No Name'
+        })));
+      }
 
       // DON'T filter out current user - show everyone
+      // Check connection status (but don't let this block showing users)
+      // Use sentRequestIds state (loaded separately) for pending check
       const membersWithConnections = await Promise.all(
         allUsers.map(async (member) => {
           let isConnected = false;
@@ -74,8 +107,14 @@ const MembersPage: React.FC = () => {
                 member.uid
               );
               isConnected = !!connection;
+              
+              // Check if we've sent a pending request to this member (from state)
+              if (!isConnected) {
+                connectionPending = sentRequestIds.has(member.uid);
+              }
             } catch (error) {
               // Don't log this error - it's not critical for showing users
+              // Silently continue - we'll show the member anyway
             }
           }
 
@@ -87,16 +126,17 @@ const MembersPage: React.FC = () => {
         })
       );
 
-      console.log(`✅ Final members list: ${membersWithConnections.length}`);
-      console.log('👥 Sample members:', membersWithConnections.slice(0, 3).map(u => ({ 
-        uid: u.uid.substring(0, 8), 
-        name: u.displayName || u.firstName || 'No Name', 
-        company: u.company || 'No Company'
-      })));
+      if (import.meta.env.DEV) {
+        console.log(`✅ Final members list: ${membersWithConnections.length}`);
+        console.log(`📊 membersCount: ${membersWithConnections.length}`);
+        console.log(`📊 membersLoading: false`);
+      }
       
       setMembers(membersWithConnections);
     } catch (error) {
       console.error('❌ CRITICAL: Error loading members:', error);
+      // Set empty array on error so page still renders
+      setMembers([]);
     } finally {
       setLoading(false);
     }
@@ -132,32 +172,342 @@ const MembersPage: React.FC = () => {
     });
 
     setFilteredMembers(filtered);
+    
+    if (import.meta.env.DEV) {
+      console.log(`📊 filterMembers: ${members.length} -> ${filtered.length} (query: "${searchQuery}")`);
+    }
   };
 
+  // Load incoming connection requests (independent from members loading)
+  const loadIncomingRequests = async () => {
+    if (!currentUser?.uid) {
+      if (import.meta.env.DEV) {
+        console.log('[incoming-requests] No current user, skipping');
+      }
+      return;
+    }
+    
+    try {
+      setLoadingRequests(true);
+      
+      if (import.meta.env.DEV) {
+        console.log('[incoming-requests] Loading for user:', currentUser.uid);
+      }
+      
+      const requests = await ConnectionRequestService.getPendingRequests(currentUser.uid);
+      
+      if (import.meta.env.DEV) {
+        console.log(`[incoming-requests] Loaded ${requests.length} requests for user ${currentUser.uid}`);
+        console.log(`📊 requestsCount: ${requests.length}`);
+        console.log(`📊 requestsLoading: false`);
+        if (requests.length > 0) {
+          console.log('[incoming-requests] First request:', {
+            id: requests[0].id,
+            requesterId: requests[0].requesterId,
+            targetId: requests[0].targetId,
+            status: requests[0].status,
+            fromName: requests[0].fromName
+          });
+        }
+      }
+      
+      setIncomingRequests(requests);
+    } catch (error) {
+      console.error('❌ Error loading incoming requests:', error);
+      // Don't block page - just log error and set empty array
+      setIncomingRequests([]);
+      
+      if (import.meta.env.DEV) {
+        console.log(`📊 requestsError: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error('[incoming-requests] Full error:', error);
+      }
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
+  // Load sent connection requests to track pending state (independent from members loading)
+  const loadSentRequests = async () => {
+    if (!currentUser?.uid) return;
+    
+    try {
+      const sentRequests = await ConnectionRequestService.getSentRequests(currentUser.uid);
+      const pendingTargetIds = new Set(
+        sentRequests
+          .filter(req => req.status === 'pending')
+          .map(req => req.targetId || req.toUid)
+      );
+      setSentRequestIds(pendingTargetIds);
+      
+      if (import.meta.env.DEV) {
+        console.log(`📊 sentRequestIds count: ${pendingTargetIds.size}`);
+      }
+    } catch (error) {
+      console.error('❌ Error loading sent requests:', error);
+      // Don't block page - just set empty set
+      setSentRequestIds(new Set());
+    }
+  };
+
+  // Handle accepting/rejecting incoming requests
+  const handleRespondToRequest = async (requestId: string, action: 'accept' | 'reject') => {
+    if (!currentUser?.uid || respondingToRequest === requestId) return;
+
+    // Find the request in local state to get requester info
+    const request = incomingRequests.find(r => r.id === requestId);
+    const requesterId = request?.requesterId || request?.fromUid;
+    const targetId = request?.targetId || request?.toUid;
+
+    if (import.meta.env.DEV) {
+      console.log('[handle-respond-start]', {
+        requestId,
+        action,
+        currentUserId: currentUser.uid,
+        requesterId,
+        targetId
+      });
+    }
+
+    try {
+      setRespondingToRequest(requestId);
+      
+      // Respond to request (this will create connection if accepted, using same path as admin)
+      const connectionId = await ConnectionRequestService.respondToRequest(
+        requestId, 
+        action, 
+        currentUser.uid
+      );
+      
+      if (import.meta.env.DEV) {
+        console.log('[handle-respond-result]', {
+          requestId,
+          action,
+          connectionId,
+          connectionCreated: !!connectionId
+        });
+      }
+      
+      // Remove from incoming requests immediately (optimistic update)
+      setIncomingRequests(prev => prev.filter(req => req.id !== requestId));
+      
+      // If accepted, verify connection exists using EXACT same checks the UI uses
+      if (action === 'accept') {
+        try {
+          const { ConnectionService } = await import('../services/connectionService');
+          
+          // VERIFICATION 1: Use the EXACT same check as member card "Connected" button
+          // This is what determines isConnected in MembersPage (line ~105-109)
+          const isConnectedResult = await ConnectionService.checkExistingConnection(
+            currentUser.uid,
+            requesterId || ''
+          );
+          
+          // VERIFICATION 2: Use the EXACT same query as "My Connections" dashboard
+          // This is what ConnectionsCard uses (getUserConnections)
+          const dashboardConnections = await ConnectionService.getUserConnections(currentUser.uid, 100);
+          const dashboardContainsOtherUser = dashboardConnections.some(conn => 
+            (conn.uid1 === requesterId && conn.uid2 === currentUser.uid) ||
+            (conn.uid2 === requesterId && conn.uid1 === currentUser.uid)
+          );
+          
+          // Also check from requester's perspective
+          const requesterConnections = requesterId 
+            ? await ConnectionService.getUserConnections(requesterId, 100)
+            : [];
+          const requesterSeesConnection = requesterConnections.some(conn =>
+            (conn.uid1 === requesterId && conn.uid2 === currentUser.uid) ||
+            (conn.uid2 === requesterId && conn.uid1 === currentUser.uid)
+          );
+          
+          if (import.meta.env.DEV) {
+            // Find the actual connection doc from dashboard query to see its structure
+            const actualConnectionDoc = dashboardConnections.find(conn => 
+              (conn.uid1 === requesterId && conn.uid2 === currentUser.uid) ||
+              (conn.uid2 === requesterId && conn.uid1 === currentUser.uid)
+            );
+            
+            console.log('[ACCEPT_VERIFY]', {
+              requestId,
+              requesterId,
+              targetId: currentUser.uid,
+              connectionId,
+              adminConnectCalled: true, // Confirmed: AdminConnectionService.createAdminConnection was called
+              // Verification 1: Member card "Connected" button check (query-based, not path-based)
+              connectedButtonLogicResult: !!isConnectedResult,
+              connectedButtonLogicResult_id: isConnectedResult?.id,
+              connectedButtonLogicResult_uid1: isConnectedResult?.uid1,
+              connectedButtonLogicResult_uid2: isConnectedResult?.uid2,
+              connectedButtonLogicResult_hasUpdatedAt: !!isConnectedResult?.updatedAt,
+              // Verification 2: Dashboard "My Connections" check (same as ConnectionsCard)
+              myConnectionsContainsOtherUser: dashboardContainsOtherUser,
+              myConnectionsCount: dashboardConnections.length,
+              requesterSeesConnection,
+              // Actual connection doc structure (if found)
+              actualConnectionDoc: actualConnectionDoc ? {
+                id: actualConnectionDoc.id,
+                uid1: actualConnectionDoc.uid1,
+                uid2: actualConnectionDoc.uid2,
+                hasUpdatedAt: !!actualConnectionDoc.updatedAt,
+                hasCreatedAt: !!actualConnectionDoc.createdAt,
+                source: actualConnectionDoc.source
+              } : null,
+              // Sample connection IDs from dashboard query
+              dashboardConnectionIds: dashboardConnections.map(c => c.id).slice(0, 5)
+            });
+            
+            // If verification fails, print exactly why
+            if (!isConnectedResult) {
+              console.error('❌ [ACCEPT_VERIFY] FAILED: checkExistingConnection returned null', {
+                requesterId,
+                targetId: currentUser.uid,
+                connectionId,
+                reason: 'Query-based check found no connection. Connection may not exist or may be missing uid1/uid2 fields.',
+                queryUsed: 'connections where (uid1==requesterId AND uid2==targetId) OR (uid1==targetId AND uid2==requesterId)',
+                adminCreatorWroteTo: `connections/${connectionId}`,
+                note: 'checkExistingConnection now uses query-based lookup, not doc ID assumption'
+              });
+            }
+            
+            if (!dashboardContainsOtherUser) {
+              console.error('❌ [ACCEPT_VERIFY] FAILED: Connection not in getUserConnections query', {
+                connectionId,
+                dashboardQuery: 'connections where uid1==currentUser OR uid2==currentUser, orderBy updatedAt',
+                dashboardResults: dashboardConnections.length,
+                reason: 'Connection doc missing uid1 or uid2 field matching currentUser, or missing updatedAt for orderBy',
+                adminCreatorShouldWrite: {
+                  uid1: requesterId,
+                  uid2: currentUser.uid,
+                  updatedAt: 'serverTimestamp() (REQUIRED for orderBy)',
+                  createdAt: 'serverTimestamp()',
+                  createdBy: 'currentUser.uid',
+                  source: 'user'
+                },
+                actualConnectionDoc: actualConnectionDoc || 'NOT FOUND IN QUERY'
+              });
+            }
+            
+            if (!isConnectedResult || !dashboardContainsOtherUser) {
+              console.error('❌ [ACCEPT_VERIFY] Connection verification FAILED', {
+                checkExistingConnection_works: !!isConnectedResult,
+                getUserConnections_works: dashboardContainsOtherUser,
+                connectionId,
+                mismatch: !isConnectedResult ? 'Query-based check failed (connection may not exist or missing fields)' : 'Connection exists but not in getUserConnections query (missing uid1/uid2/updatedAt)'
+              });
+            } else {
+              console.log('✅ [ACCEPT_VERIFY] PASSED: Connection is queryable by both UI checks');
+            }
+          }
+          
+          // Assert verification passed
+          if (!isConnectedResult) {
+            throw new Error('Connection was created but checkExistingConnection cannot find it. The connection may not be in the correct format.');
+          }
+          
+          if (!dashboardContainsOtherUser) {
+            throw new Error('Connection was created but getUserConnections cannot find it. The connection may be missing required fields (uid1, uid2, updatedAt).');
+          }
+        } catch (verifyError) {
+          console.error('[ACCEPT_VERIFY] Verification error:', verifyError);
+          // Don't throw - connection might still be created, just not immediately queryable
+          // But log the error so we can debug
+        }
+        
+        // Update sent request IDs to remove any pending state
+        if (requesterId) {
+          setSentRequestIds(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(requesterId);
+            return newSet;
+          });
+        }
+        
+        // Reload members to show connection status
+        await loadMembers();
+        
+        if (import.meta.env.DEV) {
+          console.log('[handle-respond-accepted]', {
+            requestId,
+            requesterId,
+            targetId,
+            connectionId,
+            membersReloaded: true
+          });
+        }
+      }
+      
+      console.log(`✅ Request ${action}ed successfully`);
+    } catch (error: any) {
+      console.error(`❌ Error ${action}ing request:`, error);
+      
+      // Show user-friendly error message
+      const errorMessage = error.message || `Failed to ${action} request. Please try again.`;
+      alert(errorMessage);
+      
+      // Reload requests to get fresh state in case of partial failure
+      if (currentUser?.uid) {
+        await loadIncomingRequests();
+      }
+    } finally {
+      setRespondingToRequest(null);
+    }
+  };
+
+  // Handle sending connection request (user-initiated) or creating connection (admin)
   const handleConnect = async (memberId: string) => {
     if (!currentUser?.uid || connectingUsers.has(memberId)) return;
 
     try {
       setConnectingUsers(prev => new Set([...prev, memberId]));
 
-      await ConnectionService.createConnection(
-        currentUser.uid,
-        memberId,
-        ['platform_connection'] // Default reason for member page connections
-      );
+      // Admins create connections immediately (no request workflow)
+      if (currentUser.role === 'admin') {
+        const { AdminConnectionService } = await import('../services/adminConnectionService');
+        await AdminConnectionService.createAdminConnection(
+          currentUser.uid,
+          memberId,
+          currentUser.uid,
+          { reason: 'Admin connection from Members page' }
+        );
 
-      // Update local state
-      setMembers(prev => 
-        prev.map(member => 
-          member.uid === memberId 
-            ? { ...member, isConnected: true }
-            : member
-        )
-      );
+        // Update local state to show connected
+        setMembers(prev => 
+          prev.map(member => 
+            member.uid === memberId 
+              ? { ...member, isConnected: true, connectionPending: false }
+              : member
+          )
+        );
 
-      console.log('✅ Connection created successfully');
-    } catch (error) {
-      console.error('❌ Error creating connection:', error);
+        console.log('✅ Admin connection created immediately');
+      } else {
+        // Regular users send connection request
+        await ConnectionRequestService.sendConnectionRequest(
+          currentUser.uid,
+          memberId,
+          {}
+        );
+
+        // Update local state to show pending
+        setMembers(prev => 
+          prev.map(member => 
+            member.uid === memberId 
+              ? { ...member, connectionPending: true }
+              : member
+          )
+        );
+        
+        // Track sent request
+        setSentRequestIds(prev => new Set([...prev, memberId]));
+
+        console.log('✅ Connection request sent successfully');
+      }
+    } catch (error: any) {
+      console.error('❌ Error creating connection/request:', error);
+      // Show user-friendly error message (not the API server error)
+      const errorMessage = error.message?.includes('API server') || error.message?.includes('localhost:3000')
+        ? 'Couldn\'t send request. Please try again.'
+        : error.message || 'Failed to create connection. Please try again.';
+      alert(errorMessage);
     } finally {
       setConnectingUsers(prev => {
         const newSet = new Set(prev);
@@ -201,6 +551,7 @@ const MembersPage: React.FC = () => {
     console.log(`   👤 Is self: ${isSelf} (currentUser.uid: ${currentUser?.uid?.substring(0, 8) || 'none'})`);
     const avatarColor = getAvatarColor(displayName);
     const isConnecting = connectingUsers.has(member.uid);
+    const hasPendingRequest = member.connectionPending || sentRequestIds.has(member.uid);
 
     if (viewMode === 'list') {
       return (
@@ -271,7 +622,7 @@ const MembersPage: React.FC = () => {
                     </a>
                   )}
                   
-                  {currentUser && !member.isConnected && !isSelf && (
+                  {currentUser && !member.isConnected && !isSelf && !hasPendingRequest && (
                     <button
                       onClick={() => handleConnect(member.uid)}
                       disabled={isConnecting}
@@ -284,6 +635,13 @@ const MembersPage: React.FC = () => {
                         <Plus className="h-5 w-5" />
                       )}
                     </button>
+                  )}
+                  
+                  {hasPendingRequest && !member.isConnected && (
+                    <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1">
+                      <Clock className="h-4 w-4" />
+                      <span>Pending</span>
+                    </div>
                   )}
                   
                   {member.isConnected && (
@@ -398,7 +756,7 @@ const MembersPage: React.FC = () => {
             )}
           </div>
 
-          {currentUser && !member.isConnected && !isSelf && (
+          {currentUser && !member.isConnected && !isSelf && !hasPendingRequest && (
             <button
               onClick={() => handleConnect(member.uid)}
               disabled={isConnecting}
@@ -416,6 +774,13 @@ const MembersPage: React.FC = () => {
                 </>
               )}
             </button>
+          )}
+
+          {hasPendingRequest && !member.isConnected && (
+            <div className="bg-yellow-100 text-yellow-800 px-4 py-2.5 rounded-lg font-medium flex items-center justify-center space-x-2">
+              <Clock className="h-4 w-4" />
+              <span>Pending</span>
+            </div>
           )}
 
           {member.isConnected && (
@@ -455,8 +820,121 @@ const MembersPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <Header />
       
+      {/* Connection Requests Section - Independent from members loading */}
+      <section className={`${incomingRequests.length > 0 ? 'pt-32 pb-6' : 'pt-32 pb-0'} px-4 sm:px-6 lg:px-8`}>
+        {loadingRequests && (
+          <div className="max-w-6xl mx-auto mb-6">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <span className="text-gray-600">Loading connection requests...</span>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {incomingRequests.length > 0 && (
+          <div className="max-w-6xl mx-auto">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
+                  <Clock className="h-6 w-6 text-blue-600" />
+                  <span>Connection Requests</span>
+                  <span className="bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full text-sm font-medium">
+                    {incomingRequests.length}
+                  </span>
+                </h2>
+              </div>
+              
+              <div className="space-y-3">
+                {incomingRequests.map((request) => {
+                  const requesterName = request.fromName || request.requester?.displayName || request.requester?.name || 'Unknown User';
+                  const requesterWork = request.fromWork || request.requester?.work || '';
+                  const requesterAvatar = request.fromProfileImage || request.requester?.profileImage;
+                  
+                  return (
+                    <div
+                      key={request.id}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center space-x-4 flex-1 min-w-0">
+                        {/* Avatar */}
+                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 flex-shrink-0">
+                          {requesterAvatar ? (
+                            <img
+                              src={requesterAvatar}
+                              alt={requesterName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold">
+                              {requesterName.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-semibold text-gray-900 truncate">
+                            {requesterName}
+                          </h3>
+                          {requesterWork && (
+                            <p className="text-sm text-gray-600 truncate">
+                              {requesterWork}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            {request.createdAt 
+                              ? `Requested ${request.createdAt instanceof Date 
+                                  ? request.createdAt.toLocaleDateString()
+                                  : new Date(request.createdAt).toLocaleDateString()}`
+                              : 'Requested recently'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Actions */}
+                      <div className="flex items-center space-x-2 ml-4 flex-shrink-0">
+                        <button
+                          onClick={() => handleRespondToRequest(request.id, 'accept')}
+                          disabled={respondingToRequest === request.id}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 font-medium"
+                        >
+                          {respondingToRequest === request.id ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <>
+                              <Check className="h-4 w-4" />
+                              <span>Accept</span>
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleRespondToRequest(request.id, 'reject')}
+                          disabled={respondingToRequest === request.id}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 font-medium"
+                        >
+                          {respondingToRequest === request.id ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <>
+                              <X className="h-4 w-4" />
+                              <span>Reject</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+      
       {/* Hero Section */}
-      <section className="pt-32 pb-12 bg-gradient-to-br from-blue-50 to-indigo-50">
+      <section className="pt-6 pb-12 bg-gradient-to-br from-blue-50 to-indigo-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">

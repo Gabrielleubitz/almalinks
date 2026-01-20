@@ -3,6 +3,7 @@ import { Search, Users, MapPin, Briefcase, Linkedin, Mail, UserPlus, Clock, Filt
 import { DirectoryService } from '../../services/directoryService';
 import { PrivacyService } from '../../services/privacyService';
 import { ConnectionService } from '../../services/connectionService';
+import { ConnectionRequestService } from '../../services/connectionRequestService';
 import { EventService } from '../../services/eventService';
 import { UserDirectoryEntry } from '../../types/connection';
 import { useAuth } from '../../hooks/useAuth';
@@ -131,14 +132,17 @@ const GlobalDirectory: React.FC<GlobalDirectoryProps> = ({ eventId, className = 
     try {
       setConnectingUsers(prev => new Set([...prev, targetUser.uid]));
 
-      // For now, create direct connection (we'll add connection requests later)
-      // In the future, this would send a connection request instead
-      await ConnectionService.createConnection(user.uid, targetUser.uid, selectedEventFilter || '');
+      // Send connection request (not direct connection)
+      await ConnectionRequestService.sendConnectionRequest(
+        user.uid,
+        targetUser.uid,
+        { eventId: selectedEventFilter || undefined }
+      );
       
       // Update rate limit status
       await loadRateLimitStatus();
       
-      alert(`✅ Successfully connected with ${targetUser.name}!`);
+      alert(`✅ Connection request sent to ${targetUser.name}! They'll be notified.`);
       
       // Remove from search results or mark as connected
       setUsers(prevUsers => prevUsers.filter(u => u.uid !== targetUser.uid));

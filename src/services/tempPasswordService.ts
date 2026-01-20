@@ -88,7 +88,22 @@ export class TempPasswordService {
     try {
       console.log('🔐 Forcing password change for user:', targetUserId);
       
-      const response = await fetch('/api/user-admin', {
+      // Use relative URL - Vite proxy will forward to localhost:3000 in dev
+      // In production, this will hit the same origin
+      const url = '/api/user-admin';
+      
+      if (import.meta.env.DEV) {
+        console.log('[tempPasswordService] Calling API:', {
+          url,
+          method: 'POST',
+          action: 'force-password-reset',
+          targetUserId,
+          adminId,
+          note: 'Using relative URL - Vite proxy should forward to localhost:3000'
+        });
+      }
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -100,16 +115,80 @@ export class TempPasswordService {
         })
       });
       
+      // Log the actual URL that was called (for debugging)
+      if (import.meta.env.DEV) {
+        console.log('[tempPasswordService] Response received:', {
+          url,
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok
+        });
+      }
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to force password reset');
+        // Try to read error message from response
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        let errorData: any = null;
+        
+        try {
+          const errorText = await response.text();
+          if (errorText) {
+            try {
+              errorData = JSON.parse(errorText);
+              errorMessage = errorData.error || errorData.message || errorText;
+            } catch {
+              errorMessage = errorText || errorMessage;
+            }
+          }
+        } catch (parseError) {
+          console.warn('[tempPasswordService] Failed to parse error response:', parseError);
+        }
+        
+        if (import.meta.env.DEV) {
+          console.error('[tempPasswordService] API error response:', {
+            url,
+            status: response.status,
+            statusText: response.statusText,
+            errorMessage,
+            errorData
+          });
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      const result = await response.json();
+      
+      if (import.meta.env.DEV) {
+        console.log('[tempPasswordService] Success response:', result);
       }
       
       console.log('✅ Password reset forced successfully');
-      return true;
+      return result.success !== false; // Return true if success is not explicitly false
       
     } catch (error: any) {
       console.error('❌ Error forcing password reset:', error);
+      
+      // Provide more helpful error messages for network errors
+      if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+        const isDev = import.meta.env.DEV;
+        const errorMsg = isDev
+          ? `Network error: Could not reach API server at ${url}. ` +
+            `Make sure 'vercel dev --listen 3000' is running. ` +
+            `The Vite proxy forwards /api/* requests from localhost:5173 to localhost:3000.`
+          : `Network error: Could not reach API server. Please check your connection and try again.`;
+        
+        throw new Error(errorMsg);
+      }
+      
+      // Check if error is from proxy connection failure
+      if (error.message?.includes('PROXY_CONNECTION_ERROR') || error.message?.includes('Cannot connect to API server')) {
+        throw new Error(
+          `API server not available. Please run 'vercel dev --listen 3000' in a separate terminal. ` +
+          `The frontend (localhost:5173) proxies /api/* requests to the API server (localhost:3000).`
+        );
+      }
+      
       throw new Error(`Failed to force password reset: ${error.message}`);
     }
   }

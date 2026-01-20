@@ -241,13 +241,41 @@ export class ConnectionService {
   // Check if a connection exists between two users (regardless of event)
   static async checkExistingConnection(uid1: string, uid2: string): Promise<Connection | null> {
     try {
-      const connectionId = this.generateConnectionId(uid1, uid2);
-      const connectionDoc = await retryOnNetworkFailure(() => 
-        getDoc(doc(db, 'connections', connectionId))
+      // Query-based lookup: Don't assume doc ID format
+      // Query connections where (uid1==uid1 AND uid2==uid2) OR (uid1==uid2 AND uid2==uid1)
+      // This matches how getUserConnections() works and doesn't depend on doc ID format
+      const connectionsRef = collection(db, 'connections');
+      
+      // Query 1: uid1 == first param, uid2 == second param
+      const q1 = query(
+        connectionsRef,
+        where('uid1', '==', uid1),
+        where('uid2', '==', uid2),
+        limit(1)
       );
       
-      if (connectionDoc.exists()) {
-        return { id: connectionDoc.id, ...connectionDoc.data() } as Connection;
+      // Query 2: uid1 == second param, uid2 == first param (reverse)
+      const q2 = query(
+        connectionsRef,
+        where('uid1', '==', uid2),
+        where('uid2', '==', uid1),
+        limit(1)
+      );
+      
+      const [snapshot1, snapshot2] = await Promise.all([
+        retryOnNetworkFailure(() => getDocs(q1)),
+        retryOnNetworkFailure(() => getDocs(q2))
+      ]);
+      
+      // Return first match (should only be one)
+      if (!snapshot1.empty) {
+        const doc = snapshot1.docs[0];
+        return { id: doc.id, ...doc.data() } as Connection;
+      }
+      
+      if (!snapshot2.empty) {
+        const doc = snapshot2.docs[0];
+        return { id: doc.id, ...doc.data() } as Connection;
       }
       
       return null;
@@ -349,21 +377,31 @@ export class ConnectionService {
       
       snapshot1.forEach(doc => {
         const data = doc.data();
-        console.log('📸 Connection where user is uid1:', {
-          id: doc.id,
-          uid1ProfileImage: data.uid1ProfileImage,
-          uid2ProfileImage: data.uid2ProfileImage
-        });
+        if (import.meta.env.DEV) {
+          console.log('📸 Connection where user is uid1:', {
+            id: doc.id,
+            uid1: data.uid1,
+            uid2: data.uid2,
+            hasUpdatedAt: !!data.updatedAt,
+            uid1ProfileImage: data.uid1ProfileImage,
+            uid2ProfileImage: data.uid2ProfileImage
+          });
+        }
         connections.push({ id: doc.id, ...data } as Connection);
       });
       
       snapshot2.forEach(doc => {
         const data = doc.data();
-        console.log('📸 Connection where user is uid2:', {
-          id: doc.id,
-          uid1ProfileImage: data.uid1ProfileImage,
-          uid2ProfileImage: data.uid2ProfileImage
-        });
+        if (import.meta.env.DEV) {
+          console.log('📸 Connection where user is uid2:', {
+            id: doc.id,
+            uid1: data.uid1,
+            uid2: data.uid2,
+            hasUpdatedAt: !!data.updatedAt,
+            uid1ProfileImage: data.uid1ProfileImage,
+            uid2ProfileImage: data.uid2ProfileImage
+          });
+        }
         connections.push({ id: doc.id, ...data } as Connection);
       });
       
