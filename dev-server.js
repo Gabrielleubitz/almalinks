@@ -7,13 +7,15 @@ import { config } from 'dotenv';
 config();
 
 // Initialize Firebase Admin ONCE before importing API handlers
-import './api/firebase-init.js';
+import './lib/server/firebase-init.js';
 
-import adminChatsHandler from './api/admin/chats.js';
-import userAdminHandler from './api/user-admin.js';
-import activityAdminHandler from './api/activity-admin.js';
-import emailServiceHandler from './api/email-service.js';
-import deleteUserHandler from './api/delete-user.js';
+import userAdminHandler from './lib/server/api/user-admin.js';
+import activityAdminHandler from './lib/server/api/activity-admin.js';
+import emailServiceHandler from './lib/server/api/email-service.js';
+import deleteUserHandler from './lib/server/api/delete-user.js';
+
+// CJS handler (kept as CommonJS)
+import adminChatsHandler from './lib/server/api/admin/chats.cjs';
 // Temporarily disabled problematic imports
 // import systemTestHandler from './api/system-test.js';
 // import adminToolsHandler from './api/admin-tools.js';

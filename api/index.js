@@ -1,0 +1,99 @@
+// Single-entry Vercel function router (Hobby plan friendly)
+// All /api/* requests are routed here via vercel.json rewrite.
+//
+// Important: This file should stay very small; all business logic lives in lib/server/*.
+
+import url from 'url';
+
+// ESM handlers
+import userAdminHandler from '../lib/server/api/user-admin.js';
+import activityAdminHandler from '../lib/server/api/activity-admin.js';
+import emailServiceHandler from '../lib/server/api/email-service.js';
+import deleteUserHandler from '../lib/server/api/delete-user.js';
+import sendEmailHandler from '../lib/server/api/send-email.js';
+import sendBulkEmailHandler from '../lib/server/api/send-bulk-email.js';
+import notifySignupHandler from '../lib/server/api/notify-signup.js';
+import notifyUserSignupHandler from '../lib/server/api/notify-user-signup.js';
+import resolveEmailRecipientsHandler from '../lib/server/api/resolve-email-recipients.js';
+
+// Legacy connection/request endpoints (kept for compatibility with current frontend paths)
+import connectionsAdminCreateHandler from '../lib/server/api/legacy/api/connections/admin-create.js';
+import connectionsCreateFromRequestHandler from '../lib/server/api/legacy/api/connections/create-from-request.js';
+import connectionRequestCreateHandler from '../lib/server/api/legacy/api/connection-requests/connection-request/create.js';
+import connectionRequestRespondHandler from '../lib/server/api/legacy/api/connection-requests/connection-request/respond.js';
+import connectionRequestsIncomingHandler from '../lib/server/api/legacy/api/connection-requests/incoming.js';
+
+// CJS handlers (kept as .cjs to avoid changing their runtime semantics)
+const lazyCjs = async (relPath) => {
+  // Node will treat .cjs as CommonJS even in type=module projects
+  const mod = await import(relPath);
+  return mod?.default || mod;
+};
+
+const routeTable = new Map([
+  // Admin/user management
+  ['/api/user-admin', userAdminHandler],
+  ['/api/activity-admin', activityAdminHandler],
+  ['/api/delete-user', deleteUserHandler],
+
+  // Email / notifications
+  ['/api/email-service', emailServiceHandler],
+  ['/api/send-email', sendEmailHandler],
+  ['/api/send-bulk-email', sendBulkEmailHandler],
+  ['/api/resolve-email-recipients', resolveEmailRecipientsHandler],
+  ['/api/notify-signup', notifySignupHandler],
+  ['/api/notify-user-signup', notifyUserSignupHandler],
+
+  // Connections workflow (current frontend paths)
+  ['/api/connections/admin-create', connectionsAdminCreateHandler],
+  ['/api/connections/create-from-request', connectionsCreateFromRequestHandler],
+  ['/api/connection-request/create', connectionRequestCreateHandler],
+  ['/api/connection-request/respond', connectionRequestRespondHandler],
+  ['/api/connection-requests/incoming', connectionRequestsIncomingHandler],
+
+  // Back-compat for accidentally nested paths that existed in repo history
+  ['/api/api/connections/admin-create', connectionsAdminCreateHandler],
+  ['/api/api/connections/create-from-request', connectionsCreateFromRequestHandler],
+  ['/api/api/connection-request/create', connectionRequestCreateHandler],
+  ['/api/api/connection-request/respond', connectionRequestRespondHandler],
+  ['/api/api/connection-requests/incoming', connectionRequestsIncomingHandler],
+]);
+
+export default async function handler(req, res) {
+  const parsed = url.parse(req.url || '', true);
+  const pathname = parsed.pathname || '';
+
+  // Basic CORS / preflight support (individual handlers may also do this)
+  if (req.method === 'OPTIONS') {
+    return res.status(200).json({ ok: true });
+  }
+
+  // Lazy-load the CJS endpoints only when called (keeps cold start smaller)
+  if (pathname === '/api/send-sms' || pathname === '/api/system-test' || pathname === '/api/admin-tools' || pathname === '/api/automation-hub' || pathname === '/api/chat-api' || pathname === '/api/admin/chats') {
+    const cjsHandler =
+      pathname === '/api/send-sms' ? await lazyCjs('../lib/server/api/send-sms.cjs') :
+      pathname === '/api/system-test' ? await lazyCjs('../lib/server/api/system-test.cjs') :
+      pathname === '/api/admin-tools' ? await lazyCjs('../lib/server/api/admin-tools.cjs') :
+      pathname === '/api/automation-hub' ? await lazyCjs('../lib/server/api/automation-hub.cjs') :
+      pathname === '/api/chat-api' ? await lazyCjs('../lib/server/api/chat-api.cjs') :
+      pathname === '/api/admin/chats' ? await lazyCjs('../lib/server/api/admin/chats.cjs') :
+      null;
+
+    if (!cjsHandler) {
+      return res.status(404).json({ ok: false, error: 'Not found' });
+    }
+    return cjsHandler(req, res);
+  }
+
+  const directHandler = routeTable.get(pathname);
+  if (directHandler) {
+    return directHandler(req, res);
+  }
+
+  return res.status(404).json({
+    ok: false,
+    error: 'Not found',
+    path: pathname,
+  });
+}
+
