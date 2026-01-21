@@ -147,6 +147,21 @@ const ConnectionsCard: React.FC = () => {
         // Load all connections
         userConnections = await ConnectionService.getUserConnectionsLegacy(user.uid);
         
+        // Log UI connection source (DEV only)
+        if (import.meta.env.DEV) {
+          console.log('[CONN_UI_SOURCE] My Connections list', {
+            currentUser: user.uid,
+            source: 'ConnectionService.getUserConnectionsLegacy() -> queries connections where (uid1==currentUser OR uid2==currentUser) orderBy updatedAt desc',
+            count: userConnections.length,
+            sample: userConnections[0] ? {
+              id: userConnections[0].id,
+              fromUid: userConnections[0].fromUid,
+              toUid: userConnections[0].toUid,
+              eventId: userConnections[0].eventId
+            } : null
+          });
+        }
+        
         // Deduplicate users when showing "All Events"
         // Keep only the most recent connection with each unique user
         // But also track all events where they connected

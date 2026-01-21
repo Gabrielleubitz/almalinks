@@ -1,8 +1,15 @@
 {
-  "type": "module",
+  "name": "alma",
+  "private": true,
   "dependencies": {
     "node-mailjet": "^6.0.5",
     "twilio": "^4.19.0",
     "openai": "^4.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "dev:api": "vercel dev --listen 3000",
+    "build": "vite build",
+    "preview": "vite preview"
   }
 }

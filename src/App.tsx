@@ -9,7 +9,6 @@ import FloatingBubbles from './components/FloatingBubbles';
 import UpcomingEvent from './components/UpcomingEvent';
 import FAQ from './components/FAQ';
 import Footer from './components/Footer';
-import ChatWidget from './components/chat/ChatWidget';
 import DashboardPage from './pages/DashboardPage';
 import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
@@ -65,7 +64,6 @@ const HomePage = () => (
     <UpcomingEvent />
     <FAQ />
     <Footer />
-    <ChatWidget />
   </div>
 );
 

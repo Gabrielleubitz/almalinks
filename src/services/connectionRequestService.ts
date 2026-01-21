@@ -115,15 +115,56 @@ export class ConnectionRequestService {
 
     const pairKey = generatePairKey(fromUid, toUid);
 
+    // Check if connection already exists using SAME query-based approach as UI
+    // Do this BEFORE transaction to avoid unnecessary transaction overhead
+    const existingConnectionPreCheck = await ConnectionService.checkExistingConnection(fromUid, toUid);
+    
+    if (import.meta.env.DEV) {
+      console.log('[CONN_EXISTS_CHECK] Pre-transaction check (same as UI)', {
+        uidA: fromUid,
+        uidB: toUid,
+        whereChecking: 'ConnectionService.checkExistingConnection() -> queries connections where (uid1==fromUid AND uid2==toUid) OR (uid1==toUid AND uid2==fromUid)',
+        result: existingConnectionPreCheck ? {
+          id: existingConnectionPreCheck.id,
+          path: `connections/${existingConnectionPreCheck.id}`,
+          uid1: existingConnectionPreCheck.uid1,
+          uid2: existingConnectionPreCheck.uid2,
+          data: existingConnectionPreCheck
+        } : null,
+        note: 'Using same query-based check as UI (green Connected button). This is the source of truth.'
+      });
+    }
+    
+    if (existingConnectionPreCheck) {
+      throw new Error('Connection already exists between these users');
+    }
+
     // Use transaction to ensure atomicity
     return await retryOnNetworkFailure(() => 
       runTransaction(db, async (transaction) => {
-        // Check if connection already exists
+        // Double-check inside transaction (for race condition protection)
+        // Check doc by pairKey (admin creator uses this ID format)
         const connectionId = pairKey;
         const connectionRef = doc(db, 'connections', connectionId);
         const connectionDoc = await transaction.get(connectionRef);
         
         if (connectionDoc.exists()) {
+          if (import.meta.env.DEV) {
+            console.log('[CONN_EXISTS_CHECK] Transaction double-check found connection', {
+              uidA: fromUid,
+              uidB: toUid,
+              pairKey: connectionId,
+              whereChecking: `connections/${connectionId} (direct doc lookup in transaction)`,
+              result: {
+                id: connectionDoc.id,
+                path: `connections/${connectionDoc.id}`,
+                uid1: connectionDoc.data()?.uid1,
+                uid2: connectionDoc.data()?.uid2,
+                data: connectionDoc.data()
+              },
+              note: 'Found connection doc in transaction - connection exists!'
+            });
+          }
           throw new Error('Connection already exists between these users');
         }
 
@@ -152,26 +193,29 @@ export class ConnectionRequestService {
           throw new Error('Connection request already exists between these users');
         }
         
-        // Also check for accepted requests (to prevent duplicate connections)
-        const acceptedQuery1 = query(
-          requestsRef,
-          where('requesterId', '==', fromUid),
-          where('targetId', '==', toUid),
-          where('status', '==', 'accepted')
-        );
-        const acceptedQuery2 = query(
-          requestsRef,
-          where('requesterId', '==', toUid),
-          where('targetId', '==', fromUid),
-          where('status', '==', 'accepted')
-        );
+        // Check if actual connection exists (using same query as UI)
+        // DO NOT treat accepted requests as connections - only check real connection docs
+        // Note: This check was already done before the transaction, but we keep it here
+        // for consistency with the API endpoint flow
+        const existingConnectionInTransaction = await ConnectionService.checkExistingConnection(fromUid, toUid);
         
-        const [acceptedSnapshot1, acceptedSnapshot2] = await Promise.all([
-          getDocs(acceptedQuery1),
-          getDocs(acceptedQuery2)
-        ]);
+        if (import.meta.env.DEV) {
+          console.log('[CONN_EXISTS_CHECK] Real connection check (same as UI)', {
+            uidA: fromUid,
+            uidB: toUid,
+            whereChecking: 'ConnectionService.checkExistingConnection() -> queries connections where (uid1==fromUid AND uid2==toUid) OR (uid1==toUid AND uid2==fromUid)',
+            result: existingConnectionInTransaction ? {
+              id: existingConnectionInTransaction.id,
+              path: `connections/${existingConnectionInTransaction.id}`,
+              uid1: existingConnectionInTransaction.uid1,
+              uid2: existingConnectionInTransaction.uid2,
+              data: existingConnectionInTransaction
+            } : null,
+            note: 'Using same query-based check as UI (green Connected button)'
+          });
+        }
         
-        if (!acceptedSnapshot1.empty || !acceptedSnapshot2.empty) {
+        if (existingConnectionInTransaction) {
           throw new Error('Connection already exists between these users');
         }
 
@@ -246,64 +290,103 @@ export class ConnectionRequestService {
         throw new Error('User must be authenticated to respond to connection requests');
       }
 
-      if (import.meta.env.DEV) {
-        console.log('[respond-to-request-start]', {
-          requestId,
-          response,
-          respondingUserId
-        });
-      }
+      // Log input parameters
+      console.log('[RESPOND_TO_REQUEST_INPUT]', {
+        requestId,
+        action: response,
+        responderUid: respondingUserId,
+        actionType: typeof response,
+        actionValue: String(response)
+      });
 
-      if (response === 'accepted') {
-        // STEP 1: Get request data to extract requesterId and targetId
+      // Normalize action to handle variations
+      const normalized = String(response || '').toLowerCase().trim();
+      
+      // Determine branch using explicit boolean flags
+      const isAccept = ['accept', 'accepted', 'approve', 'approved'].includes(normalized);
+      const isReject = ['reject', 'rejected', 'decline', 'declined'].includes(normalized);
+      
+      // Validate action is recognized
+      if (!isAccept && !isReject) {
+        throw new Error(`Invalid action for respondToRequest: "${response}" (normalized: "${normalized}"). Must be 'accept'/'accepted' or 'reject'/'rejected'.`);
+      }
+      
+      // Log branch decision
+      console.log('[RESPOND_TO_REQUEST_BRANCH]', {
+        originalAction: response,
+        normalized,
+        isAccept,
+        isReject,
+        willExecute: isAccept ? 'ACCEPT' : 'REJECT'
+      });
+
+      if (isAccept) {
+        console.log('[ACCEPT_FLOW] START', { phase: 'load_request', requestId });
+        
+        // STEP 1: Load the connection request document
         const requestRef = doc(db, 'connection_requests', requestId);
         const requestDoc = await retryOnNetworkFailure(() => getDoc(requestRef));
         
         if (!requestDoc.exists()) {
-          throw new Error('Connection request not found');
+          throw new Error(`Connection request not found: ${requestId}`);
         }
         
         const requestData = requestDoc.data();
         const requesterId = requestData.requesterId || requestData.fromUid;
         const targetId = requestData.targetId || requestData.toUid;
+        const currentStatus = requestData.status;
         
-        // Verify current user is the target
+        console.log('[ACCEPT_FLOW]', { phase: 'request_loaded', requestId, status: currentStatus, requesterId, targetId });
+        
+        // STEP 2: Validate responderUid === targetId
         if (targetId !== currentUser.uid && requestData.toUid !== currentUser.uid) {
-          throw new Error('You can only accept requests sent to you');
+          throw new Error(`You can only accept requests sent to you. Expected targetId: ${targetId || requestData.toUid}, got: ${currentUser.uid}`);
         }
         
-        // Verify request is still pending
-        if (requestData.status !== 'pending') {
-          throw new Error(`Request already ${requestData.status}`);
+        // STEP 3: Handle already-accepted requests (idempotency)
+        if (currentStatus === 'accepted') {
+          console.log('[ACCEPT_FLOW]', { phase: 'already_accepted', requestId, status: currentStatus });
+          
+          // Check if connection already exists
+          const existingConnection = await ConnectionService.checkExistingConnection(requesterId, targetId);
+          
+          if (existingConnection) {
+            console.log('[ACCEPT_FLOW]', { 
+              phase: 'connection_exists', 
+              requestId, 
+              status: currentStatus, 
+              connectionId: existingConnection.id,
+              note: 'Request already accepted AND connection exists - returning existing connectionId (idempotent success)'
+            });
+            // Request already accepted and connection exists - return success
+            return existingConnection.id;
+          } else {
+            console.log('[ACCEPT_FLOW]', { 
+              phase: 'accepted_but_no_connection', 
+              requestId, 
+              status: currentStatus,
+              note: 'Request marked as accepted but no connection found - will create connection'
+            });
+            // Request marked as accepted but no connection exists - create it
+            // Continue to connection creation below
+          }
+        } else if (currentStatus !== 'pending') {
+          // Request is rejected or cancelled - cannot accept
+          throw new Error(`Request is ${currentStatus}. Cannot accept.`);
         }
         
-        // STEP 2: Update request status to accepted
-        await retryOnNetworkFailure(() => updateDoc(requestRef, {
-          status: 'accepted',
-          updatedAt: serverTimestamp(),
-          decidedAt: serverTimestamp(),
-          decisionBy: currentUser.uid,
-          decisionRole: 'user'
-        }));
-        
-        // STEP 3: Call the EXACT SAME admin connection creation function
-        // This is the EXACT entry point used by admin panel
+        // STEP 4: Create the connection FIRST (before updating request status)
+        // This ensures connection exists before we mark request as accepted
         const { AdminConnectionService } = await import('./adminConnectionService');
         
-        if (import.meta.env.DEV) {
-          console.log('[accept-calling-admin-connection-creator]', {
-            requestId,
-            requesterId,
-            targetId,
-            callingFunction: 'AdminConnectionService.createAdminConnection',
-            adminUid: currentUser.uid,
-            note: 'Using EXACT same function as admin panel'
-          });
-        }
+        console.log('[ACCEPT_FLOW]', { 
+          phase: 'create_connection', 
+          requestId, 
+          requesterId, 
+          targetId,
+          note: 'Creating connection BEFORE updating request status'
+        });
         
-        // Call the EXACT SAME function admin panel uses
-        // This will call /api/connections/admin-create (same endpoint)
-        // The endpoint will handle permissions (allows non-admin when sourceRequestId provided)
         let connectionId: string;
         
         try {
@@ -318,39 +401,80 @@ export class ConnectionRequestService {
             }
           );
           
-          // Store connectionId on request for audit
-          await retryOnNetworkFailure(() => updateDoc(requestRef, {
-            sourceRequestId: connectionId
-          }));
+          // CRITICAL: connectionId MUST be non-null
+          if (!connectionId || typeof connectionId !== 'string' || connectionId.length === 0) {
+            throw new Error(`Admin connection creator returned invalid connectionId: ${connectionId === null ? 'null' : connectionId === undefined ? 'undefined' : `type: ${typeof connectionId}`}. Check [ADMIN_CONNECT_RETURN] log.`);
+          }
+          
+          console.log('[ACCEPT_FLOW]', { 
+            phase: 'connection_created', 
+            requestId, 
+            connectionId,
+            note: 'Connection created successfully - now updating request status'
+          });
           
         } catch (connectionError: any) {
-          console.error('❌ Error creating connection via admin creator:', connectionError);
+          console.error('[ACCEPT_FLOW]', { 
+            phase: 'connection_error', 
+            requestId, 
+            error: connectionError.message 
+          });
           throw new Error(`Failed to create connection: ${connectionError.message}`);
         }
         
-        if (import.meta.env.DEV) {
-          console.log('[accept-admin-connection-creator-result]', {
-            requestId,
+        // STEP 5: ONLY AFTER successful connection creation, update request status
+        // This ensures we never mark request as accepted without a connection
+        if (currentStatus !== 'accepted') {
+          console.log('[ACCEPT_FLOW]', { 
+            phase: 'update_request_status', 
+            requestId, 
             connectionId,
-            connectionPath: `connections/${connectionId}`,
-            requesterId,
-            targetId,
-            adminConnectCalled: true,
-            writes: [
-              `connection_requests/${requestId} (status=accepted, sourceRequestId=${connectionId})`,
-              `connections/${connectionId} (uid1=${requesterId}, uid2=${targetId}, source=user)`
-            ]
+            oldStatus: currentStatus,
+            newStatus: 'accepted'
           });
+          
+          await retryOnNetworkFailure(() => updateDoc(requestRef, {
+            status: 'accepted',
+            updatedAt: serverTimestamp(),
+            decidedAt: serverTimestamp(),
+            decisionBy: currentUser.uid,
+            decisionRole: 'user',
+            sourceRequestId: connectionId,
+            sourceConnectionPath: `connections/${connectionId}`
+          }));
+        } else {
+          // Request was already accepted - just update connection reference if missing
+          console.log('[ACCEPT_FLOW]', { 
+            phase: 'update_request_reference', 
+            requestId, 
+            connectionId,
+            note: 'Request already accepted - updating connection reference only'
+          });
+          
+          await retryOnNetworkFailure(() => updateDoc(requestRef, {
+            sourceRequestId: connectionId,
+            sourceConnectionPath: `connections/${connectionId}`,
+            updatedAt: serverTimestamp()
+          }));
         }
         
+        console.log('[ACCEPT_FLOW]', { 
+          phase: 'complete', 
+          requestId, 
+          connectionId,
+          status: 'accepted',
+          note: 'Accept flow completed successfully - connection exists and request is marked accepted'
+        });
+        
+        // Return connectionId - guaranteed non-null at this point
         return connectionId;
-      } else {
-        // For reject: update request status only
+      } else if (isReject) {
+        // For reject: update request status only (returns null)
         const requestRef = doc(db, 'connection_requests', requestId);
         const requestDoc = await retryOnNetworkFailure(() => getDoc(requestRef));
         
         if (!requestDoc.exists()) {
-          throw new Error('Connection request not found');
+          throw new Error(`Connection request not found: ${requestId}`);
         }
         
         const requestData = requestDoc.data();
@@ -358,7 +482,7 @@ export class ConnectionRequestService {
         
         // Verify current user is the target
         if (targetId !== currentUser.uid && requestData.toUid !== currentUser.uid) {
-          throw new Error('You can only reject requests sent to you');
+          throw new Error(`You can only reject requests sent to you. Expected targetId: ${targetId || requestData.toUid}, got: ${currentUser.uid}`);
         }
         
         // Update request status
@@ -370,12 +494,36 @@ export class ConnectionRequestService {
           decisionRole: 'user'
         }));
         
+        console.log('[RESPOND_TO_REQUEST_REJECT_RESULT]', {
+          connectionId: null,
+          requestId,
+          action: normalized,
+          branch: 'REJECT',
+          note: 'Request rejected - returning null (no connection created)'
+        });
+        
         console.log('✅ Connection request rejected:', requestId);
-        return null;
+        return null; // Reject returns null (no connection created)
+      } else {
+        // This should never happen due to validation above, but add safety check
+        throw new Error(`Invalid action state: isAccept=${isAccept}, isReject=${isReject}, normalized="${normalized}"`);
       }
 
     } catch (error: any) {
       console.error('❌ Error responding to connection request:', error);
+      
+      // DEV log: Error path
+      if (import.meta.env.DEV) {
+        console.error('[RESPOND_TO_REQUEST] ERROR', {
+          requestId,
+          action: response,
+          responderUid: respondingUserId,
+          error: error.message,
+          note: 'respondToRequest threw error - NOT returning null, throwing error instead'
+        });
+      }
+      
+      // Re-throw error - NEVER return null on error
       throw error;
     }
   }
@@ -551,7 +699,7 @@ export class ConnectionRequestService {
             eventId: requestData.eventId || null,
             requestId: requestId,
             context: 'user-requested connection accepted',
-            timestamp: serverTimestamp()
+            timestamp: new Date().toISOString() // Use ISO string instead of serverTimestamp() (serverTimestamp() cannot be used in arrays)
           }]
         };
 
@@ -662,7 +810,7 @@ export class ConnectionRequestService {
             requestId: requestId,
             eventId: eventId || null,
             context: 'Connection request accepted by user',
-            timestamp: now
+            timestamp: new Date().toISOString() // Use ISO string instead of serverTimestamp() (serverTimestamp() cannot be used in arrays)
           }]
         };
         

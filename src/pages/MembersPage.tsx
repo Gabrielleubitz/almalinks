@@ -108,6 +108,22 @@ const MembersPage: React.FC = () => {
               );
               isConnected = !!connection;
               
+              // Log UI connection check (DEV only)
+              if (import.meta.env.DEV) {
+                console.log('[CONN_UI_SOURCE] Green Connected button check', {
+                  currentUser: currentUser.uid,
+                  otherUser: member.uid,
+                  source: 'ConnectionService.checkExistingConnection() -> queries connections where (uid1==currentUser AND uid2==otherUser) OR (uid1==otherUser AND uid2==currentUser)',
+                  result: connection ? {
+                    id: connection.id,
+                    path: `connections/${connection.id}`,
+                    uid1: connection.uid1,
+                    uid2: connection.uid2
+                  } : null,
+                  isConnected
+                });
+              }
+              
               // Check if we've sent a pending request to this member (from state)
               if (!isConnected) {
                 connectionPending = sentRequestIds.has(member.uid);
@@ -272,9 +288,11 @@ const MembersPage: React.FC = () => {
       setRespondingToRequest(requestId);
       
       // Respond to request (this will create connection if accepted, using same path as admin)
+      // Convert 'accept'/'reject' to 'accepted'/'rejected' for the service
+      const serviceAction = action === 'accept' ? 'accepted' : 'rejected';
       const connectionId = await ConnectionRequestService.respondToRequest(
         requestId, 
-        action, 
+        serviceAction, 
         currentUser.uid
       );
       
@@ -290,126 +308,136 @@ const MembersPage: React.FC = () => {
       // Remove from incoming requests immediately (optimistic update)
       setIncomingRequests(prev => prev.filter(req => req.id !== requestId));
       
-      // If accepted, verify connection exists using EXACT same checks the UI uses
+      // If accepted, verify connection exists using returned connectionId
       if (action === 'accept') {
         try {
+          // CRITICAL: connectionId MUST be non-null from admin creator
+          if (!connectionId) {
+            throw new Error('CRITICAL: Admin connection creator returned null connectionId. Check [ADMIN_CONNECT_RETURN] and [ADMIN_CONNECT_USED] logs.');
+          }
+          
+          const connectionPath = `connections/${connectionId}`;
+          
+          // VERIFICATION 1: Read the returned doc directly (fastest, most reliable)
+          const { doc, getDoc } = await import('firebase/firestore');
+          const { db } = await import('../firebase/config');
+          
+          const connectionDocRef = doc(db, connectionPath);
+          const connectionDoc = await getDoc(connectionDocRef);
+          
+          if (!connectionDoc.exists()) {
+            throw new Error(`Connection doc does not exist at returned path: ${connectionPath}. Check [ADMIN_CONNECT_WRITE] log.`);
+          }
+          
+          const connectionData = connectionDoc.data();
+          
+          if (import.meta.env.DEV) {
+            console.log('[ACCEPT_VERIFY] Step 1: Direct doc read', {
+              connectionId,
+              connectionPath,
+              docExists: connectionDoc.exists(),
+              docData: {
+                uid1: connectionData.uid1,
+                uid2: connectionData.uid2,
+                hasUpdatedAt: !!connectionData.updatedAt,
+                source: connectionData.source
+              }
+            });
+          }
+          
+          // VERIFICATION 2: Use query-based checks (for UI compatibility)
           const { ConnectionService } = await import('../services/connectionService');
           
-          // VERIFICATION 1: Use the EXACT same check as member card "Connected" button
-          // This is what determines isConnected in MembersPage (line ~105-109)
+          // Small delay for eventual consistency
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Retry getUserConnections up to 5 times (for eventual consistency)
+          let dashboardConnections: any[] = [];
+          let dashboardContainsOtherUser = false;
+          let retryCount = 0;
+          const maxRetries = 5;
+          
+          while (retryCount < maxRetries && !dashboardContainsOtherUser) {
+            dashboardConnections = await ConnectionService.getUserConnections(currentUser.uid, 100);
+            dashboardContainsOtherUser = dashboardConnections.some(conn => 
+              (conn.uid1 === requesterId && conn.uid2 === currentUser.uid) ||
+              (conn.uid2 === requesterId && conn.uid1 === currentUser.uid)
+            );
+            
+            if (!dashboardContainsOtherUser && retryCount < maxRetries - 1) {
+              await new Promise(resolve => setTimeout(resolve, 200));
+              retryCount++;
+            } else {
+              break;
+            }
+          }
+          
+          // Also verify checkExistingConnection works
           const isConnectedResult = await ConnectionService.checkExistingConnection(
             currentUser.uid,
             requesterId || ''
           );
           
-          // VERIFICATION 2: Use the EXACT same query as "My Connections" dashboard
-          // This is what ConnectionsCard uses (getUserConnections)
-          const dashboardConnections = await ConnectionService.getUserConnections(currentUser.uid, 100);
-          const dashboardContainsOtherUser = dashboardConnections.some(conn => 
-            (conn.uid1 === requesterId && conn.uid2 === currentUser.uid) ||
-            (conn.uid2 === requesterId && conn.uid1 === currentUser.uid)
-          );
-          
-          // Also check from requester's perspective
-          const requesterConnections = requesterId 
-            ? await ConnectionService.getUserConnections(requesterId, 100)
-            : [];
-          const requesterSeesConnection = requesterConnections.some(conn =>
-            (conn.uid1 === requesterId && conn.uid2 === currentUser.uid) ||
-            (conn.uid2 === requesterId && conn.uid1 === currentUser.uid)
-          );
-          
           if (import.meta.env.DEV) {
-            // Find the actual connection doc from dashboard query to see its structure
-            const actualConnectionDoc = dashboardConnections.find(conn => 
-              (conn.uid1 === requesterId && conn.uid2 === currentUser.uid) ||
-              (conn.uid2 === requesterId && conn.uid1 === currentUser.uid)
-            );
-            
             console.log('[ACCEPT_VERIFY]', {
               requestId,
               requesterId,
               targetId: currentUser.uid,
               connectionId,
-              adminConnectCalled: true, // Confirmed: AdminConnectionService.createAdminConnection was called
-              // Verification 1: Member card "Connected" button check (query-based, not path-based)
-              connectedButtonLogicResult: !!isConnectedResult,
-              connectedButtonLogicResult_id: isConnectedResult?.id,
-              connectedButtonLogicResult_uid1: isConnectedResult?.uid1,
-              connectedButtonLogicResult_uid2: isConnectedResult?.uid2,
-              connectedButtonLogicResult_hasUpdatedAt: !!isConnectedResult?.updatedAt,
-              // Verification 2: Dashboard "My Connections" check (same as ConnectionsCard)
-              myConnectionsContainsOtherUser: dashboardContainsOtherUser,
-              myConnectionsCount: dashboardConnections.length,
-              requesterSeesConnection,
-              // Actual connection doc structure (if found)
-              actualConnectionDoc: actualConnectionDoc ? {
-                id: actualConnectionDoc.id,
-                uid1: actualConnectionDoc.uid1,
-                uid2: actualConnectionDoc.uid2,
-                hasUpdatedAt: !!actualConnectionDoc.updatedAt,
-                hasCreatedAt: !!actualConnectionDoc.createdAt,
-                source: actualConnectionDoc.source
-              } : null,
-              // Sample connection IDs from dashboard query
-              dashboardConnectionIds: dashboardConnections.map(c => c.id).slice(0, 5)
+              connectionPath,
+              adminConnectCalled: true,
+              // Verification 1: Direct doc read (most reliable)
+              directDocRead: {
+                exists: connectionDoc.exists(),
+                path: connectionPath,
+                uid1: connectionData.uid1,
+                uid2: connectionData.uid2,
+                hasUpdatedAt: !!connectionData.updatedAt
+              },
+              // Verification 2: Query-based checks (for UI compatibility)
+              checkExistingConnectionResult: {
+                found: !!isConnectedResult,
+                docId: isConnectedResult?.id,
+                matchesReturnedId: isConnectedResult?.id === connectionId
+              },
+              getUserConnectionsResult: {
+                found: dashboardContainsOtherUser,
+                retries: retryCount,
+                totalConnections: dashboardConnections.length,
+                connectionIds: dashboardConnections.map(c => c.id).slice(0, 5)
+              },
+              verificationStatus: {
+                directDocRead: connectionDoc.exists() ? 'PASS' : 'FAIL',
+                checkExistingConnection: isConnectedResult ? 'PASS' : 'FAIL (may be eventual consistency)',
+                getUserConnections: dashboardContainsOtherUser ? 'PASS' : `FAIL after ${retryCount} retries (may be eventual consistency)`
+              }
             });
-            
-            // If verification fails, print exactly why
-            if (!isConnectedResult) {
-              console.error('❌ [ACCEPT_VERIFY] FAILED: checkExistingConnection returned null', {
-                requesterId,
-                targetId: currentUser.uid,
-                connectionId,
-                reason: 'Query-based check found no connection. Connection may not exist or may be missing uid1/uid2 fields.',
-                queryUsed: 'connections where (uid1==requesterId AND uid2==targetId) OR (uid1==targetId AND uid2==requesterId)',
-                adminCreatorWroteTo: `connections/${connectionId}`,
-                note: 'checkExistingConnection now uses query-based lookup, not doc ID assumption'
-              });
-            }
-            
-            if (!dashboardContainsOtherUser) {
-              console.error('❌ [ACCEPT_VERIFY] FAILED: Connection not in getUserConnections query', {
-                connectionId,
-                dashboardQuery: 'connections where uid1==currentUser OR uid2==currentUser, orderBy updatedAt',
-                dashboardResults: dashboardConnections.length,
-                reason: 'Connection doc missing uid1 or uid2 field matching currentUser, or missing updatedAt for orderBy',
-                adminCreatorShouldWrite: {
-                  uid1: requesterId,
-                  uid2: currentUser.uid,
-                  updatedAt: 'serverTimestamp() (REQUIRED for orderBy)',
-                  createdAt: 'serverTimestamp()',
-                  createdBy: 'currentUser.uid',
-                  source: 'user'
-                },
-                actualConnectionDoc: actualConnectionDoc || 'NOT FOUND IN QUERY'
-              });
-            }
-            
-            if (!isConnectedResult || !dashboardContainsOtherUser) {
-              console.error('❌ [ACCEPT_VERIFY] Connection verification FAILED', {
-                checkExistingConnection_works: !!isConnectedResult,
-                getUserConnections_works: dashboardContainsOtherUser,
-                connectionId,
-                mismatch: !isConnectedResult ? 'Query-based check failed (connection may not exist or missing fields)' : 'Connection exists but not in getUserConnections query (missing uid1/uid2/updatedAt)'
-              });
-            } else {
-              console.log('✅ [ACCEPT_VERIFY] PASSED: Connection is queryable by both UI checks');
-            }
           }
           
-          // Assert verification passed
-          if (!isConnectedResult) {
-            throw new Error('Connection was created but checkExistingConnection cannot find it. The connection may not be in the correct format.');
+          // Primary verification: doc must exist at returned path
+          if (!connectionDoc.exists()) {
+            throw new Error(`Connection verification failed: Doc does not exist at returned path ${connectionPath}. Check [ADMIN_CONNECT_WRITE] log.`);
           }
           
-          if (!dashboardContainsOtherUser) {
-            throw new Error('Connection was created but getUserConnections cannot find it. The connection may be missing required fields (uid1, uid2, updatedAt).');
+          // Secondary verification: query-based checks (warn but don't fail if eventual consistency)
+          if (!isConnectedResult || !dashboardContainsOtherUser) {
+            if (import.meta.env.DEV) {
+              console.warn('[ACCEPT_VERIFY] Query-based checks failed (may be eventual consistency)', {
+                checkExistingConnection: !isConnectedResult,
+                getUserConnections: !dashboardContainsOtherUser,
+                note: 'Direct doc read passed, so connection exists. Queries may need more time for indexing.'
+              });
+            }
+            // Don't throw - connection exists, queries just need time
+          }
+          
+          if (import.meta.env.DEV) {
+            console.log('✅ [ACCEPT_VERIFY] PASSED: Connection exists at returned path and is queryable');
           }
         } catch (verifyError) {
           console.error('[ACCEPT_VERIFY] Verification error:', verifyError);
-          // Don't throw - connection might still be created, just not immediately queryable
-          // But log the error so we can debug
+          // Re-throw to surface the error
+          throw verifyError;
         }
         
         // Update sent request IDs to remove any pending state

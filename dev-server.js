@@ -9,7 +9,6 @@ config();
 // Initialize Firebase Admin ONCE before importing API handlers
 import './api/firebase-init.js';
 
-import chatHandler from './api/chat.js';
 import adminChatsHandler from './api/admin/chats.js';
 import userAdminHandler from './api/user-admin.js';
 import activityAdminHandler from './api/activity-admin.js';
@@ -64,12 +63,6 @@ app.use((req, res, next) => {
 
 // Parse JSON bodies
 app.use(express.json());
-
-// API routes
-app.post('/api/chat', (req, res) => {
-  console.log('Chat API called:', req.body);
-  chatHandler(req, res);
-});
 
 app.post('/api/admin/chats', (req, res) => {
   console.log('Admin Chat Creation API called:', req.body);
@@ -141,7 +134,6 @@ app.get('/api/health', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Development API server running on http://localhost:${PORT}`);
   console.log('Available endpoints:');
-  console.log('  - POST http://localhost:3001/api/chat');
   console.log('  - POST http://localhost:3001/api/admin/chats');
   console.log('  - ALL  http://localhost:3001/api/user-admin          User management (POST) & locations (GET)');
   console.log('  - POST http://localhost:3001/api/activity-admin      Activity tracking');

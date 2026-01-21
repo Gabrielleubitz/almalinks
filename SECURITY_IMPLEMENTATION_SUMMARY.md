@@ -16,7 +16,6 @@
    - All protected routes use `<ProtectedRoute>` component
 
 2. **API Routes** (`/api`):
-   - `/api/chat` - Chat API (POST)
    - `/api/admin/chats` - Admin chat creation (POST)
    - `/api/user-admin` - User management (POST/GET)
    - `/api/activity-admin` - Activity tracking (POST)
@@ -30,7 +29,7 @@
    - Firebase Authentication
    - Firebase Firestore
    - Firebase Storage
-   - OpenAI API (for chat)
+   - OpenAI API (for admin-only image generation)
    - Mailjet (email)
    - Twilio (SMS)
    - Hotjar (analytics)
@@ -39,7 +38,6 @@
 
 - Login/Signup forms
 - Profile edit forms
-- Chat messages
 - Event registration
 - Admin user creation
 - Connection requests
@@ -80,7 +78,6 @@
 
 ✅ **Input Validation & Sanitization**:
 - All API routes validate required fields
-- Input sanitization in `api/chat.js` (XSS prevention)
 - Type checking for request bodies
 - Length limits on user input
 
@@ -141,10 +138,8 @@
 6. `src/firebase/config.ts` - Removed hardcoded keys, added validation
 7. `src/hooks/useAdmin.ts` - Removed hardcoded emails
 8. `src/utils/security.ts` - **NEW** - Security utilities
-9. `api/chat.js` - Added input sanitization
-10. `api/chat-api.js` - Added CORS validation
-11. `api/firebase-init.js` - Removed hardcoded fallback
-12. `dev-server.js` - Added CORS validation
+9. `api/firebase-init.js` - Removed hardcoded fallback
+10. `dev-server.js` - Added CORS validation
 
 ### Documentation
 13. `SECURITY.md` - Technical documentation (updated)

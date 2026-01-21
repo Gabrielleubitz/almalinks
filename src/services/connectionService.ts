@@ -241,12 +241,15 @@ export class ConnectionService {
   // Check if a connection exists between two users (regardless of event)
   static async checkExistingConnection(uid1: string, uid2: string): Promise<Connection | null> {
     try {
-      // Query-based lookup: Don't assume doc ID format
-      // Query connections where (uid1==uid1 AND uid2==uid2) OR (uid1==uid2 AND uid2==uid1)
-      // This matches how getUserConnections() works and doesn't depend on doc ID format
+      // REAL SCHEMA (from [ADMIN_CONNECT_WRITE] logs):
+      // Collection: "connections"
+      // Fields: uid1, uid2 (as written by admin creator, not sorted)
+      // Doc ID: sorted [uid1, uid2].join('_')
+      
+      // Query-based lookup matching admin creator's schema
       const connectionsRef = collection(db, 'connections');
       
-      // Query 1: uid1 == first param, uid2 == second param
+      // Query 1: uid1 == first param, uid2 == second param (exact match)
       const q1 = query(
         connectionsRef,
         where('uid1', '==', uid1),
@@ -254,13 +257,25 @@ export class ConnectionService {
         limit(1)
       );
       
-      // Query 2: uid1 == second param, uid2 == first param (reverse)
+      // Query 2: uid1 == second param, uid2 == first param (reverse direction)
       const q2 = query(
         connectionsRef,
         where('uid1', '==', uid2),
         where('uid2', '==', uid1),
         limit(1)
       );
+      
+      if (import.meta.env.DEV) {
+        console.log('[checkExistingConnection]', {
+          uid1,
+          uid2,
+          queries: [
+            `connections where uid1==${uid1} AND uid2==${uid2}`,
+            `connections where uid1==${uid2} AND uid2==${uid1}`
+          ],
+          note: 'Matching admin creator schema: connections collection with uid1/uid2 fields'
+        });
+      }
       
       const [snapshot1, snapshot2] = await Promise.all([
         retryOnNetworkFailure(() => getDocs(q1)),
@@ -270,17 +285,52 @@ export class ConnectionService {
       // Return first match (should only be one)
       if (!snapshot1.empty) {
         const doc = snapshot1.docs[0];
-        return { id: doc.id, ...doc.data() } as Connection;
+        const data = doc.data();
+        if (import.meta.env.DEV) {
+          console.log('[checkExistingConnection] FOUND', {
+            docId: doc.id,
+            path: `connections/${doc.id}`,
+            uid1: data.uid1,
+            uid2: data.uid2,
+            hasUpdatedAt: !!data.updatedAt
+          });
+        }
+        return { id: doc.id, ...data } as Connection;
       }
       
       if (!snapshot2.empty) {
         const doc = snapshot2.docs[0];
-        return { id: doc.id, ...doc.data() } as Connection;
+        const data = doc.data();
+        if (import.meta.env.DEV) {
+          console.log('[checkExistingConnection] FOUND (reverse)', {
+            docId: doc.id,
+            path: `connections/${doc.id}`,
+            uid1: data.uid1,
+            uid2: data.uid2,
+            hasUpdatedAt: !!data.updatedAt
+          });
+        }
+        return { id: doc.id, ...data } as Connection;
+      }
+      
+      if (import.meta.env.DEV) {
+        console.log('[checkExistingConnection] NOT FOUND', {
+          uid1,
+          uid2,
+          note: 'No connection found matching queries. Check [ADMIN_CONNECT_WRITE] to see what was actually written.'
+        });
       }
       
       return null;
     } catch (error) {
       console.error('❌ Error checking existing connection:', error);
+      if (import.meta.env.DEV) {
+        console.error('[checkExistingConnection] Error details:', {
+          uid1,
+          uid2,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
       return null;
     }
   }
@@ -348,11 +398,15 @@ export class ConnectionService {
   }
   
   // Get all connections for a user
+  // REAL SCHEMA (from [ADMIN_CONNECT_WRITE] logs):
+  // Collection: "connections"
+  // Fields: uid1, uid2, updatedAt (for orderBy)
   static async getUserConnections(userId: string, limitCount = 50): Promise<Connection[]> {
     try {
       const connectionsRef = collection(db, 'connections');
       
-      // Get connections where user is either uid1 or uid2
+      // Query matching admin creator's schema:
+      // connections where uid1==userId OR uid2==userId, orderBy updatedAt desc
       const q1 = query(
         connectionsRef,
         where('uid1', '==', userId),
@@ -367,6 +421,17 @@ export class ConnectionService {
         limit(limitCount)
       );
       
+      if (import.meta.env.DEV) {
+        console.log('[getUserConnections]', {
+          userId,
+          queries: [
+            `connections where uid1==${userId} orderBy updatedAt desc`,
+            `connections where uid2==${userId} orderBy updatedAt desc`
+          ],
+          note: 'Matching admin creator schema: connections collection with uid1/uid2/updatedAt fields'
+        });
+      }
+      
       const [snapshot1, snapshot2] = await Promise.all([
         retryOnNetworkFailure(() => getDocs(q1)),
         retryOnNetworkFailure(() => getDocs(q2))
@@ -378,13 +443,13 @@ export class ConnectionService {
       snapshot1.forEach(doc => {
         const data = doc.data();
         if (import.meta.env.DEV) {
-          console.log('📸 Connection where user is uid1:', {
+          console.log('[getUserConnections] Found (uid1 match):', {
             id: doc.id,
+            path: `connections/${doc.id}`,
             uid1: data.uid1,
             uid2: data.uid2,
             hasUpdatedAt: !!data.updatedAt,
-            uid1ProfileImage: data.uid1ProfileImage,
-            uid2ProfileImage: data.uid2ProfileImage
+            updatedAt: data.updatedAt?.toDate?.()?.toISOString() || 'missing'
           });
         }
         connections.push({ id: doc.id, ...data } as Connection);
@@ -393,19 +458,19 @@ export class ConnectionService {
       snapshot2.forEach(doc => {
         const data = doc.data();
         if (import.meta.env.DEV) {
-          console.log('📸 Connection where user is uid2:', {
+          console.log('[getUserConnections] Found (uid2 match):', {
             id: doc.id,
+            path: `connections/${doc.id}`,
             uid1: data.uid1,
             uid2: data.uid2,
             hasUpdatedAt: !!data.updatedAt,
-            uid1ProfileImage: data.uid1ProfileImage,
-            uid2ProfileImage: data.uid2ProfileImage
+            updatedAt: data.updatedAt?.toDate?.()?.toISOString() || 'missing'
           });
         }
         connections.push({ id: doc.id, ...data } as Connection);
       });
       
-      // Sort by updatedAt (newest first)
+      // Sort by updatedAt (newest first) - fallback if orderBy didn't work
       connections.sort((a, b) => {
         const timeA = a.updatedAt?.toDate?.() || new Date(0);
         const timeB = b.updatedAt?.toDate?.() || new Date(0);
@@ -417,9 +482,24 @@ export class ConnectionService {
         index === self.findIndex(c => c.id === connection.id)
       );
       
+      if (import.meta.env.DEV) {
+        console.log('[getUserConnections] Result', {
+          userId,
+          totalFound: uniqueConnections.length,
+          connectionIds: uniqueConnections.map(c => c.id).slice(0, 5)
+        });
+      }
+      
       return uniqueConnections.slice(0, limitCount);
     } catch (error) {
       console.error('❌ Error fetching user connections:', error);
+      if (import.meta.env.DEV) {
+        console.error('[getUserConnections] Error details:', {
+          userId,
+          error: error instanceof Error ? error.message : String(error),
+          note: 'Check if Firestore composite index exists for: connections(uid1, updatedAt) and connections(uid2, updatedAt)'
+        });
+      }
       return [];
     }
   }

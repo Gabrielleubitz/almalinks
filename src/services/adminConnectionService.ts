@@ -16,6 +16,7 @@ export interface AdminConnectionOptions {
   eventId?: string;
   reason?: string;
   bypassPrivacy?: boolean; // Admin can connect users regardless of privacy settings
+  sourceRequestId?: string; // For accept flow - pass requestId to allow non-admin access
 }
 
 export interface UserConnectionStats {
@@ -40,6 +41,21 @@ export class AdminConnectionService {
     adminUid: string,
     options: AdminConnectionOptions = {}
   ): Promise<string> {
+    // Log entry (DEV only)
+    if (import.meta.env.DEV) {
+      console.log('[ADMIN_CONNECT_USED] ENTRY', {
+        userA: fromUid,
+        userB: toUid,
+        adminUid,
+        eventId: options.eventId,
+        reason: options.reason,
+        sourceRequestId: (options as any).sourceRequestId,
+        source: 'AdminConnectionService.createAdminConnection',
+        endpoint: '/api/connections/admin-create',
+        note: 'Admin connection creator called - will return connectionId'
+      });
+    }
+    
     try {
       // Get authentication token
       const currentUser = auth.currentUser;
@@ -68,36 +84,91 @@ export class AdminConnectionService {
       const data = await response.json();
 
       if (!response.ok || !data.ok) {
-        throw new Error(data.error || `HTTP ${response.status}: Failed to create admin connection`);
+        // API returned error - throw with details
+        const errorMsg = data.error || `HTTP ${response.status}: Failed to create admin connection`;
+        console.error('[AdminConnectionService] API returned error', {
+          status: response.status,
+          error: errorMsg,
+          response: data,
+          fromUid,
+          toUid
+        });
+        throw new Error(`Admin connect failed: ${errorMsg}`);
       }
 
-      // DEV log to track when admin connection creator is used
+      // CRITICAL: connectionId MUST be non-null string
+      if (!data.connectionId || typeof data.connectionId !== 'string' || data.connectionId.length === 0) {
+        console.error('[AdminConnectionService] CRITICAL: API returned invalid connectionId', {
+          response: data,
+          connectionId: data.connectionId,
+          connectionIdType: typeof data.connectionId,
+          connectionIdIsNull: data.connectionId === null,
+          connectionIdIsUndefined: data.connectionId === undefined,
+          fromUid,
+          toUid
+        });
+        throw new Error(`Admin connect failed: API returned invalid connectionId (${data.connectionId === null ? 'null' : data.connectionId === undefined ? 'undefined' : `type: ${typeof data.connectionId}`}). Check [ADMIN_CONNECT_RETURN] log.`);
+      }
+
+      // Log successful return (DEV only)
       if (import.meta.env.DEV) {
-        console.log('[ADMIN_CONNECT_USED]', {
+        console.log('[ADMIN_CONNECT_USED] SUCCESS', {
           userA: fromUid,
           userB: toUid,
           adminUid,
           connectionId: data.connectionId,
+          connectionPath: data.connectionPath,
+          created: data.created,
+          existed: data.existed,
           eventId: options.eventId,
           reason: options.reason,
           source: 'AdminConnectionService.createAdminConnection',
-          endpoint: '/api/connections/admin-create'
+          endpoint: '/api/connections/admin-create',
+          note: 'connectionId is non-null and will be returned'
         });
       }
 
+      // Log return value RIGHT BEFORE returning
+      console.log('[ADMIN_CONNECT_RETURN] CLIENT', {
+        connectionId: data.connectionId,
+        connectionPath: data.connectionPath,
+        connectionIdType: typeof data.connectionId,
+        connectionIdIsNull: data.connectionId === null,
+        connectionIdIsUndefined: data.connectionId === undefined,
+        connectionIdLength: data.connectionId.length,
+        note: 'AdminConnectionService.createAdminConnection returning connectionId RIGHT NOW'
+      });
+
       console.log('✅ Admin connection created via API:', {
         connectionId: data.connectionId,
+        connectionPath: data.connectionPath,
         fromUid,
         toUid,
         adminUid,
+        created: data.created,
+        existed: data.existed,
         eventId: options.eventId,
         reason: options.reason
       });
 
+      // Return connectionId - guaranteed non-null at this point
       return data.connectionId;
 
     } catch (error: any) {
       console.error('❌ Error creating admin connection:', error);
+      
+      // Log error with context (DEV only)
+      if (import.meta.env.DEV) {
+        console.error('[ADMIN_CONNECT_RETURN] ERROR PATH', {
+          error: error.message,
+          fromUid,
+          toUid,
+          adminUid,
+          note: 'AdminConnectionService.createAdminConnection threw error - NOT returning null, throwing error instead'
+        });
+      }
+      
+      // Re-throw error - NEVER return null
       throw error;
     }
   }
