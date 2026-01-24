@@ -5,7 +5,6 @@ import Hero from './components/Hero';
 import About from './components/About';
 import MarqueeDemo from './components/MarqueeDemo';
 import InThePress from './components/InThePress';
-import FloatingBubbles from './components/FloatingBubbles';
 import UpcomingEvent from './components/UpcomingEvent';
 import FAQ from './components/FAQ';
 import Footer from './components/Footer';
@@ -60,7 +59,6 @@ const HomePage = () => (
     <About />
     <MarqueeDemo />
     <InThePress />
-    <FloatingBubbles />
     <UpcomingEvent />
     <FAQ />
     <Footer />
