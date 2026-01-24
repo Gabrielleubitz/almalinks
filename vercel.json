@@ -1,5 +1,7 @@
 {
-  "builds": [{ "src": "api/**/*.js", "use": "@vercel/node" }],
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
   "crons": [
     {
       "path": "/api/automation-hub",
