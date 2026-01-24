@@ -4,16 +4,13 @@ import { marqueeImages } from '../config/marqueeImages';
 
 const MarqueeDemo: React.FC = () => {
   return (
-    <section className="relative py-20 sm:py-24 bg-white overflow-hidden">
-      {/* Subtle background accent */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-50/20 to-transparent"></div>
-      
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 slide-up" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Backed by <span className="bg-gradient-to-r from-blue-700 to-red-700 bg-clip-text text-transparent">Bold Founders</span>
+    <section className="py-16 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            Backed by <span className="gradient-text">Bold Founders</span>
           </h2>
-          <p className="mt-2 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto slide-up-delay" style={{ fontFamily: "'Lora', serif" }}>
+          <p className="mt-2 text-lg text-gray-600">
             Members of AlmaLinks are building the future—from AI to blockchain. We connect outstanding leaders across industries.
           </p>
         </div>
