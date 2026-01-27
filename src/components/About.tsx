@@ -9,13 +9,13 @@ const About = () => {
   ];
 
   return (
-    <section id="about" className="py-16 sm:py-20 md:py-24 bg-white">
+    <section id="about" className="py-12 sm:py-16 md:py-20 lg:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6 slide-up px-2">
+        <div className="text-center mb-8 sm:mb-12 md:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4 md:mb-6 slide-up px-2">
             What is <span className="gradient-text">AlmaLinks</span>?
           </h2>
-          <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed slide-up-delay px-4">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed slide-up-delay px-2 sm:px-4">
             AlmaLinks is a global professional network that fosters meaningful relationships between 
             altruistic CEOs, founders, financiers, and seasoned executives. We nurture our members' 
             professional success and personal development by connecting them to each other — outstanding 
@@ -23,29 +23,29 @@ const About = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 mb-8 sm:mb-12 md:mb-16">
           {stats.map((stat, index) => {
             const IconComponent = stat.icon;
             return (
               <div
                 key={index}
-                className={`text-center slide-up hover-lift bg-gray-50 p-6 sm:p-8 rounded-2xl`}
+                className={`text-center slide-up hover-lift bg-gray-50 p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl`}
                 style={{ animationDelay: `${index * 0.2}s` }}
               >
-                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-full mb-3 sm:mb-4">
-                  <IconComponent className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-full mb-2 sm:mb-3 md:mb-4">
+                  <IconComponent className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-white" />
                 </div>
-                <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{stat.number}</div>
-                <div className="text-sm sm:text-base text-gray-600 font-medium">{stat.label}</div>
+                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">{stat.number}</div>
+                <div className="text-xs sm:text-sm md:text-base text-gray-600 font-medium">{stat.label}</div>
               </div>
             );
           })}
         </div>
 
         {/* Quote section - using Brygada 1918 for quotes as per brand guidelines */}
-        <div className="bg-gradient-to-r from-red-50 to-blue-50 rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 slide-up">
+        <div className="bg-gradient-to-r from-red-50 to-blue-50 rounded-xl sm:rounded-2xl md:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12 slide-up">
           <div className="max-w-4xl mx-auto text-center">
-            <p className="text-base sm:text-lg md:text-xl text-gray-700 leading-relaxed italic" style={{ fontFamily: "'Brygada 1918', serif" }}>
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed italic" style={{ fontFamily: "'Brygada 1918', serif" }}>
               "AlmaLinks embodies our core values of intellectual generosity, a culture of curiosity, 
               mutual respect, and openness. We build genuine connections without expectations, fostering 
               an environment where every member seeks to learn and share. While all members are of Jewish 

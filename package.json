@@ -19,7 +19,7 @@
     "preview": "vite preview",
     "fix-user-claims": "node scripts/fix-user-claims.js",
     "check-activities": "node scripts/check-activities.js",
-    "deploy:backend": "git add api/user-admin.js && git commit -m 'Deploy: Update backend API' && git push origin main",
+    "deploy:backend": "echo 'Backend is now consolidated in api/index.js. All handlers are in lib/server/api/. Use git add/commit/push as needed.'",
     "verify:deployment": "echo 'Check Vercel dashboard: https://vercel.com/your-project/deployments'"
   },
   "dependencies": {

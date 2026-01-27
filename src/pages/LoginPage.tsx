@@ -149,19 +149,19 @@ const LoginPage: React.FC = () => {
   // Show success message if login was successful and user is pending
   if (loginSuccess && user && isPending) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-4 relative">
-        <div className="max-w-md w-full text-center">
-          <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-full mb-6">
-              <CheckCircle className="h-8 w-8 text-yellow-600" />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-3 sm:px-4 relative overflow-x-hidden w-full max-w-full box-border">
+        <div className="max-w-md w-full text-center px-0 sm:px-0">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-5 sm:p-6 lg:p-8 border border-gray-100 w-full max-w-full">
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-yellow-100 rounded-full mb-4 sm:mb-6">
+              <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-600" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
               Login Successful
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
               Your account is pending admin approval. You'll be redirected to the pending page.
             </p>
-            <div className="w-12 h-12 border-4 border-yellow-200 border-t-yellow-600 rounded-full animate-spin mx-auto"></div>
+            <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-yellow-200 border-t-yellow-600 rounded-full animate-spin mx-auto"></div>
           </div>
         </div>
       </div>
@@ -169,67 +169,67 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-4 py-6 relative">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex flex-col items-center justify-center px-3 sm:px-4 py-4 sm:py-6 pb-20 sm:pb-6 relative overflow-x-hidden w-full max-w-full box-border">
       {/* Logo in top left corner */}
-      <div className="absolute top-6 left-6 z-10">
-        <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
+      <div className="absolute top-4 left-3 sm:top-6 sm:left-6 z-10">
+        <Link to="/" className="hover:opacity-80 transition-opacity duration-200 inline-block">
           <img 
             src={logoSvg}
             alt="AlmaLinks Logo" 
-            className="h-8 md:h-10 w-auto"
+            className="h-7 sm:h-8 md:h-10 w-auto"
           />
         </Link>
       </div>
 
-      <div className="max-w-md w-full">
+      <div className="max-w-md w-full px-0 sm:px-0 flex-shrink-0 mb-8 sm:mb-0">
         {/* Back button */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <Link 
             to="/"
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm font-medium"
+            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-xs sm:text-sm font-medium min-h-[44px] sm:min-h-0"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4 flex-shrink-0" />
             <span>Back to site</span>
           </Link>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 border border-gray-100">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-5 sm:p-6 lg:p-8 border border-gray-100 w-full max-w-full">
           {showForgotPassword ? (
             <>
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-full mb-4">
-                  <Lock className="h-8 w-8 text-white" />
+              <div className="text-center mb-6 sm:mb-8">
+                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-full mb-3 sm:mb-4">
+                  <Lock className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                   Reset Password
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                   Enter your email to receive a password reset link
                 </p>
               </div>
 
               {displayError && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-3">
-                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-                  <p className="text-red-600 text-sm">{displayError}</p>
+                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-2 sm:space-x-3">
+                  <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 flex-shrink-0" />
+                  <p className="text-red-600 text-xs sm:text-sm">{displayError}</p>
                 </div>
               )}
 
               {resetEmailSent && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-                  <p className="text-green-600 text-sm">If an account exists with that email, a password reset link has been sent.</p>
+                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-xl flex items-center space-x-2 sm:space-x-3">
+                  <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
+                  <p className="text-green-600 text-xs sm:text-sm">If an account exists with that email, a password reset link has been sent.</p>
                 </div>
               )}
 
-              <form onSubmit={handleForgotPassword} className="space-y-6">
+              <form onSubmit={handleForgotPassword} className="space-y-4 sm:space-y-6">
                 {/* Email Address */}
                 <div>
-                  <label htmlFor="forgotPasswordEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="forgotPasswordEmail" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                     Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                     <input
                       id="forgotPasswordEmail"
                       name="forgotPasswordEmail"
@@ -237,7 +237,7 @@ const LoginPage: React.FC = () => {
                       required
                       value={forgotPasswordEmail}
                       onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-4 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                      className="w-full pl-9 sm:pl-10 pr-4 py-3 sm:py-4 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 min-h-[44px] sm:min-h-0"
                       placeholder="Enter your email"
                       disabled={isResettingPassword}
                       autoCapitalize="none"
@@ -250,7 +250,7 @@ const LoginPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isResettingPassword || !forgotPasswordEmail.trim()}
-                  className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white py-4 px-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed text-base touch-manipulation"
+                  className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white py-3 sm:py-4 px-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base touch-manipulation min-h-[44px] sm:min-h-0"
                 >
                   {isResettingPassword ? (
                     <>
@@ -269,7 +269,7 @@ const LoginPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowForgotPassword(false)}
-                    className="text-gray-600 hover:text-gray-800 font-medium"
+                    className="text-gray-600 hover:text-gray-800 font-medium text-xs sm:text-sm min-h-[44px] sm:min-h-0 inline-flex items-center justify-center"
                   >
                     Back to Login
                   </button>
@@ -278,40 +278,40 @@ const LoginPage: React.FC = () => {
             </>
           ) : (
             <>
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-full mb-4">
-                  <Lock className="h-8 w-8 text-white" />
+              <div className="text-center mb-6 sm:mb-8">
+                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-full mb-3 sm:mb-4">
+                  <Lock className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                   Welcome Back
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                   Sign in to your AlmaLinks account
                 </p>
               </div>
 
               {displayError && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-3">
-                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-                  <p className="text-red-600 text-sm">{displayError}</p>
+                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-2 sm:space-x-3">
+                  <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 flex-shrink-0" />
+                  <p className="text-red-600 text-xs sm:text-sm">{displayError}</p>
                 </div>
               )}
 
               {statusMessage && (
-                <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-center space-x-3">
-                  <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0" />
-                  <p className="text-yellow-600 text-sm">{statusMessage}</p>
+                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-center space-x-2 sm:space-x-3">
+                  <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 flex-shrink-0" />
+                  <p className="text-yellow-600 text-xs sm:text-sm">{statusMessage}</p>
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                 {/* Email Address */}
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                     Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                     <input
                       id="email"
                       name="email"
@@ -319,7 +319,7 @@ const LoginPage: React.FC = () => {
                       required
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-4 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                      className="w-full pl-9 sm:pl-10 pr-4 py-3 sm:py-4 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 min-h-[44px] sm:min-h-0"
                       placeholder="Enter your email"
                       disabled={isSubmitting}
                       autoCapitalize="none"
@@ -330,11 +330,11 @@ const LoginPage: React.FC = () => {
 
                 {/* Password */}
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                     Password
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                     <input
                       id="password"
                       name="password"
@@ -342,7 +342,7 @@ const LoginPage: React.FC = () => {
                       required
                       value={formData.password}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-12 py-4 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                      className="w-full pl-9 sm:pl-10 pr-11 sm:pr-12 py-3 sm:py-4 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 min-h-[44px] sm:min-h-0"
                       placeholder="Enter your password"
                       disabled={isSubmitting}
                       autoCapitalize="none"
@@ -352,11 +352,11 @@ const LoginPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50 p-1 touch-manipulation"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50 p-2 sm:p-1 touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center"
                       disabled={isSubmitting}
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5" />}
                     </button>
                   </div>
                 </div>
@@ -364,7 +364,7 @@ const LoginPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting || !isFormValid}
-                  className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white py-4 px-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed text-base touch-manipulation"
+                  className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white py-3 sm:py-4 px-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base touch-manipulation min-h-[44px] sm:min-h-0"
                 >
                   {isSubmitting ? (
                     <>
@@ -381,11 +381,11 @@ const LoginPage: React.FC = () => {
               </form>
 
               {/* Divider */}
-              <div className="relative my-6">
+              <div className="relative my-4 sm:my-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300"></div>
                 </div>
-                <div className="relative flex justify-center text-sm">
+                <div className="relative flex justify-center text-xs sm:text-sm">
                   <span className="px-2 bg-white text-gray-500">Or continue with</span>
                 </div>
               </div>
@@ -404,9 +404,9 @@ const LoginPage: React.FC = () => {
                   }
                 }}
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 text-gray-700 py-4 px-4 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed text-base touch-manipulation"
+                className="w-full flex items-center justify-center gap-2 sm:gap-3 bg-white border-2 border-gray-300 text-gray-700 py-3 sm:py-4 px-4 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base touch-manipulation min-h-[44px] sm:min-h-0"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -424,20 +424,20 @@ const LoginPage: React.FC = () => {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                <span>Continue with Google</span>
+                <span className="whitespace-nowrap">Continue with Google</span>
               </button>
 
-              <div className="mt-4 text-center">
+              <div className="mt-3 sm:mt-4 text-center">
                 <Link
                   to="/forgot-password"
-                  className="text-red-600 hover:text-red-700 text-sm font-medium"
+                  className="text-red-600 hover:text-red-700 text-xs sm:text-sm font-medium min-h-[44px] sm:min-h-0 inline-flex items-center justify-center"
                 >
                   Forgot your password?
                 </Link>
               </div>
 
-              <div className="mt-8 text-center">
-                <p className="text-gray-600">
+              <div className="mt-6 sm:mt-8 text-center">
+                <p className="text-xs sm:text-sm text-gray-600">
                   Don't have an account?{' '}
                   <Link
                     to="/signup"
@@ -449,12 +449,12 @@ const LoginPage: React.FC = () => {
               </div>
 
               {/* Help Text */}
-              <div className="mt-6 text-center">
-                <p className="text-sm text-gray-500">
+              <div className="mt-4 sm:mt-6 text-center">
+                <p className="text-xs sm:text-sm text-gray-500">
                   Having trouble? Contact us at{' '}
                   <a 
                     href="mailto:info@almalinks.org" 
-                    className="text-red-600 hover:text-red-700 font-medium"
+                    className="text-red-600 hover:text-red-700 font-medium break-all"
                   >
                     info@almalinks.org
                   </a>
@@ -465,8 +465,10 @@ const LoginPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Igani Watermark */}
-      <IganiWatermark position="bottom-center" size="sm" opacity={0.3} />
+      {/* Igani Watermark - Responsive positioning */}
+      <div className="w-full flex items-center justify-center mt-auto sm:mt-6 pb-4 sm:pb-0 z-0">
+        <IganiWatermark position="bottom-center" size="sm" opacity={0.3} />
+      </div>
     </div>
   );
 };

@@ -28,41 +28,41 @@ const FAQ = () => {
   ];
 
   return (
-    <section id="faq" className="py-24 bg-gray-50">
+    <section id="faq" className="py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 slide-up">
+        <div className="text-center mb-8 sm:mb-12 md:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4 md:mb-6 slide-up">
             Frequently Asked <span className="gradient-text">Questions</span>
           </h2>
-          <p className="text-xl text-gray-600 slide-up-delay">
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 slide-up-delay">
             Everything you need to know about AlmaLinks
           </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {faqs.map((faq, index) => (
             <div
               key={index}
-              className={`bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 slide-up`}
+              className={`bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 slide-up`}
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               <button
-                className="w-full px-8 py-6 text-left flex items-center justify-between focus:outline-none"
+                className="w-full px-4 sm:px-6 md:px-8 py-4 sm:py-5 md:py-6 text-left flex items-center justify-between focus:outline-none touch-manipulation min-h-[44px] md:min-h-0"
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
               >
-                <span className="text-lg font-semibold text-gray-900">
+                <span className="text-base sm:text-lg font-semibold text-gray-900 pr-4">
                   {faq.question}
                 </span>
                 {openIndex === index ? (
-                  <ChevronUp className="h-6 w-6 text-red-700 flex-shrink-0" />
+                  <ChevronUp className="h-5 w-5 sm:h-6 sm:w-6 text-red-700 flex-shrink-0" />
                 ) : (
-                  <ChevronDown className="h-6 w-6 text-gray-400 flex-shrink-0" />
+                  <ChevronDown className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 flex-shrink-0" />
                 )}
               </button>
               
               {openIndex === index && (
-                <div className="px-8 pb-6">
-                  <p className="text-gray-600 leading-relaxed">
+                <div className="px-4 sm:px-6 md:px-8 pb-4 sm:pb-5 md:pb-6">
+                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                     {faq.answer}
                   </p>
                 </div>
@@ -72,17 +72,17 @@ const FAQ = () => {
         </div>
 
         {/* Contact Information */}
-        <div className="mt-16 text-center">
-          <div className="bg-white rounded-2xl shadow-sm p-8">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+        <div className="mt-8 sm:mt-12 md:mt-16 text-center">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-6 sm:p-8">
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">
               Have More Questions?
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
               We're here to help! Reach out to us directly for any inquiries about events, speaking opportunities, or partnerships.
             </p>
             <a 
               href="mailto:info@almalinks.org"
-              className="inline-flex items-center justify-center bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
+              className="inline-flex items-center justify-center bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 sm:px-8 py-3 rounded-full hover:shadow-lg active:shadow-md transition-all duration-300 font-semibold text-sm sm:text-base min-h-[44px] md:min-h-0 touch-manipulation"
             >
               Contact Us: info@almalinks.org
             </a>

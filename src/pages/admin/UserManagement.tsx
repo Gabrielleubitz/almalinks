@@ -340,7 +340,7 @@ const UserManagement: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
         <AdminHeader title="User Management" />
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-12 overflow-x-hidden w-full max-w-full box-border">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-600">Loading users...</p>
@@ -357,14 +357,14 @@ const UserManagement: React.FC = () => {
         subtitle="Manage user roles and permissions"
       />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-12 overflow-x-hidden w-full max-w-full box-border">
         {/* Back Button */}
-        <div className="mb-8">
+        <div className="mb-4 sm:mb-6 lg:mb-8">
           <button
             onClick={() => navigate('/admin')}
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
+            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium text-sm sm:text-base"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             <span>Back to Admin Tools</span>
           </button>
         </div>
@@ -420,71 +420,71 @@ const UserManagement: React.FC = () => {
         )}
 
         {/* User Management Section */}
-        <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">User Management</h2>
-            <div className="flex items-center space-x-3">
-              <div className="text-sm text-gray-500">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 lg:p-8 border border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4 sm:gap-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">User Management</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-3 sm:space-x-3">
+              <div className="text-xs sm:text-sm text-gray-500 order-2 sm:order-1">
                 {filteredUsers.length} of {users.length} users
               </div>
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 order-1 sm:order-2 w-full sm:w-auto">
                 <button
                   onClick={() => setShowUserCreation(true)}
-                  className="inline-flex items-center px-3 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors text-sm font-medium"
+                  className="inline-flex items-center justify-center px-3 py-2.5 sm:py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors text-sm font-medium min-h-[44px] sm:min-h-0"
                   title="Create new user"
                 >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Create User
+                  <UserPlus className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="whitespace-nowrap">Create User</span>
                 </button>
                 <button
                   onClick={() => setShowBulkImport(true)}
-                  className="inline-flex items-center px-3 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors text-sm font-medium"
+                  className="inline-flex items-center justify-center px-3 py-2.5 sm:py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors text-sm font-medium min-h-[44px] sm:min-h-0"
                   title="Bulk import users from CSV"
                 >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Bulk Import
+                  <Upload className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="whitespace-nowrap">Bulk Import</span>
                 </button>
                 <button
                   onClick={() => setShowAuditLogs(true)}
-                  className="inline-flex items-center px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+                  className="inline-flex items-center justify-center px-3 py-2.5 sm:py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium min-h-[44px] sm:min-h-0"
                   title="View audit logs"
                 >
-                  <Activity className="h-4 w-4 mr-2" />
-                  Audit Logs
+                  <Activity className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="whitespace-nowrap">Audit Logs</span>
                 </button>
               </div>
             </div>
           </div>
 
           {/* Search Input */}
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search users by name or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base min-h-[44px] sm:min-h-0"
               />
             </div>
           </div>
 
           {/* Users Table */}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Name
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Email
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Role
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -492,10 +492,10 @@ const UserManagement: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
-                      <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600 font-medium">No users found</p>
-                      <p className="text-gray-500 text-sm mt-1">
+                    <td colSpan={4} className="px-3 sm:px-6 py-8 sm:py-12 text-center">
+                      <Users className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-sm sm:text-base text-gray-600 font-medium">No users found</p>
+                      <p className="text-xs sm:text-sm text-gray-500 mt-1 px-2">
                         {searchTerm ? `No results for "${searchTerm}"` : 'Try adjusting your filters'}
                       </p>
                     </td>
@@ -503,10 +503,10 @@ const UserManagement: React.FC = () => {
                 ) : (
                   filteredUsers.map((userData) => (
                     <tr key={userData.uid} className="group hover:bg-gray-50 cursor-pointer" onClick={() => handleUserProfileClick(userData)}>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
                         <div className="flex items-center">
-                          <Eye className="h-4 w-4 text-gray-400 mr-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          <div className="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden">
+                          <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 mr-2 sm:mr-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                          <div className="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full overflow-hidden">
                             {userData.profileImage ? (
                               <img 
                                 src={userData.profileImage} 
@@ -518,133 +518,136 @@ const UserManagement: React.FC = () => {
                                 }}
                               />
                             ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold">
+                              <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm">
                                 {userData.name?.charAt(0) || userData.email?.charAt(0) || '?'}
                               </div>
                             )}
                           </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
+                          <div className="ml-2 sm:ml-4 min-w-0 flex-1">
+                            <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                               {userData.name || 'No Name'}
                             </div>
-                            <div className="text-sm text-gray-500">
-                              <Calendar className="h-3 w-3 inline mr-1" />
-                              {formatDate(userData.createdAt)}
+                            <div className="text-xs sm:text-sm text-gray-500 flex items-center">
+                              <Calendar className="h-3 w-3 inline mr-1 flex-shrink-0" />
+                              <span className="truncate">{formatDate(userData.createdAt)}</span>
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 flex items-center">
-                          <Mail className="h-4 w-4 text-gray-400 mr-2" />
-                          {userData.email}
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <div className="text-xs sm:text-sm text-gray-900 flex items-center min-w-0">
+                          <Mail className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 mr-1.5 sm:mr-2 flex-shrink-0" />
+                          <span className="truncate" title={userData.email}>{userData.email}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getRoleBadgeClass(userData.role)}`}>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <span className={`inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${getRoleBadgeClass(userData.role)}`}>
                           {getRoleIcon(userData.role)}
-                          <span className="ml-1 capitalize">{userData.role}</span>
+                          <span className="ml-1 capitalize whitespace-nowrap">{userData.role}</span>
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-3">
-                          <div className="relative flex-1">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:space-x-2 sm:space-x-3">
+                          <div className="relative w-full sm:flex-1 min-w-[120px] sm:min-w-0">
                             <select
                               value={userData.role}
                               onChange={(e) => handleRoleChange(userData.uid, e.target.value)}
                               onClick={(e) => e.stopPropagation()}
                               disabled={updatingUser === userData.uid || userData.uid === user?.uid}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-xs sm:text-sm appearance-none disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] sm:min-h-0"
                             >
                               <option value="member">Member</option>
                               <option value="admin">Admin</option>
                             </select>
-                            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400 pointer-events-none" />
                             
                             {updatingUser === userData.uid && (
                               <div className="absolute inset-0 flex items-center justify-center bg-white/80">
-                                <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                                <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
                               </div>
                             )}
                             
                             {userData.uid === user?.uid && (
-                              <div className="mt-1 text-xs text-gray-500">
+                              <div className="mt-1 text-[10px] sm:text-xs text-gray-500">
                                 Cannot change your own role
                               </div>
                             )}
                           </div>
                           
-                          {/* Edit Button */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const editRoute = `/admin/users/${userData.uid}/edit`;
-                              console.log('🎯 Navigating to admin user edit:', editRoute, 'for user:', userData.name);
-                              navigate(editRoute);
-                            }}
-                            className="bg-green-100 text-green-700 p-2 rounded-lg hover:bg-green-200 transition-colors duration-200"
-                            title="Edit user profile"
-                          >
-                            <Edit3 className="h-5 w-5" />
-                          </button>
+                          {/* Action Buttons Row - Stack on mobile, horizontal on desktop */}
+                          <div className="flex flex-row sm:flex-row gap-1.5 sm:gap-2 sm:space-x-0 flex-wrap sm:flex-nowrap">
+                            {/* Edit Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const editRoute = `/admin/users/${userData.uid}/edit`;
+                                console.log('🎯 Navigating to admin user edit:', editRoute, 'for user:', userData.name);
+                                navigate(editRoute);
+                              }}
+                              className="bg-green-100 text-green-700 p-2 rounded-lg hover:bg-green-200 transition-colors duration-200 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center flex-shrink-0"
+                              title="Edit user profile"
+                            >
+                              <Edit3 className="h-4 w-4 sm:h-5 sm:w-5" />
+                            </button>
 
-                          {/* Connect Button */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleConnectClick(userData);
-                            }}
-                            className="bg-blue-50 text-blue-700 p-2 rounded-lg hover:bg-blue-200 transition-colors duration-200"
-                            title="Connect this user with another user"
-                          >
-                            <UserPlus className="h-5 w-5" />
-                          </button>
+                            {/* Connect Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleConnectClick(userData);
+                              }}
+                              className="bg-blue-50 text-blue-700 p-2 rounded-lg hover:bg-blue-200 transition-colors duration-200 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center flex-shrink-0"
+                              title="Connect this user with another user"
+                            >
+                              <UserPlus className="h-4 w-4 sm:h-5 sm:w-5" />
+                            </button>
 
-                          {/* Manage Connections Button */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleManageConnectionsClick(userData);
-                            }}
-                            className="bg-purple-100 text-purple-700 p-2 rounded-lg hover:bg-purple-200 transition-colors duration-200"
-                            title="Manage user's connections"
-                          >
-                            <UserMinus className="h-5 w-5" />
-                          </button>
+                            {/* Manage Connections Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleManageConnectionsClick(userData);
+                              }}
+                              className="bg-purple-100 text-purple-700 p-2 rounded-lg hover:bg-purple-200 transition-colors duration-200 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center flex-shrink-0"
+                              title="Manage user's connections"
+                            >
+                              <UserMinus className="h-4 w-4 sm:h-5 sm:w-5" />
+                            </button>
 
-                          {/* Force Password Reset Button */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleForcePasswordReset(userData);
-                            }}
-                            disabled={userData.uid === user?.uid || updatingUser === userData.uid}
-                            className="bg-orange-100 text-orange-700 p-2 rounded-lg hover:bg-orange-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={userData.uid === user?.uid ? "You cannot reset your own password" : "Force password reset"}
-                          >
-                            {updatingUser === userData.uid ? (
-                              <div className="w-5 h-5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
-                            ) : (
-                              <Key className="h-5 w-5" />
-                            )}
-                          </button>
+                            {/* Force Password Reset Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleForcePasswordReset(userData);
+                              }}
+                              disabled={userData.uid === user?.uid || updatingUser === userData.uid}
+                              className="bg-orange-100 text-orange-700 p-2 rounded-lg hover:bg-orange-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center flex-shrink-0"
+                              title={userData.uid === user?.uid ? "You cannot reset your own password" : "Force password reset"}
+                            >
+                              {updatingUser === userData.uid ? (
+                                <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
+                              ) : (
+                                <Key className="h-4 w-4 sm:h-5 sm:w-5" />
+                              )}
+                            </button>
 
-                          {/* Delete Button */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteClick(userData);
-                            }}
-                            disabled={userData.uid === user?.uid || deletingUser === userData.uid}
-                            className="bg-red-100 text-red-700 p-2 rounded-lg hover:bg-red-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            {/* Delete Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(userData);
+                              }}
+                              disabled={userData.uid === user?.uid || deletingUser === userData.uid}
+                              className="bg-red-100 text-red-700 p-2 rounded-lg hover:bg-red-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center flex-shrink-0"
                             title={userData.uid === user?.uid ? "You cannot delete your own account" : "Delete user"}
                           >
                             {deletingUser === userData.uid ? (
-                              <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                              <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
                             ) : (
-                              <Trash2 className="h-5 w-5" />
+                              <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
                             )}
                           </button>
+                          </div>
                         </div>
                       </td>
                     </tr>

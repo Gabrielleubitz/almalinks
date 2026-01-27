@@ -136,18 +136,18 @@ const SpeakerAwareHeader: React.FC = () => {
                 <Heart className="h-4 w-4 fill-current" />
                 <span className="text-sm">Donate</span>
               </a>
-              <button
-                onClick={() => navigate('/login')}
-                className="text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium"
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => navigate('/signup')}
-                className="bg-brand-blue text-white px-4 py-2 rounded-lg hover:bg-brand-blue-hover transition-colors duration-200 font-medium"
-              >
-                Join Now
-              </button>
+            <button
+              onClick={() => navigate('/login')}
+              className="text-gray-600 hover:text-gray-900 active:text-gray-900 transition-colors duration-200 font-medium text-sm sm:text-base min-h-[44px] sm:min-h-0 touch-manipulation px-2 sm:px-0"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => navigate('/signup')}
+              className="bg-brand-blue text-white px-4 py-2 sm:px-4 sm:py-2 rounded-lg hover:bg-brand-blue-hover active:bg-brand-blue-hover transition-colors duration-200 font-medium text-sm sm:text-base min-h-[44px] sm:min-h-0 touch-manipulation"
+            >
+              Join Now
+            </button>
             </div>
           </div>
         </div>
@@ -274,10 +274,10 @@ const SpeakerAwareHeader: React.FC = () => {
               </span>
             </button>
 
-            {/* Logout Button */}
+            {/* Logout Button - Hidden on mobile (≤768px), visible on desktop */}
             <button
               onClick={handleLogout}
-              className="flex items-center space-x-2 text-gray-600 hover:text-red-600 transition-colors duration-200"
+              className="hidden md:flex items-center space-x-2 text-gray-600 hover:text-red-600 transition-colors duration-200"
             >
               <LogOut className="h-5 w-5" />
               <span className="hidden sm:inline text-sm font-medium">Sign Out</span>
@@ -286,7 +286,8 @@ const SpeakerAwareHeader: React.FC = () => {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="md:hidden p-2 text-gray-600 hover:text-gray-900 transition-colors"
+              className="md:hidden p-2 text-gray-600 hover:text-gray-900 active:text-gray-900 transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Toggle menu"
             >
               {showMobileMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>

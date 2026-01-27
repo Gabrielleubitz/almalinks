@@ -53,3 +53,7 @@ alma-links-*-firebase-adminsdk-*.json
 .netlify/
 .vercel
 .env*.local
+
+# Vercel build artifacts
+api/.vercel/
+api/node_modules/

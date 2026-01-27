@@ -180,17 +180,17 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
   };
 
   return (
-    <div className={`bg-white rounded-3xl shadow-xl p-6 border border-gray-100 ${className}`}>
+    <div className={`bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 border border-gray-100 ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-3">
-          <Users className="h-6 w-6 text-brand-light" />
-          <h3 className="text-xl font-bold text-gray-900">Connection Management</h3>
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+          <Users className="h-5 w-5 sm:h-6 sm:w-6 text-brand-light flex-shrink-0" />
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate">Connection Management</h3>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-1 bg-gray-100 rounded-lg p-1 mb-6">
+      <div className="flex space-x-1 bg-gray-100 rounded-lg p-1 mb-4 sm:mb-6">
         {[
           { id: 'stats', label: 'User Stats', icon: Users },
           { id: 'connect', label: 'Connect Users', icon: UserPlus },
@@ -201,14 +201,14 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-lg transition-all ${
+              className={`flex-1 flex items-center justify-center space-x-1 sm:space-x-2 py-2 sm:py-2 px-2 sm:px-4 rounded-lg transition-all min-h-[44px] sm:min-h-0 ${
                 activeTab === tab.id
                   ? 'bg-white text-brand-light shadow-sm'
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
-              <IconComponent className="h-4 w-4" />
-              <span className="font-medium">{tab.label}</span>
+              <IconComponent className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="font-medium text-xs sm:text-sm whitespace-nowrap">{tab.label}</span>
             </button>
           );
         })}
@@ -224,44 +224,44 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-blue-50 p-4 rounded-xl">
-                  <div className="flex items-center space-x-3">
-                    <Users className="h-8 w-8 text-brand-light" />
-                    <div>
-                      <p className="text-sm text-brand-light font-medium">Total Users</p>
-                      <p className="text-2xl font-bold text-blue-900">{userStats.length}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div className="bg-blue-50 p-3 sm:p-4 rounded-xl">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <Users className="h-6 w-6 sm:h-8 sm:w-8 text-brand-light flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm text-brand-light font-medium">Total Users</p>
+                      <p className="text-xl sm:text-2xl font-bold text-blue-900">{userStats.length}</p>
                     </div>
                   </div>
                 </div>
-                <div className="bg-green-50 p-4 rounded-xl">
-                  <div className="flex items-center space-x-3">
-                    <Zap className="h-8 w-8 text-green-600" />
-                    <div>
-                      <p className="text-sm text-green-600 font-medium">Auto Connections</p>
-                      <p className="text-2xl font-bold text-green-900">
+                <div className="bg-green-50 p-3 sm:p-4 rounded-xl">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <Zap className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm text-green-600 font-medium">Auto Connections</p>
+                      <p className="text-xl sm:text-2xl font-bold text-green-900">
                         {userStats.reduce((sum, user) => sum + user.autoConnections, 0)}
                       </p>
                     </div>
                   </div>
                 </div>
-                <div className="bg-purple-50 p-4 rounded-xl">
-                  <div className="flex items-center space-x-3">
-                    <UserPlus className="h-8 w-8 text-brand-dark" />
-                    <div>
-                      <p className="text-sm text-brand-dark font-medium">Manual Connections</p>
-                      <p className="text-2xl font-bold text-purple-900">
+                <div className="bg-purple-50 p-3 sm:p-4 rounded-xl">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <UserPlus className="h-6 w-6 sm:h-8 sm:w-8 text-brand-dark flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm text-brand-dark font-medium">Manual Connections</p>
+                      <p className="text-xl sm:text-2xl font-bold text-purple-900">
                         {userStats.reduce((sum, user) => sum + user.manualConnections, 0)}
                       </p>
                     </div>
                   </div>
                 </div>
-                <div className="bg-orange-50 p-4 rounded-xl">
-                  <div className="flex items-center space-x-3">
-                    <QrCode className="h-8 w-8 text-orange-600" />
-                    <div>
-                      <p className="text-sm text-orange-600 font-medium">Scan Connections</p>
-                      <p className="text-2xl font-bold text-orange-900">
+                <div className="bg-orange-50 p-3 sm:p-4 rounded-xl">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <QrCode className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm text-orange-600 font-medium">Scan Connections</p>
+                      <p className="text-xl sm:text-2xl font-bold text-orange-900">
                         {userStats.reduce((sum, user) => sum + user.scanConnections, 0)}
                       </p>
                     </div>
@@ -269,50 +269,50 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <table className="w-full min-w-[600px] sm:min-w-0">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900">User</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900">Total</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900">Auto</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900">Manual</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900">Scan</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900">Events</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 font-semibold text-gray-900 text-xs sm:text-sm">User</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 font-semibold text-gray-900 text-xs sm:text-sm">Total</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 font-semibold text-gray-900 text-xs sm:text-sm">Auto</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 font-semibold text-gray-900 text-xs sm:text-sm">Manual</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 font-semibold text-gray-900 text-xs sm:text-sm">Scan</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 font-semibold text-gray-900 text-xs sm:text-sm">Events</th>
                     </tr>
                   </thead>
                   <tbody>
                     {userStats.slice(0, 20).map((user) => (
                       <tr key={user.uid} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4">
-                          <div>
-                            <p className="font-medium text-gray-900">{user.name}</p>
-                            <p className="text-sm text-gray-600">{user.work}</p>
+                        <td className="py-2 sm:py-3 px-3 sm:px-4">
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 text-xs sm:text-sm truncate">{user.name}</p>
+                            <p className="text-xs sm:text-sm text-gray-600 truncate">{user.work}</p>
                           </div>
                         </td>
-                        <td className="py-3 px-4 font-semibold text-gray-900">
+                        <td className="py-2 sm:py-3 px-3 sm:px-4 font-semibold text-gray-900 text-xs sm:text-sm">
                           {user.totalConnections}
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-2 sm:py-3 px-3 sm:px-4">
                           <div className="flex items-center space-x-1">
                             {getConnectionTypeIcon('auto')}
-                            <span>{user.autoConnections}</span>
+                            <span className="text-xs sm:text-sm">{user.autoConnections}</span>
                           </div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-2 sm:py-3 px-3 sm:px-4">
                           <div className="flex items-center space-x-1">
                             {getConnectionTypeIcon('manual')}
-                            <span>{user.manualConnections}</span>
+                            <span className="text-xs sm:text-sm">{user.manualConnections}</span>
                           </div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-2 sm:py-3 px-3 sm:px-4">
                           <div className="flex items-center space-x-1">
                             {getConnectionTypeIcon('scan')}
-                            <span>{user.scanConnections}</span>
+                            <span className="text-xs sm:text-sm">{user.scanConnections}</span>
                           </div>
                         </td>
-                        <td className="py-3 px-4">
-                          <span className="px-2 py-1 bg-blue-50 text-blue-800 rounded-full text-sm">
+                        <td className="py-2 sm:py-3 px-3 sm:px-4">
+                          <span className="px-2 py-1 bg-blue-50 text-blue-800 rounded-full text-xs sm:text-sm whitespace-nowrap">
                             {user.registeredEvents.length} events
                           </span>
                         </td>

@@ -15,12 +15,23 @@ A comprehensive event management and networking platform for Alma Links events.
 
 ### Quick Start
 
+**All commands must be run from the project root directory:**
+
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd alma
+
+# Install dependencies (from project root)
 npm install
+
+# Start development server (from project root)
 npm run dev
 ```
 
 This starts the Vite dev server on `http://localhost:5173` with React Refresh enabled.
+
+**Important:** The `api/` directory only contains the Vercel serverless function router (`api/index.js`). All npm commands must be run from the **project root**, not from `api/` or any subdirectory.
 
 ### Development Modes
 

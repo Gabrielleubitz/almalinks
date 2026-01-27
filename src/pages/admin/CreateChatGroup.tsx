@@ -323,33 +323,33 @@ const CreateChatGroup: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <AdminHeader />
       
-      <div className="pt-20 pb-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="pt-20 pb-12 sm:pb-16">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 lg:px-8 overflow-x-hidden w-full max-w-full box-border">
           {/* Page Header */}
-          <div className="mb-8">
-            <div className="flex items-center space-x-4 mb-6">
+          <div className="mb-6 sm:mb-8">
+            <div className="flex items-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
               <button
                 onClick={() => navigate('/admin')}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
+                className="text-gray-600 hover:text-gray-900 transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center"
               >
                 <ArrowLeft className="h-5 w-5" />
               </button>
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white">
-                <MessageCircle className="h-5 w-5" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Create Chat Group</h1>
-                <p className="text-gray-600">Set up a new group chat for your community</p>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Create Chat Group</h1>
+                <p className="text-sm sm:text-base text-gray-600">Set up a new group chat for your community</p>
               </div>
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
             {/* Chat Settings Form */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">Chat Settings</h2>
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Chat Settings</h2>
               
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                 {/* Chat Name */}
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -363,7 +363,7 @@ const CreateChatGroup: React.FC = () => {
                     maxLength={100}
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-h-[44px] sm:min-h-0"
                     placeholder="Enter chat name"
                     disabled={loading}
                   />
@@ -384,7 +384,7 @@ const CreateChatGroup: React.FC = () => {
                     maxLength={500}
                     value={formData.description}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base min-h-[80px] sm:min-h-0"
                     placeholder="What's this chat about?"
                     disabled={loading}
                   />
@@ -404,7 +404,7 @@ const CreateChatGroup: React.FC = () => {
                     type="url"
                     value={formData.imageUrl}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-h-[44px] sm:min-h-0"
                     placeholder="https://example.com/group-image.jpg"
                     disabled={loading}
                   />
@@ -510,7 +510,7 @@ const CreateChatGroup: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading || !formData.name.trim() || formData.initialAdmins.length === 0}
-                  className="w-full flex items-center justify-center px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-full flex items-center justify-center px-4 sm:px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] sm:min-h-0 text-sm sm:text-base font-medium"
                 >
                   {loading ? (
                     <>
@@ -528,25 +528,25 @@ const CreateChatGroup: React.FC = () => {
             </div>
 
             {/* User Selection */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900">Select Members</h2>
-                <div className="text-sm text-gray-600">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900">Select Members</h2>
+                <div className="text-xs sm:text-sm text-gray-600">
                   {formData.initialAdmins.length + formData.seedMembers.length} selected
                   {users.length > 0 && ` of ${users.length} available`}
                 </div>
               </div>
 
               {/* Search */}
-              <div className="mb-6">
+              <div className="mb-4 sm:mb-6">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search users..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-h-[44px] sm:min-h-0"
                   />
                 </div>
               </div>
@@ -620,13 +620,13 @@ const CreateChatGroup: React.FC = () => {
                     const isCurrentUser = u.uid === user?.uid;
                     
                     return (
-                      <div key={u.uid} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium text-gray-600">
+                      <div key={u.uid} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg gap-3 sm:gap-0">
+                        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                          <div className="w-8 h-8 sm:w-8 sm:h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium text-gray-600 flex-shrink-0">
                             {(u.displayName || u.firstName || u.email || '?').charAt(0).toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-sm font-medium text-gray-900 truncate">
                               {u.displayName || u.firstName || u.email || 'Unknown User'}
                               {isCurrentUser && ' (You)'}
                             </p>
@@ -636,25 +636,29 @@ const CreateChatGroup: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="flex items-center space-x-2">
-                          {role === 'admin' && (
-                            <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                              <Shield className="h-3 w-3 mr-1" />
-                              Admin
-                            </div>
-                          )}
-                          
-                          {role === 'member' && (
-                            <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-800">
-                              Member
-                            </div>
-                          )}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2 sm:space-x-2 flex-shrink-0">
+                          {/* Role Badge - Show on desktop only (when buttons are small) */}
+                          <div className="hidden sm:flex">
+                            {role === 'admin' && (
+                              <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                <Shield className="h-3 w-3 mr-1 flex-shrink-0" />
+                                <span className="whitespace-nowrap">Admin</span>
+                              </div>
+                            )}
+                            
+                            {role === 'member' && (
+                              <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-800">
+                                <span className="whitespace-nowrap">Member</span>
+                              </div>
+                            )}
+                          </div>
 
-                          <div className="flex space-x-1">
+                          {/* Role Buttons - 2-column grid on mobile, flex row on desktop */}
+                          <div className="grid grid-cols-2 gap-1.5 sm:flex sm:space-x-1 w-full sm:w-auto">
                             <button
                               onClick={() => handleUserSelection(u.uid, 'admin')}
                               disabled={isCurrentUser && formData.initialAdmins.length === 1}
-                              className={`px-3 py-1 text-xs rounded-lg transition-colors ${
+                              className={`px-2 sm:px-3 py-2 sm:py-1 text-xs rounded-lg transition-colors whitespace-nowrap min-h-[44px] sm:min-h-0 font-medium ${
                                 role === 'admin' 
                                   ? 'bg-brand-dark text-white'
                                   : 'bg-gray-200 text-gray-700 hover:bg-purple-100'
@@ -666,7 +670,7 @@ const CreateChatGroup: React.FC = () => {
                             
                             <button
                               onClick={() => handleUserSelection(u.uid, 'member')}
-                              className={`px-3 py-1 text-xs rounded-lg transition-colors ${
+                              className={`px-2 sm:px-3 py-2 sm:py-1 text-xs rounded-lg transition-colors whitespace-nowrap min-h-[44px] sm:min-h-0 font-medium ${
                                 role === 'member'
                                   ? 'bg-brand-dark text-white'
                                   : 'bg-gray-200 text-gray-700 hover:bg-blue-50'

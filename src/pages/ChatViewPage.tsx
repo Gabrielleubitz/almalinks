@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -52,9 +52,41 @@ const ChatViewPage: React.FC = () => {
   const { logChatMessage } = useActivityTracking();
   
   // Refs for scroll detection
-  const bottomRef = useRef<HTMLDivElement | null>(null); // Sentinel at bottom of messages
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null); // Direct ref to the ACTUAL scrollable container
+  const bottomRef = useRef<HTMLDivElement | null>(null); // Bottom sentinel element (last child after messages)
   const lastMessageRef = useRef<HTMLDivElement | null>(null); // Ref to the newest (last) message
-  
+
+  // State to track when refs are ready (triggers effect re-run)
+  const [refsReady, setRefsReady] = useState(false);
+
+  // ResizeObserver for detecting layout stability
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const stableFrameCountRef = useRef<number>(0);
+  const lastScrollHeightRef = useRef<number>(0);
+  const rafId1Ref = useRef<number | null>(null);
+  const rafId2Ref = useRef<number | null>(null);
+
+  // Callback refs to detect when elements mount
+  const setScrollContainerRef = useCallback((node: HTMLDivElement | null) => {
+    scrollContainerRef.current = node;
+    // Check if both refs are ready
+    if (node && bottomRef.current) {
+      setRefsReady(true);
+    } else if (!node) {
+      setRefsReady(false);
+    }
+  }, []);
+
+  const setBottomRef = useCallback((node: HTMLDivElement | null) => {
+    bottomRef.current = node;
+    // Check if both refs are ready
+    if (node && scrollContainerRef.current) {
+      setRefsReady(true);
+    } else if (!node) {
+      setRefsReady(false);
+    }
+  }, []);
+
   const [chat, setChat] = useState<ChatWithMembers | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [permissions, setPermissions] = useState<ChatPermissions | null>(null);
@@ -77,8 +109,7 @@ const ChatViewPage: React.FC = () => {
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserCard[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [showChatSidebar, setShowChatSidebar] = useState(true);
-  const [userChats, setUserChats] = useState<ChatListItem[]>([]);
+  // Sidebar removed - individual chat view shows only the chat
   const [showChatInfo, setShowChatInfo] = useState(false);
   const [showGroupPhotoModal, setShowGroupPhotoModal] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -92,6 +123,11 @@ const ChatViewPage: React.FC = () => {
   const [openReactionPickerId, setOpenReactionPickerId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
 
+  // Chat list sidebar state (for desktop)
+  const [userChats, setUserChats] = useState<ChatListItem[]>([]);
+  const [loadingChats, setLoadingChats] = useState(false);
+  const [chatListSearchQuery, setChatListSearchQuery] = useState('');
+
   // Real-time subscription
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
@@ -100,11 +136,16 @@ const ChatViewPage: React.FC = () => {
       // Clear messages immediately when chatId changes to ensure clean state
       // This ensures the scroll effect can properly detect the new chat
       setMessages([]);
+      // Reset refsReady when chatId changes so scroll logic re-runs
+      setRefsReady(false);
+      // Reset loading and error states when chatId changes
+      setLoading(true);
+      setError(null);
+      setChat(null); // Clear previous chat data
       
       loadChat();
       loadPermissions();
       subscribeToMessages();
-      loadUserChats();
       loadMuteStatus();
     }
 
@@ -115,6 +156,59 @@ const ChatViewPage: React.FC = () => {
     };
   }, [user?.uid, chatId]);
 
+  // Load chat list for sidebar (desktop only)
+  useEffect(() => {
+    if (user?.uid) {
+      loadUserChats();
+    }
+  }, [user?.uid]);
+
+  const loadUserChats = async () => {
+    if (!user?.uid) return;
+
+    try {
+      setLoadingChats(true);
+      const chats = await ChatService.getUserChats(user.uid);
+      setUserChats(chats);
+    } catch (err) {
+      console.error('❌ Error loading user chats:', err);
+    } finally {
+      setLoadingChats(false);
+    }
+  };
+
+  const filteredChats = userChats.filter(chat =>
+    chat.name.toLowerCase().includes(chatListSearchQuery.toLowerCase()) ||
+    chat.description?.toLowerCase().includes(chatListSearchQuery.toLowerCase()) ||
+    chat.lastMessagePreview?.toLowerCase().includes(chatListSearchQuery.toLowerCase())
+  );
+
+  const formatLastActivity = (timestamp: any): string => {
+    if (!timestamp) return '';
+    
+    let date: Date;
+    if (timestamp?.toDate) {
+      date = timestamp.toDate();
+    } else if (timestamp instanceof Date) {
+      date = timestamp;
+    } else {
+      date = new Date(timestamp);
+    }
+    
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    
+    return date.toLocaleDateString();
+  };
+
   // Prevent body scrolling when on chat page
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -123,184 +217,221 @@ const ChatViewPage: React.FC = () => {
     };
   }, []);
 
-  // Helper: Find the closest scrollable ancestor of an element
-  const findScrollParent = (el: HTMLElement | null): HTMLElement | null => {
-    let cur = el;
-    while (cur) {
-      const s = window.getComputedStyle(cur);
-      const canScroll =
-        (s.overflowY === 'auto' || s.overflowY === 'scroll') &&
-        cur.scrollHeight > cur.clientHeight + 1;
-      if (canScroll) return cur;
-      cur = cur.parentElement as HTMLElement | null;
-    }
-    return null;
-  };
+  // Removed findScrollParent - using direct container ref instead
 
-  // Force scroll to bottom using programmatically found scroll container
-  const setBottom = () => {
+  // Force scroll to bottom - reliable method using both scrollIntoView and direct scrollTop
+  const scrollToBottom = () => {
     if (!chatId) return;
 
-    // Try to find scroll container using bottomRef first, then lastMessageRef as fallback
-    const anchorElement = bottomRef.current || lastMessageRef.current;
-    if (!anchorElement) {
+    const container = scrollContainerRef.current;
+    if (!container) {
       if (import.meta.env.DEV) {
-        console.warn('[chat-scroll] No anchor element found (bottomRef or lastMessageRef)');
+        console.warn('[chat-scroll] Container ref not available');
       }
       return;
     }
 
-    const scroller = findScrollParent(anchorElement);
-    if (!scroller) {
-      if (import.meta.env.DEV) {
-        console.warn('[chat-scroll] No scrollable parent found for anchor element');
-      }
-      return;
+    const beforeScroll = {
+      scrollTop: container.scrollTop,
+      scrollHeight: container.scrollHeight,
+      clientHeight: container.clientHeight
+    };
+    const maxScrollTop = beforeScroll.scrollHeight - beforeScroll.clientHeight;
+
+    // Method 1: Use bottom sentinel scrollIntoView
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ block: 'end', behavior: 'auto', inline: 'nearest' });
     }
 
-    const beforeScrollTop = scroller.scrollTop;
-    const scrollHeight = scroller.scrollHeight;
-    const clientHeight = scroller.clientHeight;
-    
-    // CRITICAL: Scroll to bottom (newest message), NOT top
-    // First set scrollTop directly to ensure we're at bottom
-    scroller.scrollTop = scrollHeight;
-    
-    // Then use scrollIntoView on the newest message element (last message or bottom sentinel)
-    // This ensures the newest message is visible at the bottom
-    if (lastMessageRef.current) {
-      lastMessageRef.current.scrollIntoView({ block: 'end', behavior: 'auto' });
-    } else if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ block: 'end', behavior: 'auto' });
-    }
-    
-    const afterScrollTop = scroller.scrollTop;
+    // Method 2: Direct scrollTop manipulation (always do this as backup/primary)
+    container.scrollTop = container.scrollHeight;
 
-    // Dev-only debug logs
-    if (import.meta.env.DEV) {
-      const computedStyle = window.getComputedStyle(scroller);
-      const overflowY = computedStyle.overflowY;
-      const canScroll = scrollHeight > clientHeight;
-      const firstMessageId = messages.length > 0 ? messages[0]?.id : null;
-      const lastMessageId = messages.length > 0 ? messages[messages.length - 1]?.id : null;
-      const firstMessageTime = messages.length > 0 && messages[0]?.createdAt 
-        ? (messages[0].createdAt?.toDate ? messages[0].createdAt.toDate() : new Date(messages[0].createdAt))
-        : null;
-      const lastMessageTime = messages.length > 0 && messages[messages.length - 1]?.createdAt
-        ? (messages[messages.length - 1].createdAt?.toDate ? messages[messages.length - 1].createdAt.toDate() : new Date(messages[messages.length - 1].createdAt))
-        : null;
+    const afterScroll = {
+      scrollTop: container.scrollTop,
+      scrollHeight: container.scrollHeight,
+      clientHeight: container.clientHeight
+    };
+    const finalMaxScrollTop = afterScroll.scrollHeight - afterScroll.clientHeight;
+    const scrolledToBottom = Math.abs(afterScroll.scrollTop - finalMaxScrollTop) < 5;
 
-      console.log('[chat-scroll]', {
-        chatId,
-        messagesLength: messages.length,
-        firstMessageId,
-        lastMessageId,
-        firstMessageTime: firstMessageTime?.toISOString(),
-        lastMessageTime: lastMessageTime?.toISOString(),
-        scrollerTag: scroller.tagName,
-        scrollerId: scroller.id,
-        scrollerClassName: scroller.className,
-        scrollHeight,
-        clientHeight,
-        canScroll,
-        overflowY,
-        beforeScrollTop,
-        afterScrollTop,
-        scrolled: afterScrollTop !== beforeScrollTop,
-        scrolledToBottom: Math.abs(afterScrollTop - (scrollHeight - clientHeight)) < 5,
-        usedLastMessageRef: !!lastMessageRef.current,
-        usedBottomRef: !!bottomRef.current && !lastMessageRef.current
-      });
-
-      // Verify message ordering: newest should be last
-      if (firstMessageTime && lastMessageTime && firstMessageTime > lastMessageTime) {
-        console.warn('[chat-scroll] WARNING: Messages appear to be newest->oldest! First message is newer than last. Check message ordering.');
-      }
-
-      // Safety check: warn if container cannot scroll
-      if (!canScroll && messages.length > 0) {
-        console.warn('[chat-scroll] Container cannot scroll! scrollHeight <= clientHeight. Check layout.');
-      }
-    }
-  };
-
-  // Deterministic scroll using useLayoutEffect with multiple attempts
-  // Scrolls the chat box to bottom (newest message) when chatId changes or messages render
-  useLayoutEffect(() => {
-    if (!chatId) return;
-    
-    // Wait for messages to render - need at least bottomRef or lastMessageRef
-    if (!bottomRef.current && !lastMessageRef.current) return;
-
-    // Multi-step scroll to handle async content (fonts, images, etc.)
-    // Each step ensures we end at bottom even if content height changes
-    let timeout1: NodeJS.Timeout | null = null;
-    let timeout2: NodeJS.Timeout | null = null;
-    let timeout3: NodeJS.Timeout | null = null;
-    let watchdogTimeout: NodeJS.Timeout | null = null;
-    
-    const raf1 = requestAnimationFrame(() => {
-      setBottom();
-      
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setBottom();
-        });
-      });
-      
-      timeout1 = setTimeout(() => {
-        setBottom();
-        
-        timeout2 = setTimeout(() => {
-          setBottom();
-          
-          timeout3 = setTimeout(() => {
-            setBottom();
-            
-            // Watchdog: Check if scroll was reset after all attempts
-            if (import.meta.env.DEV) {
-              watchdogTimeout = setTimeout(() => {
-                const anchorElement = bottomRef.current || lastMessageRef.current;
-                if (!anchorElement) return;
-                
-                const scroller = findScrollParent(anchorElement);
-                if (scroller) {
-                  const after = scroller.scrollTop;
-                  const scrollHeight = scroller.scrollHeight;
-                  const clientHeight = scroller.clientHeight;
-                  const expectedBottom = scrollHeight - clientHeight;
-                  
-                  if (after < expectedBottom - 50) {
-                    console.warn('[chat-scroll] scroll was reset unexpectedly', {
-                      chatId,
-                      afterScrollTop: after,
-                      expectedBottom,
-                      scrollHeight,
-                      clientHeight,
-                      scrollerTag: scroller.tagName,
-                      scrollerId: scroller.id,
-                      scrollerClassName: scroller.className,
-                      usedLastMessageRef: !!lastMessageRef.current,
-                      usedBottomRef: !!bottomRef.current && !lastMessageRef.current
-                    });
-                  }
-                }
-              }, 250);
-            }
-          }, 200);
-        }, 50);
-      }, 0);
+    // Debug logging (always log until verified working)
+    console.log('[chat-scroll] ✅ Scroll executed', {
+      chatId,
+      messagesLength: messages.length,
+      element: 'scrollContainerRef (messages container with overflow-y-auto)',
+      before: beforeScroll,
+      after: afterScroll,
+      maxScrollTop: finalMaxScrollTop,
+      scrolledToBottom,
+      scrollDelta: afterScroll.scrollTop - beforeScroll.scrollTop,
+      containerTag: container.tagName,
+      containerId: container.id || 'none',
+      containerClass: container.className,
+      hasBottomRef: !!bottomRef.current,
+      hasLastMessageRef: !!lastMessageRef.current
     });
 
-    // Cleanup all timers and RAFs
-    return () => {
-      cancelAnimationFrame(raf1);
-      if (timeout1) clearTimeout(timeout1);
-      if (timeout2) clearTimeout(timeout2);
-      if (timeout3) clearTimeout(timeout3);
-      if (watchdogTimeout) clearTimeout(watchdogTimeout);
+    // Verify scroll succeeded
+    if (!scrolledToBottom && afterScroll.scrollHeight > afterScroll.clientHeight) {
+      console.warn('[chat-scroll] ⚠️ Scroll may not have reached bottom', {
+        expectedScrollTop: finalMaxScrollTop,
+        actualScrollTop: afterScroll.scrollTop,
+        difference: Math.abs(afterScroll.scrollTop - finalMaxScrollTop)
+      });
+    }
+  };
+
+  // Auto-scroll to bottom using ResizeObserver to detect layout stability
+  // Uses useLayoutEffect to run synchronously after DOM updates
+  useLayoutEffect(() => {
+    if (!chatId) return;
+
+    const container = scrollContainerRef.current;
+    const bottomSentinel = bottomRef.current;
+    
+    // Wait for both refs to be available before attempting scroll
+    // The container and bottom sentinel should always exist (always rendered)
+    if (!container || !bottomSentinel) {
+      if (import.meta.env.DEV) {
+        console.log('[chat-scroll] Refs not ready yet', {
+          chatId,
+          hasContainer: !!container,
+          hasBottomSentinel: !!bottomSentinel,
+          messagesLength: messages.length,
+          refsReady
+        });
+      }
+      return;
+    }
+    
+    // Only scroll if we have messages (empty state doesn't need scrolling)
+    if (messages.length === 0) {
+      if (import.meta.env.DEV) {
+        console.log('[chat-scroll] No messages yet, skipping scroll', { chatId });
+      }
+      return;
+    }
+
+    // Reset stability counter when chatId or messages change
+    stableFrameCountRef.current = 0;
+    lastScrollHeightRef.current = container.scrollHeight;
+
+    // Clean up existing observer
+    if (resizeObserverRef.current) {
+      resizeObserverRef.current.disconnect();
+      resizeObserverRef.current = null;
+    }
+
+    // Create ResizeObserver to watch for layout changes
+    const scheduleStabilityCheck = () => {
+      if (!container) return;
+      
+      // Cancel any pending checks
+      if (rafId1Ref.current !== null) {
+        cancelAnimationFrame(rafId1Ref.current);
+        rafId1Ref.current = null;
+      }
+      if (rafId2Ref.current !== null) {
+        cancelAnimationFrame(rafId2Ref.current);
+        rafId2Ref.current = null;
+      }
+      
+      // Capture current scrollHeight
+      const capturedScrollHeight = container.scrollHeight;
+      lastScrollHeightRef.current = capturedScrollHeight;
+      
+      if (import.meta.env.DEV) {
+        console.log('[chat-scroll] ResizeObserver fired, scheduling stability check', {
+          chatId,
+          scrollHeight: capturedScrollHeight,
+          clientHeight: container.clientHeight
+        });
+      }
+      
+      // Wait 2 animation frames to verify stability
+      rafId1Ref.current = requestAnimationFrame(() => {
+        rafId2Ref.current = requestAnimationFrame(() => {
+          // After 2 frames, check if scrollHeight is still the same
+          if (!container) return;
+          
+          const finalScrollHeight = container.scrollHeight;
+          const finalClientHeight = container.clientHeight;
+          
+          if (finalScrollHeight === capturedScrollHeight) {
+            // Layout is stable (2 frames with no changes), scroll to bottom
+            if (import.meta.env.DEV) {
+              console.log('[chat-scroll] ✅ Layout stable (2 frames), scrolling to bottom', {
+                chatId,
+                scrollHeight: finalScrollHeight,
+                clientHeight: finalClientHeight,
+                canScroll: finalScrollHeight > finalClientHeight
+              });
+            }
+            
+            scrollToBottom();
+            
+            // Disconnect observer after successful scroll
+            if (resizeObserverRef.current) {
+              resizeObserverRef.current.disconnect();
+              resizeObserverRef.current = null;
+            }
+            rafId1Ref.current = null;
+            rafId2Ref.current = null;
+          } else {
+            // ScrollHeight changed during frames, will be caught by next resize event
+            if (import.meta.env.DEV) {
+              console.log('[chat-scroll] Layout still changing, waiting for next resize event', {
+                chatId,
+                capturedScrollHeight,
+                finalScrollHeight,
+                difference: finalScrollHeight - capturedScrollHeight
+              });
+            }
+            // ResizeObserver will fire again if layout continues changing
+          }
+        });
+      });
     };
-  }, [chatId, messages.length, messages.length > 0 ? messages[messages.length - 1]?.id : null]);
+    
+    const observer = new ResizeObserver(() => {
+      scheduleStabilityCheck();
+    });
+
+    // Start observing the scroll container
+    observer.observe(container);
+    resizeObserverRef.current = observer;
+
+    // Also observe the messages content area (child) to catch content changes
+    const messagesContent = container.querySelector('.max-w-3xl');
+    if (messagesContent) {
+      observer.observe(messagesContent);
+    }
+
+    // Initial trigger to start observation and check
+    requestAnimationFrame(() => {
+      if (container) {
+        // Initial stability check
+        scheduleStabilityCheck();
+      }
+    });
+
+    // Cleanup
+    return () => {
+      if (rafId1Ref.current !== null) {
+        cancelAnimationFrame(rafId1Ref.current);
+        rafId1Ref.current = null;
+      }
+      if (rafId2Ref.current !== null) {
+        cancelAnimationFrame(rafId2Ref.current);
+        rafId2Ref.current = null;
+      }
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+        resizeObserverRef.current = null;
+      }
+      stableFrameCountRef.current = 0;
+    };
+  }, [chatId, messages.length, refsReady]); // Trigger on chatId change, messages load, or when refs become ready
 
   const loadChat = async () => {
     if (!user?.uid || !chatId) return;
@@ -395,16 +526,7 @@ const ChatViewPage: React.FC = () => {
     }
   };
 
-  const loadUserChats = async () => {
-    if (!user?.uid) return;
-
-    try {
-      const chats = await ChatService.getUserChats(user.uid);
-      setUserChats(chats);
-    } catch (err) {
-      console.error('❌ Error loading user chats:', err);
-    }
-  };
+  // Removed loadUserChats - not needed on individual chat view (sidebar removed)
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -430,7 +552,15 @@ const ChatViewPage: React.FC = () => {
       // Log chat message activity
       if (chat) {
         logChatMessage(chatId, chat.name);
-        }
+      }
+      
+      // Scroll to bottom after sending (real-time subscription will also trigger scroll via useLayoutEffect)
+      // Trigger scroll after a brief delay to ensure message is in DOM
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollToBottom();
+        });
+      });
       }
       
     } catch (err: any) {
@@ -716,32 +846,6 @@ const ChatViewPage: React.FC = () => {
     }
   };
 
-  const formatLastActivity = (timestamp: any): string => {
-    if (!timestamp) return '';
-    
-    let date: Date;
-    if (timestamp?.toDate) {
-      date = timestamp.toDate();
-    } else if (timestamp instanceof Date) {
-      date = timestamp;
-    } else {
-      date = new Date(timestamp);
-    }
-    
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    
-    return date.toLocaleDateString();
-  };
-
   const getMessageSenderName = (message: ChatMessage): string => {
     if (message.type === 'system') return 'System';
     if (!message.userId) return 'Unknown';
@@ -805,6 +909,8 @@ const ChatViewPage: React.FC = () => {
     );
   }
 
+  // Rendering order: loading → error/not found → chat UI
+  // Show loading state while fetching chat data
   if (loading) {
     return (
       <div className="h-screen bg-[#E5DDD5] flex items-center justify-center">
@@ -813,20 +919,21 @@ const ChatViewPage: React.FC = () => {
     );
   }
 
-  if (error || !chat) {
+  // Only show "Chat not found" when loading is complete AND chat is missing
+  if (!chat || error) {
     return (
       <div className="h-screen bg-[#E5DDD5] flex items-center justify-center">
         <div className="text-center max-w-md px-4">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Chat Not Found</h2>
-              <p className="text-gray-600 mb-8">{error || 'The chat you\'re looking for doesn\'t exist or you don\'t have access.'}</p>
-              <button
-                onClick={() => navigate('/chats')}
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Chat Not Found</h2>
+          <p className="text-gray-600 mb-8">{error || 'The chat you\'re looking for doesn\'t exist or you don\'t have access.'}</p>
+          <button
+            onClick={() => navigate('/chats')}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#0B2B6B] hover:bg-[#1E56B3]"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Chats
-              </button>
-            </div>
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Chats
+          </button>
+        </div>
       </div>
     );
   }
@@ -835,104 +942,130 @@ const ChatViewPage: React.FC = () => {
     <div className="h-screen bg-white flex flex-col overflow-hidden">
       <Header />
       <div className="flex-1 flex overflow-hidden pt-20" style={{ height: 'calc(100vh - 80px)' }}>
-        {/* Chat Layout */}
+        {/* Chat Layout - Sidebar on desktop, hidden on mobile */}
         <div className="flex-1 flex overflow-hidden h-full w-full">
-        {/* Left Sidebar - Chats List (Premium WhatsApp Style) */}
-        {showChatSidebar && (
-          <div className="w-80 bg-white flex flex-col overflow-hidden border-r border-gray-300 shadow-sm">
-            {/* Sidebar Header - Premium Design */}
-            <div className="bg-[#F0F2F5] px-4 py-4 border-b border-gray-300 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">Chats</h2>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => navigate('/chats')}
-                    className="p-2 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
-                    title="New Chat"
-                  >
-                    <MessageCircle className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => setShowChatSidebar(false)}
-                    className="p-2 text-gray-600 hover:bg-gray-200 rounded-full transition-colors md:hidden"
-                    title="Close Sidebar"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-            </div>
+          
+          {/* Left Sidebar - Chat List (Desktop only, ≥1024px) */}
+          <div className="hidden lg:flex lg:flex-col lg:w-80 lg:border-r lg:border-gray-200 lg:bg-white lg:flex-shrink-0">
+            {/* Sidebar Header */}
+            <div className="px-4 py-3 border-b border-gray-200 flex-shrink-0">
+              <h2 className="text-sm font-semibold text-gray-900 mb-2">Chats</h2>
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search chats..."
+                  value={chatListSearchQuery}
+                  onChange={(e) => setChatListSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0B2B6B] focus:border-transparent transition-all"
+                />
               </div>
             </div>
-            
-            {/* Chats List - Improved Design */}
+
+            {/* Chat List */}
             <div className="flex-1 overflow-y-auto">
-              {userChats.map((chatItem) => (
-                <button
-                  key={chatItem.id}
-                  onClick={() => navigate(`/chats/${chatItem.id}`)}
-                  className={`w-full p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left group ${
-                    chatItem.id === chatId ? 'bg-[#E5DDD5] border-l-4 border-l-[#0B2B6B]' : ''
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-12 h-12 bg-gradient-to-br from-[#0B2B6B] to-[#2E7FEF] rounded-full flex items-center justify-center text-white font-semibold text-base flex-shrink-0 shadow-sm ${
-                      chatItem.id === chatId ? 'ring-2 ring-[#0B2B6B] ring-offset-1' : ''
-                    }`}>
-                      {chatItem.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <h3 className={`font-semibold truncate text-sm ${
-                          chatItem.id === chatId ? 'text-[#0B2B6B]' : 'text-gray-900'
-                        }`}>
-                          {chatItem.name}
-                        </h3>
-                        {chatItem.lastActivity && (
-                          <span className={`text-[10px] ml-2 flex-shrink-0 ${
-                            chatItem.id === chatId ? 'text-gray-600' : 'text-gray-500'
-                          }`}>
-                            {formatLastActivity(chatItem.lastActivity)}
-                          </span>
-                        )}
-                      </div>
-                      {chatItem.lastMessagePreview && (
-                        <p className={`text-xs truncate ${
-                          chatItem.id === chatId ? 'text-gray-700' : 'text-gray-600'
-                        }`}>
-                          {chatItem.lastMessagePreview}
-                        </p>
-                      )}
-                    </div>
-                    {chatItem.unreadCount > 0 && (
-                      <div className="bg-[#25D366] text-white text-[10px] rounded-full min-w-[18px] h-[18px] px-1.5 flex items-center justify-center flex-shrink-0 font-semibold shadow-sm">
-                        {chatItem.unreadCount > 99 ? '99+' : chatItem.unreadCount}
-                      </div>
-                    )}
-                  </div>
-                </button>
-              ))}
-              {userChats.length === 0 && (
-                <div className="p-12 text-center text-gray-500">
-                  <MessageCircle className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                  <p className="text-sm font-medium">No chats yet</p>
-                  <p className="text-xs text-gray-400 mt-1">Start a conversation!</p>
+              {loadingChats ? (
+                <div className="flex items-center justify-center py-8">
+                  <LoadingSpinner size="md" color="border-[#0B2B6B]" />
+                </div>
+              ) : filteredChats.length === 0 ? (
+                <div className="text-center py-8 px-4">
+                  <MessageCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-xs text-gray-500">No chats found</p>
+                </div>
+              ) : (
+                <div className="py-2">
+                  {filteredChats.map((chatItem) => {
+                    const isActive = chatItem.id === chatId;
+                    return (
+                      <button
+                        key={chatItem.id}
+                        onClick={() => navigate(`/chats/${chatItem.id}`)}
+                        className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-l-2 ${
+                          isActive 
+                            ? 'bg-blue-50 border-[#0B2B6B]' 
+                            : 'border-transparent'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {/* Avatar */}
+                          {chatItem.imageUrl ? (
+                            <img
+                              src={chatItem.imageUrl}
+                              alt={chatItem.name}
+                              className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                target.nextElementSibling?.classList.remove('hidden');
+                              }}
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-gradient-to-br from-[#0B2B6B] to-[#2E7FEF] rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+                              {chatItem.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="w-10 h-10 bg-gradient-to-br from-[#0B2B6B] to-[#2E7FEF] rounded-full flex items-center justify-center text-white font-semibold text-xs hidden">
+                            {chatItem.name.charAt(0).toUpperCase()}
+                          </div>
+
+                          {/* Chat Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <h3 className={`text-sm font-medium truncate ${
+                                isActive ? 'text-[#0B2B6B]' : 'text-gray-900'
+                              }`}>
+                                {chatItem.name}
+                              </h3>
+                              {chatItem.unreadCount > 0 && (
+                                <span className="inline-flex items-center justify-center min-w-[18px] h-4.5 px-1 text-[10px] font-semibold text-white bg-[#0B2B6B] rounded-full flex-shrink-0">
+                                  {chatItem.unreadCount > 99 ? '99+' : chatItem.unreadCount}
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center gap-2 text-xs text-gray-500 mb-0.5">
+                              <div className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                <span>{chatItem.memberCount}</span>
+                              </div>
+                              {chatItem.lastActivity && (
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{formatLastActivity(chatItem.lastActivity)}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {chatItem.lastMessagePreview && (
+                              <p className="text-xs text-gray-500 truncate">
+                                {chatItem.lastMessagePreview}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
           </div>
-        )}
 
-        {/* Right Panel - Single Continuous Chat Surface */}
+        {/* Right Panel - Chat View */}
         <div className="flex-1 flex flex-col overflow-hidden bg-white">
           {/* Chat Header - Part of the surface */}
           <div className="px-4 py-2.5 border-b border-gray-200 flex-shrink-0 bg-white">
             <div className="flex items-center justify-between h-12">
               <div className="flex items-center space-x-2.5 flex-1 min-w-0">
+                  {/* Back button - visible on mobile, hidden on desktop when sidebar is visible */}
                   <button
-                    onClick={() => setShowChatSidebar(!showChatSidebar)}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
-                  title="Toggle Chats"
-                >
-                  <Menu className="h-4 w-4" />
+                    onClick={() => navigate('/chats')}
+                    className="lg:hidden p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
+                    title="Back to Chats"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
                   </button>
                 
                 <button
@@ -1014,6 +1147,7 @@ const ChatViewPage: React.FC = () => {
               }}
             />
             <div 
+              ref={setScrollContainerRef}
               className="flex-1 px-4 overflow-y-auto relative z-10" 
               id="messages-container"
             >
@@ -1057,8 +1191,8 @@ const ChatViewPage: React.FC = () => {
                       </div>
                     );
                   })}
-                  {/* Bottom sentinel for scroll detection - placed AFTER newest message */}
-                  <div ref={bottomRef} data-testid="chat-bottom" />
+                  {/* Bottom sentinel - ALWAYS render (even when empty) so ref is always available */}
+                  <div ref={setBottomRef} data-testid="chat-bottom" className="h-1 w-full" />
                 </div>
               </div>
             </div>

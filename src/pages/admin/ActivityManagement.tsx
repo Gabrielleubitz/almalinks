@@ -130,7 +130,23 @@ const ActivityManagement: React.FC = () => {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          // Try to get error details from response body
+          let errorDetails = '';
+          try {
+            const errorData = await response.json();
+            errorDetails = errorData.error || errorData.message || response.statusText;
+            console.error('❌ API Error Response:', {
+              status: response.status,
+              statusText: response.statusText,
+              error: errorData.error,
+              code: errorData.code,
+              details: errorData.details
+            });
+          } catch (e) {
+            errorDetails = response.statusText;
+          }
+          
+          throw new Error(`HTTP ${response.status}: ${errorDetails}`);
         }
 
         const data = await response.json();
@@ -167,16 +183,28 @@ const ActivityManagement: React.FC = () => {
 
     } catch (error: any) {
       console.error('❌ Error loading activities:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load activities';
-      setError(`${errorMessage}. Check console for details.`);
-
-      // Log additional debug info
-      console.error('Debug Info:', {
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        url: '/api/activity-admin',
+        method: 'POST',
         userId: user?.uid,
         email: user?.email,
-        filters,
-        errorDetails: error
+        filters
       });
+      
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load activities';
+      
+      // Provide user-friendly error message
+      let userMessage = errorMessage;
+      if (errorMessage.includes('503') || errorMessage.includes('Service temporarily unavailable') || errorMessage.includes('SERVICE_UNAVAILABLE')) {
+        userMessage = 'Activity service is currently unavailable. Please ensure the API server is running and try again.';
+      } else if (errorMessage.includes('Cannot connect') || errorMessage.includes('PROXY_CONNECTION_ERROR')) {
+        userMessage = 'Cannot connect to the API server. Make sure the development server is running on port 3001.';
+      }
+      
+      setError(userMessage);
     } finally {
       setLoading(false);
     }
@@ -205,18 +233,42 @@ const ActivityManagement: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        // Try to get error details from response body
+        let errorDetails = '';
+        try {
+          const errorData = await response.json();
+          errorDetails = errorData.error || errorData.message || response.statusText;
+          console.error('❌ Stats API Error Response:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData.error,
+            code: errorData.code,
+            details: errorData.details
+          });
+        } catch (e) {
+          errorDetails = response.statusText;
+        }
+        
+        throw new Error(`HTTP ${response.status}: ${errorDetails}`);
       }
 
       const data = await response.json();
       
       if (data.success) {
         setStats(data.stats);
+      } else {
+        throw new Error(data.error || 'Failed to load stats');
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error loading stats:', error);
-      console.error('Stats Debug Info:', {
+      console.error('Stats Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        url: '/api/activity-admin',
+        method: 'POST',
+        action: 'get-activity-stats',
         userId: user?.uid,
         email: user?.email,
         errorDetails: error
@@ -409,7 +461,7 @@ const ActivityManagement: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <AdminHeader title="Activity Management" />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8 overflow-x-hidden w-full max-w-full box-border">
         {/* Back Button */}
         <div className="mb-8">
           <Link
@@ -422,13 +474,13 @@ const ActivityManagement: React.FC = () => {
         </div>
 
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Activity Management</h1>
-              <p className="text-gray-600">Monitor user activities and system usage</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Activity Management</h1>
+              <p className="text-sm sm:text-base text-gray-600">Monitor user activities and system usage</p>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
               <button
                 onClick={() => {
                   setError(null); // Clear any previous errors
@@ -436,28 +488,28 @@ const ActivityManagement: React.FC = () => {
                   loadStats();
                 }}
                 disabled={loading}
-                className="inline-flex items-center px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid disabled:opacity-50"
+                className="inline-flex items-center justify-center px-4 py-2.5 sm:py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid disabled:opacity-50 min-h-[44px] sm:min-h-0 text-sm sm:text-base"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
               </button>
               <button
                 onClick={exportActivities}
-                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                className="inline-flex items-center justify-center px-4 py-2.5 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 min-h-[44px] sm:min-h-0 text-sm sm:text-base"
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
               </button>
               <button
                 onClick={cleanupDuplicates}
-                className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                className="inline-flex items-center justify-center px-4 py-2.5 sm:py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 min-h-[44px] sm:min-h-0 text-sm sm:text-base"
               >
                 <AlertTriangle className="h-4 w-4 mr-2" />
                 Remove Duplicates
               </button>
               <button
                 onClick={cleanupOldLogs}
-                className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                className="inline-flex items-center justify-center px-4 py-2.5 sm:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 min-h-[44px] sm:min-h-0 text-sm sm:text-base"
               >
                 <AlertTriangle className="h-4 w-4 mr-2" />
                 Cleanup Old Logs
@@ -468,7 +520,7 @@ const ActivityManagement: React.FC = () => {
 
         {/* Statistics Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
                 <div className="p-2 bg-blue-50 rounded-lg">
@@ -623,26 +675,26 @@ const ActivityManagement: React.FC = () => {
             </div>
           )}
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-3 sm:mx-0">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Timestamp
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     User
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Activity
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Description
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Page/Location
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -650,7 +702,7 @@ const ActivityManagement: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading && activities.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan={6} className="px-3 sm:px-6 py-4 text-center text-gray-500">
                       <div className="flex items-center justify-center space-x-2">
                         <RefreshCw className="h-5 w-5 animate-spin" />
                         <span>Loading activities...</span>
@@ -659,53 +711,53 @@ const ActivityManagement: React.FC = () => {
                   </tr>
                 ) : activities.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan={6} className="px-3 sm:px-6 py-4 text-center text-gray-500">
                       No activities found matching the current filters.
                     </td>
                   </tr>
                 ) : (
                   activities.map((activity) => (
                     <tr key={activity.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                         <div className="flex items-center space-x-2">
                           <Clock className="h-4 w-4 text-gray-400" />
                           <span>{formatTimestamp(activity.timestamp)}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                            <User className="h-4 w-4 text-gray-500" />
+                          <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                            <User className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
                           </div>
-                          <div className="ml-3">
-                            <div className="text-sm font-medium text-gray-900">{activity.userName}</div>
-                            <div className="text-sm text-gray-500">{activity.userEmail}</div>
+                          <div className="ml-2 sm:ml-3 min-w-0">
+                            <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">{activity.userName}</div>
+                            <div className="text-xs sm:text-sm text-gray-500 truncate">{activity.userEmail}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-[10px] sm:text-xs font-medium rounded-full ${
                           ACTIVITY_TYPES[activity.activityType]?.color || 'bg-gray-100 text-gray-800'
                         }`}>
                           {ACTIVITY_TYPES[activity.activityType]?.label || activity.activityType}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        <div className="max-w-xs truncate" title={activity.description}>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900">
+                        <div className="max-w-[120px] sm:max-w-xs truncate" title={activity.description}>
                           {activity.description}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span className="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-medium">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                        <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-gray-100 text-gray-700 text-[10px] sm:text-xs font-medium">
                           {formatPagePath(activity.metadata?.page)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                         <button
                           onClick={() => setSelectedActivity(activity)}
-                          className="text-brand-dark hover:text-brand-blue"
+                          className="text-brand-dark hover:text-brand-blue p-1 sm:p-0 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 flex items-center justify-center"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-4 w-4 sm:h-4 sm:w-4" />
                         </button>
                       </td>
                     </tr>

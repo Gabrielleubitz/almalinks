@@ -59,10 +59,10 @@ export default defineConfig({
         secure: false,
         timeout: 30000,
         // Handle proxy errors - return proper error response instead of generic message
-        configure: (proxy, options) => {
-          proxy.on('error', (err, req, res) => {
+        configure: (proxy) => {
+          proxy.on('error', (err, _req, res) => {
             console.warn('[Vite Proxy] Connection error:', err.message);
-            console.warn('[Vite Proxy] Ensure vercel dev is running: vercel dev --listen 3000');
+            console.warn('[Vite Proxy] Ensure dev-server.js is running: node dev-server.js (or npm run dev:api)');
             if (!res.headersSent) {
               res.writeHead(503, {
                 'Content-Type': 'application/json',
@@ -71,7 +71,7 @@ export default defineConfig({
               // Return a specific error that can be handled by the client
               res.end(JSON.stringify({ 
                 ok: false,
-                error: `Cannot connect to API server at http://localhost:3000. Make sure 'vercel dev --listen 3000' is running.`,
+                error: `Cannot connect to API server at http://localhost:3001. Make sure the development API server is running (node dev-server.js).`,
                 code: 'PROXY_CONNECTION_ERROR'
               }));
             }
