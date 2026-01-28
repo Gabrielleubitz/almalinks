@@ -442,20 +442,23 @@ const ConnectionsCard: React.FC = () => {
   };
   
   return (
-    <div className="bg-white rounded-3xl shadow-xl p-6 border border-gray-100">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-3">
-          <Users className="h-6 w-6 text-brand-blue" />
-          <h3 className="text-xl font-bold text-gray-900">My Connections</h3>
+    <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 border border-gray-100">
+      {/* Header - Stacked on mobile, horizontal on desktop */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
+        {/* Title Row - Full width on mobile */}
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-shrink-0">
+          <Users className="h-5 w-5 sm:h-6 sm:w-6 text-brand-blue flex-shrink-0" />
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 whitespace-nowrap">My Connections</h3>
         </div>
         
-        {/* Event Filter Dropdown */}
-        <div className="flex items-center space-x-4">
-          <div className="relative">
+        {/* Controls Row - Full width on mobile, auto on desktop */}
+        <div className="flex items-center justify-between sm:justify-end space-x-3 sm:space-x-4 w-full sm:w-auto flex-shrink-0">
+          {/* Event Filter Dropdown */}
+          <div className="relative flex-1 sm:flex-none min-w-0">
             <select
               value={selectedEventId}
               onChange={handleEventChange}
-              className="appearance-none bg-white border border-gray-300 rounded-lg px-3 py-2 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="w-full sm:w-auto appearance-none bg-white border border-gray-300 rounded-lg px-3 py-2 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[44px] sm:min-h-0"
               disabled={loadingEvents || events.length === 0}
             >
               <option value="all">All Events</option>
@@ -468,12 +471,13 @@ const ConnectionsCard: React.FC = () => {
             <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
           </div>
           
+          {/* Pagination Arrows */}
           {connections.length > 0 && (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 flex-shrink-0">
               <button
                 onClick={scrollLeft}
                 disabled={!canScrollLeft}
-                className={`p-2 rounded-full ${
+                className={`p-2 rounded-full min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center ${
                   canScrollLeft 
                     ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' 
                     : 'bg-gray-50 text-gray-400 cursor-not-allowed'
@@ -485,7 +489,7 @@ const ConnectionsCard: React.FC = () => {
               <button
                 onClick={scrollRight}
                 disabled={!canScrollRight}
-                className={`p-2 rounded-full ${
+                className={`p-2 rounded-full min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center ${
                   canScrollRight 
                     ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' 
                     : 'bg-gray-50 text-gray-400 cursor-not-allowed'
