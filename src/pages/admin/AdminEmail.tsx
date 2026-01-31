@@ -8,6 +8,7 @@ import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/adm
 import AudienceSelector, { RecipientMode, AudienceSelection } from '../../components/admin/AudienceSelector';
 import RecipientPreview from '../../components/admin/RecipientPreview';
 import { auth } from '../../firebase/config';
+import { apiRequest } from '../../utils/apiClient';
 
 const AdminEmail: React.FC = () => {
   const navigate = useNavigate();
@@ -38,6 +39,8 @@ const AdminEmail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [importingMailchimp, setImportingMailchimp] = useState(false);
+  const [importResult, setImportResult] = useState<string | null>(null);
 
   const validateForm = (): boolean => {
     if (!subject.trim()) {
@@ -186,7 +189,7 @@ const AdminEmail: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <AdminHeader 
         title="Email Panel" 
-        subtitle="Send emails to members (Mailchimp integration coming soon)"
+        subtitle="Send emails to members and sync with Mailchimp audience"
       />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -209,9 +212,45 @@ const AdminEmail: React.FC = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Email Panel
             </h1>
-            <p className="text-gray-600">
-              Send emails to members (Mailchimp integration coming soon)
+            <p className="text-gray-600 mb-2">
+              Send emails to members. New signups and approved users are added to your Mailchimp audience when configured.
             </p>
+          </div>
+
+          {/* Import users to Mailchimp */}
+          <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
+            <p className="text-sm font-medium text-gray-700 mb-2">Mailchimp audience</p>
+            <p className="text-xs text-gray-600 mb-3">
+              Import all approved AlmaLinks members into your Mailchimp audience (list). Set MAILCHIMP_AUDIENCE_ID and a Marketing API key in your environment.
+            </p>
+            <button
+              type="button"
+              disabled={importingMailchimp}
+              onClick={async () => {
+                setImportingMailchimp(true);
+                setImportResult(null);
+                setError(null);
+                try {
+                  const res = await apiRequest('/api/mailchimp-import-users', { method: 'POST' });
+                  const data = await res.json();
+                  if (data.ok) {
+                    setImportResult(`Imported: ${data.added} added, ${data.updated} updated, ${data.failed} failed (${data.total} total).`);
+                  } else {
+                    setError(data.error || 'Import failed');
+                  }
+                } catch (e: unknown) {
+                  setError(e instanceof Error ? e.message : 'Import failed');
+                } finally {
+                  setImportingMailchimp(false);
+                }
+              }}
+              className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-gray-800 text-white text-sm font-medium hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {importingMailchimp ? 'Importing…' : 'Import users to Mailchimp'}
+            </button>
+            {importResult && (
+              <p className="mt-2 text-sm text-green-700">{importResult}</p>
+            )}
           </div>
 
           {/* Error Message */}

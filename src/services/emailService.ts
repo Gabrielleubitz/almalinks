@@ -1,9 +1,11 @@
 /**
  * Email Service - Admin Email Functionality
- * 
- * This service provides admin email functionality.
- * Currently implemented as a stub (for future Mailchimp integration).
+ *
+ * Sends admin emails via the backend /api/send-bulk-email endpoint (Mailchimp/Mandrill).
+ * Requires admin authentication; the API validates the Bearer token.
  */
+
+import { apiRequest } from '../utils/apiClient';
 
 export interface AdminEmailPayload {
   to: string | string[]; // Email address(es) - can be comma-separated string or array
@@ -18,17 +20,21 @@ export interface AdminEmailResult {
   success: boolean;
   messageId?: string;
   error?: string;
-  details?: any;
+  details?: {
+    sent?: number;
+    failed?: number;
+    total?: number;
+    errors?: Array<{ email: string; reason: string }>;
+  };
 }
 
 /**
- * Send admin email (stub implementation)
- * 
- * Currently validates fields and logs payload in dev mode.
- * Returns success response as placeholder for future Mailchimp integration.
- * 
+ * Send admin email to one or more recipients.
+ * Calls /api/send-bulk-email with mode 'individuals' and an emails array.
+ * Requires the current user to be authenticated as admin.
+ *
  * @param payload Email payload with to, subject, message, etc.
- * @returns Promise with email result
+ * @returns Promise with email result (success, sent count, or error)
  */
 export async function sendAdminEmail(payload: AdminEmailPayload): Promise<AdminEmailResult> {
   try {
@@ -55,9 +61,9 @@ export async function sendAdminEmail(payload: AdminEmailPayload): Promise<AdminE
     }
 
     // Normalize 'to' field - handle both string and array
-    const recipients = Array.isArray(payload.to) 
-      ? payload.to 
-      : payload.to.split(',').map(email => email.trim()).filter(email => email);
+    const recipients = Array.isArray(payload.to)
+      ? payload.to
+      : payload.to.split(',').map((email) => email.trim()).filter((email) => email);
 
     if (recipients.length === 0) {
       return {
@@ -68,8 +74,8 @@ export async function sendAdminEmail(payload: AdminEmailPayload): Promise<AdminE
 
     // Validate email format (basic validation)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const invalidEmails = recipients.filter(email => !emailRegex.test(email));
-    
+    const invalidEmails = recipients.filter((email) => !emailRegex.test(email));
+
     if (invalidEmails.length > 0) {
       return {
         success: false,
@@ -77,35 +83,57 @@ export async function sendAdminEmail(payload: AdminEmailPayload): Promise<AdminE
       };
     }
 
-    // Log payload in development mode only
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[EmailService] sendAdminEmail called with payload:', {
-        to: recipients,
-        subject: payload.subject,
-        messageLength: payload.message.length,
-        fromName: payload.fromName,
-        replyTo: payload.replyTo,
-        eventId: payload.eventId
-      });
+    const response = await apiRequest('/api/send-bulk-email', {
+      method: 'POST',
+      body: JSON.stringify({
+        mode: 'individuals',
+        emails: recipients,
+        subject: payload.subject.trim(),
+        text: payload.message.trim(),
+        fromName: payload.fromName?.trim() || undefined
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: data.error || 'Failed to send email'
+      };
     }
 
-    // TODO: Replace this with actual Mailchimp API call
-    // For now, return success response
+    if (!data.ok) {
+      return {
+        success: false,
+        error: data.error || 'Failed to send email',
+        details: data.errors ? { errors: data.errors } : undefined
+      };
+    }
+
+    const sent = data.sent ?? 0;
+    const failed = data.failed ?? 0;
+    const total = data.total ?? recipients.length;
+
+    if (sent === 0 && total > 0) {
+      return {
+        success: false,
+        error: data.error || 'No emails were sent',
+        details: { sent, failed, total, errors: data.errors }
+      };
+    }
+
     return {
       success: true,
-      messageId: `stub-${Date.now()}`,
-      details: {
-        recipients: recipients.length,
-        mode: 'stub',
-        message: 'Email workflow coming soon. Mailchimp integration pending.'
-      }
+      messageId: `bulk-${sent}-${Date.now()}`,
+      details: { sent, failed, total, errors: data.errors }
     };
-
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to send email';
     console.error('❌ Error in sendAdminEmail:', error);
     return {
       success: false,
-      error: error.message || 'Failed to send email'
+      error: message
     };
   }
 }

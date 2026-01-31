@@ -44,11 +44,13 @@ This document describes the email flow and environment variables used for transa
 - **Evidence**: `notify-user-signup` writes to Firestore `emailAttempts` for audit.
 - **Bulk**: `send-bulk-email` requires admin auth and writes to `emailCampaigns` for audit.
 
-## Mailchimp Audience ID
+## Mailchimp Audience (List) Sync
 
-`MAILCHIMP_AUDIENCE_ID` (e.g. `d2650d7ca2`) is set in env for use with the Mailchimp Marketing API when you add features such as:
+When `MAILCHIMP_AUDIENCE_ID` and a Marketing API key (`MAILCHIMP_MARKETING_API_KEY` or `MAILCHIMP_API_KEY`) are set:
 
-- Adding new signups or approved users to an audience.
-- Syncing contacts for campaigns.
+1. **On signup** – `POST /api/notify-user-signup` adds the new signup to your Mailchimp audience after sending the confirmation email.
+2. **On approval** – When an admin approves a user in Pending Registrations, that user is added/updated in the audience (via `POST /api/mailchimp-sync-contact`).
+3. **When sending bulk email** – Each recipient is added/updated in the audience before the send, so the list stays in sync.
+4. **Import users** – On the Admin Email page, "Import users to Mailchimp" syncs all approved AlmaLinks members to the audience (`POST /api/mailchimp-import-users`).
 
-Current transactional endpoints (Mandrill) do not use the audience ID; it is available as `process.env.MAILCHIMP_AUDIENCE_ID` for future implementation.
+API key: Use a Mailchimp **Marketing API** key (Account → Extras → API keys). You can use the same key as Mandrill if your Mailchimp account has both; otherwise set `MAILCHIMP_MARKETING_API_KEY` for list sync and keep `MAILCHIMP_API_KEY` for transactional (Mandrill) sends.

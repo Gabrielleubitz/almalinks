@@ -320,23 +320,52 @@ const PendingRegistrations: React.FC = () => {
 
   const handleApproveUser = async (userId: string) => {
     if (!user?.uid) return;
-    
+    const userToApprove = pendingUsers.find((u) => u.uid === userId);
     setProcessingUser(userId);
-    
+
     try {
       // Use JoinRequestService to approve and create user document
       const { JoinRequestService } = await import('../../services/joinRequestService');
       await JoinRequestService.approveRequest(userId, user.uid);
-      
+
       // Send SMS notification
       await sendApprovalSMS(userId);
-      
+
       // Send email notification
       await sendApprovalEmail(userId);
-      
+
+      // Add approved user to Mailchimp audience (if configured)
+      if (userToApprove?.email) {
+        try {
+          const idToken = await auth.currentUser?.getIdToken();
+          if (idToken) {
+            const nameParts = (userToApprove.name || '').trim().split(/\s+/);
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+            const res = await fetch('/api/mailchimp-sync-contact', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${idToken}`,
+              },
+              body: JSON.stringify({
+                email: userToApprove.email,
+                firstName: firstName || undefined,
+                lastName: lastName || undefined,
+              }),
+            });
+            if (!res.ok) {
+              console.warn('Mailchimp sync failed (non-blocking):', await res.text());
+            }
+          }
+        } catch (mcErr) {
+          console.warn('Mailchimp sync error (non-blocking):', mcErr);
+        }
+      }
+
       // Update local state
-      setPendingUsers(prev => prev.filter(u => u.uid !== userId));
-      
+      setPendingUsers((prev) => prev.filter((u) => u.uid !== userId));
+
       showToast(`User approved successfully and notifications sent`, 'success');
     } catch (error: any) {
       console.error('❌ Error approving user:', error);
