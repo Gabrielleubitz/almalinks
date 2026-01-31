@@ -26,7 +26,8 @@ const RecipientPreview: React.FC<RecipientPreviewProps> = ({
       (mode === 'group' && selection.groupId) ||
       (mode === 'event' && selection.eventId) ||
       (mode === 'chat' && selection.chatId) ||
-      (mode === 'location' && selection.location);
+      (mode === 'location' && selection.location) ||
+      mode === 'all_users';
 
     if (hasSelection) {
       resolveRecipients();
@@ -78,7 +79,8 @@ const RecipientPreview: React.FC<RecipientPreviewProps> = ({
       (mode === 'group' && !selection.groupId) &&
       (mode === 'event' && !selection.eventId) &&
       (mode === 'chat' && !selection.chatId) &&
-      (mode === 'location' && !selection.location)) {
+      (mode === 'location' && !selection.location) &&
+      mode !== 'all_users') {
     return null;
   }
 

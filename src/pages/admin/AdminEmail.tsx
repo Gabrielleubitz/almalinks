@@ -74,8 +74,9 @@ const AdminEmail: React.FC = () => {
         return false;
       }
     } else {
-      // For audience modes, check if selection is valid
+      // For audience modes, check if selection is valid (all_users needs no sub-selection)
       const hasSelection = 
+        recipientMode === 'all_users' ||
         (recipientMode === 'event' && audienceSelection.eventId) ||
         (recipientMode === 'chat' && audienceSelection.chatId) ||
         (recipientMode === 'location' && audienceSelection.location);
@@ -151,7 +152,7 @@ const AdminEmail: React.FC = () => {
           },
           body: JSON.stringify({
             mode: recipientMode,
-            ...audienceSelection,
+            ...(recipientMode !== 'all_users' ? audienceSelection : {}),
             subject: subject.trim(),
             text: message.trim(),
             fromName: fromName.trim() || undefined

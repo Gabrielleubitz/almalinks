@@ -3,7 +3,7 @@ import { Loader } from 'lucide-react';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 
-export type RecipientMode = 'individuals' | 'group' | 'event' | 'chat' | 'location';
+export type RecipientMode = 'individuals' | 'group' | 'event' | 'chat' | 'location' | 'all_users';
 
 export interface AudienceSelection {
   mode: RecipientMode;
@@ -163,6 +163,7 @@ const AudienceSelector: React.FC<AudienceSelectorProps> = ({
           {!excludedModes.includes('event') && <option value="event">Event</option>}
           {!excludedModes.includes('chat') && <option value="chat">Chat</option>}
           {!excludedModes.includes('location') && <option value="location">Location</option>}
+          {!excludedModes.includes('all_users') && <option value="all_users">All users</option>}
         </select>
       </div>
 

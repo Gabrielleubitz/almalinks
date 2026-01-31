@@ -12,7 +12,7 @@ import {
 import { db } from '../firebase/config';
 import { EventService } from './eventService';
 
-export type RecipientMode = 'individuals' | 'group' | 'event' | 'chat' | 'location';
+export type RecipientMode = 'individuals' | 'group' | 'event' | 'chat' | 'location' | 'all_users';
 
 export interface RecipientResolutionResult {
   ok: boolean;
@@ -43,12 +43,12 @@ export class RecipientResolutionService {
       const { mode, ids, groupId, eventId, chatId, location } = input;
 
       // Validate input
-      if (!mode || !['individuals', 'group', 'event', 'chat', 'location'].includes(mode)) {
+      if (!mode || !['individuals', 'group', 'event', 'chat', 'location', 'all_users'].includes(mode)) {
         return {
           ok: false,
           recipients: [],
           count: 0,
-          error: 'mode must be one of: individuals, group, event, chat, location'
+          error: 'mode must be one of: individuals, group, event, chat, location, all_users'
         };
       }
 
@@ -114,6 +114,10 @@ export class RecipientResolutionService {
             };
           }
           recipients = await this.resolveLocationRecipients(location);
+          break;
+
+        case 'all_users':
+          recipients = await this.resolveAllUsersRecipients();
           break;
       }
 
@@ -295,6 +299,33 @@ export class RecipientResolutionService {
       return recipients;
     } catch (error) {
       console.error('[RecipientResolutionService] Error resolving location recipients:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Resolve recipients from all users (every user with an email)
+   */
+  private static async resolveAllUsersRecipients(): Promise<Array<{ userId: string; email: string; name?: string }>> {
+    try {
+      const usersRef = collection(db, 'users');
+      const snapshot = await getDocs(usersRef);
+      const recipients: Array<{ userId: string; email: string; name?: string }> = [];
+
+      snapshot.docs.forEach(doc => {
+        const userData = doc.data();
+        if (userData.email) {
+          recipients.push({
+            userId: doc.id,
+            email: userData.email,
+            name: userData.displayName || userData.name || undefined
+          });
+        }
+      });
+
+      return recipients;
+    } catch (error) {
+      console.error('[RecipientResolutionService] Error resolving all users:', error);
       return [];
     }
   }

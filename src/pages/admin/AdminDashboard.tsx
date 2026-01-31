@@ -172,6 +172,7 @@ const AdminDashboard: React.FC = () => {
       }
     } else {
       const hasSelection = 
+        emailRecipientMode === 'all_users' ||
         (emailRecipientMode === 'group' && emailAudienceSelection.groupId) ||
         (emailRecipientMode === 'event' && emailAudienceSelection.eventId) ||
         (emailRecipientMode === 'chat' && emailAudienceSelection.chatId) ||
@@ -245,7 +246,7 @@ const AdminDashboard: React.FC = () => {
           },
           body: JSON.stringify({
             mode: emailRecipientMode,
-            ...emailAudienceSelection,
+            ...(emailRecipientMode !== 'all_users' ? emailAudienceSelection : {}),
             subject: emailSubject.trim() || (selectedEventId ? `Update for ${selectedEvent?.name || 'event'}` : ''),
             text: emailMessage.trim()
           })
