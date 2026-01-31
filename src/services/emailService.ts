@@ -94,12 +94,23 @@ export async function sendAdminEmail(payload: AdminEmailPayload): Promise<AdminE
       })
     });
 
-    const data = await response.json();
+    let data: { ok?: boolean; error?: string; sent?: number; failed?: number; total?: number; errors?: unknown[] } = {};
+    try {
+      const text = await response.text();
+      if (text) {
+        data = JSON.parse(text);
+      }
+    } catch {
+      return {
+        success: false,
+        error: response.ok ? 'Failed to send email' : `Server error (${response.status}). Try again or check Vercel logs.`
+      };
+    }
 
     if (!response.ok) {
       return {
         success: false,
-        error: data.error || 'Failed to send email'
+        error: (data && typeof data.error === 'string') ? data.error : 'Failed to send email'
       };
     }
 

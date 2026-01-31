@@ -232,11 +232,17 @@ const AdminEmail: React.FC = () => {
                 setError(null);
                 try {
                   const res = await apiRequest('/api/mailchimp-import-users', { method: 'POST' });
-                  const data = await res.json();
-                  if (data.ok) {
-                    setImportResult(`Imported: ${data.added} added, ${data.updated} updated, ${data.failed} failed (${data.total} total).`);
+                  let data: { ok?: boolean; error?: string; added?: number; updated?: number; failed?: number; total?: number } = {};
+                  try {
+                    data = await res.json();
+                  } catch {
+                    setError(res.ok ? 'Import failed' : `Error ${res.status}: ${res.statusText}`);
+                    return;
+                  }
+                  if (res.ok && data.ok) {
+                    setImportResult(`Imported: ${data.added ?? 0} added, ${data.updated ?? 0} updated, ${data.failed ?? 0} failed (${data.total ?? 0} total).`);
                   } else {
-                    setError(data.error || 'Import failed');
+                    setError(data.error || `Import failed (${res.status})`);
                   }
                 } catch (e: unknown) {
                   setError(e instanceof Error ? e.message : 'Import failed');
