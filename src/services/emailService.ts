@@ -127,9 +127,10 @@ export async function sendAdminEmail(payload: AdminEmailPayload): Promise<AdminE
     const total = data.total ?? recipients.length;
 
     if (sent === 0 && total > 0) {
+      const detail = (data as { errorDetail?: string }).errorDetail ?? (data.errors && Array.isArray(data.errors) && (data.errors[0] as { reason?: string })?.reason);
       return {
         success: false,
-        error: data.error || 'No emails were sent',
+        error: detail || data.error || 'No emails were sent. Check MAILCHIMP_API_KEY is a Transactional key in Vercel.',
         details: { sent, failed, total, errors: data.errors }
       };
     }
