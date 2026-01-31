@@ -232,7 +232,7 @@ const AdminEmail: React.FC = () => {
                 setError(null);
                 try {
                   const res = await apiRequest('/api/mailchimp-import-users', { method: 'POST' });
-                  let data: { ok?: boolean; error?: string; added?: number; updated?: number; failed?: number; total?: number } = {};
+                  let data: { ok?: boolean; error?: string; added?: number; updated?: number; failed?: number; total?: number; audienceIdHint?: string } = {};
                   try {
                     data = await res.json();
                   } catch {
@@ -240,7 +240,8 @@ const AdminEmail: React.FC = () => {
                     return;
                   }
                   if (res.ok && data.ok) {
-                    setImportResult(`Imported: ${data.added ?? 0} added, ${data.updated ?? 0} updated, ${data.failed ?? 0} failed (${data.total ?? 0} total).`);
+                    const hint = data.audienceIdHint ? ` Synced to audience ${data.audienceIdHint}.` : '';
+                    setImportResult(`Imported: ${data.added ?? 0} added, ${data.updated ?? 0} updated, ${data.failed ?? 0} failed (${data.total ?? 0} total).${hint}`);
                   } else {
                     setError(data.error || `Import failed (${res.status})`);
                   }
@@ -255,7 +256,12 @@ const AdminEmail: React.FC = () => {
               {importingMailchimp ? 'Importing…' : 'Import users to Mailchimp'}
             </button>
             {importResult && (
-              <p className="mt-2 text-sm text-green-700">{importResult}</p>
+              <>
+                <p className="mt-2 text-sm text-green-700">{importResult}</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  If you don&apos;t see contacts in Mailchimp, check that MAILCHIMP_AUDIENCE_ID in Vercel matches your audience ID (Mailchimp → Audience → Settings → Audience ID).
+                </p>
+              </>
             )}
           </div>
 
