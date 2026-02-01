@@ -285,10 +285,11 @@ export class JoinRequestService {
               console.log('[signup] Welcome email sent', result.campaignId);
             } else if (result.skipped) {
               console.log('[signup] Welcome email skipped (already sent)');
-            } else if (result.welcomeEmailSent === false) {
-              console.warn('[signup] Welcome email not sent (see server logs for Mailchimp details)');
             } else {
-              console.warn('[signup] Welcome email not sent:', result.error || response.status);
+              console.warn('[signup] Welcome email failed — response:', response.status, 'details:', result);
+              if (result.details?.length) {
+                console.warn('[signup] Mailchimp errors:', result.details);
+              }
             }
           })
           .catch((err: any) => {

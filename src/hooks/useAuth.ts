@@ -220,46 +220,8 @@ export const useAuth = () => {
           console.error('❌ WARNING: Join request verification failed - request not found after creation');
         }
         
-        // Send signup confirmation email to user
-        try {
-          await fetch('/api/email-service', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: 'signup',
-              email: joinRequestData.email,
-              name: joinRequestData.name
-            })
-          });
-          console.log('✅ Signup confirmation email sent to user');
-        } catch (emailError) {
-          console.error('❌ Failed to send signup confirmation email:', emailError);
-        }
-        
-        // SMS notifications disabled (signup flow uses email only)
-        console.log('SMS notifications disabled');
-
-        // Send email notification to admin
-        try {
-          const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@wineandgrind.com';
-          await fetch('/api/email-service', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: 'admin-notification',
-              email: adminEmail,
-              subject: 'New User Registration - Pending Approval',
-              name: joinRequestData.name,
-              userEmail: joinRequestData.email,
-              phone: joinRequestData.phone || 'Not provided',
-              work: `${joinRequestData.work || 'Not provided'} at ${joinRequestData.company || 'Not provided'}`
-            })
-          });
-          console.log('✅ Admin email notification sent for pending user');
-        } catch (emailError) {
-          console.error('❌ Failed to send admin email notification:', emailError);
-        }
-        
+        // User welcome email: sent only via POST /api/welcome-email (Mailchimp Marketing) from joinRequestService.createJoinRequest.
+        // Admin notification: sent via POST /api/notify-signup from joinRequestService (no /api/email-service).
         // Return null since no user document exists yet
         return null;
       } else {
