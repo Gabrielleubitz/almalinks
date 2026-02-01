@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Briefcase, Plus, Linkedin, User, Grid, List, ExternalLink, Map, Check, X, Clock, UserPlus } from 'lucide-react';
+import { Search, MapPin, Briefcase, Plus, Linkedin, User, Grid, List, ExternalLink, Map, Check, X, Clock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { UserService } from '../services/userService';
 import { ConnectionService } from '../services/connectionService';
@@ -356,25 +356,26 @@ const MembersPage: React.FC = () => {
   };
 
   const renderMemberCard = (member: MemberCard) => {
-    // More robust name handling
-    const displayName = member.displayName || 
-                       `${member.firstName || ''} ${member.lastName || ''}`.trim() || 
+    const displayName = member.displayName ||
+                       `${member.firstName || ''} ${member.lastName || ''}`.trim() ||
                        'Member';
-    
+
     const isSelf = member.uid === currentUser?.uid;
-    
-    console.log(`🎨 Rendering card for: "${displayName}" (${member.uid.substring(0, 8)})`);
-    console.log(`   📋 Member data: displayName="${member.displayName}", firstName="${member.firstName}", lastName="${member.lastName}"`);  
-    console.log(`   👤 Is self: ${isSelf} (currentUser.uid: ${currentUser?.uid?.substring(0, 8) || 'none'})`);
+    const incomingReq = incomingRequests.find(r => (r.requesterId || r.fromUid) === member.uid);
+    const hasIncomingRequest = !!incomingReq;
+    const isRespondingToRequest = hasIncomingRequest && respondingRequestId === incomingReq!.id;
+
     const avatarColor = getAvatarColor(displayName);
     const isConnecting = connectingUsers.has(member.uid);
     const hasPendingRequest = member.connectionPending || sentRequestIds.has(member.uid);
+
+    const cardOutlineClass = hasIncomingRequest ? 'ring-2 ring-blue-500 border-blue-500' : '';
 
     if (viewMode === 'list') {
       return (
         <div
           key={member.uid}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-200 group"
+          className={`bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-200 group ${cardOutlineClass}`}
         >
           <div className="flex items-center space-x-4">
             {/* Avatar */}
@@ -419,7 +420,6 @@ const MembersPage: React.FC = () => {
 
                 {/* Actions */}
                 <div className="flex items-center space-x-2 flex-shrink-0 ml-4">
-                  {/* View Profile Button */}
                   <button
                     onClick={() => window.location.href = `/profile/${member.uid}`}
                     className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
@@ -438,8 +438,31 @@ const MembersPage: React.FC = () => {
                       <Linkedin className="h-5 w-5" />
                     </a>
                   )}
-                  
-                  {currentUser && !member.isConnected && !isSelf && !hasPendingRequest && (
+
+                  {hasIncomingRequest && incomingReq && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={isRespondingToRequest}
+                        onClick={() => handleRespondToRequest(incomingReq.id, 'accepted')}
+                        className="flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-white bg-[#0B2B6B] hover:bg-[#0a2456] rounded-lg transition-colors disabled:opacity-50"
+                        title="Accept"
+                      >
+                        {isRespondingToRequest ? '…' : <><Check className="h-4 w-4" /> Accept</>}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isRespondingToRequest}
+                        onClick={() => handleRespondToRequest(incomingReq.id, 'rejected')}
+                        className="flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                        title="Reject"
+                      >
+                        {!isRespondingToRequest && <><X className="h-4 w-4" /> Reject</>}
+                      </button>
+                    </div>
+                  )}
+
+                  {!hasIncomingRequest && currentUser && !member.isConnected && !isSelf && !hasPendingRequest && (
                     <button
                       onClick={() => handleConnect(member.uid)}
                       disabled={isConnecting}
@@ -453,20 +476,20 @@ const MembersPage: React.FC = () => {
                       )}
                     </button>
                   )}
-                  
-                  {hasPendingRequest && !member.isConnected && (
+
+                  {!hasIncomingRequest && hasPendingRequest && !member.isConnected && (
                     <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1">
                       <Clock className="h-4 w-4" />
                       <span>Pending</span>
                     </div>
                   )}
-                  
+
                   {member.isConnected && (
                     <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
                       Connected
                     </div>
                   )}
-                  
+
                   {isSelf && (
                     <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
                       You
@@ -483,7 +506,7 @@ const MembersPage: React.FC = () => {
     return (
       <div
         key={member.uid}
-        className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all duration-200 flex flex-col h-full"
+        className={`bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all duration-200 flex flex-col h-full ${cardOutlineClass}`}
       >
         {/* Avatar */}
         <div className="flex justify-center mb-4">
@@ -552,7 +575,6 @@ const MembersPage: React.FC = () => {
         {/* Actions */}
         <div className="flex flex-col space-y-2 mt-auto pt-3 border-t border-gray-100">
           <div className="flex justify-center space-x-2">
-            {/* View Profile Button */}
             <button
               onClick={() => window.location.href = `/profile/${member.uid}`}
               className="p-2 text-gray-400 hover:text-brand-blue transition-colors border border-gray-200 rounded-lg hover:border-blue-200"
@@ -573,7 +595,30 @@ const MembersPage: React.FC = () => {
             )}
           </div>
 
-          {currentUser && !member.isConnected && !isSelf && !hasPendingRequest && (
+          {hasIncomingRequest && incomingReq && (
+            <div className="flex items-center justify-center gap-2">
+              <button
+                type="button"
+                disabled={isRespondingToRequest}
+                onClick={() => handleRespondToRequest(incomingReq.id, 'accepted')}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-[#0B2B6B] hover:bg-[#0a2456] rounded-lg transition-colors disabled:opacity-50 min-h-[36px]"
+                title="Accept"
+              >
+                {isRespondingToRequest ? '…' : <><Check className="h-4 w-4" /> Accept</>}
+              </button>
+              <button
+                type="button"
+                disabled={isRespondingToRequest}
+                onClick={() => handleRespondToRequest(incomingReq.id, 'rejected')}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 min-h-[36px]"
+                title="Reject"
+              >
+                {!isRespondingToRequest && <><X className="h-4 w-4" /> Reject</>}
+              </button>
+            </div>
+          )}
+
+          {!hasIncomingRequest && currentUser && !member.isConnected && !isSelf && !hasPendingRequest && (
             <button
               onClick={() => handleConnect(member.uid)}
               disabled={isConnecting}
@@ -593,7 +638,7 @@ const MembersPage: React.FC = () => {
             </button>
           )}
 
-          {hasPendingRequest && !member.isConnected && (
+          {!hasIncomingRequest && hasPendingRequest && !member.isConnected && (
             <div className="bg-yellow-100 text-yellow-800 px-4 py-2.5 rounded-lg font-medium flex items-center justify-center space-x-2">
               <Clock className="h-4 w-4" />
               <span>Pending</span>
@@ -637,8 +682,8 @@ const MembersPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <Header />
       
-      {/* Hero Section */}
-      <section className="pt-6 pb-12 bg-gradient-to-br from-blue-50 to-indigo-50">
+      {/* Hero Section - pt-28 so content is below fixed header */}
+      <section className="pt-28 pb-12 bg-gradient-to-br from-blue-50 to-indigo-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
@@ -701,67 +746,6 @@ const MembersPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Connection Requests */}
-      {incomingRequests.length > 0 && (
-        <section className="py-8 border-b border-gray-200 bg-white/60">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-[#0B2B6B]" />
-              Connection Requests
-            </h2>
-            <div className="space-y-4">
-              {incomingRequests.map((req) => {
-                const fromName = req.fromName || req.requester?.displayName || req.requester?.name || 'Someone';
-                const message = req.message || req.note;
-                const isResponding = respondingRequestId === req.id;
-                return (
-                  <div
-                    key={req.id}
-                    className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm"
-                  >
-                    <p className="text-sm font-medium text-gray-900">
-                      Request to connect from {fromName}
-                    </p>
-                    {message && (
-                      <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap break-words">
-                        {message}
-                      </p>
-                    )}
-                    <p className="text-xs text-gray-400 mt-2">
-                      {req.createdAt && (() => {
-                        const t = req.createdAt as { toMillis?: () => number; toDate?: () => Date };
-                        const date = typeof t?.toMillis === 'function' ? new Date(t.toMillis()) : typeof t?.toDate === 'function' ? t.toDate() : new Date(t as string | number);
-                        return date.toLocaleDateString();
-                      })()}
-                    </p>
-                    <div className="flex items-center gap-2 mt-4">
-                      <button
-                        type="button"
-                        disabled={isResponding}
-                        onClick={() => handleRespondToRequest(req.id, 'accepted')}
-                        className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-[#0B2B6B] hover:bg-[#0a2456] rounded-lg transition-colors disabled:opacity-50 min-h-[36px]"
-                        title="Accept and connect"
-                      >
-                        {isResponding ? '…' : <><Check className="h-4 w-4" /> Connect</>}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isResponding}
-                        onClick={() => handleRespondToRequest(req.id, 'rejected')}
-                        className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 min-h-[36px]"
-                        title="Reject"
-                      >
-                        {isResponding ? null : <><X className="h-4 w-4" /> Reject</>}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* Members Grid */}
       <section className="py-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -778,14 +762,24 @@ const MembersPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Members List */}
+          {/* Members List - incoming request members first, then rest */}
           {filteredMembers.length > 0 ? (
             <div className={
               viewMode === 'grid' 
                 ? "grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
                 : "space-y-4"
             }>
-              {filteredMembers.map(renderMemberCard)}
+              {(() => {
+                const requesterIds = new Set(incomingRequests.map(r => r.requesterId || r.fromUid).filter(Boolean));
+                const sorted = [...filteredMembers].sort((a, b) => {
+                  const aFirst = requesterIds.has(a.uid);
+                  const bFirst = requesterIds.has(b.uid);
+                  if (aFirst && !bFirst) return -1;
+                  if (!aFirst && bFirst) return 1;
+                  return 0;
+                });
+                return sorted.map(renderMemberCard);
+              })()}
             </div>
           ) : (
             <div className="text-center py-16">
