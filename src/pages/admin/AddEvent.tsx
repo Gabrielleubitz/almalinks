@@ -78,9 +78,35 @@ const AddEvent: React.FC = () => {
 
     try {
       const eventId = await EventService.createEvent(formData, user.uid);
-      
-      setSuccess(`Event "${formData.name}" created successfully with slug: ${previewSlug}`);
-      
+
+      // Send Mailchimp Marketing campaign to entire audience (server-side, non-blocking for UX)
+      let announcementSent = false;
+      try {
+        const idToken = await user.getIdToken();
+        const res = await fetch('/api/send-event-announcement', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ eventId }),
+          credentials: 'include',
+        });
+        const data = await res.json().catch(() => ({}));
+        announcementSent = res.ok && data.ok;
+        if (!announcementSent) {
+          console.warn('[AddEvent] Announcement not sent:', data.error || res.status);
+        }
+      } catch (announceErr) {
+        console.warn('[AddEvent] Announcement request failed:', announceErr);
+      }
+
+      setSuccess(
+        announcementSent
+          ? `Event "${formData.name}" created. Announcement sent to Mailchimp audience.`
+          : `Event "${formData.name}" created successfully with slug: ${previewSlug}`
+      );
+
       // Clear form
       setFormData({
         name: '',

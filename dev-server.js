@@ -13,6 +13,7 @@ import userAdminHandler from './lib/server/api/user-admin.js';
 import activityAdminHandler from './lib/server/api/activity-admin.js';
 import emailServiceHandler from './lib/server/api/email-service.js';
 import deleteUserHandler from './lib/server/api/delete-user.js';
+import sendEventAnnouncementHandler from './lib/server/api/send-event-announcement.js';
 
 // CJS handler (kept as CommonJS)
 import adminChatsHandler from './lib/server/api/admin/chats.cjs';
@@ -97,6 +98,12 @@ app.post('/api/delete-user', (req, res) => {
   deleteUserHandler(req, res);
 });
 
+// Mailchimp Marketing: send event announcement campaign to audience
+app.post('/api/send-event-announcement', (req, res) => {
+  console.log('Send Event Announcement API called:', req.body?.eventId);
+  sendEventAnnouncementHandler(req, res);
+});
+
 // Temporarily disabled APIs due to import issues
 // // System Test API
 // app.all('/api/system-test', (req, res) => {
@@ -141,6 +148,7 @@ app.listen(PORT, () => {
   console.log('  - POST http://localhost:3001/api/activity-admin      Activity tracking');
   console.log('  - ALL  http://localhost:3001/api/email-service       Consolidated email');
   console.log('  - POST http://localhost:3001/api/delete-user         Delete users');
+  console.log('  - POST http://localhost:3001/api/send-event-announcement  Mailchimp event campaign');
   console.log('  - GET  http://localhost:3001/api/health              Health check');
   console.log('');
   console.log('Note: Some APIs temporarily disabled due to import issues');
