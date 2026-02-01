@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, ArrowRight, Clock, Users, RotateCcw, User, Mail, Phone, Briefcase, Ticket, Download, Edit, Save, X, Check, AlertCircle, ChevronDown, Linkedin, Globe, Twitter, CheckCircle, TrendingUp, MessageCircle, Compass, Map, Heart, FolderOpen } from 'lucide-react';
+import { Calendar, MapPin, ArrowRight, Clock, Users, RotateCcw, User, Mail, Phone, Briefcase, Ticket, Download, Edit, Save, X, Check, AlertCircle, ChevronDown, Linkedin, Globe, Twitter, CheckCircle, TrendingUp, MessageCircle, Compass, Map, Heart } from 'lucide-react';
 import { EventService, EventData } from '../services/eventService';
 import { ConnectionService } from '../services/connectionService';
 import { useAuth } from '../hooks/useAuth';
@@ -1661,16 +1661,17 @@ const EventsPage: React.FC = () => {
                 <p className="text-gray-600">Loading your tickets...</p>
               </div>
             ) : userRegistrations.length > 0 ? (
-              <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-                {/* Upcoming tickets - full cards */}
-                <div className="flex-1 min-w-0">
-                  {(() => {
-                    const upcoming = userRegistrations.filter((r: any) => isUpcoming(r.eventDate));
-                    const expired = userRegistrations.filter((r: any) => !isUpcoming(r.eventDate));
-                    const fd = (d: string) => formatDate(d);
-                    return (
-                      <>
-                        {upcoming.length > 0 && (
+              <div className="space-y-8">
+                {(() => {
+                  const upcoming = userRegistrations.filter((r: any) => isUpcoming(r.eventDate));
+                  const past = userRegistrations.filter((r: any) => !isUpcoming(r.eventDate));
+                  const fd = (d: string) => formatDate(d);
+                  return (
+                    <>
+                      {/* Upcoming tickets */}
+                      {upcoming.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Upcoming</h3>
                           <div className="flex flex-wrap gap-4 sm:gap-6 justify-center lg:justify-start">
                             {upcoming.map((registration: any, index: number) => (
                               <div key={registration.eventId} className="slide-up" style={{ animationDelay: `${index * 0.15}s` }}>
@@ -1689,42 +1690,34 @@ const EventsPage: React.FC = () => {
                               </div>
                             ))}
                           </div>
-                        )}
-                        {upcoming.length === 0 && expired.length > 0 && (
-                          <p className="text-gray-600 text-sm">All your tickets are from past events. See the Expired section for details.</p>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-                {/* Expired tickets - peeking folder on the side */}
-                {userRegistrations.filter((r: any) => !isUpcoming(r.eventDate)).length > 0 && (
-                  <div className="w-full lg:w-[72px] flex-shrink-0 flex flex-row lg:flex-col items-center gap-2 lg:gap-0">
-                    <div className="flex items-center gap-2 text-gray-500 text-xs font-medium lg:mb-2">
-                      <FolderOpen className="h-4 w-4 flex-shrink-0" aria-hidden />
-                      <span>Expired</span>
-                    </div>
-                    <div className="flex flex-wrap lg:flex-col justify-center lg:justify-start gap-2 lg:gap-0 lg:relative lg:min-h-[140px] lg:w-[100px] lg:overflow-visible">
-                      {userRegistrations
-                        .filter((r: any) => !isUpcoming(r.eventDate))
-                        .map((registration: any, index: number) => (
-                          <div
-                            key={registration.eventId}
-                            className="flex-shrink-0 rounded-xl overflow-hidden bg-white shadow-sm border border-gray-100 hover:z-10 hover:shadow-md transition-all duration-300 w-[220px] lg:absolute"
-                            style={{ left: `${index * 14}px`, top: `${index * 18}px`, zIndex: index }}
-                            title={`${registration.eventName} · ${formatDate(registration.eventDate).date}`}
-                          >
-                            <div className="h-10 flex items-center px-3 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light">
-                              <span className="text-white text-xs font-semibold truncate block">{registration.eventName}</span>
-                            </div>
-                            <div className="px-2 py-1.5 bg-white text-gray-600 text-xs truncate border-t border-gray-100">
-                              {formatDate(registration.eventDate).date}
-                            </div>
+                        </div>
+                      )}
+                      {/* Past events - same card style, clear section */}
+                      {past.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Past events</h3>
+                          <div className="flex flex-wrap gap-4 sm:gap-6 justify-center lg:justify-start">
+                            {past.map((registration: any) => (
+                              <EventTicketCard
+                                key={registration.eventId}
+                                eventName={registration.eventName}
+                                eventDate={fd(registration.eventDate).date}
+                                eventTime={fd(registration.eventDate).time}
+                                eventLocation={registration.eventLocation || ''}
+                                attendeeName={registration.name}
+                                attendeeEmail={registration.email}
+                                attendeePhone={registration.phone}
+                                attendeeWork={registration.work}
+                                ticketId={registration.qrCodeUrl?.slice(-8).toUpperCase() || 'TICKET'}
+                                isExpired
+                              />
+                            ))}
                           </div>
-                        ))}
-                    </div>
-                  </div>
-                )}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             ) : (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
