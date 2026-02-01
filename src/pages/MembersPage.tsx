@@ -544,11 +544,26 @@ const MembersPage: React.FC = () => {
         console.log('✅ Connection request sent successfully');
       }
     } catch (error: any) {
+      const msg = error?.message ?? '';
+      const isAlreadySent =
+        msg.includes('already sent') ||
+        msg.includes('not yet responded') ||
+        msg.includes('Connection request already exists');
+      if (isAlreadySent) {
+        // 409 / idempotent: request was already sent; show "Request sent" and don't error
+        setMembers(prev =>
+          prev.map(member =>
+            member.uid === memberId ? { ...member, connectionPending: true } : member
+          )
+        );
+        setSentRequestIds(prev => new Set([...prev, memberId]));
+        return;
+      }
       console.error('❌ Error creating connection/request:', error);
-      // Show user-friendly error message (not the API server error)
-      const errorMessage = error.message?.includes('API server') || error.message?.includes('localhost:3000')
-        ? 'Couldn\'t send request. Please try again.'
-        : error.message || 'Failed to create connection. Please try again.';
+      const errorMessage =
+        error.message?.includes('API server') || error.message?.includes('localhost:3000')
+          ? "Couldn't send request. Please try again."
+          : error.message || 'Failed to create connection. Please try again.';
       alert(errorMessage);
     } finally {
       setConnectingUsers(prev => {
