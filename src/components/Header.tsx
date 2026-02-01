@@ -193,13 +193,18 @@ const SpeakerAwareHeader: React.FC = () => {
             </button>
             <button
               onClick={() => navigate('/members')}
-              className={`text-sm font-medium transition-colors duration-200 ${
+              className={`flex items-center gap-2 text-sm font-medium transition-colors duration-200 ${
                 location.pathname === '/members'
                   ? 'text-brand-dark font-semibold'
                   : 'text-gray-600 hover:text-brand-blue'
               }`}
             >
-              Members
+              <span>Members</span>
+              {notificationCounts.pendingConnectionRequests > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full">
+                  {notificationCounts.pendingConnectionRequests > 99 ? '99+' : notificationCounts.pendingConnectionRequests}
+                </span>
+              )}
             </button>
             <button
               onClick={() => navigate('/chats')}
@@ -248,9 +253,9 @@ const SpeakerAwareHeader: React.FC = () => {
               <span className="text-sm">Donate</span>
             </a>
 
-            {/* Profile Button - Direct to Edit */}
+            {/* Profile Button - View own profile */}
             <button
-              onClick={() => navigate('/profile/edit')}
+              onClick={() => navigate(`/profile/${user?.uid}`)}
               className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
             >
               <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-red-500 to-blue-500 text-white font-bold text-sm">
@@ -324,14 +329,21 @@ const SpeakerAwareHeader: React.FC = () => {
 
             <button
               onClick={() => handleNavigation('/members')}
-              className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
+              className={`flex items-center justify-between w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
                 location.pathname === '/members'
                   ? 'text-brand-dark bg-brand-light font-semibold'
                   : 'text-gray-600 hover:text-brand-blue hover:bg-gray-50'
               }`}
             >
-              <Users className="h-4 w-4" />
-              <span>Members</span>
+              <div className="flex items-center space-x-3">
+                <Users className="h-4 w-4" />
+                <span>Members</span>
+              </div>
+              {notificationCounts.pendingConnectionRequests > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full">
+                  {notificationCounts.pendingConnectionRequests > 99 ? '99+' : notificationCounts.pendingConnectionRequests}
+                </span>
+              )}
             </button>
 
             <button

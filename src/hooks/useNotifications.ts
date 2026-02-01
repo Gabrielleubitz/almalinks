@@ -5,6 +5,7 @@ import { db } from '../firebase/config';
 export interface NotificationCounts {
   unreadChats: number;
   pendingRegistrations: number;
+  pendingConnectionRequests: number;
   totalUnread: number;
 }
 
@@ -12,30 +13,29 @@ export const useNotifications = (userId: string | undefined, isAdmin: boolean = 
   const [counts, setCounts] = useState<NotificationCounts>({
     unreadChats: 0,
     pendingRegistrations: 0,
+    pendingConnectionRequests: 0,
     totalUnread: 0
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!userId) {
-      setCounts({ unreadChats: 0, pendingRegistrations: 0, totalUnread: 0 });
+      setCounts({ unreadChats: 0, pendingRegistrations: 0, pendingConnectionRequests: 0, totalUnread: 0 });
       setLoading(false);
       return;
     }
 
     let unsubscribeChats: (() => void) | undefined;
     let unsubscribePending: (() => void) | undefined;
+    let unsubscribeConnectionRequests: (() => void) | undefined;
 
     const loadNotifications = async () => {
       try {
-        // Subscribe to chat notifications
         unsubscribeChats = await subscribeToUnreadChats(userId);
-
-        // Subscribe to pending registrations (admin only)
+        unsubscribeConnectionRequests = await subscribeToPendingConnectionRequests(userId);
         if (isAdmin) {
           unsubscribePending = await subscribeToPendingRegistrations();
         }
-
         setLoading(false);
       } catch (error) {
         console.error('❌ Error loading notifications:', error);
@@ -110,7 +110,24 @@ export const useNotifications = (userId: string | undefined, isAdmin: boolean = 
         setCounts(prev => ({
           ...prev,
           unreadChats: totalUnread,
-          totalUnread: totalUnread + prev.pendingRegistrations
+          totalUnread: totalUnread + prev.pendingRegistrations + prev.pendingConnectionRequests
+        }));
+      });
+    };
+
+    const subscribeToPendingConnectionRequests = async (uid: string) => {
+      const { query, collection, where, onSnapshot } = await import('firebase/firestore');
+      const q = query(
+        collection(db, 'connection_requests'),
+        where('targetId', '==', uid),
+        where('status', '==', 'pending')
+      );
+      return onSnapshot(q, (snapshot) => {
+        const count = snapshot.size;
+        setCounts(prev => ({
+          ...prev,
+          pendingConnectionRequests: count,
+          totalUnread: prev.unreadChats + prev.pendingRegistrations + count
         }));
       });
     };
@@ -125,21 +142,20 @@ export const useNotifications = (userId: string | undefined, isAdmin: boolean = 
 
       return onSnapshot(pendingQuery, (snapshot) => {
         const pendingCount = snapshot.size;
-
         setCounts(prev => ({
           ...prev,
           pendingRegistrations: pendingCount,
-          totalUnread: prev.unreadChats + pendingCount
+          totalUnread: prev.unreadChats + prev.pendingConnectionRequests + pendingCount
         }));
       });
     };
 
     loadNotifications();
 
-    // Cleanup subscriptions on unmount
     return () => {
       if (unsubscribeChats) unsubscribeChats();
       if (unsubscribePending) unsubscribePending();
+      if (unsubscribeConnectionRequests) unsubscribeConnectionRequests();
     };
   }, [userId, isAdmin]);
 

@@ -258,11 +258,11 @@ const UserProfilePage: React.FC = () => {
                       {/* Regular Edit Button - Always show for own profile */}
                       {currentUser?.uid === userId && (
                         <button
-                          onClick={() => navigate('/profile/edit')}
+                          onClick={() => navigate('/dashboard')}
                           className="inline-flex items-center px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors duration-200 text-sm font-medium"
                         >
                           <Edit3 className="h-4 w-4 mr-2" />
-                          Edit Profile
+                          Dashboard
                         </button>
                       )}
                       

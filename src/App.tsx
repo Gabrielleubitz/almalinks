@@ -32,7 +32,6 @@ import SystemTestPage from './pages/admin/SystemTestPage';
 import ConnectionManagement from './pages/admin/ConnectionManagement';
 import AdminUserEdit from './pages/admin/AdminUserEdit';
 import ActivityManagement from './pages/admin/ActivityManagement';
-import ProfileEditPage from './pages/ProfileEditPage';
 // Removed badge generator functionality
 import AdGenerator from './pages/admin/AdGenerator';
 import ProfileSyncTools from './pages/admin/ProfileSyncTools';
@@ -115,14 +114,6 @@ function App() {
           element={
             <ProtectedRoute>
               <CompleteProfilePage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/profile/edit" 
-          element={
-            <ProtectedRoute>
-              <ProfileEditPage />
             </ProtectedRoute>
           } 
         />

@@ -81,7 +81,8 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
       label: 'Members',
       path: '/members',
       icon: Users,
-      show: user && !isPending
+      show: user && !isPending,
+      badge: notificationCounts.pendingConnectionRequests > 0 ? notificationCounts.pendingConnectionRequests : undefined
     },
     {
       label: 'Chats',
@@ -99,7 +100,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
     },
     {
       label: 'Profile',
-      path: '/profile/edit',
+      path: user ? `/profile/${user.uid}` : '/profile',
       icon: User,
       show: user && !isPending
     }
@@ -126,14 +127,14 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
             {/* Right side actions */}
             <div className="flex items-center space-x-3">
               {/* Notifications indicator */}
-              {(notificationCounts.unreadChats > 0 || notificationCounts.pendingRegistrations > 0) && (
+              {(notificationCounts.unreadChats > 0 || notificationCounts.pendingRegistrations > 0 || (notificationCounts.pendingConnectionRequests ?? 0) > 0) && (
                 <div className="w-2 h-2 bg-red-500 rounded-full"></div>
               )}
               
               {/* Profile Avatar */}
               {user && (
                 <button
-                  onClick={() => handleNavigation('/profile/edit')}
+                  onClick={() => handleNavigation(user ? `/profile/${user.uid}` : '/dashboard')}
                   className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-red-500 to-blue-500 text-white font-bold text-sm"
                 >
                   {user.profileImage ? (

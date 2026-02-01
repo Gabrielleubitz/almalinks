@@ -104,7 +104,8 @@ const ChatViewPage: React.FC = () => {
   const [editingChat, setEditingChat] = useState({
     name: '',
     description: '',
-    allowRequests: false
+    allowRequests: false,
+    imageUrl: ''
   });
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserCard[]>([]);
@@ -737,7 +738,8 @@ const ChatViewPage: React.FC = () => {
       setEditingChat({
         name: chat.name,
         description: chat.description || '',
-        allowRequests: chat.allowRequests
+        allowRequests: chat.allowRequests,
+        imageUrl: chat.imageUrl || ''
       });
       setShowEditModal(true);
       setShowSettings(false);
@@ -1531,6 +1533,24 @@ const ChatViewPage: React.FC = () => {
                   rows={3}
                   maxLength={500}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Group image URL
+                </label>
+                <input
+                  type="url"
+                  value={editingChat.imageUrl}
+                  onChange={(e) => setEditingChat({...editingChat, imageUrl: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="https://example.com/group-image.jpg"
+                />
+                {editingChat.imageUrl && (
+                  <div className="mt-2 w-16 h-16 rounded overflow-hidden border border-gray-200">
+                    <img src={editingChat.imageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  </div>
+                )}
               </div>
               
               <div className="flex items-center">

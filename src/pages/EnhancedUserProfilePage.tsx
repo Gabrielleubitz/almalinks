@@ -221,11 +221,11 @@ const EnhancedUserProfilePage: React.FC = () => {
               {/* Edit Button for Owner */}
               {isOwner && (
                 <Link
-                  to={`/profile/edit`}
+                  to="/dashboard"
                   className="absolute top-6 right-6 inline-flex items-center space-x-2 px-4 py-2 bg-white bg-opacity-20 backdrop-blur-sm text-white rounded-xl hover:bg-opacity-30 transition-all duration-200"
                 >
                   <Edit3 className="h-4 w-4" />
-                  <span>Edit Profile</span>
+                  <span>Dashboard</span>
                 </Link>
               )}
             </div>
