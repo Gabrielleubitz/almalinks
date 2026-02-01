@@ -1,4 +1,16 @@
-# Deploy Firestore Index for joinRequests
+# Deploy Firestore Indexes
+
+Two composite indexes are defined in `firestore.indexes.json`. Deploy both with:
+
+```bash
+firebase deploy --only firestore:indexes
+```
+
+Wait 2–5 minutes for indexes to build, then refresh the app.
+
+---
+
+## 1. joinRequests index (Pending Registrations)
 
 ## ✅ Index Definition Verified
 
@@ -104,6 +116,18 @@ After index is enabled:
 - **Field 1**: `status` - `ASCENDING`
 - **Field 2**: `createdAt` - `DESCENDING`
 - **Purpose**: Query pending join requests sorted by creation date (newest first)
+
+---
+
+## 2. users index (Members directory / Email autocomplete)
+
+- **Collection**: `users`
+- **Fields**: `status` (ASCENDING), `updatedAt` (DESCENDING)
+- **Purpose**: `getAllMembersForDirectory` – approved users sorted by `updatedAt` (newest first). Used by Members page, Create Chat Group, and Email Recipient Autocomplete.
+
+If this index is not deployed, the app falls back to a query without `orderBy` and sorts in memory; the console will show:  
+`⚠️ Index required: users collection, fields: status (Ascending), updatedAt (Descending)`.  
+Deploy with `firebase deploy --only firestore:indexes` to remove the warning and use the index.
 
 ## ⚠️ Troubleshooting
 

@@ -388,8 +388,9 @@ export class UserService {
       const memberCards: UserCard[] = [];
       
       for (const user of approvedUsers) {
+        const _d = (v: unknown) => (v === undefined || v === null ? '(not set)' : String(v));
         console.log(`👤 Processing user: ${user.displayName || user.firstName || (user as any).name || user.uid}`);
-        console.log(`   📋 Raw name data: displayName="${user.displayName}", firstName="${user.firstName}", lastName="${user.lastName}", name="${(user as any).name}"`);
+        console.log(`   📋 Raw name data: displayName=${_d(user.displayName)}, firstName=${_d(user.firstName)}, lastName=${_d(user.lastName)}, name=${_d((user as any).name)}`);
         
         // Create user card with ALL available info (handle legacy data)
         // Try multiple field combinations for names
