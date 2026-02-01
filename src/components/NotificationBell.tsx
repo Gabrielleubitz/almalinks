@@ -53,6 +53,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
   const [open, setOpen] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
   const [respondingId, setRespondingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'unread' | 'all'>('unread');
 
   useEffect(() => {
     if (!open || !buttonRef.current) return;
@@ -111,7 +112,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
               {unreadCount > 0 && (
                 <button
                   type="button"
-                  onClick={() => markAllRead()}
+                  onClick={(e) => { e.stopPropagation(); markAllRead(); }}
                   className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#0B2B6B] hover:bg-blue-50 rounded transition-colors"
                   title="Mark all as read"
                 >
@@ -122,7 +123,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
               {notifications.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => deleteAll()}
+                  onClick={(e) => { e.stopPropagation(); deleteAll(); }}
                   className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded transition-colors"
                   title="Delete all"
                 >
@@ -133,113 +134,106 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
             </div>
           </div>
 
+          <div className="flex border-b border-gray-200 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setActiveTab('unread')}
+              className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
+                activeTab === 'unread'
+                  ? 'text-[#0B2B6B] border-b-2 border-[#0B2B6B] bg-blue-50/30'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              Unread {unreadCount > 0 && `(${unreadCount})`}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('all')}
+              className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
+                activeTab === 'all'
+                  ? 'text-[#0B2B6B] border-b-2 border-[#0B2B6B] bg-blue-50/30'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              All
+            </button>
+          </div>
+
           <div className="overflow-y-auto flex-1 min-h-0">
             {loading ? (
               <div className="px-4 py-8 text-center text-sm text-gray-500">Loading...</div>
-            ) : notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm text-gray-500">No notifications</div>
-            ) : (
-              <>
-                {unread.length > 0 && (
-                  <div className="border-b border-gray-100">
-                    <div className="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-50">
-                      Unread
-                    </div>
-                    {unread.map((n) => (
-                      <div
-                        key={n.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => handleNotificationClick(n)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleNotificationClick(n)}
-                        className="w-full text-left px-4 py-3 flex gap-3 items-center hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors cursor-pointer"
-                      >
-                        <NotificationIcon type={n.type} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{n.title}</p>
-                          {n.body && (
-                            <p className="text-xs text-gray-500 truncate mt-0.5">{n.body}</p>
-                          )}
-                          <p className="text-xs text-gray-400 mt-1">
-                            {formatNotificationTime(n.createdAt)}
-                          </p>
-                        </div>
-                        {n.type === 'connection_request' && n.metadata?.requestId && (
-                          <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              type="button"
-                              disabled={respondingId === n.id}
-                              onClick={() => handleRespondToRequest(n, 'accepted')}
-                              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-[#0B2B6B] hover:bg-[#0a2456] rounded transition-colors disabled:opacity-50 min-h-[32px]"
-                              title="Accept"
-                            >
-                              {respondingId === n.id ? '…' : <><Check className="h-3.5 w-3.5" /> Accept</>}
-                            </button>
-                            <button
-                              type="button"
-                              disabled={respondingId === n.id}
-                              onClick={() => handleRespondToRequest(n, 'rejected')}
-                              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50 min-h-[32px]"
-                              title="Reject"
-                            >
-                              {respondingId === n.id ? null : <><X className="h-3.5 w-3.5" /> Reject</>}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+            ) : (() => {
+              const list = activeTab === 'unread' ? unread : notifications;
+              if (list.length === 0) {
+                return (
+                  <div className="px-4 py-8 text-center text-sm text-gray-500">
+                    {activeTab === 'unread' ? 'No unread notifications' : 'No notifications'}
                   </div>
-                )}
-                <div>
-                  <div className="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-50">
-                    All
-                  </div>
-                  {notifications.map((n) => (
+                );
+              }
+              return (
+                <div className="py-1">
+                  {list.map((n) => (
                     <div
                       key={n.id}
                       role="button"
                       tabIndex={0}
                       onClick={() => handleNotificationClick(n)}
                       onKeyDown={(e) => e.key === 'Enter' && handleNotificationClick(n)}
-                      className={`w-full text-left px-4 py-3 flex gap-3 items-center hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors cursor-pointer ${!n.read ? 'bg-blue-50/50' : ''}`}
+                      className={`w-full text-left px-4 py-3 border-b border-gray-100 last:border-0 transition-colors cursor-pointer ${!n.read ? 'bg-blue-50/50' : ''} hover:bg-gray-50`}
                     >
-                      <NotificationIcon type={n.type} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{n.title}</p>
-                        {n.body && (
-                          <p className="text-xs text-gray-500 truncate mt-0.5">{n.body}</p>
-                        )}
-                        <p className="text-xs text-gray-400 mt-1">
-                          {formatNotificationTime(n.createdAt)}
-                        </p>
-                      </div>
-                      {n.type === 'connection_request' && n.metadata?.requestId && (
-                        <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            disabled={respondingId === n.id}
-                            onClick={() => handleRespondToRequest(n, 'accepted')}
-                            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-[#0B2B6B] hover:bg-[#0a2456] rounded transition-colors disabled:opacity-50 min-h-[32px]"
-                            title="Accept"
-                          >
-                            {respondingId === n.id ? '…' : <><Check className="h-3.5 w-3.5" /> Accept</>}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={respondingId === n.id}
-                            onClick={() => handleRespondToRequest(n, 'rejected')}
-                            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50 min-h-[32px]"
-                            title="Reject"
-                          >
-                            {respondingId === n.id ? null : <><X className="h-3.5 w-3.5" /> Reject</>}
-                          </button>
+                      {n.type === 'connection_request' && n.metadata?.requestId ? (
+                        <div className="flex gap-3">
+                          <NotificationIcon type={n.type} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 whitespace-normal">{n.title}</p>
+                            {n.body && (
+                              <p className="text-sm text-gray-600 mt-1.5 whitespace-pre-wrap break-words">{n.body}</p>
+                            )}
+                            <p className="text-xs text-gray-400 mt-1.5">
+                              {formatNotificationTime(n.createdAt)}
+                            </p>
+                            <div className="flex items-center gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                type="button"
+                                disabled={respondingId === n.id}
+                                onClick={() => handleRespondToRequest(n, 'accepted')}
+                                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-[#0B2B6B] hover:bg-[#0a2456] rounded-lg transition-colors disabled:opacity-50 min-h-[36px]"
+                                title="Accept and connect"
+                              >
+                                {respondingId === n.id ? '…' : <><Check className="h-4 w-4" /> Connect</>}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={respondingId === n.id}
+                                onClick={() => handleRespondToRequest(n, 'rejected')}
+                                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 min-h-[36px]"
+                                title="Reject"
+                              >
+                                {respondingId === n.id ? null : <><X className="h-4 w-4" /> Reject</>}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex gap-3 items-start">
+                          <NotificationIcon type={n.type} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{n.title}</p>
+                            {n.body && (
+                              <p className="text-xs text-gray-500 truncate mt-0.5">{n.body}</p>
+                            )}
+                            <p className="text-xs text-gray-400 mt-1">
+                              {formatNotificationTime(n.createdAt)}
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>
                   ))}
                 </div>
-              </>
-            )}
+              );
+            })()}
           </div>
         </div>
   );

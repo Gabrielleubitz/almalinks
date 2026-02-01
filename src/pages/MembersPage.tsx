@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Briefcase, Plus, Linkedin, User, Grid, List, ExternalLink, Map, Check, X, Clock } from 'lucide-react';
+import { Search, MapPin, Briefcase, Plus, Linkedin, User, Grid, List, ExternalLink, Map, Check, X, Clock, UserPlus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { UserService } from '../services/userService';
 import { ConnectionService } from '../services/connectionService';
@@ -32,10 +32,13 @@ const MembersPage: React.FC = () => {
   const [showMemberMap, setShowMemberMap] = useState(false);
   
   const [sentRequestIds, setSentRequestIds] = useState<Set<string>>(new Set()); // Track which users we've sent requests to
+  const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
+  const [respondingRequestId, setRespondingRequestId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!currentUser?.uid) return;
     loadSentRequests();
+    loadIncomingRequests();
     if (import.meta.env.DEV) {
       ConnectionRequestService.getRecentRequests(20).catch(err => {
         console.warn('[debug] Could not load recent requests:', err);
@@ -203,6 +206,17 @@ const MembersPage: React.FC = () => {
   };
 
   // Load sent connection requests to track pending state (independent from members loading)
+  const loadIncomingRequests = async () => {
+    if (!currentUser?.uid) return;
+    try {
+      const requests = await ConnectionRequestService.getPendingRequests(currentUser.uid);
+      setIncomingRequests(requests);
+    } catch (err) {
+      console.error('Failed to load incoming connection requests', err);
+      setIncomingRequests([]);
+    }
+  };
+
   const loadSentRequests = async () => {
     if (!currentUser?.uid) return;
     
@@ -226,6 +240,21 @@ const MembersPage: React.FC = () => {
   };
 
   // Handle sending connection request (user-initiated) or creating connection (admin)
+  const handleRespondToRequest = async (requestId: string, response: 'accepted' | 'rejected') => {
+    if (!currentUser?.uid) return;
+    setRespondingRequestId(requestId);
+    try {
+      await ConnectionRequestService.respondToRequest(requestId, response, currentUser.uid);
+      await loadIncomingRequests();
+      if (response === 'accepted') await loadMembers();
+    } catch (e) {
+      console.error('Failed to respond to connection request', e);
+      alert('Something went wrong. Please try again.');
+    } finally {
+      setRespondingRequestId(null);
+    }
+  };
+
   const handleConnect = async (memberId: string) => {
     if (!currentUser?.uid || connectingUsers.has(memberId)) return;
 
@@ -671,6 +700,67 @@ const MembersPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Connection Requests */}
+      {incomingRequests.length > 0 && (
+        <section className="py-8 border-b border-gray-200 bg-white/60">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-[#0B2B6B]" />
+              Connection Requests
+            </h2>
+            <div className="space-y-4">
+              {incomingRequests.map((req) => {
+                const fromName = req.fromName || req.requester?.displayName || req.requester?.name || 'Someone';
+                const message = req.message || req.note;
+                const isResponding = respondingRequestId === req.id;
+                return (
+                  <div
+                    key={req.id}
+                    className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm"
+                  >
+                    <p className="text-sm font-medium text-gray-900">
+                      Request to connect from {fromName}
+                    </p>
+                    {message && (
+                      <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap break-words">
+                        {message}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-400 mt-2">
+                      {req.createdAt && (() => {
+                        const t = req.createdAt as { toMillis?: () => number; toDate?: () => Date };
+                        const date = typeof t?.toMillis === 'function' ? new Date(t.toMillis()) : typeof t?.toDate === 'function' ? t.toDate() : new Date(t as string | number);
+                        return date.toLocaleDateString();
+                      })()}
+                    </p>
+                    <div className="flex items-center gap-2 mt-4">
+                      <button
+                        type="button"
+                        disabled={isResponding}
+                        onClick={() => handleRespondToRequest(req.id, 'accepted')}
+                        className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-[#0B2B6B] hover:bg-[#0a2456] rounded-lg transition-colors disabled:opacity-50 min-h-[36px]"
+                        title="Accept and connect"
+                      >
+                        {isResponding ? '…' : <><Check className="h-4 w-4" /> Connect</>}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isResponding}
+                        onClick={() => handleRespondToRequest(req.id, 'rejected')}
+                        className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 min-h-[36px]"
+                        title="Reject"
+                      >
+                        {isResponding ? null : <><X className="h-4 w-4" /> Reject</>}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Members Grid */}
       <section className="py-16">

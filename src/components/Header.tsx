@@ -12,14 +12,12 @@ import {
   Menu,
   X,
   MessageCircle,
-  Heart,
-  Bell
+  Heart
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNotifications } from '../hooks/useNotifications';
 import logoSvg from '../assets/alma-links-logo.svg';
 import ProfilePictureUploader from './profile/ProfilePictureUploader';
-import NotificationBell from './NotificationBell';
 
 const SpeakerAwareHeader: React.FC = () => {
   const navigate = useNavigate();
@@ -237,9 +235,8 @@ const SpeakerAwareHeader: React.FC = () => {
             )}
           </nav>
 
-          {/* Right side - Notifications, Profile and Actions */}
+          {/* Right side - Profile and Actions */}
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <NotificationBell userId={user?.uid} />
             {/* Donate Button */}
             <a
               href="https://almalinks.org/donate.html"
