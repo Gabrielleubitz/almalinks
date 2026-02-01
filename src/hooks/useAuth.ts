@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, setPersistence, browserLocalPersistence, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, linkWithCredential, getAdditionalUserInfo, getIdToken } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, setPersistence, browserLocalPersistence, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, linkWithCredential, getAdditionalUserInfo } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, retryOnNetworkFailure } from '../firebase/config';
 import { ActivityService } from '../services/activityService';
@@ -663,31 +663,9 @@ export const useAuth = () => {
         });
         
         console.log('✅ Registration and profile creation successful');
-
-        // Send welcome email via Mailchimp Marketing (server-side, non-blocking)
-        try {
-          const idToken = await getIdToken(result.user);
-          const welcomeRes = await fetch('/api/welcome-email', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${idToken}`,
-            },
-            credentials: 'include',
-          });
-          const welcomeData = await welcomeRes.json().catch(() => ({}));
-          if (welcomeRes.ok && welcomeData.ok && !welcomeData.skipped) {
-            console.log('✅ Welcome email sent');
-          } else if (welcomeData.skipped) {
-            console.log('ℹ️ Welcome email skipped (already sent)');
-          } else {
-            console.warn('⚠️ Welcome email not sent:', welcomeData.error || welcomeRes.status);
-          }
-        } catch (welcomeErr) {
-          console.warn('⚠️ Welcome email request failed:', welcomeErr);
-        }
       }
-      
+      // Welcome email is sent from joinRequestService after join request is created (Mailchimp Marketing, server-side).
+
       // The onAuthStateChanged listener will handle role fetching and navigation
     } catch (err: any) {
       console.error('❌ Registration failed:', err.code, err.message);
@@ -824,31 +802,7 @@ export const useAuth = () => {
         });
       }
 
-      // Send welcome email for first-time sign-ups (Mailchimp Marketing, server-side)
-      if (isNewUser) {
-        try {
-          const idToken = await getIdToken(result.user);
-          const welcomeRes = await fetch('/api/welcome-email', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${idToken}`,
-            },
-            credentials: 'include',
-          });
-          const welcomeData = await welcomeRes.json().catch(() => ({}));
-          if (welcomeRes.ok && welcomeData.ok && !welcomeData.skipped) {
-            console.log('✅ Welcome email sent');
-          } else if (welcomeData.skipped) {
-            console.log('ℹ️ Welcome email skipped (already sent)');
-          } else {
-            console.warn('⚠️ Welcome email not sent:', welcomeData.error || welcomeRes.status);
-          }
-        } catch (welcomeErr) {
-          console.warn('⚠️ Welcome email request failed:', welcomeErr);
-        }
-      }
-      
+      // Welcome email for new Google sign-ups is sent from joinRequestService when the join request is created (createOrUpdateUserProfile path).
       // The onAuthStateChanged listener will handle role fetching and navigation
     } catch (err: any) {
       console.error('❌ Google sign-in failed:', err.code, err.message);

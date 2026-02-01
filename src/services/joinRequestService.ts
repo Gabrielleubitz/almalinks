@@ -33,6 +33,7 @@ export interface JoinRequest {
   rejectedBy?: string;
   adminNotifiedAt?: Timestamp | Date; // Timestamp when admin notification email was sent
   userNotifiedAt?: Timestamp | Date; // Timestamp when user confirmation email was sent
+  welcomeEmailSentAt?: Timestamp | Date; // Set by backend when Mailchimp welcome email is sent
   // Additional profile fields that might be provided during signup
   bioTitle?: string;
   bio?: string;
@@ -265,6 +266,35 @@ export class JoinRequestService {
         name: verifiedData.name,
         status: verifiedData.status
       });
+
+      // Send welcome email via Mailchimp Marketing (server-side, non-blocking)
+      try {
+        fetch('/api/welcome-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            joinRequestId: uid,
+            email: verifiedData.email,
+            displayName: verifiedData.name || verifiedData.displayName || '',
+            firstName: (verifiedData.name || verifiedData.displayName || '').trim().split(/\s+/)[0] || '',
+          }),
+        })
+          .then(async (response) => {
+            const result = await response.json().catch(() => ({}));
+            if (response.ok && result.ok && !result.skipped) {
+              console.log('[signup] Welcome email sent', result.campaignId);
+            } else if (result.skipped) {
+              console.log('[signup] Welcome email skipped (already sent)');
+            } else {
+              console.warn('[signup] Welcome email not sent:', result.error || response.status);
+            }
+          })
+          .catch((err: any) => {
+            console.warn('[signup] Welcome email request failed (non-blocking):', err?.message);
+          });
+      } catch (welcomeErr: any) {
+        console.warn('[signup] Welcome email init error (non-blocking):', welcomeErr?.message);
+      }
 
       // Send admin notification (non-blocking)
       // Check if already notified to prevent duplicates
