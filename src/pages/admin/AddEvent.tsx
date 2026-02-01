@@ -21,6 +21,7 @@ const AddEvent: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [announcementFailedReason, setAnnouncementFailedReason] = useState<string | null>(null);
   const [previewSlug, setPreviewSlug] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -75,6 +76,7 @@ const AddEvent: React.FC = () => {
 
     setLoading(true);
     setError(null);
+    setAnnouncementFailedReason(null);
 
     try {
       const eventId = await EventService.createEvent(formData, user.uid);
@@ -101,12 +103,16 @@ const AddEvent: React.FC = () => {
         }
       } catch (announceErr: unknown) {
         announcementError = announceErr instanceof Error ? announceErr.message : String(announceErr);
+        if (announcementError.includes('fetch') || announcementError.includes('Failed to fetch') || announcementError.includes('NetworkError')) {
+          announcementError = 'Could not reach API. Locally: run the API in another terminal (npm run dev:express). On production: check Vercel env vars.';
+        }
         console.warn('[AddEvent] Announcement request failed:', announceErr);
       }
 
+      if (announcementError) setAnnouncementFailedReason(announcementError);
       setSuccess(
         announcementSent
-          ? `Event "${formData.name}" created. Announcement sent to Mailchimp audience.`
+          ? `Event "${formData.name}" created. Announcement sent to Mailchimp audience. (Only contacts in that audience receive the email—add yourself or run Import users to Mailchimp.)`
           : announcementError
             ? `Event "${formData.name}" created. Mailchimp announcement failed: ${announcementError}`
             : `Event "${formData.name}" created successfully with slug: ${previewSlug}`
@@ -185,9 +191,23 @@ const AddEvent: React.FC = () => {
 
           {/* Success Message */}
           {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center space-x-3">
-              <Save className="h-5 w-5 text-green-600 flex-shrink-0" />
-              <p className="text-green-600 text-sm">{success}</p>
+            <div className="mb-6 space-y-3">
+              <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center space-x-3">
+                <Save className="h-5 w-5 text-green-600 flex-shrink-0" />
+                <p className="text-green-600 text-sm">{success}</p>
+              </div>
+              {announcementFailedReason && (
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start space-x-3">
+                  <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-800">
+                    <p className="font-medium">Email announcement did not send</p>
+                    <p className="mt-1">{announcementFailedReason}</p>
+                    <p className="mt-2 text-amber-700">
+                      Locally: run the API in another terminal (<code className="bg-amber-100 px-1 rounded">npm run dev:express</code>). Production: set Mailchimp env vars in Vercel and ensure you are admin.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

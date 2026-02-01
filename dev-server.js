@@ -1,10 +1,9 @@
+// Load .env FIRST (ESM hoists imports, so this must be a separate module imported before firebase-init)
+import './lib/server/load-env.js';
+
 import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { config } from 'dotenv';
-
-// Load environment variables FIRST before any imports that use them
-config();
 
 // Initialize Firebase Admin ONCE before importing API handlers
 import './lib/server/firebase-init.js';
@@ -23,9 +22,6 @@ import adminChatsHandler from './lib/server/api/admin/chats.cjs';
 // import automationHubHandler from './api/automation-hub.js';
 // import sendSmsHandler from './api/send-sms.js';
 // import chatApiHandler from './api/chat-api.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = 3001;
@@ -66,6 +62,12 @@ app.use((req, res, next) => {
 
 // Parse JSON bodies
 app.use(express.json());
+
+// Log every request so you can see if the app is talking to this server
+app.use((req, res, next) => {
+  console.log(`[dev-server] ${req.method} ${req.path}`);
+  next();
+});
 
 app.post('/api/admin/chats', (req, res) => {
   console.log('Admin Chat Creation API called:', req.body);
