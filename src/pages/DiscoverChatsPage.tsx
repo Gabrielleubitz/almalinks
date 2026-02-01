@@ -145,20 +145,20 @@ const DiscoverChatsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="h-screen max-h-dvh bg-gradient-to-br from-gray-50 to-white flex flex-col overflow-hidden">
       <Header />
       
-      <div className="pt-20 pb-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Page Header */}
-          <div className="mb-8">
+      <div className="flex-1 flex flex-col min-h-0 pt-20 overflow-hidden">
+        {/* Page Header - fixed, no scroll */}
+        <div className="flex-shrink-0 px-4 sm:px-6 lg:px-8 pb-4">
+          <div className="max-w-4xl mx-auto">
             <div className="flex items-center space-x-4 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
                 <MessageCircle className="h-5 w-5" />
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Discover Chats</h1>
-                <p className="text-gray-600">Find and join public chat groups</p>
+              <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Discover Chats</h1>
+                <p className="text-sm sm:text-base text-gray-600 truncate">Find and join public chat groups</p>
               </div>
             </div>
 
@@ -171,12 +171,16 @@ const DiscoverChatsPage: React.FC = () => {
                   placeholder="Search chats..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-10 pr-4 py-3 text-base sm:text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 touch-manipulation"
                 />
               </div>
             </div>
           </div>
+        </div>
 
+        {/* Content - only this scrolls when list is long */}
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain pb-16 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Loading State */}
           {loading && (
             <div className="flex items-center justify-center py-12">
@@ -233,11 +237,11 @@ const DiscoverChatsPage: React.FC = () => {
 
           {/* Chats Grid */}
           {!loading && !error && filteredChats.length > 0 && (
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
               {filteredChats.map((chat) => (
                 <div
                   key={chat.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-gray-200 transition-all duration-200"
+                  className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 hover:shadow-md hover:border-gray-200 transition-all duration-200 touch-manipulation"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
@@ -293,20 +297,20 @@ const DiscoverChatsPage: React.FC = () => {
                     {chat.isAlreadyMember ? (
                       <button
                         onClick={() => navigate(`/chats/${chat.id}`)}
-                        className="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors"
+                        className="px-4 py-2.5 min-h-[44px] bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors touch-manipulation flex items-center"
                       >
                         Open Chat
                       </button>
                     ) : chat.hasPendingRequest ? (
-                      <div className="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-medium">
+                      <div className="px-4 py-2.5 min-h-[44px] bg-yellow-100 text-yellow-700 rounded-lg text-sm font-medium flex items-center">
                         Request Pending
                       </div>
                     ) : chat.canRequest ? (
                       <button
                         onClick={() => handleJoinRequest(chat)}
-                        className="px-4 py-2 bg-brand-dark text-white rounded-lg text-sm font-medium hover:bg-brand-mid transition-colors flex items-center space-x-1"
+                        className="px-4 py-2.5 min-h-[44px] bg-brand-dark text-white rounded-lg text-sm font-medium hover:bg-brand-mid transition-colors flex items-center space-x-1 touch-manipulation"
                       >
-                        <UserPlus className="h-4 w-4" />
+                        <UserPlus className="h-4 w-4 flex-shrink-0" />
                         <span>Request to Join</span>
                       </button>
                     ) : !chat.allowRequests ? (
@@ -324,6 +328,7 @@ const DiscoverChatsPage: React.FC = () => {
               ))}
             </div>
           )}
+        </div>
         </div>
       </div>
 

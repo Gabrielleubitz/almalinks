@@ -96,13 +96,13 @@ const ChatsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="h-screen max-h-dvh bg-white flex flex-col overflow-hidden">
       <Header />
       
-      <div className="flex-1 flex flex-col overflow-hidden pt-20">
-        {/* Page Header */}
-        <div className="px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
-          <div className="max-w-5xl mx-auto flex items-center justify-between">
+      <div className="flex-1 flex flex-col min-h-0 pt-20 overflow-hidden">
+        {/* Page Header - fixed, does not scroll */}
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
+          <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-xl font-semibold text-gray-900">Chats</h1>
               <p className="text-xs text-gray-500 mt-0.5">
@@ -116,7 +116,7 @@ const ChatsPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate('/discover-chats')}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[#0B2B6B] bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-[#0B2B6B] bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors min-h-[44px] touch-manipulation"
               >
                 <Compass className="h-4 w-4" />
                 <span>Discover</span>
@@ -124,7 +124,7 @@ const ChatsPage: React.FC = () => {
               {user.role === 'admin' && (
                 <button
                   onClick={() => navigate('/admin/chats/create')}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-[#0B2B6B] hover:bg-[#1E56B3] rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-[#0B2B6B] hover:bg-[#1E56B3] rounded-lg transition-colors min-h-[44px] touch-manipulation"
                 >
                   <Plus className="h-4 w-4" />
                   <span>New Chat</span>
@@ -143,16 +143,16 @@ const ChatsPage: React.FC = () => {
                   placeholder="Search chats..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#0B2B6B] focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0B2B6B] focus:border-transparent transition-all touch-manipulation"
                 />
               </div>
             </div>
           )}
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto bg-white">
-        <div className="max-w-5xl mx-auto px-6 py-6">
+        {/* Groups list - only this section scrolls when list exceeds viewport */}
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
           {/* Loading State */}
           {loading && (
             <div className="flex items-center justify-center py-20">
@@ -208,7 +208,7 @@ const ChatsPage: React.FC = () => {
                 <button
                   key={chat.id}
                   onClick={() => navigate(`/chats/${chat.id}`)}
-                  className="w-full text-left bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 hover:border-gray-300 transition-all duration-150 group"
+                  className="w-full text-left bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 hover:border-gray-300 transition-all duration-150 group min-h-[72px] touch-manipulation active:bg-gray-100"
                 >
                   <div className="flex items-center gap-3">
                     {/* Avatar */}

@@ -939,15 +939,15 @@ const ChatViewPage: React.FC = () => {
   }
 
   return (
-    <div className="h-screen bg-white flex flex-col overflow-hidden">
+    <div className="h-screen max-h-dvh bg-white flex flex-col overflow-hidden">
       <Header />
-      <div className="flex-1 flex overflow-hidden pt-20" style={{ height: 'calc(100vh - 80px)' }}>
+      <div className="flex-1 flex min-h-0 pt-20 overflow-hidden">
         {/* Chat Layout - Sidebar on desktop, hidden on mobile */}
-        <div className="flex-1 flex overflow-hidden h-full w-full">
+        <div className="flex-1 flex min-h-0 w-full overflow-hidden">
           
-          {/* Left Sidebar - Chat List (Desktop only, ≥1024px) */}
-          <div className="hidden lg:flex lg:flex-col lg:w-80 lg:border-r lg:border-gray-200 lg:bg-white lg:flex-shrink-0">
-            {/* Sidebar Header */}
+          {/* Left Sidebar - Chat List (Desktop only, ≥1024px). Only this list scrolls when many groups. */}
+          <div className="hidden lg:flex lg:flex-col lg:w-80 lg:min-w-0 lg:border-r lg:border-gray-200 lg:bg-white lg:flex-shrink-0">
+            {/* Sidebar Header - fixed, no scroll */}
             <div className="px-4 py-3 border-b border-gray-200 flex-shrink-0">
               <h2 className="text-sm font-semibold text-gray-900 mb-2">Chats</h2>
               {/* Search Bar */}
@@ -963,8 +963,8 @@ const ChatViewPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Chat List */}
-            <div className="flex-1 overflow-y-auto">
+            {/* Chat List - only this section scrolls when groups exceed viewport */}
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
               {loadingChats ? (
                 <div className="flex items-center justify-center py-8">
                   <LoadingSpinner size="md" color="border-[#0B2B6B]" />
@@ -1054,23 +1054,23 @@ const ChatViewPage: React.FC = () => {
           </div>
 
         {/* Right Panel - Chat View */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-white">
-          {/* Chat Header - Part of the surface */}
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white">
+          {/* Chat Header - Part of the surface, no scroll */}
           <div className="px-4 py-2.5 border-b border-gray-200 flex-shrink-0 bg-white">
             <div className="flex items-center justify-between h-12">
               <div className="flex items-center space-x-2.5 flex-1 min-w-0">
                   {/* Back button - visible on mobile, hidden on desktop when sidebar is visible */}
                   <button
                     onClick={() => navigate('/chats')}
-                    className="lg:hidden p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
+                    className="lg:hidden p-2.5 -ml-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] touch-manipulation"
                     title="Back to Chats"
                   >
-                    <ArrowLeft className="h-4 w-4" />
+                    <ArrowLeft className="h-5 w-5" />
                   </button>
                 
                 <button
                   onClick={() => setShowChatInfo(!showChatInfo)}
-                  className="flex items-center space-x-2.5 flex-1 min-w-0 hover:bg-gray-50 rounded px-2 py-1 transition-colors"
+                  className="flex items-center space-x-2.5 flex-1 min-w-0 hover:bg-gray-50 rounded px-2 py-2 min-h-[44px] touch-manipulation lg:min-h-0"
                 >
                   <div className="flex-shrink-0">
                     {renderChatIcon('small')}
@@ -1091,10 +1091,10 @@ const ChatViewPage: React.FC = () => {
                       setShowRequests(false);
                     }
                   }}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                  className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors min-h-[44px] min-w-[44px] touch-manipulation flex items-center justify-center"
                   title="View Members"
                 >
-                  <Users className="h-4 w-4" />
+                  <Users className="h-5 w-5" />
                 </button>
                 
                 {chat.userRole === 'admin' && pendingRequests.length > 0 && (
@@ -1106,11 +1106,11 @@ const ChatViewPage: React.FC = () => {
                         setShowSettings(false);
                       }
                     }}
-                    className="relative p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                    className="relative p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors min-h-[44px] min-w-[44px] touch-manipulation flex items-center justify-center"
                     title="Join Requests"
                   >
-                    <UserPlus className="h-4 w-4" />
-                    <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 bg-[#0B2B6B] text-white text-[9px] rounded-full flex items-center justify-center font-medium">
+                    <UserPlus className="h-5 w-5" />
+                    <span className="absolute top-1 right-1 h-4 w-4 bg-[#0B2B6B] text-white text-[9px] rounded-full flex items-center justify-center font-medium">
                       {pendingRequests.length > 9 ? '9+' : pendingRequests.length}
                     </span>
                   </button>
@@ -1124,18 +1124,17 @@ const ChatViewPage: React.FC = () => {
                       setShowRequests(false);
                     }
                   }}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                  className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors min-h-[44px] min-w-[44px] touch-manipulation flex items-center justify-center"
                   title="Chat Settings"
                 >
-                  <Settings className="h-4 w-4" />
+                  <Settings className="h-5 w-5" />
                 </button>
               </div>
             </div>
           </div>
           
-          {/* Messages Area - Same background, continuous surface */}
-          {/* Force remount on chatId change to prevent scroll position preservation */}
-          <div key={chatId} className="flex-1 flex flex-col overflow-hidden bg-white relative">
+          {/* Messages Area - only this scrolls; input stays fixed at bottom */}
+          <div key={chatId} className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white relative">
             {/* Subtle background pattern with Alma Links logo */}
             <div 
               className="absolute inset-0 opacity-[0.018] pointer-events-none"
@@ -1146,9 +1145,10 @@ const ChatViewPage: React.FC = () => {
                 backgroundPosition: '0 0, 200px 200px',
               }}
             />
+            {/* Scrollable messages - only this div scrolls */}
             <div 
               ref={setScrollContainerRef}
-              className="flex-1 px-4 overflow-y-auto relative z-10" 
+              className="flex-1 min-h-0 px-4 overflow-y-auto overflow-x-hidden overscroll-contain relative z-10" 
               id="messages-container"
             >
               <div className="max-w-3xl mx-auto">
@@ -1197,22 +1197,22 @@ const ChatViewPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Message Input - Anchored to bottom, part of the surface */}
+            {/* Message Input - Fixed at bottom, does not scroll (stays on screen) */}
             {permissions?.canSendMessages && (
-              <div className="px-4 py-3 border-t border-gray-200 flex-shrink-0 bg-white">
+              <div className="px-4 py-3 border-t border-gray-200 flex-shrink-0 bg-white pb-[env(safe-area-inset-bottom)]">
                 {editingMessageId && (
                   <div className="mb-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700 flex items-center justify-between max-w-3xl mx-auto">
                     <span>Editing message</span>
                     <button
                       onClick={handleCancelEdit}
-                      className="text-blue-600 hover:text-blue-800 font-medium"
+                      className="text-blue-600 hover:text-blue-800 font-medium min-h-[44px] min-w-[44px] touch-manipulation"
                     >
                       Cancel
                     </button>
                   </div>
                 )}
                 <form onSubmit={handleSendMessage} className="flex items-end gap-2 max-w-3xl mx-auto">
-                  <div className="flex-1 bg-gray-50 rounded-lg px-3 py-2 flex items-center border border-gray-200">
+                  <div className="flex-1 min-w-0 bg-gray-50 rounded-lg px-3 py-2 flex items-center border border-gray-200">
                     <textarea
                       value={messageText}
                       onChange={(e) => {
@@ -1222,7 +1222,7 @@ const ChatViewPage: React.FC = () => {
                       }}
                       placeholder={editingMessageId ? "Edit your message" : "Type a message"}
                       rows={1}
-                      className="w-full bg-transparent border-0 focus:ring-0 focus:outline-none resize-none text-sm text-gray-900 placeholder-gray-400 max-h-[100px] overflow-y-auto leading-relaxed"
+                      className="w-full bg-transparent border-0 focus:ring-0 focus:outline-none resize-none text-base text-gray-900 placeholder-gray-400 max-h-[100px] overflow-y-auto leading-relaxed touch-manipulation"
                       disabled={sending}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -1238,7 +1238,7 @@ const ChatViewPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={!messageText.trim() || sending}
-                    className="w-9 h-9 bg-[#0B2B6B] text-white rounded-lg hover:bg-[#1E56B3] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center flex-shrink-0"
+                    className="w-11 h-11 sm:w-9 sm:h-9 bg-[#0B2B6B] text-white rounded-lg hover:bg-[#1E56B3] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center flex-shrink-0 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 touch-manipulation"
                   >
                     {sending ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

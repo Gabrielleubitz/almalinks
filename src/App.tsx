@@ -48,7 +48,6 @@ import ThemePreview from './pages/ThemePreview';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AuthWrapper from './components/auth/AuthWrapper';
 import NetworkStatusIndicator from './components/ui/NetworkStatusIndicator';
-import PWAInstallPrompt from './components/PWAInstallPrompt';
 import ActivityTracker from './components/ActivityTracker';
 
 // Home page component
@@ -315,9 +314,6 @@ function App() {
       
       {/* Network Status Indicator */}
       <NetworkStatusIndicator position="bottom-right" />
-      
-      {/* PWA Install Prompt */}
-      <PWAInstallPrompt />
     </Router>
   );
 }

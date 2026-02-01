@@ -155,49 +155,7 @@ export class JoinRequestService {
           console.log('[signup] joinRequest created', uid);
         }
 
-        // Send user confirmation email immediately after Firestore write succeeds
-        // Call server-side endpoint which looks up joinRequest from Firestore
-        // Fire and forget - don't await to avoid blocking signup
-        try {
-          fetch('/api/notify-user-signup', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              joinRequestId: uid
-            })
-          })
-          .then(async (response) => {
-            const result = await response.json();
-            
-            // Log response in browser console
-            console.log('[signup] notify response', result);
-            
-            // Mark as notified in Firestore (non-blocking update)
-            // This includes successful sends AND rejected emails (to prevent duplicate attempts)
-            if (result.ok) {
-              try {
-                // Check if already notified before updating (prevent race conditions)
-                const currentDoc = await retryOnNetworkFailure(() => getDoc(requestRef));
-                if (currentDoc.exists() && !currentDoc.data()?.userNotifiedAt) {
-                  await retryOnNetworkFailure(() => updateDoc(requestRef, {
-                    userNotifiedAt: serverTimestamp()
-                  }));
-                }
-              } catch (updateError: any) {
-                console.warn('⚠️ Failed to update userNotifiedAt (non-blocking):', updateError.message);
-              }
-            }
-          })
-          .catch((error: any) => {
-            // Log but don't throw - signup should succeed even if email fails
-            console.warn('[signup] notify error (non-blocking):', error.message);
-          });
-        } catch (notificationError: any) {
-          // Log but don't throw - signup should succeed even if notification fails
-          console.warn('[signup] notify init error (non-blocking):', notificationError.message);
-        }
+        // User signup email: sent via POST /api/welcome-email (Mandrill) after join request is verified below.
       } catch (writeError: any) {
         console.error('❌ Firestore write error:', {
           code: writeError.code,
@@ -281,14 +239,14 @@ export class JoinRequestService {
         })
           .then(async (response) => {
             const result = await response.json().catch(() => ({}));
-            if (response.ok && result.ok && !result.skipped && result.welcomeEmailSent !== false) {
-              console.log('[signup] Welcome email sent', result.campaignId);
+            if (response.ok && result.ok && !result.skipped) {
+              console.log('[signup] Welcome email sent (Mandrill)', result.messageId);
             } else if (result.skipped) {
               console.log('[signup] Welcome email skipped (already sent)');
             } else {
               console.warn('[signup] Welcome email failed — response:', response.status, 'details:', result);
-              if (result.details?.length) {
-                console.warn('[signup] Mailchimp errors:', result.details);
+              if (result.details) {
+                console.warn('[signup] Mandrill details:', result.details);
               }
             }
           })
