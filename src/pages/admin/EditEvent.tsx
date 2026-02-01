@@ -321,7 +321,7 @@ const EditEvent: React.FC = () => {
                   <div className="text-sm text-blue-800">
                     <strong>Event URL Preview:</strong>
                   </div>
-                  <div className="text-sm text-brand-light font-mono">
+                  <div className="text-sm text-blue-900 font-mono">
                     almalinks.com/events/{previewSlug}
                   </div>
                   {originalEvent?.slug !== previewSlug && (
