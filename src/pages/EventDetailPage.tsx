@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Clock, ArrowLeft, Users, CheckCircle, AlertCircle, Ticket, Download, User, Linkedin, Briefcase, CalendarPlus } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+import { Calendar, MapPin, Clock, ArrowLeft, Users, CheckCircle, AlertCircle, Ticket, User, Linkedin, Briefcase, CalendarPlus } from 'lucide-react';
 import { EventService, EventData } from '../services/eventService';
+import EventTicketCard from '../components/dashboard/EventTicketCard';
 import { useAuth } from '../hooks/useAuth';
 import { useActivityTracking } from '../hooks/useActivityTracking';
 import Header from '../components/Header';
@@ -216,36 +216,6 @@ const EventDetailPage: React.FC = () => {
     });
     
     return `https://calendar.google.com/calendar/render?${params.toString()}`;
-  };
-
-  const downloadQRCode = () => {
-    if (!registration?.qrCodeUrl) return;
-
-    const svg = document.getElementById('event-qr-code');
-    if (!svg) return;
-
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-
-    canvas.width = 200;
-    canvas.height = 200;
-
-    img.onload = () => {
-      if (ctx) {
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, 200, 200);
-        ctx.drawImage(img, 0, 0, 200, 200);
-        
-        const link = document.createElement('a');
-        link.download = `${event?.name.replace(/\s+/g, '-').toLowerCase()}-ticket.png`;
-        link.href = canvas.toDataURL();
-        link.click();
-      }
-    };
-
-    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
   };
 
   const formatDate = (dateString: string) => {
@@ -515,77 +485,31 @@ const EventDetailPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Digital Ticket */}
-      {showTicket && isRegistered && registration && (
+      {/* Digital Ticket - Uiverse-style card (no QR) */}
+      {showTicket && isRegistered && registration && event && (
         <section className="py-16 bg-gray-50">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-3xl p-8 text-white relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-12 -translate-x-12"></div>
-              
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-2">
-                    <Ticket className="h-6 w-6" />
-                    <span className="font-semibold">Digital Ticket</span>
-                  </div>
-                  <div className="text-sm opacity-90">
-                    #{(registration.id || 'TEMP').slice(-8).toUpperCase()}
-                  </div>
-                </div>
-                
-                <div className="space-y-3 mb-6">
-                  <div className="text-2xl font-bold">{event.name}</div>
-                  <div className="opacity-90">{formattedDate.date} • {formattedDate.time}</div>
-                  <div className="opacity-90">{event.location}</div>
-                </div>
-                
-                <div className="pt-4 border-t border-white/20">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm opacity-90">Attendee</div>
-                      <div className="font-semibold">{registration.name}</div>
-                      <div className="text-sm opacity-75">{registration.email}</div>
-                      <div className="text-sm opacity-75">{registration.phone}</div>
-                      <div className="text-sm opacity-75">{registration.work}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm opacity-90">QR Code</div>
-                      <div className="bg-white p-2 rounded-lg mt-1">
-                        <QRCodeSVG
-                          id="event-qr-code"
-                          value={registration.qrCodeUrl || event.id + '-' + user?.uid}
-                          size={60}
-                          bgColor="#ffffff"
-                          fgColor="#000000"
-                          level="M"
-                          includeMargin={false}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mt-6 text-center">
-                  <p className="text-sm opacity-90">
-                    Present this ticket at the event entrance
-                  </p>
-                </div>
-                
-                {/* Add to Calendar Button */}
-                <div className="mt-4 pt-4 border-t border-white/20 flex justify-center">
-                  <a
-                    href={createGoogleCalendarUrl()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-white/20 hover:bg-white/30 text-white px-6 py-2 rounded-full transition-all duration-300 font-medium inline-flex items-center space-x-2 border border-white/30"
-                  >
-                    <CalendarPlus className="h-4 w-4" />
-                    <span>Add to Google Calendar</span>
-                  </a>
-                </div>
-              </div>
-            </div>
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+            <EventTicketCard
+              eventName={event.name}
+              eventDate={formattedDate.date}
+              eventTime={formattedDate.time}
+              eventLocation={event.location}
+              attendeeName={registration.name}
+              attendeeEmail={registration.email}
+              attendeePhone={registration.phone}
+              attendeeWork={registration.work}
+              ticketId={(registration.id || 'TEMP').slice(-8).toUpperCase()}
+              isExpired={event?.status === 'completed'}
+            />
+            <a
+              href={createGoogleCalendarUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-brand-blue-dark hover:text-brand-blue-light font-medium"
+            >
+              <CalendarPlus className="h-5 w-5" />
+              <span>Add to Google Calendar</span>
+            </a>
           </div>
         </section>
       )}

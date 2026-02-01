@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, ArrowRight, Clock, Users, RotateCcw, User, Mail, Phone, Briefcase, Ticket, Download, Edit, Save, X, Check, AlertCircle, ChevronDown, Linkedin, Globe, Twitter, CheckCircle, TrendingUp, MessageCircle, Compass, Map, Heart } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+import { Calendar, MapPin, ArrowRight, Clock, Users, RotateCcw, User, Mail, Phone, Briefcase, Ticket, Download, Edit, Save, X, Check, AlertCircle, ChevronDown, Linkedin, Globe, Twitter, CheckCircle, TrendingUp, MessageCircle, Compass, Map, Heart, FolderOpen } from 'lucide-react';
 import { EventService, EventData } from '../services/eventService';
 import { ConnectionService } from '../services/connectionService';
 import { useAuth } from '../hooks/useAuth';
@@ -11,6 +10,7 @@ import Footer from '../components/Footer';
 import IganiWatermark from '../components/IganiWatermark';
 import AnnouncementsSidebar from '../components/announcements/AnnouncementsSidebar';
 import ConnectionsCard from '../components/dashboard/ConnectionsCard';
+import EventTicketCard from '../components/dashboard/EventTicketCard';
 import ProfilePictureUploader from '../components/profile/ProfilePictureUploader';
 
 // Country codes data for phone editing
@@ -484,34 +484,6 @@ const EventsPage: React.FC = () => {
     } finally {
       setProfileUpdateLoading(false);
     }
-  };
-
-  const downloadQRCode = (registration: any) => {
-    const svg = document.getElementById(`qr-code-${registration.eventId}`);
-    if (!svg) return;
-
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-
-    canvas.width = 200;
-    canvas.height = 200;
-
-    img.onload = () => {
-      if (ctx) {
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, 200, 200);
-        ctx.drawImage(img, 0, 0, 200, 200);
-        
-        const link = document.createElement('a');
-        link.download = `${registration.eventName.replace(/\s+/g, '-').toLowerCase()}-ticket.png`;
-        link.href = canvas.toDataURL();
-        link.click();
-      }
-    };
-
-    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
   };
 
   const getStatusBadge = (status: EventData['status']) => {
@@ -1689,78 +1661,70 @@ const EventsPage: React.FC = () => {
                 <p className="text-gray-600">Loading your tickets...</p>
               </div>
             ) : userRegistrations.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                {userRegistrations.map((registration, index) => {
-                  const isExpired = !isUpcoming(registration.eventDate);
-                  
-                  return (
-                  <div
-                    key={registration.eventId}
-                    className={`${isExpired ? 'bg-gradient-to-br from-gray-500 to-gray-600' : 'bg-gradient-to-br from-brand-blue-dark to-brand-blue-light'} rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 text-white relative overflow-hidden slide-up w-full max-w-full min-w-0`}
-                    style={{ animationDelay: `${index * 0.2}s` }}
-                  >
-                    <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8 sm:-translate-y-12 sm:translate-x-12 md:-translate-y-16 md:translate-x-16"></div>
-                    <div className="absolute bottom-0 left-0 w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-white/10 rounded-full translate-y-6 -translate-x-6 sm:translate-y-8 sm:-translate-x-8 md:translate-y-12 md:-translate-x-12"></div>
-                    
-                    <div className="relative z-10">
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center space-x-2">
-                          <Ticket className="h-6 w-6" />
-                          <span className="font-semibold">{isExpired ? 'Expired Ticket' : 'Digital Ticket'}</span>
-                        </div>
-                        <div className="text-sm opacity-90">
-                          #{registration.qrCodeUrl?.slice(-8).toUpperCase() || 'TICKET'}
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
-                        <div className="text-lg sm:text-xl md:text-2xl font-bold break-words">{registration.eventName}</div>
-                        <div className="opacity-90 text-sm sm:text-base">{formatDate(registration.eventDate).date} • {formatDate(registration.eventDate).time}</div>
-                        <div className="opacity-90 text-sm sm:text-base break-words">{registration.eventLocation}</div>
-                      </div>
-                      
-                      <div className="pt-4 border-t border-white/20">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs sm:text-sm opacity-90">Attendee</div>
-                            <div className="font-semibold text-sm sm:text-base break-words">{registration.name}</div>
-                            <div className="text-xs sm:text-sm opacity-75 break-words">{registration.email}</div>
-                            <div className="text-xs sm:text-sm opacity-75 break-words">{registration.phone}</div>
-                            <div className="text-xs sm:text-sm opacity-75 break-words">{registration.work}</div>
+              <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+                {/* Upcoming tickets - full cards */}
+                <div className="flex-1 min-w-0">
+                  {(() => {
+                    const upcoming = userRegistrations.filter((r: any) => isUpcoming(r.eventDate));
+                    const expired = userRegistrations.filter((r: any) => !isUpcoming(r.eventDate));
+                    const fd = (d: string) => formatDate(d);
+                    return (
+                      <>
+                        {upcoming.length > 0 && (
+                          <div className="flex flex-wrap gap-4 sm:gap-6 justify-center lg:justify-start">
+                            {upcoming.map((registration: any, index: number) => (
+                              <div key={registration.eventId} className="slide-up" style={{ animationDelay: `${index * 0.15}s` }}>
+                                <EventTicketCard
+                                  eventName={registration.eventName}
+                                  eventDate={fd(registration.eventDate).date}
+                                  eventTime={fd(registration.eventDate).time}
+                                  eventLocation={registration.eventLocation || ''}
+                                  attendeeName={registration.name}
+                                  attendeeEmail={registration.email}
+                                  attendeePhone={registration.phone}
+                                  attendeeWork={registration.work}
+                                  ticketId={registration.qrCodeUrl?.slice(-8).toUpperCase() || 'TICKET'}
+                                  isExpired={false}
+                                />
+                              </div>
+                            ))}
                           </div>
-                          <div className="text-center sm:text-right flex-shrink-0">
-                            <div className="text-xs sm:text-sm opacity-90">QR Code</div>
-                            <div className="bg-white p-2 rounded-lg mt-1 inline-block">
-                              <QRCodeSVG
-                                id={`qr-code-${registration.eventId}`}
-                                value={`https://almalinks.com/connect?to=${user.uid}&event=${registration.eventId}`}
-                                size={60}
-                                bgColor="#ffffff"
-                                fgColor="#000000"
-                                level="M"
-                                includeMargin={false}
-                              />
+                        )}
+                        {upcoming.length === 0 && expired.length > 0 && (
+                          <p className="text-gray-600 text-sm">All your tickets are from past events. See expired folder on the side.</p>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+                {/* Expired tickets - peeking folder on the side */}
+                {userRegistrations.filter((r: any) => !isUpcoming(r.eventDate)).length > 0 && (
+                  <div className="w-full lg:w-[72px] flex-shrink-0 flex flex-row lg:flex-col items-center gap-2 lg:gap-0">
+                    <div className="flex items-center gap-2 text-gray-500 text-xs font-medium lg:mb-2">
+                      <FolderOpen className="h-4 w-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">Expired</span>
+                    </div>
+                    <div className="flex flex-wrap lg:flex-col justify-center lg:justify-start gap-2 lg:gap-0 lg:relative lg:min-h-[140px] lg:w-[100px] lg:overflow-visible">
+                      {userRegistrations
+                        .filter((r: any) => !isUpcoming(r.eventDate))
+                        .map((registration: any, index: number) => (
+                          <div
+                            key={registration.eventId}
+                            className="flex-shrink-0 rounded-xl overflow-hidden bg-[#1b233d] shadow-[rgba(100,100,111,0.2)_0px_7px_20px_0px] border border-[#1b233d] hover:z-10 hover:scale-105 transition-transform duration-300 w-[220px] lg:absolute"
+                            style={{ left: `${index * 14}px`, top: `${index * 18}px`, zIndex: index }}
+                            title={`${registration.eventName} · ${formatDate(registration.eventDate).date}`}
+                          >
+                            <div className="h-10 flex items-center px-2" style={{ background: 'linear-gradient(45deg, rgb(4, 159, 187) 0%, rgb(80, 246, 255) 100%)' }}>
+                              <span className="text-[#1b233d] text-xs font-semibold truncate block">{registration.eventName}</span>
                             </div>
-                            <button
-                              onClick={() => downloadQRCode(registration)}
-                              className="mt-2 text-xs text-white/80 hover:text-white active:text-white flex items-center justify-center space-x-1 min-h-[36px] sm:min-h-0 touch-manipulation mx-auto sm:mx-0"
-                            >
-                              <Download className="h-3 w-3" />
-                              <span>Download</span>
-                            </button>
+                            <div className="px-2 py-1 bg-[#1b233d] text-[rgba(170,222,243,0.721)] text-[9px] truncate">
+                              {formatDate(registration.eventDate).date}
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-6 text-center">
-                        <p className="text-sm opacity-90">
-                          {isExpired ? 'This ticket has expired' : 'Present this ticket at the event entrance'}
-                        </p>
-                      </div>
+                        ))}
                     </div>
                   </div>
-                  );
-                })}
+                )}
               </div>
             ) : (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100">

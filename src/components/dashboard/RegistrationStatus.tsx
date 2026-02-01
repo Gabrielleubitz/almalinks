@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Check, Calendar, MapPin, Clock, Ticket, User, Mail, Phone, Briefcase, Download, X, AlertTriangle, CalendarPlus } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+import { Check, Calendar, MapPin, Clock, User, Mail, Phone, Briefcase, X, AlertTriangle, CalendarPlus } from 'lucide-react';
 import { useRegistration } from '../../hooks/useRegistration';
 import { useAuth } from '../../hooks/useAuth';
 import { EventService } from '../../services/eventService';
-import { QRCodeService } from '../../services/qrCodeService';
+import EventTicketCard from './EventTicketCard';
 
 interface RegistrationConfirmationModalProps {
   isOpen: boolean;
@@ -77,38 +76,15 @@ const RegistrationStatus: React.FC = () => {
 
   if (!registration) return null;
 
-  // Generate event-specific QR code
-  const qrCodeValue = user?.uid && registration.eventId ? 
-    QRCodeService.generateRegistrationQRUrl(user.uid, registration.eventId) : 
-    `https://almalinks.com/connect?to=${user?.uid}`; // Fallback for legacy data
-
-  const downloadQRCode = () => {
-    const svg = document.getElementById('qr-code-svg-status');
-    if (!svg) return;
-
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-
-    canvas.width = 200;
-    canvas.height = 200;
-
-    img.onload = () => {
-      if (ctx) {
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, 200, 200);
-        ctx.drawImage(img, 0, 0, 200, 200);
-        
-        const link = document.createElement('a');
-        link.download = `alma-links-qr-${registration.name.replace(/\s+/g, '-').toLowerCase()}.png`;
-        link.href = canvas.toDataURL();
-        link.click();
-      }
+  const formatTicketDate = (dateString: string | undefined) => {
+    if (!dateString) return { date: 'June 28th, 2025', time: '18:30' };
+    const d = new Date(dateString);
+    return {
+      date: d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      time: d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
     };
-
-    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
   };
+  const ticketDate = formatTicketDate(registration.eventDate);
 
   const handleCancelTicket = async () => {
     if (!user?.uid || !registration.id) return;
@@ -239,13 +215,11 @@ const RegistrationStatus: React.FC = () => {
           </p>
         </div>
 
-        {/* Registration Details with QR Code */}
+        {/* Registration Details */}
         <div className="bg-gray-50 rounded-2xl p-6 mb-6">
           <h3 className="text-lg font-bold text-gray-900 mb-6 text-center">Your Registration Details</h3>
           
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Left Column - User Details */}
-            <div className="space-y-4">
+          <div className="max-w-md mx-auto space-y-4">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 rounded-full overflow-hidden">
                   {user?.profileImage ? (
@@ -305,33 +279,6 @@ const RegistrationStatus: React.FC = () => {
                   {registration.status === 'attended' ? 'Checked In' : 'Confirmed'}
                 </span>
               </div>
-            </div>
-
-            {/* Right Column - QR Code */}
-            <div className="flex flex-col items-center justify-center">
-              <div className="text-sm text-gray-500 mb-3">Your Connection QR Code</div>
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                <QRCodeSVG
-                  id="qr-code-svg-status"
-                  value={qrCodeValue}
-                  size={120}
-                  bgColor="#ffffff"
-                  fgColor="#000000"
-                  level="M"
-                  includeMargin={false}
-                />
-              </div>
-              <div className="text-xs text-gray-400 mt-2 text-center mb-3">
-                Scan to connect with other attendees
-              </div>
-              <button
-                onClick={downloadQRCode}
-                className="inline-flex items-center space-x-2 text-brand-blue hover:text-brand-blue-hover text-sm font-medium"
-              >
-                <Download className="h-4 w-4" />
-                <span>Download QR Code</span>
-              </button>
-            </div>
           </div>
         </div>
 
@@ -384,72 +331,31 @@ const RegistrationStatus: React.FC = () => {
         )}
       </div>
 
-      {/* Digital Ticket */}
-      <div className="bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-3xl p-8 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-12 -translate-x-12"></div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-2">
-              <Ticket className="h-6 w-6" />
-              <span className="font-semibold">Digital Ticket</span>
-            </div>
-            <div className="text-sm opacity-90">
-              #{(registration.id || 'TEMP').slice(-8).toUpperCase()}
-            </div>
+      {/* Digital Ticket - Uiverse-style card (no QR) */}
+      <div className="flex flex-col items-center">
+        <EventTicketCard
+          eventName={registration.eventName || 'Alma Links 4.0'}
+          eventDate={ticketDate.date}
+          eventTime={ticketDate.time}
+          eventLocation={registration.eventLocation || 'Deli Vino, Netanya'}
+          attendeeName={registration.name}
+          attendeeEmail={registration.email}
+          attendeePhone={registration.phone}
+          attendeeWork={registration.work}
+          ticketId={(registration.id || 'TEMP').slice(-8).toUpperCase()}
+          isExpired={!isUpcomingEvent()}
+        />
+        {isUpcomingEvent() && (
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => setShowCancelModal(true)}
+              className="bg-red-100 text-red-700 px-6 py-2 rounded-full hover:bg-red-200 transition-colors font-medium inline-flex items-center space-x-2"
+            >
+              <X className="h-4 w-4" />
+              <span>Cancel Ticket</span>
+            </button>
           </div>
-          
-          <div className="space-y-3 mb-6">
-            <div className="text-2xl font-bold">Alma Links 4.0</div>
-            <div className="opacity-90">June 28th, 2025 • 18:30</div>
-            <div className="opacity-90">Deli Vino, Netanya</div>
-          </div>
-          
-          <div className="pt-4 border-t border-white/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm opacity-90">Attendee</div>
-                <div className="font-semibold">{registration.name}</div>
-                <div className="text-sm opacity-75">{registration.email}</div>
-                <div className="text-sm opacity-75">{registration.phone}</div>
-                <div className="text-sm opacity-75">{registration.work}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm opacity-90">QR Code</div>
-                <div className="bg-white p-2 rounded-lg mt-1">
-                  <QRCodeSVG
-                    value={qrCodeValue}
-                    size={60}
-                    bgColor="#ffffff"
-                    fgColor="#000000"
-                    level="M"
-                    includeMargin={false}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-6 text-center">
-            <p className="text-sm opacity-90">
-              Present this ticket at the event entrance
-            </p>
-          </div>
-
-          {/* Cancel Ticket Button - Only show for upcoming events */}
-          {isUpcomingEvent() && (
-            <div className="mt-4 pt-4 border-t border-white/20 text-center">
-              <button
-                onClick={() => setShowCancelModal(true)}
-                className="bg-white/20 hover:bg-white/30 text-white px-6 py-2 rounded-full transition-all duration-300 font-medium inline-flex items-center space-x-2 border border-white/30"
-              >
-                <X className="h-4 w-4" />
-                <span>Cancel Ticket</span>
-              </button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Additional Information */}
