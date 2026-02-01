@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getIdToken } from 'firebase/auth';
 import { Calendar, MapPin, Image, FileText, Save, ArrowLeft, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { auth } from '../../firebase/config';
 import { EventService, generateSlug } from '../../services/eventService';
 import AdminHeader from '../../components/admin/AdminHeader';
 
@@ -85,21 +87,26 @@ const AddEvent: React.FC = () => {
       let announcementSent = false;
       let announcementError: string | null = null;
       try {
-        const idToken = await user.getIdToken();
-        const res = await fetch('/api/send-event-announcement', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${idToken}`,
-          },
-          body: JSON.stringify({ eventId }),
-          credentials: 'include',
-        });
-        const data = await res.json().catch(() => ({}));
-        announcementSent = res.ok && data.ok;
-        if (!announcementSent) {
-          announcementError = data.error || `HTTP ${res.status}`;
-          console.warn('[AddEvent] Announcement not sent:', announcementError);
+        const firebaseUser = auth.currentUser;
+        if (!firebaseUser) {
+          announcementError = 'Not authenticated (Firebase user not available)';
+        } else {
+          const idToken = await getIdToken(firebaseUser);
+          const res = await fetch('/api/send-event-announcement', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({ eventId }),
+            credentials: 'include',
+          });
+          const data = await res.json().catch(() => ({}));
+          announcementSent = res.ok && data.ok;
+          if (!announcementSent) {
+            announcementError = data.error || `HTTP ${res.status}`;
+            console.warn('[AddEvent] Announcement not sent:', announcementError);
+          }
         }
       } catch (announceErr: unknown) {
         announcementError = announceErr instanceof Error ? announceErr.message : String(announceErr);
