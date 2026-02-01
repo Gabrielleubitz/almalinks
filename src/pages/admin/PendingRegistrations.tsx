@@ -328,8 +328,8 @@ const PendingRegistrations: React.FC = () => {
       const { JoinRequestService } = await import('../../services/joinRequestService');
       await JoinRequestService.approveRequest(userId, user.uid);
 
-      // Send SMS notification
-      await sendApprovalSMS(userId);
+      // SMS notifications disabled (approval uses email only)
+      console.log('SMS notifications disabled');
 
       // Send email notification
       await sendApprovalEmail(userId);
@@ -405,40 +405,6 @@ const PendingRegistrations: React.FC = () => {
     }
   };
 
-
-  const sendApprovalSMS = async (userId: string) => {
-    try {
-      const userToApprove = pendingUsers.find(u => u.uid === userId);
-      if (!userToApprove || !userToApprove.phone) {
-        console.error('❌ User not found or no phone number');
-        return;
-      }
-      
-      // Send SMS via Netlify Function
-      const response = await fetch('/api/send-sms', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to: userToApprove.phone,
-          body: `You're officially approved, welcome to the Alma Links community!🍷💼\n\nYour account is ready — check out upcoming events!\nhttps://almalinks.com\n\nJoin our exclusive Telegram to never miss an event!\nhttps://t.me/almalinks\n\nCheers!\nThe Alma Links Team ✨`
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('❌ SMS sending failed:', errorData);
-        throw new Error('Failed to send approval notification');
-      }
-      
-      console.log('✅ Approval SMS sent successfully');
-    } catch (error) {
-      console.error('❌ Error sending approval SMS:', error);
-      // Don't throw error here, we still want to mark the user as approved
-      // even if SMS fails
-    }
-  };
 
   const sendApprovalEmail = async (userId: string) => {
     try {
@@ -778,10 +744,10 @@ const PendingRegistrations: React.FC = () => {
           <div className="mt-8 bg-gray-50 rounded-2xl p-6">
             <h3 className="font-semibold text-gray-900 mb-3">👥 Registration Approval Process:</h3>
             <ul className="text-sm text-gray-600 space-y-2">
-              <li>• <strong>Approve:</strong> Grants access to the platform and sends an SMS notification</li>
+              <li>• <strong>Approve:</strong> Grants access to the platform and sends an email notification</li>
               <li>• <strong>Reject:</strong> Marks the request as rejected. The user can log in again to submit a new request</li>
               <li>• <strong>LinkedIn:</strong> Review the user's LinkedIn profile before approving</li>
-              <li>• <strong>SMS Notification:</strong> Approved users receive an SMS notification automatically</li>
+              <li>• <strong>Email Notification:</strong> Approved users receive an email notification automatically</li>
             </ul>
           </div>
         </div>

@@ -281,10 +281,12 @@ export class JoinRequestService {
         })
           .then(async (response) => {
             const result = await response.json().catch(() => ({}));
-            if (response.ok && result.ok && !result.skipped) {
+            if (response.ok && result.ok && !result.skipped && result.welcomeEmailSent !== false) {
               console.log('[signup] Welcome email sent', result.campaignId);
             } else if (result.skipped) {
               console.log('[signup] Welcome email skipped (already sent)');
+            } else if (result.welcomeEmailSent === false) {
+              console.warn('[signup] Welcome email not sent (see server logs for Mailchimp details)');
             } else {
               console.warn('[signup] Welcome email not sent:', result.error || response.status);
             }

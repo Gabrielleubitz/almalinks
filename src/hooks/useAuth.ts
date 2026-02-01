@@ -236,27 +236,8 @@ export const useAuth = () => {
           console.error('❌ Failed to send signup confirmation email:', emailError);
         }
         
-        // Send admin notifications for pending approval (both SMS and email)
-        try {
-          // Send SMS notification (optional - fails gracefully if endpoint doesn't exist)
-          const smsResponse = await fetch('/api/send-sms', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: '+972584477757',
-              body: `🔔 New user pending approval: ${joinRequestData.name} (${joinRequestData.email}). Please review in admin panel.`
-            })
-          });
-
-          if (smsResponse.ok) {
-            console.log('✅ Admin SMS notification sent for pending user');
-          } else {
-            console.log('⚠️ SMS notification endpoint not available (this is optional)');
-          }
-        } catch (smsError) {
-          // SMS is optional, don't block registration if it fails
-          console.log('⚠️ SMS notification not sent (endpoint not available)');
-        }
+        // SMS notifications disabled (signup flow uses email only)
+        console.log('SMS notifications disabled');
 
         // Send email notification to admin
         try {
