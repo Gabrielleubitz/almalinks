@@ -3,7 +3,8 @@ import {
   subscribeToNotifications,
   markAllNotificationsRead,
   deleteAllNotifications,
-  markNotificationRead
+  markNotificationRead,
+  deleteNotification
 } from '../services/notificationService';
 import type { AppNotification } from '../types/notification';
 
@@ -62,6 +63,14 @@ export function useNotificationItems(userId: string | undefined) {
     }
   };
 
+  const deleteOne = async (id: string) => {
+    try {
+      await deleteNotification(id);
+    } catch (e) {
+      console.error('Failed to delete notification', e);
+    }
+  };
+
   return {
     notifications,
     unread,
@@ -69,6 +78,7 @@ export function useNotificationItems(userId: string | undefined) {
     loading,
     markAllRead,
     deleteAll,
-    markOneRead
+    markOneRead,
+    deleteOne
   };
 }

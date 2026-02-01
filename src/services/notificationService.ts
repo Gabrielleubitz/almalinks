@@ -3,6 +3,7 @@ import {
   doc,
   addDoc,
   updateDoc,
+  deleteDoc,
   getDocs,
   query,
   where,
@@ -173,6 +174,13 @@ export async function markAllNotificationsRead(userId: string): Promise<void> {
     batch.update(doc(db, COLLECTION, d.id), { read: true });
   });
   await batch.commit();
+}
+
+/**
+ * Delete a single notification by id.
+ */
+export async function deleteNotification(notificationId: string): Promise<void> {
+  await deleteDoc(doc(db, COLLECTION, notificationId));
 }
 
 /**

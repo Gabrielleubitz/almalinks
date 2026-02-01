@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Bell, UserPlus, MessageCircle, Calendar, Trash2, CheckCheck } from 'lucide-react';
+import { Bell, UserPlus, MessageCircle, Calendar, Trash2, CheckCheck, Check, X } from 'lucide-react';
 import { useNotificationItems } from '../hooks/useNotificationItems';
+import { ConnectionRequestService } from '../services/connectionRequestService';
 import type { AppNotification } from '../types/notification';
 
 function formatNotificationTime(createdAt: unknown): string {
@@ -47,10 +48,11 @@ interface NotificationBellProps {
 const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
   const navigate = useNavigate();
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const { notifications, unread, unreadCount, loading, markAllRead, deleteAll, markOneRead } =
+  const { notifications, unread, unreadCount, loading, markAllRead, deleteAll, markOneRead, deleteOne } =
     useNotificationItems(userId);
   const [open, setOpen] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
+  const [respondingId, setRespondingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || !buttonRef.current) return;
@@ -76,6 +78,20 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
     if (!n.read) markOneRead(n.id);
     if (n.link) navigate(n.link);
     setOpen(false);
+  };
+
+  const handleRespondToRequest = async (n: AppNotification, response: 'accepted' | 'rejected') => {
+    const requestId = n.metadata?.requestId;
+    if (!requestId || !userId) return;
+    setRespondingId(n.id);
+    try {
+      await ConnectionRequestService.respondToRequest(requestId, response, userId);
+      await deleteOne(n.id);
+    } catch (e) {
+      console.error('Failed to respond to connection request', e);
+    } finally {
+      setRespondingId(null);
+    }
   };
 
   if (!userId) return null;
@@ -130,11 +146,13 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
                       Unread
                     </div>
                     {unread.map((n) => (
-                      <button
+                      <div
                         key={n.id}
-                        type="button"
+                        role="button"
+                        tabIndex={0}
                         onClick={() => handleNotificationClick(n)}
-                        className="w-full text-left px-4 py-3 flex gap-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors"
+                        onKeyDown={(e) => e.key === 'Enter' && handleNotificationClick(n)}
+                        className="w-full text-left px-4 py-3 flex gap-3 items-center hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors cursor-pointer"
                       >
                         <NotificationIcon type={n.type} />
                         <div className="flex-1 min-w-0">
@@ -146,7 +164,29 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
                             {formatNotificationTime(n.createdAt)}
                           </p>
                         </div>
-                      </button>
+                        {n.type === 'connection_request' && n.metadata?.requestId && (
+                          <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              disabled={respondingId === n.id}
+                              onClick={() => handleRespondToRequest(n, 'accepted')}
+                              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-[#0B2B6B] hover:bg-[#0a2456] rounded transition-colors disabled:opacity-50 min-h-[32px]"
+                              title="Accept"
+                            >
+                              {respondingId === n.id ? '…' : <><Check className="h-3.5 w-3.5" /> Accept</>}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={respondingId === n.id}
+                              onClick={() => handleRespondToRequest(n, 'rejected')}
+                              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50 min-h-[32px]"
+                              title="Reject"
+                            >
+                              {respondingId === n.id ? null : <><X className="h-3.5 w-3.5" /> Reject</>}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 )}
@@ -155,11 +195,13 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
                     All
                   </div>
                   {notifications.map((n) => (
-                    <button
+                    <div
                       key={n.id}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => handleNotificationClick(n)}
-                      className={`w-full text-left px-4 py-3 flex gap-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors ${!n.read ? 'bg-blue-50/50' : ''}`}
+                      onKeyDown={(e) => e.key === 'Enter' && handleNotificationClick(n)}
+                      className={`w-full text-left px-4 py-3 flex gap-3 items-center hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors cursor-pointer ${!n.read ? 'bg-blue-50/50' : ''}`}
                     >
                       <NotificationIcon type={n.type} />
                       <div className="flex-1 min-w-0">
@@ -171,7 +213,29 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
                           {formatNotificationTime(n.createdAt)}
                         </p>
                       </div>
-                    </button>
+                      {n.type === 'connection_request' && n.metadata?.requestId && (
+                        <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            disabled={respondingId === n.id}
+                            onClick={() => handleRespondToRequest(n, 'accepted')}
+                            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-[#0B2B6B] hover:bg-[#0a2456] rounded transition-colors disabled:opacity-50 min-h-[32px]"
+                            title="Accept"
+                          >
+                            {respondingId === n.id ? '…' : <><Check className="h-3.5 w-3.5" /> Accept</>}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={respondingId === n.id}
+                            onClick={() => handleRespondToRequest(n, 'rejected')}
+                            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50 min-h-[32px]"
+                            title="Reject"
+                          >
+                            {respondingId === n.id ? null : <><X className="h-3.5 w-3.5" /> Reject</>}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </>
