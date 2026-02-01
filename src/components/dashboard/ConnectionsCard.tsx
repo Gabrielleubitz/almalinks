@@ -20,6 +20,18 @@ interface EnrichedConnection extends LegacyConnection {
   allEventIds?: string[]; // For tracking multiple events in "All Events" view
 }
 
+/** Get milliseconds from any timestamp shape (Firestore Timestamp, Date, ISO string, or number). */
+function timestampToMs(t: unknown): number {
+  if (t == null) return 0;
+  const v = t as { toMillis?: () => number; toDate?: () => Date };
+  if (typeof v.toMillis === 'function') return v.toMillis();
+  if (typeof v.toDate === 'function') return v.toDate().getTime();
+  if (t instanceof Date) return t.getTime();
+  if (typeof t === 'number') return t;
+  if (typeof t === 'string') return new Date(t).getTime();
+  return 0;
+}
+
 const ConnectionsCard: React.FC = () => {
   const { user } = useAuth();
   const [connections, setConnections] = useState<EnrichedConnection[]>([]);
@@ -169,7 +181,7 @@ const ConnectionsCard: React.FC = () => {
         const seenUsers = new Map<string, string[]>(); // userId -> eventIds[]
         
         // Sort by timestamp descending (most recent first)
-        userConnections.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+        userConnections.sort((a, b) => timestampToMs(b.timestamp) - timestampToMs(a.timestamp));
         
         for (const connection of userConnections) {
           // Get the partner user ID
