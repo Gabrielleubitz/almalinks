@@ -18,6 +18,7 @@ import resolveEmailRecipientsHandler from '../lib/server/api/resolve-email-recip
 import mailchimpSyncContactHandler from '../lib/server/api/mailchimp-sync-contact.js';
 import mailchimpImportUsersHandler from '../lib/server/api/mailchimp-import-users.js';
 import sendEventAnnouncementHandler from '../lib/server/api/send-event-announcement.js';
+import welcomeEmailHandler from '../lib/server/api/welcome-email.js';
 
 // Legacy connection/request endpoints (kept for compatibility with current frontend paths)
 import connectionsAdminCreateHandler from '../lib/server/api/legacy/api/connections/admin-create.js';
@@ -49,6 +50,7 @@ const routeTable = new Map([
   ['/api/mailchimp-sync-contact', mailchimpSyncContactHandler],
   ['/api/mailchimp-import-users', mailchimpImportUsersHandler],
   ['/api/send-event-announcement', sendEventAnnouncementHandler],
+  ['/api/welcome-email', welcomeEmailHandler],
 
   // Connections workflow (current frontend paths)
   ['/api/connections/admin-create', connectionsAdminCreateHandler],
