@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Bell, UserPlus, MessageCircle, Calendar, Trash2, CheckCheck } from 'lucide-react';
 import { useNotificationItems } from '../hooks/useNotificationItems';
@@ -45,9 +46,20 @@ interface NotificationBellProps {
 
 const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
   const navigate = useNavigate();
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const { notifications, unread, unreadCount, loading, markAllRead, deleteAll, markOneRead } =
     useNotificationItems(userId);
   const [open, setOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
+
+  useEffect(() => {
+    if (!open || !buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    setDropdownPosition({
+      top: rect.bottom + 4,
+      right: window.innerWidth - rect.right
+    });
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,24 +80,15 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
 
   if (!userId) return null;
 
-  return (
-    <div className="relative notification-bell-container">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation"
-        aria-label="Notifications"
-      >
-        <Bell className="h-5 w-5" />
-        {unreadCount > 0 && (
-          <span className="absolute top-0.5 right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full">
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
-      </button>
-
-      {open && (
-        <div className="absolute right-0 top-full mt-1 w-[360px] max-w-[calc(100vw-2rem)] bg-white border border-gray-200 rounded-lg shadow-lg z-[60] overflow-hidden flex flex-col max-h-[80vh]">
+  const dropdownEl = open && (
+    <div
+      className="fixed w-[360px] max-w-[calc(100vw-2rem)] bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[80vh]"
+      style={{
+        top: dropdownPosition.top,
+        right: dropdownPosition.right,
+        zIndex: 99999
+      }}
+    >
           <div className="px-4 py-3 border-b border-gray-200 flex-shrink-0 flex items-center justify-between">
             <span className="text-sm font-semibold text-gray-900">Notifications</span>
             <div className="flex items-center gap-1">
@@ -175,7 +178,25 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
             )}
           </div>
         </div>
-      )}
+  );
+
+  return (
+    <div className="relative notification-bell-container">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation"
+        aria-label="Notifications"
+      >
+        <Bell className="h-5 w-5" />
+        {unreadCount > 0 && (
+          <span className="absolute top-0.5 right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
+      </button>
+      {typeof document !== 'undefined' && dropdownEl && createPortal(dropdownEl, document.body)}
     </div>
   );
 };
