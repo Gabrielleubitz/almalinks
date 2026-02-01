@@ -43,20 +43,17 @@ export class ConnectionRequestService {
     } = {}
   ): Promise<string> {
     try {
-      // Get authentication token
       const currentUser = auth.currentUser;
       if (!currentUser) {
         throw new Error('User must be authenticated to send connection requests');
       }
 
-      // Try API first (production or when vercel dev is running)
       const useApi = !import.meta.env.DEV || import.meta.env.VITE_USE_API === 'true';
-      
+      let requestId: string;
+
       if (useApi) {
         try {
           const idToken = await currentUser.getIdToken();
-
-          // Call backend API to create connection request
           const response = await fetch('/api/connection-request/create', {
             method: 'POST',
             headers: {
@@ -69,28 +66,38 @@ export class ConnectionRequestService {
               message: options.message
             })
           });
-
           const data = await response.json();
-
           if (response.ok && data.ok) {
             console.log('✅ Connection request sent via API:', data.requestId);
-            return data.requestId;
+            requestId = data.requestId;
           } else {
             throw new Error(data.error || `HTTP ${response.status}: Failed to create connection request`);
           }
         } catch (apiError: any) {
-          // If API fails in dev, fall back to Firestore
           if (import.meta.env.DEV) {
             console.warn('[ConnectionRequestService] API call failed, using Firestore fallback:', apiError.message);
-            return await this.sendConnectionRequestFirestore(fromUid, toUid, options);
+            requestId = await this.sendConnectionRequestFirestore(fromUid, toUid, options);
+          } else {
+            throw apiError;
           }
-          throw apiError;
         }
       } else {
-        // Direct Firestore in dev mode
-        return await this.sendConnectionRequestFirestore(fromUid, toUid, options);
+        requestId = await this.sendConnectionRequestFirestore(fromUid, toUid, options);
       }
 
+      // Create in-app notification for target user (request to connect from xxx)
+      try {
+        const requesterSnap = await getDoc(doc(db, 'users', fromUid));
+        const fromName = requesterSnap.exists()
+          ? (requesterSnap.data()?.displayName || requesterSnap.data()?.name || 'Someone')
+          : 'Someone';
+        const { createConnectionRequestNotification } = await import('./notificationService');
+        await createConnectionRequestNotification(toUid, fromName, requestId);
+      } catch (e) {
+        console.warn('Failed to create connection request notification', e);
+      }
+
+      return requestId;
     } catch (error: any) {
       console.error('❌ Error sending connection request:', error);
       throw error;

@@ -83,6 +83,10 @@ const AddEvent: React.FC = () => {
     try {
       const eventId = await EventService.createEvent(formData, user.uid);
 
+      // In-app notifications for approved users (new event created - click to view)
+      const { notifyAllUsersOfNewEvent } = await import('../../services/notificationService');
+      notifyAllUsersOfNewEvent(eventId, formData.name);
+
       // Send Mailchimp Marketing campaign to entire audience (server-side, non-blocking for UX)
       let announcementSent = false;
       let announcementError: string | null = null;

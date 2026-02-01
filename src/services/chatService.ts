@@ -398,6 +398,30 @@ export class ChatService {
       // Update rate limit
       await this.updateMessageRateLimit(userId);
 
+      // Create in-app notifications for other chat members (new message in xxx)
+      try {
+        const chatSnap = await getDoc(doc(db, 'chats', form.chatId));
+        const chatName = chatSnap.exists() ? (chatSnap.data()?.name || 'Chat') : 'Chat';
+        const membersSnap = await getDocs(
+          query(collection(db, 'chat_members'), where('chatId', '==', form.chatId))
+        );
+        const senderSnap = await getDoc(doc(db, 'users', userId));
+        const senderName = senderSnap.exists()
+          ? (senderSnap.data()?.displayName || senderSnap.data()?.name || 'Someone')
+          : 'Someone';
+        const { createChatMessageNotification } = await import('./notificationService');
+        for (const memberDoc of membersSnap.docs) {
+          const memberUserId = memberDoc.data()?.userId;
+          if (memberUserId && memberUserId !== userId) {
+            createChatMessageNotification(memberUserId, form.chatId, chatName, senderName).catch((e) =>
+              console.warn('Failed to create chat notification for', memberUserId, e)
+            );
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to create chat message notifications', e);
+      }
+
       return {
         id: messageRef.id,
         ...messageData

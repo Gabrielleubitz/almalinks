@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Briefcase, Plus, Linkedin, User, Filter, Grid, List, ExternalLink, Map, Check, X, Clock } from 'lucide-react';
+import { Search, MapPin, Briefcase, Plus, Linkedin, User, Grid, List, ExternalLink, Map, Check, X, Clock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { UserService } from '../services/userService';
 import { ConnectionService } from '../services/connectionService';
@@ -37,20 +37,34 @@ const MembersPage: React.FC = () => {
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [respondingToRequest, setRespondingToRequest] = useState<string | null>(null);
 
+  // Load sent requests first so we can pass pending targets into loadMembers
   useEffect(() => {
-    loadMembers();
-    if (currentUser?.uid) {
-      loadIncomingRequests();
-      loadSentRequests();
-      
-      // DEV: Debug recent requests
-      if (import.meta.env.DEV) {
-        ConnectionRequestService.getRecentRequests(20).catch(err => {
-          console.warn('[debug] Could not load recent requests:', err);
-        });
-      }
+    if (!currentUser?.uid) return;
+    loadIncomingRequests();
+    loadSentRequests();
+    if (import.meta.env.DEV) {
+      ConnectionRequestService.getRecentRequests(20).catch(err => {
+        console.warn('[debug] Could not load recent requests:', err);
+      });
     }
-  }, [currentUser]);
+  }, [currentUser?.uid]);
+
+  // Load members when currentUser is set; sentRequestIds will sync into members when it loads
+  useEffect(() => {
+    if (currentUser?.uid) {
+      loadMembers();
+    }
+  }, [currentUser?.uid]);
+
+  // When sent requests or members change, ensure connectionPending is true for users we've sent requests to (never show Connected until they approve)
+  useEffect(() => {
+    if (sentRequestIds.size === 0) return;
+    setMembers(prev => prev.map(m =>
+      sentRequestIds.has(m.uid) && !m.isConnected
+        ? { ...m, connectionPending: true }
+        : m
+    ));
+  }, [sentRequestIds, members.length]);
 
   useEffect(() => {
     // Always filter members when search query or members list changes
