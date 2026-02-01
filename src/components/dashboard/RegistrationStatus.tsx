@@ -331,8 +331,8 @@ const RegistrationStatus: React.FC = () => {
         )}
       </div>
 
-      {/* Digital Ticket - Uiverse-style card (no QR) */}
-      <div className="flex flex-col items-center">
+      {/* Digital Ticket - site-style card */}
+      <div className="flex flex-col items-center" aria-label="Your ticket">
         <EventTicketCard
           eventName={registration.eventName || 'Alma Links 4.0'}
           eventDate={ticketDate.date}

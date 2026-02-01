@@ -485,9 +485,9 @@ const EventDetailPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Digital Ticket - Uiverse-style card (no QR) */}
+      {/* Digital Ticket - site-style card */}
       {showTicket && isRegistered && registration && event && (
-        <section className="py-16 bg-gray-50">
+        <section className="py-16 bg-gray-50" aria-label="Your ticket">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
             <EventTicketCard
               eventName={event.name}
@@ -505,7 +505,7 @@ const EventDetailPage: React.FC = () => {
               href={createGoogleCalendarUrl()}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 text-brand-blue-dark hover:text-brand-blue-light font-medium"
+              className="mt-4 inline-flex items-center gap-2 text-brand-blue-dark hover:text-brand-blue-light font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2"
             >
               <CalendarPlus className="h-5 w-5" />
               <span>Add to Google Calendar</span>

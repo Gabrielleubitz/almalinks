@@ -1691,7 +1691,7 @@ const EventsPage: React.FC = () => {
                           </div>
                         )}
                         {upcoming.length === 0 && expired.length > 0 && (
-                          <p className="text-gray-600 text-sm">All your tickets are from past events. See expired folder on the side.</p>
+                          <p className="text-gray-600 text-sm">All your tickets are from past events. See the Expired section for details.</p>
                         )}
                       </>
                     );
@@ -1701,8 +1701,8 @@ const EventsPage: React.FC = () => {
                 {userRegistrations.filter((r: any) => !isUpcoming(r.eventDate)).length > 0 && (
                   <div className="w-full lg:w-[72px] flex-shrink-0 flex flex-row lg:flex-col items-center gap-2 lg:gap-0">
                     <div className="flex items-center gap-2 text-gray-500 text-xs font-medium lg:mb-2">
-                      <FolderOpen className="h-4 w-4 flex-shrink-0" />
-                      <span className="hidden sm:inline">Expired</span>
+                      <FolderOpen className="h-4 w-4 flex-shrink-0" aria-hidden />
+                      <span>Expired</span>
                     </div>
                     <div className="flex flex-wrap lg:flex-col justify-center lg:justify-start gap-2 lg:gap-0 lg:relative lg:min-h-[140px] lg:w-[100px] lg:overflow-visible">
                       {userRegistrations
@@ -1710,14 +1710,14 @@ const EventsPage: React.FC = () => {
                         .map((registration: any, index: number) => (
                           <div
                             key={registration.eventId}
-                            className="flex-shrink-0 rounded-xl overflow-hidden bg-[#1b233d] shadow-[rgba(100,100,111,0.2)_0px_7px_20px_0px] border border-[#1b233d] hover:z-10 hover:scale-105 transition-transform duration-300 w-[220px] lg:absolute"
+                            className="flex-shrink-0 rounded-xl overflow-hidden bg-white shadow-sm border border-gray-100 hover:z-10 hover:shadow-md transition-all duration-300 w-[220px] lg:absolute"
                             style={{ left: `${index * 14}px`, top: `${index * 18}px`, zIndex: index }}
                             title={`${registration.eventName} · ${formatDate(registration.eventDate).date}`}
                           >
-                            <div className="h-10 flex items-center px-2" style={{ background: 'linear-gradient(45deg, rgb(4, 159, 187) 0%, rgb(80, 246, 255) 100%)' }}>
-                              <span className="text-[#1b233d] text-xs font-semibold truncate block">{registration.eventName}</span>
+                            <div className="h-10 flex items-center px-3 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light">
+                              <span className="text-white text-xs font-semibold truncate block">{registration.eventName}</span>
                             </div>
-                            <div className="px-2 py-1 bg-[#1b233d] text-[rgba(170,222,243,0.721)] text-[9px] truncate">
+                            <div className="px-2 py-1.5 bg-white text-gray-600 text-xs truncate border-t border-gray-100">
                               {formatDate(registration.eventDate).date}
                             </div>
                           </div>
