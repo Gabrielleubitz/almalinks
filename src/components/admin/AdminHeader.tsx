@@ -158,7 +158,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title, subtitle }) => {
                 <ChevronDown className={`h-4 w-4 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} />
               </button>
               {adminMenuOpen && (
-                <div className="absolute left-0 top-full mt-1 w-56 rounded-xl bg-white shadow-lg border border-gray-200 py-2 z-50 max-h-[calc(100vh-5rem)] overflow-y-auto">
+                <div className="absolute left-0 top-full mt-1 w-56 rounded-xl bg-white shadow-lg border border-gray-200 py-2 z-[9999] max-h-[calc(100vh-5rem)] overflow-y-auto">
                   {adminNavGroups.map((group) => (
                     <div key={group.label} className="py-1">
                       <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">
