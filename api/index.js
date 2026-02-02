@@ -24,6 +24,7 @@ import syncHubspotContactsHandler from '../lib/server/api/sync-hubspot-contacts.
 import removeHubspotUsersHandler from '../lib/server/api/remove-hubspot-users.js';
 import uploadProfileImageHandler from '../lib/server/api/upload-profile-image.js';
 import deleteProfileImageHandler from '../lib/server/api/delete-profile-image.js';
+import uploadImageHandler from '../lib/server/api/upload-image.js';
 
 // Legacy connection/request endpoints (kept for compatibility with current frontend paths)
 import connectionsAdminCreateHandler from '../lib/server/api/legacy/api/connections/admin-create.js';
@@ -61,6 +62,7 @@ const routeTable = new Map([
   ['/api/remove-hubspot-users', removeHubspotUsersHandler],
   ['/api/upload-profile-image', uploadProfileImageHandler],
   ['/api/delete-profile-image', deleteProfileImageHandler],
+  ['/api/upload-image', uploadImageHandler],
 
   // Connections workflow (current frontend paths)
   ['/api/connections/admin-create', connectionsAdminCreateHandler],

@@ -8,6 +8,7 @@ import InThePress from './components/InThePress';
 import UpcomingEvent from './components/UpcomingEvent';
 import FAQ from './components/FAQ';
 import Footer from './components/Footer';
+import PoweredByIgani from './components/PoweredByIgani';
 import DashboardPage from './pages/DashboardPage';
 import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
@@ -67,7 +68,9 @@ function App() {
   return (
     <Router>
       <ActivityTracker />
-      <Routes>
+      <div className="min-h-screen flex flex-col">
+        <div className="flex-1 flex flex-col">
+          <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/theme-preview" element={<ThemePreview />} />
         
@@ -301,7 +304,10 @@ function App() {
         
         {/* Catch-all route for 404s */}
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          </Routes>
+        </div>
+        <PoweredByIgani />
+      </div>
       
       {/* Network Status Indicator */}
       <NetworkStatusIndicator position="bottom-right" />

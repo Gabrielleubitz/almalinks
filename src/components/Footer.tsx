@@ -1,7 +1,6 @@
 import React from 'react';
 import { Linkedin } from 'lucide-react';
 import logoSvg from '../assets/alma-links-logo.svg';
-import IganiWatermark from './IganiWatermark';
 
 const Footer = () => {
 
@@ -28,7 +27,7 @@ const Footer = () => {
               href="https://www.linkedin.com/company/almalinks/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white transition-colors duration-200"
+              className="text-gray-400 hover:text-white transition-colors duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center sm:min-h-0 sm:min-w-0"
               aria-label="LinkedIn"
             >
               <Linkedin className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -37,7 +36,6 @@ const Footer = () => {
           
           <div className="mt-12 pt-8 border-t border-gray-800 text-gray-500 text-sm space-y-4">
             <p>&copy; 2025 AlmaLinks. All rights reserved.</p>
-            <IganiWatermark position="footer" size="md" opacity={0.5} />
           </div>
         </div>
       </div>

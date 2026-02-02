@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getIdToken } from 'firebase/auth';
-import { Calendar, MapPin, Image, FileText, Save, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Calendar, MapPin, Image, FileText, Save, ArrowLeft, AlertCircle, ImagePlus } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../firebase/config';
 import { EventService, generateSlug } from '../../services/eventService';
+import { uploadImageToLibrary } from '../../services/imageUploadService';
 import AdminHeader from '../../components/admin/AdminHeader';
 
 const AddEvent: React.FC = () => {
@@ -25,6 +26,8 @@ const AddEvent: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [announcementFailedReason, setAnnouncementFailedReason] = useState<string | null>(null);
   const [previewSlug, setPreviewSlug] = useState('');
+  const [imageUploading, setImageUploading] = useState(false);
+  const imageInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -58,7 +61,7 @@ const AddEvent: React.FC = () => {
       return false;
     }
     if (!formData.imageUrl.trim()) {
-      setError('Event image URL is required');
+      setError('Event image is required (paste a URL or upload a photo)');
       return false;
     }
     return true;
@@ -293,24 +296,68 @@ const AddEvent: React.FC = () => {
               </div>
             </div>
 
-            {/* Event Image URL */}
+            {/* Event Image: URL or upload */}
             <div>
               <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-2">
-                Event Image URL *
+                Event Image *
               </label>
-              <div className="relative">
-                <Image className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  id="imageUrl"
-                  name="imageUrl"
-                  type="url"
-                  required
-                  value={formData.imageUrl}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-                  placeholder="https://example.com/event-image.jpg"
-                />
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setImageUploading(true);
+                  setError(null);
+                  try {
+                    const url = await uploadImageToLibrary('events', file);
+                    setFormData(prev => ({ ...prev, imageUrl: url }));
+                  } catch (err: any) {
+                    setError(err.message || 'Image upload failed');
+                  } finally {
+                    setImageUploading(false);
+                    e.target.value = '';
+                    if (imageInputRef.current) imageInputRef.current.value = '';
+                  }
+                }}
+              />
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Image className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    id="imageUrl"
+                    name="imageUrl"
+                    type="url"
+                    value={formData.imageUrl}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                    placeholder="https://example.com/event-image.jpg or upload below"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={loading || imageUploading}
+                  className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 font-medium"
+                >
+                  {imageUploading ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                      Uploading…
+                    </>
+                  ) : (
+                    <>
+                      <ImagePlus className="h-5 w-5" />
+                      Upload photo
+                    </>
+                  )}
+                </button>
               </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Paste a URL or upload an image to the image library (Cloudinary)
+              </p>
               {formData.imageUrl && (
                 <div className="mt-3">
                   <img

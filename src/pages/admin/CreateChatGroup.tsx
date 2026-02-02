@@ -10,11 +10,13 @@ import {
   Search,
   Shield,
   Save,
-  AlertCircle
+  AlertCircle,
+  ImagePlus
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { ChatService } from '../../services/chatService';
 import { UserService } from '../../services/userService';
+import { uploadImageToLibrary } from '../../services/imageUploadService';
 import { CreateChatGroupForm } from '../../types/chat';
 import { UserCard } from '../../types/user';
 import AdminHeader from '../../components/admin/AdminHeader';
@@ -42,6 +44,8 @@ const CreateChatGroup: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const imageInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Wait for auth to finish loading before checking admin status
@@ -393,23 +397,65 @@ const CreateChatGroup: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Group Image URL */}
+                {/* Group Image: URL or upload */}
                 <div>
                   <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-2">
-                    Group Image URL
+                    Group Image
                   </label>
                   <input
-                    id="imageUrl"
-                    name="imageUrl"
-                    type="url"
-                    value={formData.imageUrl}
-                    onChange={handleInputChange}
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-h-[44px] sm:min-h-0"
-                    placeholder="https://example.com/group-image.jpg"
-                    disabled={loading}
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setImageUploading(true);
+                      setError(null);
+                      try {
+                        const url = await uploadImageToLibrary('chat-groups', file);
+                        setFormData(prev => ({ ...prev, imageUrl: url }));
+                      } catch (err: any) {
+                        setError(err.message || 'Image upload failed');
+                      } finally {
+                        setImageUploading(false);
+                        e.target.value = '';
+                        if (imageInputRef.current) imageInputRef.current.value = '';
+                      }
+                    }}
                   />
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <input
+                      id="imageUrl"
+                      name="imageUrl"
+                      type="url"
+                      value={formData.imageUrl}
+                      onChange={handleInputChange}
+                      className="flex-1 min-w-[200px] px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base min-h-[44px] sm:min-h-0"
+                      placeholder="https://example.com/group-image.jpg or upload below"
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => imageInputRef.current?.click()}
+                      disabled={loading || imageUploading}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm font-medium"
+                    >
+                      {imageUploading ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          Uploading…
+                        </>
+                      ) : (
+                        <>
+                          <ImagePlus className="h-5 w-5" />
+                          Upload photo
+                        </>
+                      )}
+                    </button>
+                  </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Optional: URL to an image that will serve as the group icon
+                    Optional: paste a URL or upload an image to the image library (Cloudinary)
                   </p>
                   {formData.imageUrl && (
                     <div className="mt-2">

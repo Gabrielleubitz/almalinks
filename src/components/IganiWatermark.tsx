@@ -12,13 +12,13 @@ const IganiWatermark: React.FC<IganiWatermarkProps> = ({
   opacity = 0.4
 }) => {
   const sizeClasses = {
-    sm: 'h-7 w-auto',     // Small: 28px height (scales to ~70px width)
-    md: 'h-9 w-auto',     // Medium: 36px height (scales to ~90px width)
-    lg: 'h-12 w-auto'     // Large: 48px height (scales to ~120px width)
+    sm: 'h-6 sm:h-7 w-auto',
+    md: 'h-7 sm:h-9 w-auto',
+    lg: 'h-9 sm:h-12 w-auto'
   };
 
   const positionClasses = {
-    'footer': 'flex items-center justify-center space-x-2',
+    'footer': 'flex items-center justify-center gap-1.5 sm:gap-2',
     'bottom-right': 'fixed bottom-4 right-4 z-10',
     'bottom-center': 'flex items-center justify-center'
   };
@@ -28,17 +28,17 @@ const IganiWatermark: React.FC<IganiWatermarkProps> = ({
       href="https://www.igani.co/"
       target="_blank"
       rel="noopener noreferrer"
-      className={`${positionClasses[position]} hover:opacity-100 transition-opacity duration-200 group`}
+      className={`${positionClasses[position]} min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 items-center hover:opacity-100 transition-opacity duration-200 group`}
       style={{ opacity }}
       title="Built by Igani"
     >
-      <span className="text-xs text-gray-500 font-medium group-hover:text-gray-700 transition-colors">
+      <span className="text-xs sm:text-sm text-gray-500 font-medium group-hover:text-gray-700 transition-colors">
         Powered by
       </span>
       <img
         src="/igani-logo.png"
         alt="Igani"
-        className={`${sizeClasses[size]} transition-transform group-hover:scale-105`}
+        className={`${sizeClasses[size]} transition-transform group-hover:scale-105 object-contain`}
         onError={(e) => {
           // Fallback to SVG if PNG doesn't exist
           const target = e.target as HTMLImageElement;
