@@ -154,7 +154,7 @@ const CoverPhotoCropModal: React.FC<CoverPhotoCropModalProps> = ({
     >
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Position your cover</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
           <button
             type="button"
             onClick={onCancel}
@@ -166,7 +166,7 @@ const CoverPhotoCropModal: React.FC<CoverPhotoCropModalProps> = ({
         </div>
 
         <p className="px-4 pt-2 text-sm text-gray-600">
-          Drag to move and use the buttons or pinch to zoom. The frame shows what will be visible.
+          Drag to move and use the buttons or pinch to zoom. The area inside the frame is what will be displayed.
         </p>
 
         <div
@@ -203,6 +203,23 @@ const CoverPhotoCropModal: React.FC<CoverPhotoCropModalProps> = ({
               />
             </div>
           </div>
+          {/* Overlay: show what will be displayed (circle for 1:1, frame border for others) */}
+          {aspectRatio === '1/1' ? (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: 'radial-gradient(circle closest-side at center, transparent 0%, transparent 100%, rgba(0,0,0,0.65) 100%)',
+                borderRadius: 'inherit',
+              }}
+              aria-hidden
+            />
+          ) : null}
+          {aspectRatio !== '1/1' ? (
+            <div
+              className="absolute inset-0 pointer-events-none rounded-xl ring-2 ring-white ring-inset"
+              aria-hidden
+            />
+          ) : null}
         </div>
 
         <div className="p-4 border-t border-gray-200 space-y-4">
