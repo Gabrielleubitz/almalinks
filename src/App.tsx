@@ -30,6 +30,7 @@ import UserManagement from './pages/admin/UserManagement';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import PendingRegistrations from './pages/admin/PendingRegistrations';
 import SystemTestPage from './pages/admin/SystemTestPage';
+import HubSpotImportPage from './pages/admin/HubSpotImportPage';
 import ConnectionManagement from './pages/admin/ConnectionManagement';
 import AdminUserEdit from './pages/admin/AdminUserEdit';
 import ActivityManagement from './pages/admin/ActivityManagement';
@@ -268,6 +269,14 @@ function App() {
           element={
             <ProtectedRoute requiredRole="admin">
               <SystemTestPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/hubspot-import" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <HubSpotImportPage />
             </ProtectedRoute>
           } 
         />

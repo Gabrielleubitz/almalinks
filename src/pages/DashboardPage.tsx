@@ -13,6 +13,7 @@ import ConnectionsCard from '../components/dashboard/ConnectionsCard';
 import EventTicketCard from '../components/dashboard/EventTicketCard';
 import ProfilePictureUploader from '../components/profile/ProfilePictureUploader';
 import Favicon from '../components/ui/Favicon';
+import SavedIndicator from '../components/ui/SavedIndicator';
 
 // Country codes data for phone editing
 const COUNTRY_CODES = [
@@ -102,6 +103,8 @@ const EventsPage: React.FC = () => {
   const [profileUpdateSuccess, setProfileUpdateSuccess] = useState<string | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const navigate = useNavigate();
   const { user, isAdmin, isInUserView, switchToAdminView, updateProfile } = useAuth();
@@ -301,40 +304,82 @@ const EventsPage: React.FC = () => {
     }
   }, [events, user?.uid]);
 
+  // Auto-save: perform save without closing editor; sets lastSavedAt on success
+  const performSave = async () => {
+    if (!user) return;
+    if (!editFormData.name.trim()) { setProfileUpdateError('Name is required'); return; }
+    if (!editFormData.email.trim()) { setProfileUpdateError('Email is required'); return; }
+    if (!editFormData.phoneNumber.trim()) { setProfileUpdateError('Phone is required'); return; }
+    if (!editFormData.work.trim()) { setProfileUpdateError('Work information is required'); return; }
+    if (!editFormData.linkedinUsername.trim()) { setProfileUpdateError('LinkedIn username is required'); return; }
+    if (!editFormData.position) { setProfileUpdateError('Position is required'); return; }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(editFormData.email)) { setProfileUpdateError('Please enter a valid email address'); return; }
+    try {
+      const formattedPhone = formatPhoneNumber(selectedCountryCode, editFormData.phoneNumber);
+      setProfileUpdateLoading(true);
+      setProfileUpdateError(null);
+      const formattedLinkedin = editFormData.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '');
+      const formattedTwitter = editFormData.twitter.replace(/^(https?:\/\/)?(www\.)?(twitter\.com\/|x\.com\/)@?/i, '').replace(/^@/, '');
+      const formattedWebsite = editFormData.website && !editFormData.website.startsWith('http') ? `https://${editFormData.website}` : editFormData.website;
+      await updateProfile({
+        name: editFormData.name.trim(),
+        phone: formattedPhone,
+        work: editFormData.work.trim(),
+        company: editFormData.company.trim(),
+        linkedinUsername: formattedLinkedin,
+        position: editFormData.position,
+        profileImage: profileImageUrl,
+        bioTitle: editFormData.bioTitle.trim(),
+        bio: editFormData.bio.trim(),
+        city: editFormData.city.trim(),
+        country: editFormData.country.trim(),
+        timezone: editFormData.timezone,
+        website: formattedWebsite,
+        twitter: formattedTwitter.trim(),
+        skills: editFormData.skills
+      });
+      setLastSavedAt(Date.now());
+    } catch (error: any) {
+      console.error('❌ Error updating profile:', error);
+      setProfileUpdateError(error.message || 'Failed to update profile. Please try again.');
+    } finally {
+      setProfileUpdateLoading(false);
+    }
+  };
+
+  const scheduleAutoSave = () => {
+    if (autoSaveDebounceRef.current) clearTimeout(autoSaveDebounceRef.current);
+    autoSaveDebounceRef.current = setTimeout(performSave, 1200);
+  };
+
+  const handleBlurSave = () => {
+    if (autoSaveDebounceRef.current) {
+      clearTimeout(autoSaveDebounceRef.current);
+      autoSaveDebounceRef.current = null;
+    }
+    performSave();
+  };
+
   // Handle edit profile form changes
   const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
-    // For phone number, only allow digits
     if (name === 'phoneNumber') {
       const digitsOnly = value.replace(/\D/g, '');
-      setEditFormData(prev => ({
-        ...prev,
-        [name]: digitsOnly
-      }));
+      setEditFormData(prev => ({ ...prev, [name]: digitsOnly }));
     } else {
-      setEditFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
+      setEditFormData(prev => ({ ...prev, [name]: value }));
     }
+    scheduleAutoSave();
   };
 
   // Handle skills input with real-time parsing
   const handleSkillsInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setSkillsInputValue(value);
-    
-    // Parse skills in real-time
-    const skillsArray = value
-      .split(/[,;\n]/) // Split on comma, semicolon, or newline
-      .map(skill => skill.trim())
-      .filter(skill => skill);
-    
-    setEditFormData(prev => ({
-      ...prev,
-      skills: skillsArray
-    }));
+    const skillsArray = value.split(/[,;\n]/).map(skill => skill.trim()).filter(skill => skill);
+    setEditFormData(prev => ({ ...prev, skills: skillsArray }));
+    scheduleAutoSave();
   };
 
   // Start editing profile
@@ -397,94 +442,6 @@ const EventsPage: React.FC = () => {
   // Handle profile picture upload error
   const handleProfilePictureError = (errorMessage: string) => {
     setImageUploadError(errorMessage);
-  };
-
-  // Save profile changes
-  const handleSaveProfile = async () => {
-    if (!user) return;
-
-    // Validate required fields
-    if (!editFormData.name.trim()) {
-      setProfileUpdateError('Name is required');
-      return;
-    }
-    if (!editFormData.email.trim()) {
-      setProfileUpdateError('Email is required');
-      return;
-    }
-    if (!editFormData.phoneNumber.trim()) {
-      setProfileUpdateError('Phone is required');
-      return;
-    }
-    if (!editFormData.work.trim()) {
-      setProfileUpdateError('Work information is required');
-      return;
-    }
-    if (!editFormData.linkedinUsername.trim()) {
-      setProfileUpdateError('LinkedIn username is required');
-      return;
-    }
-    if (!editFormData.position) {
-      setProfileUpdateError('Position is required');
-      return;
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(editFormData.email)) {
-      setProfileUpdateError('Please enter a valid email address');
-      return;
-    }
-
-    // Validate and format phone number
-    try {
-      const formattedPhone = formatPhoneNumber(selectedCountryCode, editFormData.phoneNumber);
-      
-      setProfileUpdateLoading(true);
-      setProfileUpdateError(null);
-
-      // Format LinkedIn username (remove any linkedin.com prefix)
-      const formattedLinkedin = editFormData.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '');
-
-      // Format social media usernames
-      const formattedTwitter = editFormData.twitter.replace(/^(https?:\/\/)?(www\.)?(twitter\.com\/|x\.com\/)@?/i, '').replace(/^@/, '');
-      const formattedWebsite = editFormData.website && !editFormData.website.startsWith('http') 
-        ? `https://${editFormData.website}` 
-        : editFormData.website;
-
-      // Update profile using the auth hook
-      await updateProfile({
-        name: editFormData.name.trim(),
-        phone: formattedPhone,
-        work: editFormData.work.trim(),
-        company: editFormData.company.trim(),
-        linkedinUsername: formattedLinkedin,
-        position: editFormData.position,
-        profileImage: profileImageUrl,
-        bioTitle: editFormData.bioTitle.trim(),
-        bio: editFormData.bio.trim(),
-        city: editFormData.city.trim(),
-        country: editFormData.country.trim(),
-        timezone: editFormData.timezone,
-        website: formattedWebsite,
-        twitter: formattedTwitter.trim(),
-        skills: editFormData.skills
-      });
-
-      setProfileUpdateSuccess('Profile updated successfully!');
-      setIsEditingProfile(false);
-
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setProfileUpdateSuccess(null);
-      }, 3000);
-
-    } catch (error: any) {
-      console.error('❌ Error updating profile:', error);
-      setProfileUpdateError(error.message || 'Failed to update profile. Please try again.');
-    } finally {
-      setProfileUpdateLoading(false);
-    }
   };
 
   const getStatusBadge = (status: EventData['status']) => {
@@ -756,6 +713,7 @@ const EventsPage: React.FC = () => {
                               required
                               value={editFormData.name}
                               onChange={handleEditFormChange}
+                              onBlur={handleBlurSave}
                               className="w-full max-w-full pl-10 pr-4 py-3 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base sm:text-base min-h-[44px] md:min-h-0 box-border"
                               placeholder="Enter your full name"
                               disabled={profileUpdateLoading}
@@ -777,6 +735,7 @@ const EventsPage: React.FC = () => {
                               required
                               value={editFormData.email}
                               onChange={handleEditFormChange}
+                              onBlur={handleBlurSave}
                               className="w-full pl-10 pr-4 py-3 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base sm:text-base min-h-[44px] md:min-h-0"
                               placeholder="Enter your email"
                               disabled // Email typically shouldn't be editable after account creation
@@ -795,7 +754,8 @@ const EventsPage: React.FC = () => {
                             <div className="relative flex-shrink-0 w-full sm:w-auto min-w-0">
                               <select
                                 value={selectedCountryCode}
-                                onChange={(e) => setSelectedCountryCode(e.target.value)}
+                                onChange={(e) => { setSelectedCountryCode(e.target.value); scheduleAutoSave(); }}
+                                onBlur={handleBlurSave}
                                 className="appearance-none bg-white border border-gray-300 rounded-xl px-3 py-3 sm:py-3 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm w-full sm:w-auto min-h-[44px] sm:min-h-0 box-border max-w-full"
                               >
                                 {COUNTRY_CODES.map((country) => (
@@ -817,6 +777,7 @@ const EventsPage: React.FC = () => {
                                 required
                                 value={editFormData.phoneNumber}
                                 onChange={handleEditFormChange}
+                                onBlur={handleBlurSave}
                                 className="w-full max-w-full pl-10 pr-4 py-3 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base sm:text-base min-h-[44px] md:min-h-0 box-border"
                                 placeholder={selectedCountryCode === '+972' ? '0501234567' : 'Phone number'}
                               />
@@ -852,6 +813,7 @@ const EventsPage: React.FC = () => {
                               required
                               value={editFormData.work}
                               onChange={handleEditFormChange}
+                              onBlur={handleBlurSave}
                               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                               placeholder="e.g., CEO, Software Engineer, Investor, Product Manager"
                             />
@@ -871,6 +833,7 @@ const EventsPage: React.FC = () => {
                               type="text"
                               value={editFormData.company || ''}
                               onChange={handleEditFormChange}
+                              onBlur={handleBlurSave}
                               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                               placeholder="e.g., TechCorp, Microsoft, Startup Inc."
                               disabled={profileUpdateLoading}
@@ -892,6 +855,7 @@ const EventsPage: React.FC = () => {
                               required
                               value={editFormData.linkedinUsername}
                               onChange={handleEditFormChange}
+                              onBlur={handleBlurSave}
                               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                               placeholder="e.g., johndoe (without linkedin.com/in/)"
                             />
@@ -915,6 +879,7 @@ const EventsPage: React.FC = () => {
                               required
                               value={editFormData.position}
                               onChange={handleEditFormChange}
+                              onBlur={handleBlurSave}
                               className="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none"
                             >
                               <option value="" disabled>Select your position...</option>
@@ -949,6 +914,7 @@ const EventsPage: React.FC = () => {
                             type="text"
                             value={editFormData.bioTitle}
                             onChange={handleEditFormChange}
+                            onBlur={handleBlurSave}
                             className="w-full max-w-full px-4 py-3 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base sm:text-base min-h-[44px] md:min-h-0 box-border"
                             placeholder="e.g., Passionate about AI and startups"
                             disabled={profileUpdateLoading}
@@ -975,6 +941,7 @@ const EventsPage: React.FC = () => {
                               type="text"
                               value={editFormData.city}
                               onChange={handleEditFormChange}
+                              onBlur={handleBlurSave}
                               className="w-full max-w-full px-4 py-3 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base sm:text-base min-h-[44px] md:min-h-0 box-border"
                               placeholder="e.g., New York, London, Tel Aviv"
                               disabled={profileUpdateLoading}
@@ -992,6 +959,7 @@ const EventsPage: React.FC = () => {
                               type="text"
                               value={editFormData.country}
                               onChange={handleEditFormChange}
+                              onBlur={handleBlurSave}
                               className="w-full max-w-full px-4 py-3 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base sm:text-base min-h-[44px] md:min-h-0 box-border"
                               placeholder="e.g., United States, Israel, United Kingdom"
                               disabled={profileUpdateLoading}
@@ -1008,6 +976,7 @@ const EventsPage: React.FC = () => {
                               name="timezone"
                               value={editFormData.timezone}
                               onChange={handleEditFormChange}
+                              onBlur={handleBlurSave}
                               className="w-full max-w-full px-4 py-3 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base sm:text-base min-h-[44px] md:min-h-0 box-border"
                               disabled={profileUpdateLoading}
                             >
@@ -1048,6 +1017,7 @@ const EventsPage: React.FC = () => {
                                 type="url"
                                 value={editFormData.website}
                                 onChange={handleEditFormChange}
+                                onBlur={handleBlurSave}
                                 className="w-full max-w-full pl-10 pr-4 py-3 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base sm:text-base min-h-[44px] md:min-h-0 box-border"
                                 placeholder="e.g., mycompany.com or https://myportfolio.com"
                                 disabled={profileUpdateLoading}
@@ -1068,6 +1038,7 @@ const EventsPage: React.FC = () => {
                                 type="text"
                                 value={editFormData.twitter}
                                 onChange={handleEditFormChange}
+                                onBlur={handleBlurSave}
                                 className="w-full max-w-full pl-10 pr-4 py-3 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-base sm:text-base min-h-[44px] md:min-h-0 box-border"
                                 placeholder="e.g., johndoe (without @ or twitter.com)"
                                 disabled={profileUpdateLoading}
@@ -1092,6 +1063,7 @@ const EventsPage: React.FC = () => {
                               rows={4}
                               value={editFormData.bio}
                               onChange={handleEditFormChange}
+                              onBlur={handleBlurSave}
                               className="w-full max-w-full px-4 py-3 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none text-base sm:text-base min-h-[120px] sm:min-h-[100px] box-border"
                               placeholder="Tell us about yourself, your background, interests, and what you're passionate about..."
                               disabled={profileUpdateLoading}
@@ -1117,6 +1089,7 @@ const EventsPage: React.FC = () => {
                               rows={3}
                               value={skillsInputValue}
                               onChange={handleSkillsInputChange}
+                              onBlur={handleBlurSave}
                               onKeyDown={(e) => {
                                 // Allow Enter to add skills
                                 if (e.key === 'Enter') {
@@ -1177,37 +1150,30 @@ const EventsPage: React.FC = () => {
                       <div className="bg-gray-50 rounded-2xl p-4 sm:p-6">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                           <p className="text-xs sm:text-sm text-gray-600">
-                            Make sure all required fields (*) are filled out correctly before saving.
+                            Changes are saved automatically when you click away or after you stop typing.
                           </p>
-                          <div className="flex flex-col sm:flex-row gap-3 sm:space-x-4 w-full sm:w-auto">
-                            <button
-                              onClick={handleCancelEdit}
-                              disabled={profileUpdateLoading}
-                              className="px-6 py-3 sm:py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-white hover:shadow-sm active:bg-gray-50 transition-all duration-200 font-medium disabled:opacity-50 min-h-[44px] sm:min-h-0 touch-manipulation w-full sm:w-auto"
-                            >
-                              <div className="flex items-center justify-center sm:justify-start space-x-2">
-                                <X className="h-4 w-4" />
-                                <span>Cancel</span>
-                              </div>
-                            </button>
-                            <button
-                              onClick={handleSaveProfile}
-                              disabled={profileUpdateLoading}
-                              className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 sm:px-8 py-3 rounded-xl hover:shadow-lg active:shadow-md transition-all duration-300 font-medium flex items-center justify-center sm:justify-start space-x-2 disabled:opacity-50 min-h-[44px] sm:min-h-0 touch-manipulation w-full sm:w-auto"
-                            >
-                              {profileUpdateLoading ? (
-                                <>
-                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                  <span>Saving...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Save className="h-4 w-4" />
-                                  <span className="hidden sm:inline">Save All Changes</span>
-                                  <span className="sm:hidden">Save</span>
-                                </>
-                              )}
-                            </button>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:space-x-4 w-full sm:w-auto">
+                            <SavedIndicator savedAt={lastSavedAt} saving={profileUpdateLoading} />
+                            <div className="flex gap-3 sm:space-x-4">
+                              <button
+                                onClick={handleCancelEdit}
+                                disabled={profileUpdateLoading}
+                                className="px-6 py-3 sm:py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-white hover:shadow-sm active:bg-gray-50 transition-all duration-200 font-medium disabled:opacity-50 min-h-[44px] sm:min-h-0 touch-manipulation w-full sm:w-auto"
+                              >
+                                <div className="flex items-center justify-center sm:justify-start space-x-2">
+                                  <X className="h-4 w-4" />
+                                  <span>Cancel</span>
+                                </div>
+                              </button>
+                              <button
+                                onClick={() => setIsEditingProfile(false)}
+                                disabled={profileUpdateLoading}
+                                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 sm:px-8 py-3 rounded-xl hover:shadow-lg active:shadow-md transition-all duration-300 font-medium flex items-center justify-center sm:justify-start space-x-2 disabled:opacity-50 min-h-[44px] sm:min-h-0 touch-manipulation w-full sm:w-auto"
+                              >
+                                <Check className="h-4 w-4" />
+                                <span>Done</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>

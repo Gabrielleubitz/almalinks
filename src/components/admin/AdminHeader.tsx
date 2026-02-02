@@ -19,6 +19,7 @@ import {
   Link2,
   Activity,
   Wrench,
+  Download,
   Home,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
@@ -63,6 +64,7 @@ const adminNavGroups = [
     items: [
       { to: '/admin/connections', label: 'Connections', icon: Link2 },
       { to: '/admin/activity', label: 'Activity', icon: Activity },
+      { to: '/admin/hubspot-import', label: 'Import from HubSpot', icon: Download },
       { to: '/admin/system-test', label: 'System Test', icon: Wrench },
     ],
   },

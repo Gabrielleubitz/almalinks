@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { User, Phone, Briefcase, Save, X, Linkedin, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { User, Phone, Briefcase, CheckCircle, X, Linkedin, ChevronDown } from 'lucide-react';
 import { useAuth, AuthUser } from '../../hooks/useAuth';
 import ProfilePictureUploader from '../profile/ProfilePictureUploader';
+import SavedIndicator from '../ui/SavedIndicator';
 
 interface ProfileEditorProps {
   user: AuthUser | null;
@@ -79,6 +80,8 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, onCancel, onSuccess
   const [error, setError] = useState<string | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize form with user data
   useEffect(() => {
@@ -140,68 +143,18 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, onCancel, onSuccess
     return fullNumber;
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    
-    // For phone number, only allow digits
-    if (name === 'phoneNumber') {
-      const digitsOnly = value.replace(/\D/g, '');
-      setFormData(prev => ({
-        ...prev,
-        [name]: digitsOnly
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
-    
-    // Clear error when user types
-    if (error) setError(null);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isSubmitting) return;
-
-    // Validate required fields
-    if (!formData.name.trim()) {
-      setError('Name is required');
-      return;
-    }
-    
-    if (!formData.phoneNumber.trim()) {
-      setError('Phone number is required');
-      return;
-    }
-    
-    if (!formData.work.trim()) {
-      setError('Work information is required');
-      return;
-    }
-    
-    if (!formData.linkedinUsername.trim()) {
-      setError('LinkedIn username is required');
-      return;
-    }
-    
-    if (!formData.position) {
-      setError('Position is required');
-      return;
-    }
-    
+  const performSave = async () => {
+    if (!user) return;
+    if (!formData.name.trim()) { setError('Name is required'); return; }
+    if (!formData.phoneNumber.trim()) { setError('Phone number is required'); return; }
+    if (!formData.work.trim()) { setError('Work information is required'); return; }
+    if (!formData.linkedinUsername.trim()) { setError('LinkedIn username is required'); return; }
+    if (!formData.position) { setError('Position is required'); return; }
     try {
       setIsSubmitting(true);
       setError(null);
-      
-      // Format phone number
       const formattedPhone = formatPhoneNumber(selectedCountryCode, formData.phoneNumber);
-      
-      // Format LinkedIn username (remove any linkedin.com prefix)
       const formattedLinkedin = formData.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '');
-      
-      // Update profile
       await updateProfile({
         name: formData.name,
         phone: formattedPhone,
@@ -210,14 +163,38 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, onCancel, onSuccess
         position: formData.position,
         profileImage: profileImageUrl
       });
-      
-      onSuccess();
+      setLastSavedAt(Date.now());
     } catch (err: any) {
       console.error('❌ Profile update error:', err);
       setError(err.message || 'Failed to update profile');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const scheduleAutoSave = () => {
+    if (autoSaveDebounceRef.current) clearTimeout(autoSaveDebounceRef.current);
+    autoSaveDebounceRef.current = setTimeout(performSave, 1200);
+  };
+
+  const handleBlurSave = () => {
+    if (autoSaveDebounceRef.current) {
+      clearTimeout(autoSaveDebounceRef.current);
+      autoSaveDebounceRef.current = null;
+    }
+    performSave();
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    if (name === 'phoneNumber') {
+      const digitsOnly = value.replace(/\D/g, '');
+      setFormData(prev => ({ ...prev, [name]: digitsOnly }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+    if (error) setError(null);
+    scheduleAutoSave();
   };
 
   // Handle profile picture upload success
@@ -274,6 +251,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, onCancel, onSuccess
               required
               value={formData.name}
               onChange={handleInputChange}
+              onBlur={handleBlurSave}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               placeholder="Enter your full name"
               disabled={isSubmitting}
@@ -291,7 +269,8 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, onCancel, onSuccess
             <div className="relative">
               <select
                 value={selectedCountryCode}
-                onChange={(e) => setSelectedCountryCode(e.target.value)}
+                onChange={(e) => { setSelectedCountryCode(e.target.value); scheduleAutoSave(); }}
+                onBlur={handleBlurSave}
                 disabled={isSubmitting}
                 className="appearance-none bg-white border border-gray-300 rounded-xl px-3 py-3 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
               >
@@ -314,6 +293,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, onCancel, onSuccess
                 required
                 value={formData.phoneNumber}
                 onChange={handleInputChange}
+                onBlur={handleBlurSave}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 placeholder={selectedCountryCode === '+972' ? '0501234567' : 'Phone number'}
                 disabled={isSubmitting}
@@ -350,6 +330,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, onCancel, onSuccess
               required
               value={formData.work}
               onChange={handleInputChange}
+              onBlur={handleBlurSave}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               placeholder="e.g., CEO at TechCorp, Software Engineer, Investor"
               disabled={isSubmitting}
@@ -371,6 +352,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, onCancel, onSuccess
               required
               value={formData.linkedinUsername}
               onChange={handleInputChange}
+              onBlur={handleBlurSave}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               placeholder="e.g., johndoe (without linkedin.com/in/)"
               disabled={isSubmitting}
@@ -395,6 +377,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, onCancel, onSuccess
               required
               value={formData.position}
               onChange={handleInputChange}
+              onBlur={handleBlurSave}
               className="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none"
               disabled={isSubmitting}
             >
@@ -411,7 +394,8 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, onCancel, onSuccess
       </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+      <div className="flex flex-wrap justify-end items-center gap-4 pt-6 border-t border-gray-200">
+        <SavedIndicator savedAt={lastSavedAt} saving={isSubmitting} />
         <button
           onClick={onCancel}
           disabled={isSubmitting}
@@ -427,17 +411,8 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, onCancel, onSuccess
           disabled={isSubmitting}
           className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-2 rounded-xl hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2 disabled:opacity-50"
         >
-          {isSubmitting ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              <span>Saving...</span>
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4" />
-              <span>Save Changes</span>
-            </>
-          )}
+          <CheckCircle className="h-4 w-4" />
+          <span>Done</span>
         </button>
       </div>
     </div>

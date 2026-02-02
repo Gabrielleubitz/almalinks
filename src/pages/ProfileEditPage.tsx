@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -71,6 +71,8 @@ const ProfileEditPage: React.FC = () => {
     message: '',
     type: 'success'
   });
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ visible: true, message, type });
@@ -163,53 +165,25 @@ const ProfileEditPage: React.FC = () => {
     }
   };
 
-  const updateFormData = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Mark field as touched
-    setTouchedFields(prev => new Set([...prev, field]));
-    
-    // Clear any existing error for this field
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
-  const saveProfile = async () => {
-    if (!user?.uid || !profile) {
-      return;
-    }
-
-    // Validate form
+  const performSave = async () => {
+    if (!user?.uid || !profile) return;
     const validation = validateUserProfile(formData);
-    
     if (!validation.isValid) {
       const errorMap: Record<string, string> = {};
-      validation.errors.forEach(error => {
-        errorMap[error.field] = error.message;
-      });
+      validation.errors.forEach(error => { errorMap[error.field] = error.message; });
       setErrors(errorMap);
       showToast(`Please fix form validation errors: ${validation.errors[0].message}`, 'error');
       return;
     }
-
     try {
       setSaving(true);
       setErrors({});
-      
-      // Map form data back to database field names
-      // Extract LinkedIn username from URL for storage
       let linkedinUsername = '';
       if (formData.linkedin) {
-        if (formData.linkedin.includes('linkedin.com')) {
-          // Extract username from URL
-          linkedinUsername = formData.linkedin.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '');
-        } else {
-          // If it's just a username, use as is
-          linkedinUsername = formData.linkedin;
-        }
+        linkedinUsername = formData.linkedin.includes('linkedin.com')
+          ? formData.linkedin.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '')
+          : formData.linkedin;
       }
-      
       const updateData = {
         name: `${formData.firstName} ${formData.lastName}`.trim() || formData.displayName,
         displayName: formData.displayName,
@@ -220,8 +194,8 @@ const ProfileEditPage: React.FC = () => {
         bio: formData.bio,
         skills: formData.skills,
         phone: formData.phone,
-        linkedin: formData.linkedin, // Store full URL
-        linkedinUsername: linkedinUsername, // Store just username
+        linkedin: formData.linkedin,
+        linkedinUsername,
         website: formData.website,
         twitter: formData.twitter,
         city: formData.city,
@@ -230,32 +204,38 @@ const ProfileEditPage: React.FC = () => {
         showPhone: formData.showPhone,
         profileVisibility: formData.profileVisibility
       };
-      
-      // For regular users, update their own profile using UserService
       await UserService.updateUser(user.uid, updateData);
-      
-      // Update local profile state with the mapped data
-      const updatedProfile = { 
-        ...profile, 
-        ...updateData
-      };
-      setProfile(updatedProfile);
-      
-      showToast('Profile updated successfully', 'success');
-      
-      // Log profile update activity
-      const changedFields = Object.keys(updateData);
-      logProfileUpdate(changedFields);
-      
-      // Reload the profile to ensure we have the latest data
+      setProfile(prev => prev ? { ...prev, ...updateData } : null);
+      setLastSavedAt(Date.now());
+      showToast('Profile updated', 'success');
+      logProfileUpdate(Object.keys(updateData));
       await loadProfile();
-      
     } catch (error: any) {
       console.error('❌ Error saving profile:', error);
       showToast(error.message || 'Failed to save profile', 'error');
     } finally {
       setSaving(false);
     }
+  };
+
+  const scheduleAutoSave = () => {
+    if (autoSaveDebounceRef.current) clearTimeout(autoSaveDebounceRef.current);
+    autoSaveDebounceRef.current = setTimeout(performSave, 1200);
+  };
+
+  const handleBlurSave = () => {
+    if (autoSaveDebounceRef.current) {
+      clearTimeout(autoSaveDebounceRef.current);
+      autoSaveDebounceRef.current = null;
+    }
+    performSave();
+  };
+
+  const updateFormData = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setTouchedFields(prev => new Set([...prev, field]));
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
+    scheduleAutoSave();
   };
 
   const handleAvatarUpload = async (imageUrl: string) => {
@@ -370,24 +350,22 @@ const ProfileEditPage: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-          {/* Header with Save Button - IDENTICAL TO ADMIN */}
-          <div className="flex items-center justify-between mb-8">
+          {/* Header with Saved indicator and Done */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Edit User Profile</h2>
-              <p className="text-gray-600 mt-1">Modify user information and settings</p>
+              <h2 className="text-2xl font-bold text-gray-900">Edit Profile</h2>
+              <p className="text-gray-600 mt-1">Changes save automatically when you click away or after you stop typing.</p>
             </div>
-            <button
-              onClick={saveProfile}
-              disabled={saving}
-              className="inline-flex items-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-            >
-              {saving ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Save className="h-5 w-5" />
-              )}
-              <span>{saving ? 'Saving...' : 'Save Changes'}</span>
-            </button>
+            <div className="flex items-center gap-4">
+              <SavedIndicator savedAt={lastSavedAt} saving={saving} />
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="inline-flex items-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid transition-colors duration-200"
+              >
+                <CheckCircle className="h-5 w-5" />
+                <span>Done</span>
+              </button>
+            </div>
           </div>
 
           {/* Google Account Linking - Compact at Top */}
@@ -484,9 +462,14 @@ const ProfileEditPage: React.FC = () => {
             </div>
           </div>
 
-          {/* IDENTICAL PROFILE EDITING SECTIONS - SAME AS ADMIN EDIT */}
-          <div className="space-y-8">
-            
+          {/* Form: save when focus leaves (click away) */}
+          <div
+            className="space-y-8"
+            onBlur={(e) => {
+              const related = e.relatedTarget as Node | null;
+              if (!related || !e.currentTarget.contains(related)) handleBlurSave();
+            }}
+          >
             {/* Basic Information Section */}
             <div className="p-6 border border-gray-200 rounded-xl">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -545,19 +528,15 @@ const ProfileEditPage: React.FC = () => {
 
           </div>
 
-          {/* Save Button (Mobile) - IDENTICAL TO ADMIN */}
-          <div className="mt-8 md:hidden">
+          {/* Done (Mobile) - changes auto-save */}
+          <div className="mt-8 md:hidden flex flex-col gap-3">
+            <SavedIndicator savedAt={lastSavedAt} saving={saving} />
             <button
-              onClick={saveProfile}
-              disabled={saving}
-              className="w-full inline-flex items-center justify-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              onClick={() => navigate('/dashboard')}
+              className="w-full inline-flex items-center justify-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid transition-colors duration-200"
             >
-              {saving ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Save className="h-5 w-5" />
-              )}
-              <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+              <CheckCircle className="h-5 w-5" />
+              <span>Done</span>
             </button>
           </div>
         </div>

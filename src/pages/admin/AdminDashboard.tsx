@@ -17,7 +17,8 @@ import {
   UserPlus,
   Zap,
   Send,
-  AlertCircle
+  AlertCircle,
+  Download
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { EventService } from '../../services/eventService';
@@ -585,6 +586,21 @@ const AdminDashboard: React.FC = () => {
                   <div className="min-w-0 flex-1">
                     <h4 className="text-base sm:text-lg font-semibold text-gray-900">Connections</h4>
                     <p className="text-gray-600 text-xs sm:text-sm">Manage user connections</p>
+                  </div>
+                </div>
+              </Link>
+
+              <Link
+                to="/admin/hubspot-import"
+                className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift w-full"
+              >
+                <div className="flex items-center space-x-3 sm:space-x-4">
+                  <div className="flex-shrink-0">
+                    <Download className="h-8 w-8 text-orange-600" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">Import from HubSpot</h4>
+                    <p className="text-gray-600 text-xs sm:text-sm">Sync HubSpot CRM contacts</p>
                   </div>
                 </div>
               </Link>

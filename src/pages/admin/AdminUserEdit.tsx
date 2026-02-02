@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -27,6 +27,7 @@ import ProfileBasicsStep from '../../components/signup/steps/ProfileBasicsStep';
 import AboutYouStep from '../../components/signup/steps/AboutYouStep';
 import ContactLocationStep from '../../components/signup/steps/ContactLocationStep';
 import PrivacyStep from '../../components/signup/steps/PrivacyStep';
+import SavedIndicator from '../../components/ui/SavedIndicator';
 
 interface AdminUserEditProps {}
 
@@ -74,6 +75,8 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
     message: '',
     type: 'success'
   });
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ visible: true, message, type });
@@ -157,37 +160,30 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
     }
   };
 
-  const updateFormData = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Mark field as touched
-    setTouchedFields(prev => new Set([...prev, field]));
-    
-    // Clear any existing error for this field
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
+  const scheduleAutoSave = () => {
+    if (autoSaveDebounceRef.current) clearTimeout(autoSaveDebounceRef.current);
+    autoSaveDebounceRef.current = setTimeout(performSave, 1200);
   };
 
-  const saveProfile = async () => {
-    console.log('🚀 Save button clicked!');
-    console.log('🔍 Checking requirements:', { userId, profile: !!profile, currentUserId: currentUser?.uid });
-    
-    if (!userId || !profile || !currentUser?.uid) {
-      console.log('❌ Missing requirements, cannot save');
-      return;
+  const handleBlurSave = () => {
+    if (autoSaveDebounceRef.current) {
+      clearTimeout(autoSaveDebounceRef.current);
+      autoSaveDebounceRef.current = null;
     }
+    performSave();
+  };
 
-    // Validate form
-    console.log('🔍 Validating form data:', formData);
+  const updateFormData = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setTouchedFields(prev => new Set([...prev, field]));
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
+    scheduleAutoSave();
+  };
+
+  const performSave = async () => {
+    if (!userId || !profile || !currentUser?.uid) return;
     const validation = validateUserProfile(formData);
-    console.log('🔍 Validation result:', validation);
-    
     if (!validation.isValid) {
-      console.log('❌ Form validation failed:', validation.errors);
-      validation.errors.forEach(error => {
-        console.log(`❌ Validation error - Field: ${error.field}, Message: ${error.message}`);
-      });
       const errorMap: Record<string, string> = {};
       validation.errors.forEach(error => {
         errorMap[error.field] = error.message;
@@ -246,10 +242,6 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
         updateData.profileImagePublicId = profile.profileImagePublicId;
       }
       
-      console.log('💾 Saving profile with mapped data:', updateData);
-      console.log('📝 Original form data:', formData);
-      console.log('🎯 Specific fields - bio:', formData.bio, 'phone:', formData.phone, 'company:', formData.company);
-      
       // Call the user update API
       const response = await fetch('/api/user-admin', {
         method: 'POST',
@@ -265,8 +257,6 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       });
 
       const responseData = await response.json();
-      console.log('📬 API Response:', responseData);
-      
       if (!response.ok) {
         throw new Error(responseData.error || 'Failed to update user');
       }
@@ -278,10 +268,8 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
         role: userRole 
       };
       setProfile(updatedProfile);
-      
-      showToast('User profile updated successfully', 'success');
-      
-      // Reload the profile to ensure we have the latest data
+      setLastSavedAt(Date.now());
+      showToast('Profile updated', 'success');
       await loadUserProfile();
       
     } catch (error: any) {
@@ -437,27 +425,22 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-          {/* Header with Save Button */}
-          <div className="flex items-center justify-between mb-8">
+          {/* Header with Saved indicator and Done */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Edit User Profile</h2>
-              <p className="text-gray-600 mt-1">Modify user information and settings</p>
+              <p className="text-gray-600 mt-1">Changes save automatically when you click away or after you stop typing.</p>
             </div>
-            <button
-              onClick={(e) => {
-                console.log('🖱️ Button clicked event:', e);
-                saveProfile();
-              }}
-              disabled={saving}
-              className="inline-flex items-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-            >
-              {saving ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Save className="h-5 w-5" />
-              )}
-              <span>{saving ? 'Saving...' : 'Save Changes'}</span>
-            </button>
+            <div className="flex items-center gap-4">
+              <SavedIndicator savedAt={lastSavedAt} saving={saving} />
+              <button
+                onClick={() => navigate('/admin/users')}
+                className="inline-flex items-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid transition-colors duration-200"
+              >
+                <CheckCircle className="h-5 w-5" />
+                <span>Done</span>
+              </button>
+            </div>
           </div>
 
           {/* Profile Picture Section */}
@@ -508,7 +491,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
                 <button
                   key={role}
                   type="button"
-                  onClick={() => setUserRole(role)}
+                  onClick={() => { setUserRole(role); scheduleAutoSave(); }}
                   className={`p-3 rounded-xl border-2 transition-all duration-200 ${
                     userRole === role
                       ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -524,9 +507,14 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
             </div>
           </div>
 
-          {/* STANDARDIZED PROFILE EDITING SECTIONS - SAME AS USER EDIT */}
-          <div className="space-y-8">
-            
+          {/* Form: save when focus leaves (click away) */}
+          <div
+            className="space-y-8"
+            onBlur={(e) => {
+              const related = e.relatedTarget as Node | null;
+              if (!related || !e.currentTarget.contains(related)) handleBlurSave();
+            }}
+          >
             {/* Basic Information Section */}
             <div className="p-6 border border-gray-200 rounded-xl">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -585,22 +573,15 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
 
           </div>
 
-          {/* Save Button (Mobile) */}
-          <div className="mt-8 md:hidden">
+          {/* Done (Mobile) - changes auto-save */}
+          <div className="mt-8 md:hidden flex flex-col gap-3">
+            <SavedIndicator savedAt={lastSavedAt} saving={saving} />
             <button
-              onClick={(e) => {
-                console.log('🖱️ Mobile button clicked event:', e);
-                saveProfile();
-              }}
-              disabled={saving}
-              className="w-full inline-flex items-center justify-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              onClick={() => navigate('/admin/users')}
+              className="w-full inline-flex items-center justify-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid transition-colors duration-200"
             >
-              {saving ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Save className="h-5 w-5" />
-              )}
-              <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+              <CheckCircle className="h-5 w-5" />
+              <span>Done</span>
             </button>
           </div>
         </div>
