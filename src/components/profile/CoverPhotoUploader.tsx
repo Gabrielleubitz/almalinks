@@ -7,14 +7,14 @@ import imageCompression from 'browser-image-compression';
 /** Cover-style crop for Cloudinary (3:1 banner). */
 const COVER_TRANSFORM = 'ar_3:1,c_fill,w_1200';
 
-/** Six template cover images from Cloudinary demo (wide crop). */
+/** Six template cover images: landscapes and animals only (no people). Wide 3:1 crop. */
 const COVER_TEMPLATES: { url: string; label: string }[] = [
   { url: `https://res.cloudinary.com/demo/image/upload/${COVER_TRANSFORM}/sample.jpg`, label: 'Beach' },
-  { url: `https://res.cloudinary.com/demo/image/upload/${COVER_TRANSFORM}/balloons.jpg`, label: 'Balloons' },
-  { url: `https://res.cloudinary.com/demo/image/upload/${COVER_TRANSFORM}/woman.jpg`, label: 'Portrait' },
-  { url: `https://res.cloudinary.com/demo/image/upload/${COVER_TRANSFORM}/bird.jpg`, label: 'Nature' },
-  { url: `https://res.cloudinary.com/demo/image/upload/${COVER_TRANSFORM}/kayak.jpg`, label: 'Kayak' },
-  { url: `https://res.cloudinary.com/demo/image/upload/${COVER_TRANSFORM}/couple.jpg`, label: 'Couple' },
+  { url: `https://res.cloudinary.com/demo/image/upload/${COVER_TRANSFORM}/balloons.jpg`, label: 'Hot air balloons' },
+  { url: `https://res.cloudinary.com/demo/image/upload/${COVER_TRANSFORM}/bird.jpg`, label: 'Bird' },
+  { url: `https://res.cloudinary.com/demo/image/upload/ar_3:1,c_fill,g_north,w_1200/sample.jpg`, label: 'Beach shore' },
+  { url: `https://res.cloudinary.com/demo/image/upload/ar_3:1,c_fill,g_south,w_1200/balloons.jpg`, label: 'Balloons in sky' },
+  { url: `https://res.cloudinary.com/demo/image/upload/ar_3:1,c_fill,g_auto,w_1200/bird.jpg`, label: 'Bird close-up' },
 ];
 
 const COVER_OPTIONS = {

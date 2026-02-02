@@ -251,7 +251,7 @@ const EnhancedUserProfilePage: React.FC = () => {
           {/* Profile Header */}
           <div className="bg-white rounded-3xl shadow-xl overflow-hidden mb-8">
             {/* Cover Image - custom photo or gradient */}
-            <div className="relative h-48 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500">
+            <div className="relative h-52 sm:h-56 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500">
               {profile.coverPhotoUrl ? (
                 <img
                   src={profile.coverPhotoUrl}

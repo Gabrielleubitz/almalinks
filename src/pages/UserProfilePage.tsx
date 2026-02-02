@@ -269,7 +269,7 @@ const UserProfilePage: React.FC = () => {
           {/* Profile Card */}
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
             {/* Cover / banner: custom photo or blue gradient */}
-            <div className="relative h-32 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light">
+            <div className="relative h-40 sm:h-48 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light">
               {(profile as any).coverPhotoUrl ? (
                 <img
                   src={(profile as any).coverPhotoUrl}

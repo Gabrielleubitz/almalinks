@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, ArrowRight, Clock, Users, RotateCcw, User, Mail, Phone, Briefcase, Ticket, Download, Edit, Save, X, Check, AlertCircle, ChevronDown, Linkedin, Globe, Twitter, CheckCircle, TrendingUp, MessageCircle, Compass, Map, Heart } from 'lucide-react';
+import { Calendar, MapPin, ArrowRight, Clock, Users, RotateCcw, User, Mail, Phone, Briefcase, Ticket, Download, Edit, Save, X, Check, AlertCircle, ChevronDown, Linkedin, Globe, Twitter, CheckCircle, TrendingUp, MessageCircle, Compass, Map, Heart, Camera } from 'lucide-react';
 import { EventService, EventData } from '../services/eventService';
 import { ConnectionService } from '../services/connectionService';
 import { useAuth } from '../hooks/useAuth';
@@ -106,6 +106,7 @@ const EventsPage: React.FC = () => {
   const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
   const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
+  const [showCoverEditor, setShowCoverEditor] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -1224,11 +1225,57 @@ const EventsPage: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    /* View Mode */
+                    /* View Mode - same style as user profile page: cover + overlapping avatar */
                     <div className="space-y-8">
-                      {/* Profile Picture & Bio Title */}
-                      <div className="bg-gray-50 rounded-2xl p-6">
-                        <div className="flex flex-col md:flex-row md:items-center gap-6">
+                      {/* Cover photo with camera toggle (profile-page style) */}
+                      <div className="relative h-40 sm:h-48 -mx-4 sm:-mx-6 -mt-2 rounded-t-2xl overflow-hidden bg-gradient-to-r from-brand-blue-dark to-brand-blue-light">
+                        {coverPhotoUrl ? (
+                          <img
+                            src={coverPhotoUrl}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
+                        ) : null}
+                        <div className="absolute inset-0 bg-black bg-opacity-20" />
+                        <button
+                          type="button"
+                          onClick={() => setShowCoverEditor((v) => !v)}
+                          className="absolute top-3 right-3 p-2 rounded-full bg-white/90 text-gray-700 hover:bg-white shadow-sm transition-colors"
+                          title="Edit cover photo"
+                          aria-label="Edit cover photo"
+                        >
+                          <Camera className="h-5 w-5" />
+                        </button>
+                      </div>
+
+                      {/* Cover editor (upload / template / remove) - toggled by camera */}
+                      {showCoverEditor && (
+                        <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                          <CoverPhotoUploader
+                            currentCoverUrl={coverPhotoUrl}
+                            onUploadSuccess={(url) => {
+                              handleCoverPhotoSuccess(url);
+                              setShowCoverEditor(false);
+                            }}
+                            onUploadError={handleCoverPhotoError}
+                            onRemove={() => {
+                              handleCoverPhotoRemove();
+                              setShowCoverEditor(false);
+                            }}
+                            onTemplateSelect={(url) => {
+                              handleCoverTemplateSelect(url);
+                              setShowCoverEditor(false);
+                            }}
+                          />
+                          {coverUploadError && (
+                            <p className="text-red-600 text-sm mt-2">{coverUploadError}</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Avatar overlapping cover + name (profile-page style) */}
+                      <div className="relative px-0 sm:px-0 pb-6 -mt-16">
+                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                           <div className="flex flex-col items-center md:items-start">
                             <ProfilePictureUploader
                               currentImageUrl={user?.profileImage || null}
@@ -1236,41 +1283,52 @@ const EventsPage: React.FC = () => {
                               onUploadError={handleProfilePictureError}
                               size="lg"
                             />
-                            
                             {imageUploadError && (
                               <p className="text-red-600 text-sm mt-2">{imageUploadError}</p>
                             )}
                           </div>
-                          
-                          <div className="flex-1 text-center md:text-left">
-                            <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                              {user?.displayName || 'Your Name'}
-                            </h3>
-                            {/* Bio Title */}
-                            {user?.bioTitle && (
-                              <div className="bg-blue-50 rounded-lg p-3 mb-4">
-                                <p className="text-blue-800 font-medium">
-                                  {user.bioTitle}
-                                </p>
+                          <button
+                            type="button"
+                            onClick={() => { setIsEditingProfile(true); scrollToProfile(); }}
+                            className="hidden md:inline-flex items-center px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors text-sm font-medium self-start"
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Profile
+                          </button>
+                        </div>
+                        <div className="mt-6 text-center md:text-left px-4 sm:px-0">
+                          <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                            {user?.displayName || 'Your Name'}
+                          </h3>
+                          {user?.bioTitle && (
+                            <div className="bg-blue-50 rounded-lg p-3 mb-4">
+                              <p className="text-blue-800 font-medium">{user.bioTitle}</p>
+                            </div>
+                          )}
+                          <div className="text-gray-600 space-y-1">
+                            {user?.email && (
+                              <div className="flex items-center justify-center md:justify-start space-x-2">
+                                <Mail className="h-4 w-4" />
+                                <span>{user.email}</span>
                               </div>
                             )}
-                            
-                            {/* Basic contact info */}
-                            <div className="text-gray-600 space-y-1">
-                              {user?.email && (
-                                <div className="flex items-center justify-center md:justify-start space-x-2">
-                                  <Mail className="h-4 w-4" />
-                                  <span>{user.email}</span>
-                                </div>
-                              )}
-                              {user?.phone && (
-                                <div className="flex items-center justify-center md:justify-start space-x-2">
-                                  <Phone className="h-4 w-4" />
-                                  <span>{user.phone}</span>
-                                </div>
-                              )}
-                            </div>
+                            {user?.phone && (
+                              <div className="flex items-center justify-center md:justify-start space-x-2">
+                                <Phone className="h-4 w-4" />
+                                <span>{user.phone}</span>
+                              </div>
+                            )}
                           </div>
+                        </div>
+                        <div className="mt-4 md:hidden">
+                          <button
+                            type="button"
+                            onClick={() => { setIsEditingProfile(true); scrollToProfile(); }}
+                            className="w-full inline-flex items-center justify-center px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors text-sm font-medium"
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Profile
+                          </button>
                         </div>
                       </div>
 
