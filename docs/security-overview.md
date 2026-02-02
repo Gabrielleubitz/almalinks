@@ -46,12 +46,18 @@ We've implemented industry-standard security practices to protect against common
 ## How We Protect User Data
 
 ### Access Control in the Database
-Our database (Firestore) has strict rules about who can read and write data:
+Our database (Firestore) has strict rules about who can read and write data. Every collection is covered; any collection not explicitly allowed is denied by default.
 
-- **Your Own Data**: You can read and update your own profile, but not other users' profiles
-- **Public Information**: Some information (like event listings) is visible to all logged-in users, but only admins can create or modify events
-- **Connections**: You can only see connections you're part of
-- **Admin Access**: Administrators have special permissions that are verified on every action
+- **Users**: You can read and update your own profile; admins can create (e.g. on approval), read, update, and delete any user.
+- **Join requests**: Applicants can create and read their own pending request; only admins can update (approve/reject) or delete.
+- **Events & registrations**: All authenticated users can read events; only admins can create/update/delete events. Users can create/update only their own registration per event.
+- **Connections**: You can only read and update connections you're part of (uid1/uid2 or fromUid/toUid); admins have full access.
+- **Connection requests**: Only requester and target can read; only target can update (accept/reject); admins have full access.
+- **Notifications**: You can only read, update, and delete your own notifications; creation is allowed for authenticated users (app creates for others).
+- **Activity logs**: Users can only create logs for themselves (userId must match auth uid); only admins can read, update, or delete.
+- **Chats, chat_members, chat_messages, chat_requests**: Authenticated users can read/write as allowed (e.g. only own messages, own membership); only admins can create chats and delete chats.
+- **HubSpot contacts**: Read-only for admins; no client write (server writes via Admin SDK).
+- **Default**: All other paths are denied.
 
 These rules are enforced at the database level, meaning even if someone tries to bypass the website, they still can't access unauthorized data.
 

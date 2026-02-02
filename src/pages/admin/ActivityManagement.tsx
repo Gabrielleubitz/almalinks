@@ -91,19 +91,21 @@ const ActivityManagement: React.FC = () => {
   const [loadingChat, setLoadingChat] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Load activities from API
-  const loadActivities = useCallback(async (reset = true) => {
+  // Load activities from API (filtersOverride used when clearing so request uses empty filters immediately)
+  const loadActivities = useCallback(async (reset = true, filtersOverride?: ActivityFilters) => {
     if (!user?.uid) {
       console.log('⚠️ Cannot load activities - user not authenticated');
       setLoading(false);
       return;
     }
 
+    const effectiveFilters = filtersOverride !== undefined ? filtersOverride : filters;
+
     try {
       setLoading(true);
       setError(null);
 
-      console.log('🔄 Loading activities...', { reset, filters, userId: user.uid });
+      console.log('🔄 Loading activities...', { reset, filters: effectiveFilters, userId: user.uid });
 
       // Create abort controller for timeout
       const controller = new AbortController();
@@ -118,7 +120,7 @@ const ActivityManagement: React.FC = () => {
           },
           body: JSON.stringify({
             action: 'get-activities',
-            filters,
+            filters: effectiveFilters,
             limitCount: 25, // Reduced from 50 for faster initial load
             lastDocId: reset ? null : lastDocId,
             adminEmail: user.email,
@@ -285,16 +287,14 @@ const ActivityManagement: React.FC = () => {
     }
   }, [user?.uid, hasInitialized, loadActivities, loadStats]);
 
-  // Load activities when filters change (but not on initial load)
-  useEffect(() => {
-    if (user?.uid && hasInitialized && !error?.includes('RESOURCE_EXHAUSTED') && Object.keys(filters).length > 0) {
-      loadActivities(true);
-    }
-  }, [user?.uid, hasInitialized, error, JSON.stringify(filters)]);
-
-  // Handle filter changes
+  // Handle filter changes (no auto-refresh; user clicks Apply)
   const handleFilterChange = (key: keyof ActivityFilters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const applyFilters = () => {
+    setError(null);
+    loadActivities(true);
   };
 
   // Load chat messages for viewing
@@ -321,10 +321,16 @@ const ActivityManagement: React.FC = () => {
     }
   };
 
-  // Clear all filters
   const clearFilters = () => {
     setFilters({});
+    setError(null);
+    loadActivities(true, {}); // pass empty filters so request uses them immediately
   };
+
+  const hasActiveFilters = Object.keys(filters).some(k => {
+    const v = filters[k as keyof ActivityFilters];
+    return v !== undefined && v !== null && v !== '';
+  });
 
   // Format page path for display
   const formatPagePath = (page?: string): string => {
@@ -576,37 +582,67 @@ const ActivityManagement: React.FC = () => {
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
           <button
+            type="button"
             onClick={() => setShowFilters(!showFilters)}
-            className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50/50 transition-colors"
+            className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50/50 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-inset rounded-xl"
+            aria-expanded={showFilters}
+            aria-controls="activity-filters-content"
+            id="activity-filters-heading"
           >
             <span className="flex items-center gap-2 font-medium text-gray-900">
-              <Filter className="h-5 w-5 text-gray-500" />
-              Filters
+              <Filter className="h-5 w-5 text-gray-500" aria-hidden />
+              Filter activity
             </span>
-            {showFilters ? <ChevronUp className="h-5 w-5 text-gray-500" /> : <ChevronDown className="h-5 w-5 text-gray-500" />}
+            <span className="flex items-center gap-2">
+              {hasActiveFilters && (
+                <span className="text-xs font-medium text-brand-dark bg-brand-light px-2 py-0.5 rounded-full">
+                  Filters applied
+                </span>
+              )}
+              {showFilters ? <ChevronUp className="h-5 w-5 text-gray-500" /> : <ChevronDown className="h-5 w-5 text-gray-500" />}
+            </span>
           </button>
-          {showFilters && (
+          <div
+            id="activity-filters-content"
+            role="region"
+            aria-labelledby="activity-filters-heading"
+            className={showFilters ? 'block' : 'hidden'}
+          >
             <div className="px-4 pb-4 pt-0 border-t border-gray-100">
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 pt-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Search</label>
+              <p className="text-sm text-gray-500 pt-4 pb-3">
+                Search by username, email, or activity description. Optionally narrow by type and date range, then click Apply.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <div className="lg:col-span-2">
+                  <label htmlFor="activity-search" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Search by username, email, or activity
+                  </label>
                   <div className="relative">
-                    <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" aria-hidden />
                     <input
-                      type="text"
+                      id="activity-search"
+                      type="search"
                       value={filters.search || ''}
                       onChange={(e) => handleFilterChange('search', e.target.value)}
-                      placeholder="User, description..."
-                      className="pl-9 w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                      onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
+                      placeholder="e.g. john@example.com, Login, or page view"
+                      className="pl-9 w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-blue focus:border-transparent placeholder-gray-400"
+                      aria-describedby="activity-search-hint"
                     />
                   </div>
+                  <p id="activity-search-hint" className="text-xs text-gray-500 mt-1">
+                    Matches name, email, and activity description
+                  </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Activity type</label>
+                  <label htmlFor="activity-type-filter" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Activity type
+                  </label>
                   <select
+                    id="activity-type-filter"
                     value={filters.activityType || ''}
                     onChange={(e) => handleFilterChange('activityType', e.target.value || undefined)}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-blue focus:border-transparent bg-white"
                   >
                     <option value="">All types</option>
                     {Object.entries(ACTIVITY_TYPES).map(([type, { label }]) => (
@@ -615,34 +651,55 @@ const ActivityManagement: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">From date</label>
+                  <label htmlFor="activity-start-date" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Start date
+                  </label>
                   <input
+                    id="activity-start-date"
                     type="date"
                     value={filters.startDate ? filters.startDate.toISOString().split('T')[0] : ''}
                     onChange={(e) => handleFilterChange('startDate', e.target.value ? new Date(e.target.value) : undefined)}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-blue focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">To date</label>
+                  <label htmlFor="activity-end-date" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    End date
+                  </label>
                   <input
+                    id="activity-end-date"
                     type="date"
                     value={filters.endDate ? filters.endDate.toISOString().split('T')[0] : ''}
                     onChange={(e) => handleFilterChange('endDate', e.target.value ? new Date(e.target.value) : undefined)}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-blue focus:border-transparent"
                   />
                 </div>
-                <div className="flex items-end">
-                  <button
-                    onClick={clearFilters}
-                    className="w-full py-2 rounded-xl border border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 text-sm font-medium"
-                  >
-                    Clear filters
-                  </button>
-                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={applyFilters}
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white hover:opacity-90 disabled:opacity-50 text-sm font-medium shadow-sm"
+                >
+                  {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
+                  Apply filters
+                </button>
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm font-medium"
+                >
+                  Clear all
+                </button>
+                {hasActiveFilters && (
+                  <span className="text-sm text-gray-500">
+                    Results update when you click Apply filters.
+                  </span>
+                )}
               </div>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Table */}

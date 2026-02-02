@@ -34,7 +34,6 @@ import ConnectionManagement from './pages/admin/ConnectionManagement';
 import AdminUserEdit from './pages/admin/AdminUserEdit';
 import ActivityManagement from './pages/admin/ActivityManagement';
 // Removed badge generator functionality
-import AdGenerator from './pages/admin/AdGenerator';
 import ProfileSyncTools from './pages/admin/ProfileSyncTools';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import ConnectPage from './pages/ConnectPage';
@@ -283,14 +282,6 @@ function App() {
           } 
         />
         {/* Removed badge generator routes */}
-        <Route 
-          path="/admin/ad-generator" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AdGenerator />
-            </ProtectedRoute>
-          } 
-        />
         <Route 
           path="/admin/profile-sync" 
           element={

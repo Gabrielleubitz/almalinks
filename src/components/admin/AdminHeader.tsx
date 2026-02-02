@@ -19,7 +19,6 @@ import {
   Link2,
   Activity,
   Wrench,
-  Image,
   RefreshCw,
   Home,
 } from 'lucide-react';
@@ -66,7 +65,6 @@ const adminNavGroups = [
       { to: '/admin/connections', label: 'Connections', icon: Link2 },
       { to: '/admin/activity', label: 'Activity', icon: Activity },
       { to: '/admin/system-test', label: 'System Test', icon: Wrench },
-      { to: '/admin/ad-generator', label: 'Ad Generator', icon: Image },
       { to: '/admin/profile-sync', label: 'Profile Sync', icon: RefreshCw },
     ],
   },
