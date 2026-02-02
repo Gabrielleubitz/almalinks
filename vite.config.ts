@@ -9,8 +9,7 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       'chart.js',
-      'react-chartjs-2',
-      'html5-qrcode'
+      'react-chartjs-2'
     ],
     exclude: ['lucide-react'],
   },
@@ -41,7 +40,6 @@ export default defineConfig({
     alias: {
       // These packages should only be used in Netlify functions
       'firebase-admin': 'empty-module',
-      'twilio': 'empty-module',
       'openai': 'empty-module',
       'node-mailjet': 'empty-module'
     }

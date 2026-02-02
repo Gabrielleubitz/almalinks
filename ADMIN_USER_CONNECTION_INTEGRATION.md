@@ -94,13 +94,13 @@ Success Message → Connection Created → Modal Closes
 ## 📊 Admin Benefits
 
 ### Immediate Value:
-1. **Quick Connections**: Connect users instantly without QR codes
+1. **Quick Connections**: Connect users instantly in-person or via directory
 2. **Strategic Networking**: Create business connections based on admin knowledge
 3. **Event Management**: Bulk connect event attendees or speakers
 4. **Issue Resolution**: Fix failed auto-connections or technical issues
 
 ### Use Cases:
-- **Post-Event Networking**: Connect attendees who met but didn't scan QR codes
+- **Post-Event Networking**: Connect attendees who met but didn't connect in the app
 - **Speaker Introductions**: Connect speakers with relevant attendees
 - **Business Matchmaking**: Connect users with complementary business interests
 - **VIP Connections**: Create exclusive networking opportunities

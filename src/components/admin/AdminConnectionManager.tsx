@@ -10,7 +10,7 @@ import {
   Calendar,
   Link2,
   Zap,
-  QrCode
+  Handshake
 } from 'lucide-react';
 import { AdminConnectionService, UserConnectionStats } from '../../services/adminConnectionService';
 import { EventService } from '../../services/eventService';
@@ -175,7 +175,7 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
         return <UserPlus className="h-4 w-4 text-brand-light" />;
       case 'scan':
       default:
-        return <QrCode className="h-4 w-4 text-brand-dark" />;
+        return <Handshake className="h-4 w-4 text-brand-dark" />;
     }
   };
 
@@ -258,7 +258,7 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
                 </div>
                 <div className="bg-orange-50 p-3 sm:p-4 rounded-xl">
                   <div className="flex items-center space-x-2 sm:space-x-3">
-                    <QrCode className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 flex-shrink-0" />
+                    <Handshake className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 flex-shrink-0" />
                     <div className="min-w-0">
                       <p className="text-xs sm:text-sm text-orange-600 font-medium">Scan Connections</p>
                       <p className="text-xl sm:text-2xl font-bold text-orange-900">

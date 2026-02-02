@@ -1684,7 +1684,7 @@ const EventsPage: React.FC = () => {
                                   attendeeEmail={registration.email}
                                   attendeePhone={registration.phone}
                                   attendeeWork={registration.work}
-                                  ticketId={registration.qrCodeUrl?.slice(-8).toUpperCase() || 'TICKET'}
+                                  ticketId={registration.eventId?.slice(-8).toUpperCase() || registration.userId?.slice(-8).toUpperCase() || 'TICKET'}
                                   isExpired={false}
                                 />
                               </div>
@@ -1708,7 +1708,7 @@ const EventsPage: React.FC = () => {
                                 attendeeEmail={registration.email}
                                 attendeePhone={registration.phone}
                                 attendeeWork={registration.work}
-                                ticketId={registration.qrCodeUrl?.slice(-8).toUpperCase() || 'TICKET'}
+                                ticketId={registration.eventId?.slice(-8).toUpperCase() || registration.userId?.slice(-8).toUpperCase() || 'TICKET'}
                                 isExpired
                               />
                             ))}

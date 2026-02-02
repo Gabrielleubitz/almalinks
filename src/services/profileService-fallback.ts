@@ -1,6 +1,5 @@
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { ProfileSyncService } from './profileSyncService';
 
 /**
  * Upload a profile picture as base64 (fallback when Firebase Storage is not available)
@@ -23,16 +22,6 @@ export const uploadProfilePictureBase64 = async (userId: string, file: File): Pr
       profileImageUpdatedAt: new Date().toISOString()
     });
     console.log('✅ User document updated with base64 profile image');
-    
-    // Sync profile image across all connections and speaker assignments
-    try {
-      await ProfileSyncService.syncUserProfileImage(userId, base64String);
-      console.log('✅ Profile image synced across all data');
-    } catch (syncError) {
-      console.error('⚠️ Profile image uploaded but sync failed:', syncError);
-      // Don't throw here - the main operation succeeded
-    }
-    
     return base64String;
   } catch (error) {
     console.error('❌ Error uploading profile picture as base64:', error);
@@ -67,15 +56,6 @@ export const deleteProfilePictureBase64 = async (userId: string): Promise<void> 
       profileImageUpdatedAt: new Date().toISOString()
     });
     console.log('✅ User document updated to remove profile image');
-    
-    // Sync profile image removal across all connections and speaker assignments
-    try {
-      await ProfileSyncService.syncUserProfileImage(userId, null);
-      console.log('✅ Profile image removal synced across all data');
-    } catch (syncError) {
-      console.error('⚠️ Profile image deleted but sync failed:', syncError);
-      // Don't throw here - the main operation succeeded
-    }
   } catch (error) {
     console.error('❌ Error deleting profile picture:', error);
     throw error;

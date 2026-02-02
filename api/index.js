@@ -88,12 +88,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
-  // SMS disabled: no network requests to /api/send-sms; return 200 and log only
-  if (pathname === '/api/send-sms') {
-    console.log('SMS notifications disabled');
-    return res.status(200).json({ ok: true, skipped: true, message: 'SMS notifications disabled' });
-  }
-
   // Lazy-load the CJS endpoints only when called (keeps cold start smaller)
   if (pathname === '/api/system-test' || pathname === '/api/admin-tools' || pathname === '/api/automation-hub' || pathname === '/api/chat-api' || pathname === '/api/admin/chats') {
     const cjsHandler =

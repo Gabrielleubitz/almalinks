@@ -78,7 +78,7 @@ const ConnectPage: React.FC = () => {
         // Get target user data
         const targetUserData = await EventService.getUserById(targetUserId);
         if (!targetUserData) {
-          setError('User not found. The QR code may be invalid.');
+          setError('User not found. The link may be invalid or expired.');
           setLoading(false);
           return;
         }

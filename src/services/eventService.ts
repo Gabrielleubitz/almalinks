@@ -432,7 +432,7 @@ export class EventService {
         throw new Error('Registration is not available for this event');
       }
 
-      // Generate connection URL for QR code (camera-scannable)
+      // Generate connection URL for in-app / share link
       const qrCodeUrl = `https://almalinks.org/connect?to=${userId}&event=${eventId}`;
       
       // Also store the check-in code for admin scanner
@@ -441,7 +441,7 @@ export class EventService {
       const regRef = doc(db, 'events', eventId, 'registrations', userId);
       await setDoc(regRef, {
         ...registrationData,
-        qrCodeUrl, // Connection URL for user-to-user scanning
+        qrCodeUrl, // Connection URL for user-to-user link
         checkInCode, // Simple code for admin check-in scanner
         checkedIn: false,
         registeredAt: serverTimestamp()

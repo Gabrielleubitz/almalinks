@@ -112,8 +112,7 @@ const DiscoverabilityConsentModal: React.FC<DiscoverabilityConsentModalProps> = 
                   New Auto-Connect Feature
                 </p>
                 <p className="text-blue-700">
-                  We've replaced QR code scanning with automatic connections! When you register for an event, 
-                  you'll automatically connect with other attendees based on your privacy settings.
+                  When you register for an event, we can suggest connections automatically based on your privacy settings.
                 </p>
               </div>
             </div>

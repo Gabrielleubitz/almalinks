@@ -531,7 +531,7 @@ const ConnectionsCard: React.FC = () => {
           <h4 className="text-lg font-semibold text-gray-900 mb-2">No Connections Yet</h4>
           <p className="text-gray-600 mb-4">
             {selectedEventId === 'all'
-              ? 'Connect with other members by scanning their QR codes at events or through the Members directory.'
+              ? 'Connect with other members at events or through the Members directory.'
               : events.length > 0
                 ? `No connections found for this event. Try selecting "All Events" to see all your connections.`
                 : 'Start by registering for events and connecting with other members.'}

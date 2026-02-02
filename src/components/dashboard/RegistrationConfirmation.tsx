@@ -1,8 +1,6 @@
 import React from 'react';
-import { Check, User, Mail, Phone, Briefcase, Calendar, MapPin, Clock, Download, CalendarPlus } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+import { Check, User, Mail, Phone, Briefcase, Calendar, MapPin, Clock, CalendarPlus, Users } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { QRCodeService } from '../../services/qrCodeService';
 
 interface RegistrationConfirmationProps {
   data: {
@@ -16,37 +14,6 @@ interface RegistrationConfirmationProps {
 
 const RegistrationConfirmation: React.FC<RegistrationConfirmationProps> = ({ data, eventId }) => {
   const { user } = useAuth();
-  
-  // Generate event-specific QR code using QRCodeService
-  const qrCodeValue = user?.uid ? QRCodeService.generateRegistrationQRUrl(user.uid, eventId) : '';
-
-  const downloadQRCode = () => {
-    const svg = document.getElementById('qr-code-svg');
-    if (!svg) return;
-
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-
-    canvas.width = 200;
-    canvas.height = 200;
-
-    img.onload = () => {
-      if (ctx) {
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, 200, 200);
-        ctx.drawImage(img, 0, 0, 200, 200);
-        
-        const link = document.createElement('a');
-        link.download = `almalinks-qr-${data.name.replace(/\s+/g, '-').toLowerCase()}.png`;
-        link.href = canvas.toDataURL();
-        link.click();
-      }
-    };
-
-    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
-  };
 
   // Format event date and time for Google Calendar
   const formatGoogleCalendarDate = () => {
@@ -104,8 +71,7 @@ const RegistrationConfirmation: React.FC<RegistrationConfirmationProps> = ({ dat
       <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl p-6 mb-8">
         <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">Your Registration Details</h3>
         
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Left Column - User Details */}
+        <div className="grid gap-6">
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 rounded-full overflow-hidden">
@@ -154,32 +120,6 @@ const RegistrationConfirmation: React.FC<RegistrationConfirmationProps> = ({ dat
                 <div className="font-semibold text-gray-900">{data.work}</div>
               </div>
             </div>
-          </div>
-
-          {/* Right Column - QR Code */}
-          <div className="flex flex-col items-center justify-center">
-            <div className="text-sm text-gray-500 mb-3">Your Connection QR Code</div>
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-              <QRCodeSVG
-                id="qr-code-svg"
-                value={qrCodeValue}
-                size={120}
-                bgColor="#ffffff"
-                fgColor="#000000"
-                level="M"
-                includeMargin={false}
-              />
-            </div>
-            <div className="text-xs text-gray-400 mt-2 text-center mb-3">
-              Scan to connect with other attendees
-            </div>
-            <button
-              onClick={downloadQRCode}
-              className="inline-flex items-center space-x-2 text-brand-light hover:text-blue-700 text-sm font-medium"
-            >
-              <Download className="h-4 w-4" />
-              <span>Download QR Code</span>
-            </button>
           </div>
         </div>
       </div>
@@ -246,8 +186,8 @@ const RegistrationConfirmation: React.FC<RegistrationConfirmationProps> = ({ dat
           <div className="flex items-start space-x-3">
             <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
             <div>
-              <div className="font-medium text-gray-900">Bring your QR code</div>
-              <div className="text-gray-600 text-sm">Download or screenshot your QR code to connect with other attendees</div>
+              <div className="font-medium text-gray-900">Connect at the event</div>
+              <div className="text-gray-600 text-sm">Meet other attendees in person or use the Members directory to connect</div>
             </div>
           </div>
         </div>

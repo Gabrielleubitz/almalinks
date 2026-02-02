@@ -9,7 +9,6 @@ import {
   X, 
   AlertCircle, 
   Send, 
-  Phone, 
   Bot, 
   RefreshCw,
   Cpu,
@@ -39,11 +38,6 @@ const SystemTestPage: React.FC = () => {
     recipient: '',
     subject: 'Alma Links System Test',
     message: 'This is a test email from the Alma Links admin panel.'
-  });
-  
-  const [smsTest, setSmsTest] = useState({
-    recipient: '',
-    message: 'This is a test SMS from Alma Links admin panel.'
   });
   
   const [gptTest, setGptTest] = useState({
@@ -187,69 +181,6 @@ const SystemTestPage: React.FC = () => {
   };
   
   // Test SMS API
-  const testSmsApi = async () => {
-    const testId = `sms-${Date.now()}`;
-    
-    // Add initial test result
-    addTestResult({
-      id: testId,
-      name: 'SMS API',
-      status: 'pending',
-      message: 'Testing SMS delivery...',
-      timestamp: new Date()
-    });
-    
-    setRunningTest('sms');
-    const startTime = performance.now();
-    
-    try {
-      // Call the Vercel API function to send a test SMS (Updated)
-      const response = await fetch('/api/send-sms', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to: smsTest.recipient,
-          body: smsTest.message
-        })
-      });
-      
-      const endTime = performance.now();
-      const duration = Math.round(endTime - startTime);
-      
-      const responseData = await response.json();
-      
-      if (response.ok) {
-        updateTestResult(testId, {
-          status: 'success',
-          message: 'SMS sent successfully',
-          duration,
-          details: responseData
-        });
-      } else {
-        updateTestResult(testId, {
-          status: 'error',
-          message: `Failed to send SMS: ${responseData.error || response.statusText}`,
-          duration,
-          details: responseData
-        });
-      }
-    } catch (error: any) {
-      const endTime = performance.now();
-      const duration = Math.round(endTime - startTime);
-      
-      updateTestResult(testId, {
-        status: 'error',
-        message: `Error: ${error.message}`,
-        duration,
-        details: error
-      });
-    } finally {
-      setRunningTest(null);
-    }
-  };
-  
   // Test OpenAI GPT API
   const testGptApi = async () => {
     const testId = `gpt-${Date.now()}`;
@@ -640,64 +571,6 @@ const SystemTestPage: React.FC = () => {
                     <>
                       <Send className="h-5 w-5" />
                       <span>Test Email API</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-            
-            {/* SMS Test */}
-            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-              <div className="flex items-center space-x-3 mb-6">
-                <Phone className="h-6 w-6 text-green-600" />
-                <h2 className="text-xl font-bold text-gray-900">SMS API Test</h2>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="sms-recipient" className="block text-sm font-medium text-gray-700 mb-2">
-                    Recipient Phone Number
-                  </label>
-                  <input
-                    id="sms-recipient"
-                    type="tel"
-                    value={smsTest.recipient}
-                    onChange={(e) => setSmsTest(prev => ({ ...prev, recipient: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter test recipient phone (e.g. +972501234567)"
-                    disabled={runningTest === 'sms'}
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="sms-message" className="block text-sm font-medium text-gray-700 mb-2">
-                    Message
-                  </label>
-                  <textarea
-                    id="sms-message"
-                    value={smsTest.message}
-                    onChange={(e) => setSmsTest(prev => ({ ...prev, message: e.target.value }))}
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 resize-none"
-                    placeholder="Enter test SMS message"
-                    disabled={runningTest === 'sms'}
-                  />
-                </div>
-                
-                <button
-                  onClick={testSmsApi}
-                  disabled={!smsTest.recipient || runningTest !== null}
-                  className="w-full bg-green-600 text-white px-4 py-3 rounded-xl hover:bg-green-700 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                >
-                  {runningTest === 'sms' ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Testing SMS API...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-5 w-5" />
-                      <span>Test SMS API</span>
                     </>
                   )}
                 </button>

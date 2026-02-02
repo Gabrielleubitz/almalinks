@@ -20,7 +20,7 @@ import ChangePasswordPage from './pages/ChangePasswordPage';
 import CompleteProfilePage from './pages/CompleteProfilePage';
 import PendingPage from './pages/PendingPage';
 import ReRequestAccessPage from './pages/ReRequestAccessPage';
-// Removed QR-based AdminTools and AdminCheckIn - using EventManagement for manual check-in
+// Admin check-in: use EventManagement for manual check-in
 import AdminEmail from './pages/admin/AdminEmail';
 import AdminAnnouncements from './pages/admin/AdminAnnouncements';
 import AddEvent from './pages/admin/AddEvent';
@@ -33,8 +33,6 @@ import SystemTestPage from './pages/admin/SystemTestPage';
 import ConnectionManagement from './pages/admin/ConnectionManagement';
 import AdminUserEdit from './pages/admin/AdminUserEdit';
 import ActivityManagement from './pages/admin/ActivityManagement';
-// Removed badge generator functionality
-import ProfileSyncTools from './pages/admin/ProfileSyncTools';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import ConnectPage from './pages/ConnectPage';
 import UserProfilePage from './pages/UserProfilePage';
@@ -281,16 +279,6 @@ function App() {
             </ProtectedRoute>
           } 
         />
-        {/* Removed badge generator routes */}
-        <Route 
-          path="/admin/profile-sync" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <ProfileSyncTools />
-            </ProtectedRoute>
-          } 
-        />
-        
         {/* Legacy routes - redirect to new format */}
         
         {/* Catch-all route for 404s */}

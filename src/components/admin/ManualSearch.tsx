@@ -64,7 +64,7 @@ const ManualSearch: React.FC<ManualSearchProps> = ({ onSearch, searching }) => {
           <ul className="text-sm text-gray-600 space-y-1">
             <li>• Enter the attendee's email address</li>
             <li>• Click "Search" to find their registration</li>
-            <li>• Useful when QR codes are not working</li>
+            <li>• Useful for manual lookups</li>
             <li>• All registered emails are searchable</li>
           </ul>
         </div>

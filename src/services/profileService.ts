@@ -1,6 +1,5 @@
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { ProfileSyncService } from './profileSyncService';
 import { uploadProfilePictureBase64 } from './profileService-fallback';
 import { apiRequest } from '../utils/apiClient';
 
@@ -42,11 +41,6 @@ export const uploadProfilePicture = async (userId: string, file: File): Promise<
           ...(publicId && { profileImagePublicId: publicId }),
           profileImageUpdatedAt: new Date().toISOString(),
         });
-        try {
-          await ProfileSyncService.syncUserProfileImage(userId, downloadUrl);
-        } catch (syncError) {
-          console.error('⚠️ Profile image uploaded but sync failed:', syncError);
-        }
         console.log('✅ Profile picture uploaded to Cloudinary');
         return downloadUrl;
       }
@@ -110,12 +104,6 @@ export const deleteProfilePicture = async (
       profileImagePublicId: null,
       profileImageUpdatedAt: new Date().toISOString(),
     });
-
-    try {
-      await ProfileSyncService.syncUserProfileImage(userId, null);
-    } catch (syncError) {
-      console.error('⚠️ Profile image deleted but sync failed:', syncError);
-    }
     console.log('✅ Profile picture removed');
   } catch (error) {
     console.error('❌ Error deleting profile picture:', error);

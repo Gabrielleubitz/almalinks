@@ -139,7 +139,7 @@ const ConnectionManagement: React.FC = () => {
                   
                   <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
                     <div>
-                      <p className="font-medium text-orange-900">QR Code System</p>
+                      <p className="font-medium text-orange-900">Connection system</p>
                       <p className="text-sm text-orange-600">Legacy system active</p>
                     </div>
                     <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
@@ -175,9 +175,9 @@ const ConnectionManagement: React.FC = () => {
                     <div className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0"></div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                        3 QR code connections
+                        3 connections
                       </p>
-                      <p className="text-xs text-gray-600 truncate">Legacy QR system - 6 hours ago</p>
+                      <p className="text-xs text-gray-600 truncate">Legacy - 6 hours ago</p>
                     </div>
                   </div>
                 </div>

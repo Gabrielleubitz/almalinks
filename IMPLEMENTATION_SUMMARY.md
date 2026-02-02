@@ -63,7 +63,7 @@ Successfully replaced the scan-to-connect system with an auto-connect system tha
 **Features**:
 - Added `connectionType` field (`auto`, `manual`, `scan`)
 - Support for manual connections via directory
-- Backward compatible with existing QR scan connections
+- Backward compatible with existing in-person/scan connections
 
 ### 7. Admin Controls
 - **Enhanced**: `src/services/eventService.ts`
@@ -124,7 +124,7 @@ The implementation is backward compatible:
 
 1. **Existing connections** continue to work (default `connectionType: 'scan'`)
 2. **New privacy fields** have sensible defaults
-3. **QR code system** still works alongside auto-connect
+3. **In-person connection** still works alongside auto-connect
 4. **Gradual rollout** possible via per-event controls
 
 ## 🚀 Next Steps for Deployment

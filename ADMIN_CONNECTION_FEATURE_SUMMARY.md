@@ -148,7 +148,7 @@ import AdminConnectionWidget from '../components/admin/AdminConnectionWidget';
 - Uses existing `ConnectionService.createConnection()`
 - Maintains connection type tracking (`connectionType: 'manual'`)
 - Respects existing database schema
-- Compatible with auto-connect and QR systems
+- Compatible with auto-connect and in-person connection
 
 ### Event Integration
 - Can be added to event management pages

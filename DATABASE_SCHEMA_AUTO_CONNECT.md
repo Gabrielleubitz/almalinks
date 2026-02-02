@@ -59,7 +59,7 @@ interface EventRegistration {
   phone: string;
   work: string;
   registeredAt: Timestamp;
-  qrCodeUrl?: string;
+  qrCodeUrl?: string;  // legacy field name; stores connection URL
   checkedIn?: boolean;
   checkedInAt?: Timestamp;
   checkedInBy?: string;
