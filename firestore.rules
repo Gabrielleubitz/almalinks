@@ -114,5 +114,11 @@ service cloud.firestore {
       // Only admins can create, update, or delete announcements
       allow write: if isAdmin();
     }
+
+    // HubSpot contacts (synced by POST /api/sync-hubspot-contacts; server writes via Admin SDK)
+    match /hubspotContacts/{contactId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
   }
 }
