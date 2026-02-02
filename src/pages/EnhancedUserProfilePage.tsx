@@ -13,6 +13,7 @@ import { getVisibilityDescription, getContactPermissionExplanation } from '../ut
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import Favicon from '../components/ui/Favicon';
 
 const EnhancedUserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -494,9 +495,9 @@ const EnhancedUserProfilePage: React.FC = () => {
                         rel="noopener noreferrer"
                         className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 group"
                       >
-                        <Globe className="h-5 w-5 text-gray-600" />
-                        <span className="text-gray-700 font-medium group-hover:text-gray-800">Website</span>
-                        <ExternalLink className="h-4 w-4 text-gray-500 group-hover:text-gray-600" />
+                        <Favicon url={profile.website} size={20} iconClassName="text-gray-600" />
+                        <span className="text-gray-700 font-medium group-hover:text-gray-800 truncate">{profile.website.replace(/^https?:\/\//, '')}</span>
+                        <ExternalLink className="h-4 w-4 text-gray-500 group-hover:text-gray-600 flex-shrink-0" />
                       </a>
                     )}
                     

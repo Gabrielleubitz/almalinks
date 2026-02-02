@@ -4,8 +4,7 @@ import {
   UserPlus, 
   Link2, 
   TrendingUp,
-  Zap,
-  Handshake
+  Zap
 } from 'lucide-react';
 import { AdminConnectionService } from '../../services/adminConnectionService';
 
@@ -113,7 +112,7 @@ const AdminConnectionWidget: React.FC<AdminConnectionWidgetProps> = ({
 
         <div className="bg-orange-50 p-3 sm:p-4 rounded-xl">
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <Handshake className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 flex-shrink-0" />
+            <Link2 className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 flex-shrink-0" />
             <div className="min-w-0">
               <p className="text-xl sm:text-2xl font-bold text-orange-900">
                 {stats.scanConnections.toLocaleString()}

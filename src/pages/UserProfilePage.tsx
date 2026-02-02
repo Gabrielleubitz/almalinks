@@ -15,6 +15,7 @@ import { getVisibilityDescription } from '../utils/privacy';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import Favicon from '../components/ui/Favicon';
 
 interface Connection {
   id: string;
@@ -391,7 +392,7 @@ const UserProfilePage: React.FC = () => {
 
                     {profile.website && (
                       <div className="flex items-center text-gray-600">
-                        <Globe className="h-5 w-5 mr-3 text-gray-400" />
+                        <Favicon url={profile.website} size={20} iconClassName="text-gray-400" className="mr-3" />
                         <a 
                           href={profile.website}
                           target="_blank"

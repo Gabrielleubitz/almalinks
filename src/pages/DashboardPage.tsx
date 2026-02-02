@@ -12,6 +12,7 @@ import AnnouncementsSidebar from '../components/announcements/AnnouncementsSideb
 import ConnectionsCard from '../components/dashboard/ConnectionsCard';
 import EventTicketCard from '../components/dashboard/EventTicketCard';
 import ProfilePictureUploader from '../components/profile/ProfilePictureUploader';
+import Favicon from '../components/ui/Favicon';
 
 // Country codes data for phone editing
 const COUNTRY_CODES = [
@@ -1371,7 +1372,7 @@ const EventsPage: React.FC = () => {
                           <div className="grid md:grid-cols-2 gap-6">
                             {user?.website && (
                               <div className="flex items-center space-x-3">
-                                <Globe className="h-5 w-5 text-gray-400" />
+                                <Favicon url={user.website} size={20} iconClassName="text-gray-400" />
                                 <div>
                                   <div className="text-sm text-gray-500">Website</div>
                                   <div className="font-medium">

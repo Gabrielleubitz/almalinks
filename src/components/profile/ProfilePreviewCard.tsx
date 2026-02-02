@@ -2,6 +2,7 @@ import React from 'react';
 import { MapPin, Mail, Phone, Linkedin, Globe, Twitter, Clock, Calendar, Shield, Eye, Users, EyeOff } from 'lucide-react';
 import { UserProfile } from '../../types/user';
 import { getVisibilityDescription } from '../../utils/privacy';
+import Favicon from '../ui/Favicon';
 
 interface ProfilePreviewCardProps {
   profile: UserProfile;
@@ -172,8 +173,8 @@ const ProfilePreviewCard: React.FC<ProfilePreviewCardProps> = ({
 
               {profile.website && (
                 <div className="flex items-center text-brand-blue text-sm">
-                  <Globe className="h-4 w-4 mr-3 flex-shrink-0" />
-                  <span className="truncate">Website</span>
+                  <Favicon url={profile.website} size={16} iconClassName="text-gray-500" className="mr-3" />
+                  <span className="truncate">{profile.website.replace(/^https?:\/\//, '')}</span>
                 </div>
               )}
 
