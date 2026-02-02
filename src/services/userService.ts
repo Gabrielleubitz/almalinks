@@ -60,6 +60,7 @@ export class UserService {
         profileVisibility: normalizedProfile.profileVisibility,
         role: 'member',
         status: 'approved', // UserService.createUser is only used for admin-created users
+        registrationComplete: true,
         createdAt: now,
         updatedAt: now,
         joinedAt: now,
@@ -113,6 +114,7 @@ export class UserService {
       const updatedProfile: UserProfile = {
         ...currentProfile,
         ...normalizedUpdates,
+        registrationComplete: true,
         updatedAt: Timestamp.now(),
         lastProfileUpdate: Timestamp.now()
       };
@@ -340,8 +342,9 @@ export class UserService {
         );
         
         const snapshot = await retryOnNetworkFailure(() => getDocs(q));
-        approvedUsers = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
-        console.log(`👥 Found ${approvedUsers.length} approved users (with index)`);
+        const raw = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
+        approvedUsers = raw.filter((u) => (u as any).registrationComplete !== false);
+        console.log(`👥 Found ${approvedUsers.length} approved users with completed registration (with index)`);
       } catch (indexError: any) {
         // If index is missing, try fallback query without orderBy
         if (indexError.code === 'failed-precondition' || indexError.message?.includes('index')) {
@@ -355,8 +358,8 @@ export class UserService {
             );
             
             const snapshot = await retryOnNetworkFailure(() => getDocs(fallbackQ));
-            approvedUsers = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
-            
+            const raw = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
+            approvedUsers = raw.filter((u) => (u as any).registrationComplete !== false);
             // Sort client-side by updatedAt
             approvedUsers.sort((a, b) => {
               const aTime = a.updatedAt?.toDate?.()?.getTime() || a.updatedAt?.seconds || 0;

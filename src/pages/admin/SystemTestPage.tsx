@@ -56,6 +56,8 @@ const SystemTestPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [syncingHubspot, setSyncingHubspot] = useState(false);
   const [hubspotSyncResult, setHubspotSyncResult] = useState<{ ok?: boolean; totalUpserted?: number; error?: string } | null>(null);
+  const [removingHubspot, setRemovingHubspot] = useState(false);
+  const [removeHubspotResult, setRemoveHubspotResult] = useState<{ ok?: boolean; deletedUsers?: number; deletedContacts?: number; error?: string } | null>(null);
   
   // Scroll to top synchronously before paint to prevent visible scroll jump
   useLayoutEffect(() => {
@@ -489,6 +491,43 @@ const SystemTestPage: React.FC = () => {
     }
   };
 
+  const removeHubspotUsers = async () => {
+    if (!window.confirm('Remove all HubSpot-synced users (hubspot_*) from Firestore, and clear hubspotContacts? This cannot be undone.')) return;
+    setRemovingHubspot(true);
+    setRemoveHubspotResult(null);
+    try {
+      const res = await apiRequest('/api/remove-hubspot-users', {
+        method: 'POST',
+        body: JSON.stringify({ removeContacts: true }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setRemoveHubspotResult(data);
+      const isSuccess = res.ok && data.ok !== false && !data.error;
+      addTestResult({
+        id: `hubspot-remove-${Date.now()}`,
+        name: 'Remove HubSpot users',
+        status: isSuccess ? 'success' : 'error',
+        message: isSuccess
+          ? `Removed ${data.deletedUsers ?? 0} users${data.deletedContacts != null ? `, ${data.deletedContacts} contacts` : ''}`
+          : data.error || `HTTP ${res.status}`,
+        timestamp: new Date(),
+        details: data,
+      });
+    } catch (err: any) {
+      setRemoveHubspotResult({ ok: false, error: err?.message || 'Request failed' });
+      addTestResult({
+        id: `hubspot-remove-${Date.now()}`,
+        name: 'Remove HubSpot users',
+        status: 'error',
+        message: err?.message || 'Request failed',
+        timestamp: new Date(),
+        details: err,
+      });
+    } finally {
+      setRemovingHubspot(false);
+    }
+  };
+
   // Clear all test results
   const clearTestResults = () => {
     setTestResults([]);
@@ -805,6 +844,28 @@ const SystemTestPage: React.FC = () => {
               {hubspotSyncResult && (
                 <pre className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs overflow-auto max-h-32">
                   {JSON.stringify(hubspotSyncResult, null, 2)}
+                </pre>
+              )}
+              <button
+                onClick={removeHubspotUsers}
+                disabled={removingHubspot}
+                className="mt-4 w-full bg-red-100 text-red-700 px-4 py-3 rounded-xl hover:bg-red-200 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 border border-red-200"
+              >
+                {removingHubspot ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                    <span>Removing HubSpot users...</span>
+                  </>
+                ) : (
+                  <>
+                    <X className="h-5 w-5" />
+                    <span>Remove HubSpot users from Firebase</span>
+                  </>
+                )}
+              </button>
+              {removeHubspotResult && (
+                <pre className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs overflow-auto max-h-24">
+                  {JSON.stringify(removeHubspotResult, null, 2)}
                 </pre>
               )}
             </div>
