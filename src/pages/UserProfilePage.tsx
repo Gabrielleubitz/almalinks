@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, User, Briefcase, MapPin, Calendar, Linkedin, Mail, Users, Shield, Clock, ChevronLeft,
-  Phone, Globe, Twitter, MessageCircle, UserPlus, Share, MoreHorizontal, Edit3, Copy
+  Phone, Globe, Twitter, MessageCircle, UserPlus, Share, MoreHorizontal, Edit3, Copy, X
 } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, retryOnNetworkFailure } from '../firebase/config';
@@ -32,6 +32,7 @@ const UserProfilePage: React.FC = () => {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -142,6 +143,14 @@ const UserProfilePage: React.FC = () => {
     return positionMap[position] || position;
   };
 
+  const closeAvatarModal = useCallback(() => setShowAvatarModal(false), []);
+  useEffect(() => {
+    if (!showAvatarModal) return;
+    const onEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') closeAvatarModal(); };
+    window.addEventListener('keydown', onEscape);
+    return () => window.removeEventListener('keydown', onEscape);
+  }, [showAvatarModal, closeAvatarModal]);
+
   const formatDate = (timestamp: any): string => {
     if (!timestamp) return '';
     
@@ -213,9 +222,37 @@ const UserProfilePage: React.FC = () => {
   const userPosition = (profile as any).position || '';
   const avatarColor = getAvatarColor(displayName);
 
+  const profileImageUrl = profile.profileImage || profile.avatarUrl;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <Header />
+
+      {/* Avatar lightbox */}
+      {showAvatarModal && profileImageUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={closeAvatarModal}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Profile picture"
+        >
+          <button
+            type="button"
+            onClick={closeAvatarModal}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+            aria-label="Close"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={profileImageUrl}
+            alt={displayName}
+            className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
       
       {/* Profile Header */}
       <div className="pt-20 pb-8">
@@ -231,17 +268,31 @@ const UserProfilePage: React.FC = () => {
 
           {/* Profile Card */}
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+            {/* Cover / banner: custom photo or blue gradient */}
             <div className="relative h-32 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light">
-              <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+              {(profile as any).coverPhotoUrl ? (
+                <img
+                  src={(profile as any).coverPhotoUrl}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : null}
+              <div className="absolute inset-0 bg-black bg-opacity-20" />
             </div>
             
             <div className="relative px-8 pb-8">
-              {/* Avatar */}
+              {/* Avatar - click to enlarge when image present */}
               <div className="flex items-start justify-between -mt-16 mb-6">
-                <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white">
-                  {profile.profileImage ? (
+                <div
+                  role={(profile.profileImage || profile.avatarUrl) ? 'button' : undefined}
+                  tabIndex={(profile.profileImage || profile.avatarUrl) ? 0 : undefined}
+                  onClick={() => (profile.profileImage || profile.avatarUrl) && setShowAvatarModal(true)}
+                  onKeyDown={(e) => (profile.profileImage || profile.avatarUrl) && (e.key === 'Enter' || e.key === ' ') && setShowAvatarModal(true)}
+                  className={`w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white flex-shrink-0 ${(profile.profileImage || profile.avatarUrl) ? 'cursor-pointer hover:ring-4 hover:ring-brand-blue/30 transition-all' : ''}`}
+                >
+                  {profile.profileImage || profile.avatarUrl ? (
                     <img 
-                      src={profile.profileImage} 
+                      src={profile.profileImage || profile.avatarUrl || ''} 
                       alt={displayName}
                       className="w-full h-full object-cover"
                     />

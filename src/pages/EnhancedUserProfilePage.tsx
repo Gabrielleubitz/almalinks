@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, User, Briefcase, MapPin, Calendar, Linkedin, Mail, Users, Shield, Clock,
   Phone, Globe, Twitter, MessageCircle, UserPlus, Share, MoreHorizontal, Edit3, Copy,
-  Eye, EyeOff, CheckCircle, ExternalLink
+  Eye, EyeOff, CheckCircle, ExternalLink, X
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { UserService } from '../services/userService';
@@ -25,6 +25,7 @@ const EnhancedUserProfilePage: React.FC = () => {
   const [connectionStatus, setConnectionStatus] = useState<'none' | 'pending' | 'connected'>('none');
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -156,6 +157,13 @@ const EnhancedUserProfilePage: React.FC = () => {
   };
 
   const isOwner = currentUser?.uid === userId;
+  const closeAvatarModal = useCallback(() => setShowAvatarModal(false), []);
+  useEffect(() => {
+    if (!showAvatarModal) return;
+    const onEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') closeAvatarModal(); };
+    window.addEventListener('keydown', onEscape);
+    return () => window.removeEventListener('keydown', onEscape);
+  }, [showAvatarModal, closeAvatarModal]);
 
   if (loading) {
     return (
@@ -197,10 +205,37 @@ const EnhancedUserProfilePage: React.FC = () => {
   const displayName = profile.displayName || 'Anonymous';
   const avatarColor = getAvatarColor(displayName);
   const hasProfileImage = profile.avatarUrl || profile.profileImage;
+  const profileImageUrl = profile.avatarUrl || profile.profileImage;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <Header />
+
+      {/* Avatar lightbox */}
+      {showAvatarModal && profileImageUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={closeAvatarModal}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Profile picture"
+        >
+          <button
+            type="button"
+            onClick={closeAvatarModal}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+            aria-label="Close"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={profileImageUrl}
+            alt={displayName}
+            className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
       
       <div className="pt-20 pb-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -215,10 +250,16 @@ const EnhancedUserProfilePage: React.FC = () => {
 
           {/* Profile Header */}
           <div className="bg-white rounded-3xl shadow-xl overflow-hidden mb-8">
-            {/* Cover Image */}
+            {/* Cover Image - custom photo or gradient */}
             <div className="relative h-48 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500">
-              <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-              
+              {profile.coverPhotoUrl ? (
+                <img
+                  src={profile.coverPhotoUrl}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : null}
+              <div className="absolute inset-0 bg-black bg-opacity-20" />
               {/* Edit Button for Owner */}
               {isOwner && (
                 <Link
@@ -232,12 +273,18 @@ const EnhancedUserProfilePage: React.FC = () => {
             </div>
 
             <div className="relative px-8 pb-8">
-              {/* Avatar and Action Bar */}
+              {/* Avatar - click to enlarge when image present */}
               <div className="flex items-start justify-between -mt-16 mb-6">
-                <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl bg-white">
+                <div
+                  role={hasProfileImage ? 'button' : undefined}
+                  tabIndex={hasProfileImage ? 0 : undefined}
+                  onClick={() => hasProfileImage && setShowAvatarModal(true)}
+                  onKeyDown={(e) => hasProfileImage && (e.key === 'Enter' || e.key === ' ') && setShowAvatarModal(true)}
+                  className={`w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl bg-white flex-shrink-0 ${hasProfileImage ? 'cursor-pointer hover:ring-4 hover:ring-brand-blue/30 transition-all' : ''}`}
+                >
                   {hasProfileImage ? (
                     <img 
-                      src={profile.avatarUrl || profile.profileImage} 
+                      src={profile.avatarUrl || profile.profileImage || ''} 
                       alt={displayName}
                       className="w-full h-full object-cover"
                     />

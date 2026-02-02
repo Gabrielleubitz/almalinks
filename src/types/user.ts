@@ -37,6 +37,8 @@ export interface UserProfile {
   avatarUrl?: string | null;
   profileImage?: string | null; // legacy field for backward compatibility
   profileImagePublicId?: string | null; // Cloudinary public_id for delete
+  /** Cover/background image for profile header (LinkedIn-style banner) */
+  coverPhotoUrl?: string | null;
   
   // Privacy & Visibility
   profileVisibility: ProfileVisibility;

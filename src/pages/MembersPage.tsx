@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, MapPin, Briefcase, Plus, Linkedin, User, Grid, List, ExternalLink, Map, Check, X, Clock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { UserService } from '../services/userService';
@@ -378,8 +379,8 @@ const MembersPage: React.FC = () => {
           className={`bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-200 group ${cardOutlineClass}`}
         >
           <div className="flex items-center space-x-4">
-            {/* Avatar */}
-            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-100 flex-shrink-0">
+            {/* Avatar - links to profile */}
+            <Link to={`/profile/${member.uid}`} className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-100 flex-shrink-0 block shrink-0">
               {member.avatarUrl ? (
                 <img 
                   src={member.avatarUrl} 
@@ -391,7 +392,7 @@ const MembersPage: React.FC = () => {
                   {displayName.charAt(0).toUpperCase()}
                 </div>
               )}
-            </div>
+            </Link>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
@@ -508,9 +509,9 @@ const MembersPage: React.FC = () => {
         key={member.uid}
         className={`bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all duration-200 flex flex-col h-full ${cardOutlineClass}`}
       >
-        {/* Avatar */}
+        {/* Avatar - links to profile */}
         <div className="flex justify-center mb-4">
-          <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-100 flex-shrink-0">
+          <Link to={`/profile/${member.uid}`} className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-100 flex-shrink-0 block">
             {member.avatarUrl ? (
               <img
                 src={member.avatarUrl}
@@ -522,7 +523,7 @@ const MembersPage: React.FC = () => {
                 {displayName.charAt(0).toUpperCase()}
               </div>
             )}
-          </div>
+          </Link>
         </div>
 
         {/* Info */}

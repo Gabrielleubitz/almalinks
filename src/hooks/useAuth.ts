@@ -16,6 +16,7 @@ export interface AuthUser {
   linkedinUsername?: string;
   position?: string;
   profileImage?: string | null;
+  coverPhotoUrl?: string | null;
   bioTitle?: string;
   bio?: string;
   city?: string;
@@ -42,6 +43,7 @@ export interface ProfileData {
   status?: string;
   profileImage?: string | null;
   profileImagePublicId?: string | null;
+  coverPhotoUrl?: string | null;
   bioTitle?: string;
   bio?: string;
   city?: string;
@@ -107,6 +109,7 @@ export const useAuth = () => {
           linkedinUsername: userData.linkedinUsername || '',
           position: userData.position || '',
           profileImage: userData.profileImage || null,
+          coverPhotoUrl: userData.coverPhotoUrl || null,
           bioTitle: userData.bioTitle || '',
           bio: userData.bio || '',
           city: userData.city || '',
@@ -243,6 +246,7 @@ export const useAuth = () => {
         if (profileData?.position) updatedData.position = profileData.position;
         if (profileData?.profileImage !== undefined) updatedData.profileImage = profileData.profileImage;
         if (profileData?.profileImagePublicId !== undefined) updatedData.profileImagePublicId = profileData.profileImagePublicId;
+        if (profileData?.coverPhotoUrl !== undefined) updatedData.coverPhotoUrl = profileData.coverPhotoUrl;
         if (profileData?.bioTitle !== undefined && profileData.bioTitle !== null) updatedData.bioTitle = profileData.bioTitle;
         if (profileData?.bio !== undefined && profileData.bio !== null) updatedData.bio = profileData.bio;
         if (profileData?.city !== undefined && profileData.city !== null) updatedData.city = profileData.city;
@@ -290,6 +294,7 @@ export const useAuth = () => {
         ...(profileData.linkedinUsername && { linkedinUsername: profileData.linkedinUsername }),
         ...(profileData.position && { position: profileData.position }),
         ...(profileData.profileImage !== undefined && { profileImage: profileData.profileImage }),
+        ...(profileData.coverPhotoUrl !== undefined && { coverPhotoUrl: profileData.coverPhotoUrl }),
         ...(profileData.bioTitle !== undefined && { bioTitle: profileData.bioTitle }),
         ...(profileData.bio !== undefined && { bio: profileData.bio }),
         ...(profileData.city !== undefined && { city: profileData.city }),
@@ -313,6 +318,7 @@ export const useAuth = () => {
         linkedinUsername: profileData.linkedinUsername || prev.linkedinUsername,
         position: profileData.position || prev.position,
         profileImage: profileData.profileImage !== undefined ? profileData.profileImage : prev.profileImage,
+        coverPhotoUrl: profileData.coverPhotoUrl !== undefined ? profileData.coverPhotoUrl : prev.coverPhotoUrl,
         bioTitle: profileData.bioTitle !== undefined ? profileData.bioTitle : prev.bioTitle,
         bio: profileData.bio !== undefined ? profileData.bio : prev.bio,
         city: profileData.city !== undefined ? profileData.city : prev.city,

@@ -20,9 +20,10 @@ import { useAuth } from '../../hooks/useAuth';
 import { UserService } from '../../services/userService';
 import { UserProfile, UserProfileForm } from '../../types/user';
 import { validateUserProfile } from '../../utils/validation';
-import { uploadProfilePicture, deleteProfilePicture } from '../../services/profileService';
+import { uploadProfilePicture, deleteProfilePicture, deleteCoverPhoto } from '../../services/profileService';
 import AdminHeader from '../../components/admin/AdminHeader';
 import ProfilePictureUploader from '../../components/profile/ProfilePictureUploader';
+import CoverPhotoUploader from '../../components/profile/CoverPhotoUploader';
 import ProfileBasicsStep from '../../components/signup/steps/ProfileBasicsStep';
 import AboutYouStep from '../../components/signup/steps/AboutYouStep';
 import ContactLocationStep from '../../components/signup/steps/ContactLocationStep';
@@ -66,6 +67,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [profilePictureUploadError, setProfilePictureUploadError] = useState<string | null>(null);
+  const [coverPhotoUploadError, setCoverPhotoUploadError] = useState<string | null>(null);
   const [toast, setToast] = useState<{
     visible: boolean;
     message: string;
@@ -241,6 +243,9 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       if (profile.profileImagePublicId !== undefined) {
         updateData.profileImagePublicId = profile.profileImagePublicId;
       }
+      if (profile.coverPhotoUrl !== undefined) {
+        updateData.coverPhotoUrl = profile.coverPhotoUrl;
+      }
       
       // Call the user update API
       const response = await fetch('/api/user-admin', {
@@ -299,6 +304,29 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       console.error('Error deleting avatar:', error);
       showToast('Failed to delete profile picture', 'error');
     }
+  };
+
+  const handleCoverPhotoSuccess = (url: string) => {
+    setProfile(prev => prev ? { ...prev, coverPhotoUrl: url } : null);
+    setCoverPhotoUploadError(null);
+    scheduleAutoSave();
+  };
+  const handleCoverPhotoError = (message: string) => {
+    setCoverPhotoUploadError(message);
+  };
+  const handleCoverPhotoRemove = async () => {
+    if (!userId) return;
+    try {
+      await deleteCoverPhoto(userId);
+      setProfile(prev => prev ? { ...prev, coverPhotoUrl: null } : null);
+    } catch (e: unknown) {
+      setCoverPhotoUploadError(e instanceof Error ? e.message : 'Failed to remove cover');
+    }
+  };
+  const handleCoverTemplateSelect = (url: string) => {
+    setProfile(prev => prev ? { ...prev, coverPhotoUrl: url } : null);
+    setCoverPhotoUploadError(null);
+    scheduleAutoSave();
   };
 
   const getRoleIcon = (role: string) => {
@@ -481,6 +509,30 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Cover Photo Section */}
+          <div className="mb-8 p-6 border border-gray-200 rounded-xl">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Camera className="h-5 w-5 mr-2 text-brand-light" />
+              Cover photo
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Add, change, or remove the background image above this user&apos;s profile picture on their public profile.
+            </p>
+            <CoverPhotoUploader
+              currentCoverUrl={profile.coverPhotoUrl ?? null}
+              onUploadSuccess={handleCoverPhotoSuccess}
+              onUploadError={handleCoverPhotoError}
+              onRemove={handleCoverPhotoRemove}
+              onTemplateSelect={handleCoverTemplateSelect}
+              targetUserId={userId}
+            />
+            {coverPhotoUploadError && (
+              <div className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-800 text-sm">{coverPhotoUploadError}</p>
+              </div>
+            )}
           </div>
 
           {/* User Role Selection - ADMIN ONLY FEATURE */}

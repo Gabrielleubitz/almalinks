@@ -12,6 +12,7 @@ import AnnouncementsSidebar from '../components/announcements/AnnouncementsSideb
 import ConnectionsCard from '../components/dashboard/ConnectionsCard';
 import EventTicketCard from '../components/dashboard/EventTicketCard';
 import ProfilePictureUploader from '../components/profile/ProfilePictureUploader';
+import CoverPhotoUploader from '../components/profile/CoverPhotoUploader';
 import Favicon from '../components/ui/Favicon';
 import SavedIndicator from '../components/ui/SavedIndicator';
 
@@ -102,7 +103,9 @@ const EventsPage: React.FC = () => {
   const [profileUpdateError, setProfileUpdateError] = useState<string | null>(null);
   const [profileUpdateSuccess, setProfileUpdateSuccess] = useState<string | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -211,6 +214,7 @@ const EventsPage: React.FC = () => {
       setSkillsInputValue((user.skills || []).join(', '));
       setSelectedCountryCode(countryCode);
       setProfileImageUrl(user.profileImage || null);
+      setCoverPhotoUrl((user as { coverPhotoUrl?: string | null }).coverPhotoUrl || null);
     }
   }, [user, isEditingProfile]);
 
@@ -330,6 +334,7 @@ const EventsPage: React.FC = () => {
         linkedinUsername: formattedLinkedin,
         position: editFormData.position,
         profileImage: profileImageUrl,
+        coverPhotoUrl: coverPhotoUrl,
         bioTitle: editFormData.bioTitle.trim(),
         bio: editFormData.bio.trim(),
         city: editFormData.city.trim(),
@@ -430,6 +435,7 @@ const EventsPage: React.FC = () => {
       setSkillsInputValue((user.skills || []).join(', '));
       setSelectedCountryCode(countryCode);
       setProfileImageUrl(user.profileImage || null);
+      setCoverPhotoUrl((user as { coverPhotoUrl?: string | null }).coverPhotoUrl || null);
     }
   };
 
@@ -442,6 +448,29 @@ const EventsPage: React.FC = () => {
   // Handle profile picture upload error
   const handleProfilePictureError = (errorMessage: string) => {
     setImageUploadError(errorMessage);
+  };
+
+  // Cover photo
+  const handleCoverPhotoSuccess = (url: string) => {
+    setCoverPhotoUrl(url);
+    setCoverUploadError(null);
+  };
+  const handleCoverPhotoError = (errorMessage: string) => {
+    setCoverUploadError(errorMessage);
+  };
+  const handleCoverPhotoRemove = () => {
+    setCoverPhotoUrl(null);
+    setCoverUploadError(null);
+  };
+  const handleCoverTemplateSelect = async (url: string) => {
+    setCoverPhotoUrl(url);
+    setCoverUploadError(null);
+    try {
+      await updateProfile({ coverPhotoUrl: url });
+      setLastSavedAt(Date.now());
+    } catch (e: unknown) {
+      setCoverUploadError(e instanceof Error ? e.message : 'Failed to set cover');
+    }
   };
 
   const getStatusBadge = (status: EventData['status']) => {
@@ -671,6 +700,22 @@ const EventsPage: React.FC = () => {
                   {isEditingProfile ? (
                     /* Edit Mode */
                     <div className="space-y-6 sm:space-y-8 w-full max-w-full min-w-0">
+                      {/* Cover Photo Section */}
+                      <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 w-full max-w-full min-w-0">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Cover photo</h3>
+                        <p className="text-sm text-gray-500 mb-4">Add, change, or remove the background image above your profile picture on your public profile (like LinkedIn).</p>
+                        <CoverPhotoUploader
+                          currentCoverUrl={coverPhotoUrl}
+                          onUploadSuccess={handleCoverPhotoSuccess}
+                          onUploadError={handleCoverPhotoError}
+                          onRemove={handleCoverPhotoRemove}
+                          onTemplateSelect={handleCoverTemplateSelect}
+                        />
+                        {coverUploadError && (
+                          <p className="text-red-600 text-sm mt-2">{coverUploadError}</p>
+                        )}
+                      </div>
+
                       {/* Profile Picture Section */}
                       <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 w-full max-w-full min-w-0">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h3>

@@ -59,6 +59,7 @@ export const filterProfileForViewer = (
     timezone: profile.timezone,
     avatarUrl: profile.avatarUrl,
     profileImage: profile.profileImage,
+    coverPhotoUrl: profile.coverPhotoUrl,
     profileVisibility: profile.profileVisibility,
     role: profile.role,
     status: profile.status,

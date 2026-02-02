@@ -62,6 +62,38 @@ export const uploadProfilePicture = async (userId: string, file: File): Promise<
 };
 
 /**
+ * Upload a cover/background photo for the profile header (LinkedIn-style banner).
+ * Uses same API as profile picture with imageType: 'cover'.
+ * @param userId User ID
+ * @param file Image file to upload
+ * @returns URL of the uploaded image
+ */
+export const uploadCoverPhoto = async (userId: string, file: File): Promise<string> => {
+  const imageDataUrl = await fileToDataUrl(file);
+  const res = await apiRequest('/api/upload-profile-image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, image: imageDataUrl, imageType: 'cover' }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok || !data.url) {
+    throw new Error((data as { error?: string })?.error || 'Cover photo upload failed');
+  }
+  const downloadUrl = data.url as string;
+  const userRef = doc(db, 'users', userId);
+  await updateDoc(userRef, { coverPhotoUrl: downloadUrl });
+  return downloadUrl;
+};
+
+/**
+ * Remove cover photo from user profile.
+ */
+export const deleteCoverPhoto = async (userId: string): Promise<void> => {
+  const userRef = doc(db, 'users', userId);
+  await updateDoc(userRef, { coverPhotoUrl: null });
+};
+
+/**
  * Delete a profile picture (Cloudinary if we have publicId, else just clear Firestore).
  * @param userId User ID
  * @param publicId Optional Cloudinary public_id; if not provided, read from user doc.
