@@ -14,6 +14,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Favicon from '../components/ui/Favicon';
+import CoverImage from '../components/profile/CoverImage';
 
 const EnhancedUserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -251,12 +252,12 @@ const EnhancedUserProfilePage: React.FC = () => {
           {/* Profile Header */}
           <div className="bg-white rounded-3xl shadow-xl overflow-hidden mb-8">
             {/* Cover Image - custom photo or gradient */}
-            <div className="relative h-52 sm:h-56 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500">
+            <div className="relative aspect-[3/1] w-full min-h-[140px] sm:min-h-[180px] bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 overflow-hidden">
               {profile.coverPhotoUrl ? (
-                <img
+                <CoverImage
                   src={profile.coverPhotoUrl}
+                  crop={profile.coverCrop ?? null}
                   alt=""
-                  className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : null}
               <div className="absolute inset-0 bg-black bg-opacity-20" />

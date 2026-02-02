@@ -16,6 +16,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Favicon from '../components/ui/Favicon';
+import CoverImage from '../components/profile/CoverImage';
 
 interface Connection {
   id: string;
@@ -269,12 +270,12 @@ const UserProfilePage: React.FC = () => {
           {/* Profile Card */}
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
             {/* Cover / banner: custom photo or blue gradient */}
-            <div className="relative h-40 sm:h-48 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light">
+            <div className="relative aspect-[3/1] w-full min-h-[140px] sm:min-h-[160px] bg-gradient-to-r from-brand-blue-dark to-brand-blue-light overflow-hidden">
               {(profile as any).coverPhotoUrl ? (
-                <img
+                <CoverImage
                   src={(profile as any).coverPhotoUrl}
+                  crop={(profile as any).coverCrop ?? null}
                   alt=""
-                  className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : null}
               <div className="absolute inset-0 bg-black bg-opacity-20" />

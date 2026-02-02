@@ -1264,7 +1264,7 @@ const EventsPage: React.FC = () => {
                     /* View Mode - same style as user profile page: cover + overlapping avatar */
                     <div className="space-y-8">
                       {/* Cover photo with camera toggle (profile-page style) */}
-                      <div className="relative h-40 sm:h-48 -mx-4 sm:-mx-6 -mt-2 rounded-t-2xl overflow-hidden bg-gradient-to-r from-brand-blue-dark to-brand-blue-light">
+                      <div className="relative aspect-[3/1] w-full min-h-[140px] sm:min-h-[160px] -mx-4 sm:-mx-6 -mt-2 rounded-t-2xl overflow-hidden bg-gradient-to-r from-brand-blue-dark to-brand-blue-light">
                         {coverPhotoUrl ? (
                             <CoverImage
                               src={coverPhotoUrl}

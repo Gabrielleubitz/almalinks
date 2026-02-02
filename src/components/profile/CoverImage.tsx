@@ -25,9 +25,11 @@ const CoverImage: React.FC<CoverImageProps> = ({ src, crop, alt = '', className 
   const { scale, panX, panY } = crop;
   return (
     <div className={`absolute inset-0 overflow-hidden ${className}`}>
+      {/* Same transform order as crop modal: translate then scale (CSS applies right-to-left). Origin center so crop matches modal. */}
       <div
-        className="absolute inset-0 origin-center"
+        className="absolute inset-0"
         style={{
+          transformOrigin: 'center center',
           transform: `scale(${scale}) translate(${panX}%, ${panY}%)`,
         }}
       >
