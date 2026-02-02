@@ -458,116 +458,114 @@ const ActivityManagement: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <AdminHeader title="Activity Management" />
-      
+
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8 overflow-x-hidden w-full max-w-full box-border">
-        {/* Back Button */}
-        <div className="mb-8">
+        {/* Back */}
+        <div className="mb-6">
           <Link
             to="/admin"
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
+            className="inline-flex items-center gap-2 text-gray-600 hover:text-brand-dark transition-colors font-medium"
           >
             <ArrowLeft className="h-5 w-5" />
-            <span>Back to Admin Tools</span>
+            Back to Admin
           </Link>
         </div>
 
-        {/* Header */}
+        {/* Page title & intro */}
         <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Activity Management</h1>
-              <p className="text-sm sm:text-base text-gray-600">Monitor user activities and system usage</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-              <button
-                onClick={() => {
-                  setError(null); // Clear any previous errors
-                  loadActivities(true);
-                  loadStats();
-                }}
-                disabled={loading}
-                className="inline-flex items-center justify-center px-4 py-2.5 sm:py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid disabled:opacity-50 min-h-[44px] sm:min-h-0 text-sm sm:text-base"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
-              <button
-                onClick={exportActivities}
-                className="inline-flex items-center justify-center px-4 py-2.5 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 min-h-[44px] sm:min-h-0 text-sm sm:text-base"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </button>
-              <button
-                onClick={cleanupDuplicates}
-                className="inline-flex items-center justify-center px-4 py-2.5 sm:py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 min-h-[44px] sm:min-h-0 text-sm sm:text-base"
-              >
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                Remove Duplicates
-              </button>
-              <button
-                onClick={cleanupOldLogs}
-                className="inline-flex items-center justify-center px-4 py-2.5 sm:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 min-h-[44px] sm:min-h-0 text-sm sm:text-base"
-              >
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                Cleanup Old Logs
-              </button>
-            </div>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Activity Management</h1>
+          <p className="text-sm sm:text-base text-gray-600 max-w-2xl">
+            View and filter user activity across the site. Activity is tracked automatically (logins, page views, events, chats, connections, and more).
+          </p>
         </div>
 
-        {/* Statistics Cards */}
+        {/* Actions */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6">
+          <button
+            onClick={() => {
+              setError(null);
+              loadActivities(true);
+              loadStats();
+            }}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white hover:opacity-90 disabled:opacity-50 text-sm font-medium shadow-sm"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+          <button
+            onClick={exportActivities}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm font-medium"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </button>
+          <button
+            onClick={cleanupDuplicates}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 text-sm font-medium"
+          >
+            <AlertTriangle className="h-4 w-4" />
+            Remove Duplicates
+          </button>
+          <button
+            onClick={cleanupOldLogs}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 text-sm font-medium"
+          >
+            <AlertTriangle className="h-4 w-4" />
+            Cleanup Old Logs
+          </button>
+        </div>
+
+        {/* Stats (last 30 days) */}
         {stats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-blue-50 rounded-lg">
-                  <Activity className="h-6 w-6 text-brand-light" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 sm:mb-8">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+              <div className="flex items-center gap-4">
+                <div className="p-2.5 rounded-xl bg-brand-light">
+                  <Activity className="h-6 w-6 text-brand-dark" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Activities</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalActivities.toLocaleString()}</p>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Total activities</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.totalActivities.toLocaleString()}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Last 30 days</p>
                 </div>
               </div>
             </div>
-            
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-green-100 rounded-lg">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+              <div className="flex items-center gap-4">
+                <div className="p-2.5 rounded-xl bg-green-50">
                   <Users className="h-6 w-6 text-green-600" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Active Users</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.uniqueUsers}</p>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Active users</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.uniqueUsers}</p>
                 </div>
               </div>
             </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-purple-100 rounded-lg">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+              <div className="flex items-center gap-4">
+                <div className="p-2.5 rounded-xl bg-purple-50">
                   <TrendingUp className="h-6 w-6 text-brand-dark" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Top Activity</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {stats.topActivities[0]?.type || 'N/A'}
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Top activity type</p>
+                  <p className="text-lg font-bold text-gray-900 truncate" title={stats.topActivities[0]?.type}>
+                    {ACTIVITY_TYPES[stats.topActivities[0]?.type as ActivityType]?.label || stats.topActivities[0]?.type || '—'}
                   </p>
                 </div>
               </div>
             </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <BarChart3 className="h-6 w-6 text-orange-600" />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+              <div className="flex items-center gap-4">
+                <div className="p-2.5 rounded-xl bg-amber-50">
+                  <BarChart3 className="h-6 w-6 text-amber-600" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Daily Average</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {Math.round(stats.totalActivities / (stats.dailyStats.length || 1))}
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Daily average</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {stats.dailyStats?.length ? Math.round(stats.totalActivities / stats.dailyStats.length) : '—'}
                   </p>
                 </div>
               </div>
@@ -576,80 +574,70 @@ const ActivityManagement: React.FC = () => {
         )}
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="p-4 border-b border-gray-200">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center space-x-2 text-gray-700 hover:text-gray-900"
-            >
-              <Filter className="h-5 w-5" />
-              <span className="font-medium">Filters</span>
-              {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </button>
-          </div>
-          
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50/50 transition-colors"
+          >
+            <span className="flex items-center gap-2 font-medium text-gray-900">
+              <Filter className="h-5 w-5 text-gray-500" />
+              Filters
+            </span>
+            {showFilters ? <ChevronUp className="h-5 w-5 text-gray-500" /> : <ChevronDown className="h-5 w-5 text-gray-500" />}
+          </button>
           {showFilters && (
-            <div className="p-4 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                {/* Search */}
+            <div className="px-4 pb-4 pt-0 border-t border-gray-100">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 pt-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Search</label>
                   <div className="relative">
-                    <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
+                    <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
                       type="text"
                       value={filters.search || ''}
                       onChange={(e) => handleFilterChange('search', e.target.value)}
-                      placeholder="Search users, descriptions..."
-                      className="pl-10 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      placeholder="User, description..."
+                      className="pl-9 w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-blue focus:border-transparent"
                     />
                   </div>
                 </div>
-
-                {/* Activity Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Activity Type</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Activity type</label>
                   <select
                     value={filters.activityType || ''}
                     onChange={(e) => handleFilterChange('activityType', e.target.value || undefined)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-blue focus:border-transparent"
                   >
-                    <option value="">All Types</option>
+                    <option value="">All types</option>
                     {Object.entries(ACTIVITY_TYPES).map(([type, { label }]) => (
                       <option key={type} value={type}>{label}</option>
                     ))}
                   </select>
                 </div>
-
-                {/* Start Date */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">From date</label>
                   <input
                     type="date"
                     value={filters.startDate ? filters.startDate.toISOString().split('T')[0] : ''}
                     onChange={(e) => handleFilterChange('startDate', e.target.value ? new Date(e.target.value) : undefined)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-blue focus:border-transparent"
                   />
                 </div>
-
-                {/* End Date */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">To date</label>
                   <input
                     type="date"
                     value={filters.endDate ? filters.endDate.toISOString().split('T')[0] : ''}
                     onChange={(e) => handleFilterChange('endDate', e.target.value ? new Date(e.target.value) : undefined)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-blue focus:border-transparent"
                   />
                 </div>
-
-                {/* Clear Filters */}
                 <div className="flex items-end">
                   <button
                     onClick={clearFilters}
-                    className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 text-sm"
+                    className="w-full py-2 rounded-xl border border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 text-sm font-medium"
                   >
-                    Clear Filters
+                    Clear filters
                   </button>
                 </div>
               </div>
@@ -657,107 +645,91 @@ const ActivityManagement: React.FC = () => {
           )}
         </div>
 
-        {/* Activities Table */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Recent Activities</h3>
-            <p className="text-sm text-gray-600">Showing {activities.length} activities</p>
+        {/* Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <h2 className="text-lg font-semibold text-gray-900">Recent activity</h2>
+            <p className="text-sm text-gray-500">Showing {activities.length} {activities.length === 1 ? 'entry' : 'entries'}</p>
           </div>
-          
+
           {error && (
-            <div className={`p-4 border-l-4 ${error.includes('RESOURCE_EXHAUSTED') ? 'bg-yellow-50 border-yellow-400' : 'bg-red-50 border-red-400'}`}>
-              <p className={error.includes('RESOURCE_EXHAUSTED') ? 'text-yellow-700' : 'text-red-700'}>
-                {error.includes('RESOURCE_EXHAUSTED') 
-                  ? '⚠️ Firebase quota temporarily exceeded. Data loading is paused. Quota will reset in 24 hours. You can still use the "Refresh" button to try loading data manually.'
-                  : error
-                }
+            <div className={`mx-4 mt-4 p-4 rounded-xl border ${error.includes('RESOURCE_EXHAUSTED') ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+              <p className="text-sm">
+                {error.includes('RESOURCE_EXHAUSTED')
+                  ? 'Firebase quota temporarily exceeded. Data loading is paused; quota resets in 24 hours. Use Refresh to retry.'
+                  : error}
               </p>
             </div>
           )}
 
-          <div className="overflow-x-auto -mx-3 sm:mx-0">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-100">
+              <thead className="bg-gray-50/80">
                 <tr>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Timestamp
-                  </th>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Activity
-                  </th>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Description
-                  </th>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Page/Location
-                  </th>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Time</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">User</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Page</th>
+                  <th className="px-3 sm:px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Details</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-100">
                 {loading && activities.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-3 sm:px-6 py-4 text-center text-gray-500">
-                      <div className="flex items-center justify-center space-x-2">
+                    <td colSpan={6} className="px-3 sm:px-6 py-12 text-center">
+                      <div className="flex items-center justify-center gap-2 text-gray-500">
                         <RefreshCw className="h-5 w-5 animate-spin" />
-                        <span>Loading activities...</span>
+                        <span>Loading activities…</span>
                       </div>
                     </td>
                   </tr>
                 ) : activities.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-3 sm:px-6 py-4 text-center text-gray-500">
-                      No activities found matching the current filters.
+                    <td colSpan={6} className="px-3 sm:px-6 py-12 text-center text-gray-500">
+                      No activities match the current filters.
                     </td>
                   </tr>
                 ) : (
                   activities.map((activity) => (
-                    <tr key={activity.id} className="hover:bg-gray-50">
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                        <div className="flex items-center space-x-2">
-                          <Clock className="h-4 w-4 text-gray-400" />
-                          <span>{formatTimestamp(activity.timestamp)}</span>
+                    <tr key={activity.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-600">
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          {formatTimestamp(activity.timestamp)}
+                        </span>
+                      </td>
+                      <td className="px-3 sm:px-6 py-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="h-8 w-8 rounded-full bg-brand-light flex items-center justify-center flex-shrink-0">
+                            <User className="h-4 w-4 text-brand-dark" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-gray-900 truncate">{activity.userName}</div>
+                            <div className="text-xs text-gray-500 truncate">{activity.userEmail}</div>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                            <User className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
-                          </div>
-                          <div className="ml-2 sm:ml-3 min-w-0">
-                            <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">{activity.userName}</div>
-                            <div className="text-xs sm:text-sm text-gray-500 truncate">{activity.userEmail}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-[10px] sm:text-xs font-medium rounded-full ${
-                          ACTIVITY_TYPES[activity.activityType]?.color || 'bg-gray-100 text-gray-800'
-                        }`}>
+                      <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-lg ${ACTIVITY_TYPES[activity.activityType]?.color || 'bg-gray-100 text-gray-800'}`}>
                           {ACTIVITY_TYPES[activity.activityType]?.label || activity.activityType}
                         </span>
                       </td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900">
-                        <div className="max-w-[120px] sm:max-w-xs truncate" title={activity.description}>
-                          {activity.description}
-                        </div>
+                      <td className="px-3 sm:px-6 py-3 text-sm text-gray-900 max-w-xs">
+                        <span className="truncate block" title={activity.description}>{activity.description}</span>
                       </td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
-                        <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-gray-100 text-gray-700 text-[10px] sm:text-xs font-medium">
+                      <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
+                        <span className="inline-flex px-2 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium">
                           {formatPagePath(activity.metadata?.page)}
                         </span>
                       </td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                      <td className="px-3 sm:px-6 py-3 text-right">
                         <button
                           onClick={() => setSelectedActivity(activity)}
-                          className="text-brand-dark hover:text-brand-blue p-1 sm:p-0 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 flex items-center justify-center"
+                          className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-brand-dark hover:bg-brand-light transition-colors"
+                          title="View details"
                         >
-                          <Eye className="h-4 w-4 sm:h-4 sm:w-4" />
+                          <Eye className="h-4 w-4" />
                         </button>
                       </td>
                     </tr>
@@ -767,78 +739,65 @@ const ActivityManagement: React.FC = () => {
             </table>
           </div>
 
-          {/* Load More */}
           {hasMore && !loading && (
-            <div className="p-4 text-center border-t border-gray-200">
+            <div className="p-4 border-t border-gray-100 text-center">
               <button
                 onClick={() => loadActivities(false)}
-                className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-light text-brand-dark hover:bg-brand-blue hover:text-white transition-colors text-sm font-medium"
               >
-                Load More Activities
+                Load more
               </button>
             </div>
           )}
         </div>
 
-        {/* Activity Detail Modal */}
+        {/* Activity detail modal */}
         {selectedActivity && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-96 overflow-y-auto">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]" role="dialog" aria-modal="true" aria-labelledby="activity-detail-title">
+            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
               <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Activity Details</h3>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 id="activity-detail-title" className="text-lg font-semibold text-gray-900">Activity details</h3>
                   <button
                     onClick={() => setSelectedActivity(null)}
-                    className="text-gray-400 hover:text-gray-500"
+                    className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                    aria-label="Close"
                   >
-                    ×
+                    <X className="h-5 w-5" />
                   </button>
                 </div>
-                
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Timestamp</label>
-                    <p className="text-sm text-gray-900">{formatTimestamp(selectedActivity.timestamp)}</p>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Time</p>
+                    <p className="text-sm text-gray-900 mt-0.5">{formatTimestamp(selectedActivity.timestamp)}</p>
                   </div>
-                  
                   <div>
-                    <label className="text-sm font-medium text-gray-500">User</label>
-                    <p className="text-sm text-gray-900">
-                      {selectedActivity.userName} ({selectedActivity.userEmail})
-                    </p>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">User</p>
+                    <p className="text-sm text-gray-900 mt-0.5">{selectedActivity.userName} ({selectedActivity.userEmail})</p>
                   </div>
-                  
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Activity Type</label>
-                    <p className="text-sm text-gray-900">
-                      {ACTIVITY_TYPES[selectedActivity.activityType]?.label || selectedActivity.activityType}
-                    </p>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Type</p>
+                    <p className="text-sm text-gray-900 mt-0.5">{ACTIVITY_TYPES[selectedActivity.activityType]?.label || selectedActivity.activityType}</p>
                   </div>
-                  
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Description</label>
-                    <p className="text-sm text-gray-900">{selectedActivity.description}</p>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Description</p>
+                    <p className="text-sm text-gray-900 mt-0.5">{selectedActivity.description}</p>
                   </div>
-
-                  {/* Show View Chat button for chat_message activities */}
                   {selectedActivity.activityType === 'chat_message' && selectedActivity.metadata?.chatId && (
                     <div>
                       <button
                         onClick={() => handleViewChat(selectedActivity)}
-                        className="px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid flex items-center space-x-2"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white hover:opacity-90 text-sm font-medium"
                       >
                         <MessageCircle className="h-4 w-4" />
-                        <span>View Full Chat Conversation</span>
+                        View full chat
                       </button>
                     </div>
                   )}
-
-                  {selectedActivity.metadata && (
+                  {selectedActivity.metadata && Object.keys(selectedActivity.metadata).length > 0 && (
                     <div>
-                      <label className="text-sm font-medium text-gray-500">Metadata</label>
-                      <pre className="text-xs text-gray-900 bg-gray-100 p-2 rounded mt-1 overflow-x-auto">
-                        {JSON.stringify(selectedActivity.metadata, null, 2)}
-                      </pre>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Metadata</p>
+                      <pre className="text-xs text-gray-700 bg-gray-100 p-3 rounded-xl mt-1 overflow-x-auto max-h-40">{JSON.stringify(selectedActivity.metadata, null, 2)}</pre>
                     </div>
                   )}
                 </div>
@@ -847,65 +806,43 @@ const ActivityManagement: React.FC = () => {
           </div>
         )}
 
-        {/* Chat Messages Viewer Modal */}
+        {/* Chat viewer modal */}
         {selectedChatId && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900">Chat Conversation</h3>
-                  <button
-                    onClick={() => {
-                      setSelectedChatId(null);
-                      setChatMessages([]);
-                    }}
-                    className="text-gray-400 hover:text-gray-500"
-                  >
-                    <X className="h-6 w-6" />
-                  </button>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]" role="dialog" aria-modal="true" aria-labelledby="chat-viewer-title">
+            <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-xl">
+              <div className="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                  <h3 id="chat-viewer-title" className="text-lg font-semibold text-gray-900">Chat conversation</h3>
+                  <p className="text-sm text-gray-500 mt-0.5">{chatMessages.length} messages · Admin view</p>
                 </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  {chatMessages.length} messages • Admin view (hidden from regular users)
-                </p>
+                <button
+                  onClick={() => { setSelectedChatId(null); setChatMessages([]); }}
+                  className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
-
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
                 {loadingChat ? (
-                  <div className="flex items-center justify-center py-8">
+                  <div className="flex items-center justify-center py-12">
                     <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
                   </div>
                 ) : chatMessages.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No messages in this chat
-                  </div>
+                  <p className="text-center py-12 text-gray-500">No messages in this chat.</p>
                 ) : (
                   chatMessages.map((message) => (
-                    <div
-                      key={message.id}
-                      className="flex space-x-3 p-4 bg-gray-50 rounded-lg"
-                    >
-                      <div className="flex-shrink-0">
-                        <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center">
-                          <User className="h-5 w-5 text-brand-light" />
-                        </div>
+                    <div key={message.id} className="flex gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100">
+                      <div className="h-10 w-10 rounded-full bg-brand-light flex items-center justify-center flex-shrink-0">
+                        <User className="h-5 w-5 text-brand-dark" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-gray-900">
-                            {message.userName}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {message.createdAt?.toDate?.()?.toLocaleString() || 'Unknown time'}
-                          </p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <p className="text-sm font-medium text-gray-900">{message.userName}</p>
+                          <p className="text-xs text-gray-500">{message.createdAt?.toDate?.()?.toLocaleString() ?? '—'}</p>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {message.text}
-                        </p>
-                        {message.userEmail && (
-                          <p className="text-xs text-gray-400 mt-1">
-                            {message.userEmail}
-                          </p>
-                        )}
+                        <p className="text-sm text-gray-600 mt-1">{message.text}</p>
+                        {message.userEmail && <p className="text-xs text-gray-400 mt-1">{message.userEmail}</p>}
                       </div>
                     </div>
                   ))
