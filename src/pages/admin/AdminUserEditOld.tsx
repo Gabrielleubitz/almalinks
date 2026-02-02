@@ -216,7 +216,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
         }
       }
       
-      const updateData = {
+      const updateData: Record<string, unknown> = {
         name: `${formData.firstName} ${formData.lastName}`.trim() || formData.displayName,
         displayName: formData.displayName,
         email: formData.email,
@@ -226,8 +226,8 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
         bio: formData.bio,
         skills: formData.skills,
         phone: formData.phone,
-        linkedin: formData.linkedin, // Store full URL
-        linkedinUsername: linkedinUsername, // Store just username
+        linkedin: formData.linkedin,
+        linkedinUsername: linkedinUsername,
         website: formData.website,
         twitter: formData.twitter,
         city: formData.city,
@@ -237,6 +237,14 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
         profileVisibility: formData.profileVisibility,
         role: userRole
       };
+      if (profile.profileImage !== undefined) {
+        updateData.profileImage = profile.profileImage;
+        updateData.avatarUrl = profile.profileImage ?? profile.avatarUrl ?? null;
+        updateData.profileImageUpdatedAt = new Date().toISOString();
+      }
+      if (profile.profileImagePublicId !== undefined) {
+        updateData.profileImagePublicId = profile.profileImagePublicId;
+      }
       
       console.log('💾 Saving profile with mapped data:', updateData);
       console.log('📝 Original form data:', formData);
@@ -297,8 +305,8 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
     if (!userId) return;
     
     try {
-      await deleteProfilePicture(userId);
-      setProfile(prev => prev ? { ...prev, avatarUrl: null, profileImage: null } : null);
+      await deleteProfilePicture(userId, (profile as any)?.profileImagePublicId ?? undefined);
+      setProfile(prev => prev ? { ...prev, avatarUrl: null, profileImage: null, profileImagePublicId: undefined } : null);
     } catch (error) {
       console.error('❌ Error deleting avatar:', error);
       setProfilePictureUploadError('Failed to delete profile picture');
@@ -465,6 +473,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
                 onUploadSuccess={handleAvatarUpload}
                 onUploadError={handleAvatarError}
                 size="lg"
+                targetUserId={userId}
               />
               
               <div className="flex-1">

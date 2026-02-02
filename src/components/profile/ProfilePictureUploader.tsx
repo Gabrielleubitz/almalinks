@@ -19,6 +19,8 @@ interface ProfilePictureUploaderProps {
   onUploadError: (error: string) => void;
   size?: 'sm' | 'md' | 'lg';
   showButtons?: boolean;
+  /** When set (e.g. admin editing another user), upload/delete apply to this user instead of current user. */
+  targetUserId?: string | null;
 }
 
 const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
@@ -26,9 +28,11 @@ const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
   onUploadSuccess,
   onUploadError,
   size = 'md',
-  showButtons = true
+  showButtons = true,
+  targetUserId = null
 }) => {
   const { user } = useAuth();
+  const effectiveUserId = targetUserId ?? user?.uid ?? null;
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
   const [showPreview, setShowPreview] = useState(false);
@@ -53,7 +57,7 @@ const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0 || !user?.uid) return;
+    if (!files || files.length === 0 || !effectiveUserId) return;
 
     const file = files[0];
     if (!file.type.startsWith('image/')) {
@@ -113,14 +117,14 @@ const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
   };
 
   const handleUpload = async () => {
-    if (!user?.uid) return;
+    if (!effectiveUserId) return;
     const fileToUse = selectedFile;
     if (!fileToUse) return;
 
     setIsUploading(true);
     try {
       const processedFile = await processImage(fileToUse);
-      const imageUrl = await uploadProfilePicture(user.uid, processedFile);
+      const imageUrl = await uploadProfilePicture(effectiveUserId, processedFile);
       onUploadSuccess(imageUrl);
       if (previewUrl && previewUrl !== currentImageUrl) {
         URL.revokeObjectURL(previewUrl);

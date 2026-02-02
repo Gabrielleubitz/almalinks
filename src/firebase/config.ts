@@ -1,6 +1,11 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, setPersistence, browserLocalPersistence, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, enableIndexedDbPersistence, connectFirestoreEmulator } from 'firebase/firestore';
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentSingleTabManager,
+  connectFirestoreEmulator
+} from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 
@@ -57,8 +62,10 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
 // Initialize Firebase Authentication
 export const auth = getAuth(app);
 
-// Initialize Firestore with offline persistence
-export const db = getFirestore(app);
+// Initialize Firestore with persistent cache (replaces deprecated enableIndexedDbPersistence)
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() }),
+});
 
 // Initialize Firebase Storage
 export const storage = getStorage(app);
@@ -74,26 +81,9 @@ setPersistence(auth, browserLocalPersistence)
     console.error('❌ Firebase Auth persistence setup failed:', error);
   });
 
-// Enable Firestore offline persistence
-enableIndexedDbPersistence(db)
-  .then(() => {
-    if (import.meta.env.DEV) {
-      console.log('✅ Firestore offline persistence enabled');
-    }
-  })
-  .catch((error) => {
-    if (error.code === 'failed-precondition') {
-      if (import.meta.env.DEV) {
-        console.warn('⚠️ Firestore persistence failed: Multiple tabs open');
-      }
-    } else if (error.code === 'unimplemented') {
-      if (import.meta.env.DEV) {
-        console.warn('⚠️ Firestore persistence failed: Browser not supported');
-      }
-    } else {
-      console.error('❌ Firestore persistence error:', error);
-    }
-  });
+if (import.meta.env.DEV) {
+  console.log('✅ Firestore offline persistence enabled (persistentLocalCache)');
+}
 
 // Use emulators in development if configured
 if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATORS === 'true') {
