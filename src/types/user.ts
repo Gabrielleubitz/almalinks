@@ -37,9 +37,13 @@ export interface UserProfile {
   avatarUrl?: string | null;
   profileImage?: string | null; // legacy field for backward compatibility
   profileImagePublicId?: string | null; // Cloudinary public_id for delete
+  /** User-selected crop/position for profile picture: zoom and pan as % of frame */
+  profileImageCrop?: { scale: number; panX: number; panY: number } | null;
   /** Cover/background image for profile header (LinkedIn-style banner) */
   coverPhotoUrl?: string | null;
-  
+  /** User-selected crop/position for cover: zoom (1–3) and pan as % of frame (-100–100) */
+  coverCrop?: { scale: number; panX: number; panY: number } | null;
+
   // Privacy & Visibility
   profileVisibility: ProfileVisibility;
   
@@ -110,6 +114,7 @@ export interface UserCard {
   uid: string;
   id?: string; // For compatibility with some components
   avatarUrl?: string | null;
+  profileImageCrop?: { scale: number; panX: number; panY: number } | null;
   displayName: string;
   name?: string; // For compatibility with some components
   firstName?: string;

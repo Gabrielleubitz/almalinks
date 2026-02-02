@@ -243,6 +243,9 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       if (profile.profileImagePublicId !== undefined) {
         updateData.profileImagePublicId = profile.profileImagePublicId;
       }
+      if (profile.profileImageCrop !== undefined) {
+        updateData.profileImageCrop = profile.profileImageCrop;
+      }
       if (profile.coverPhotoUrl !== undefined) {
         updateData.coverPhotoUrl = profile.coverPhotoUrl;
       }
@@ -285,8 +288,8 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
     }
   };
 
-  const handleAvatarUpload = async (imageUrl: string) => {
-    setProfile(prev => prev ? { ...prev, avatarUrl: imageUrl, profileImage: imageUrl } : null);
+  const handleAvatarUpload = async (imageUrl: string, crop?: { scale: number; panX: number; panY: number }) => {
+    setProfile(prev => prev ? { ...prev, avatarUrl: imageUrl, profileImage: imageUrl, profileImageCrop: crop ?? null } : null);
     setProfilePictureUploadError(null);
   };
 
@@ -299,7 +302,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
     
     try {
       await deleteProfilePicture(userId, (profile as any)?.profileImagePublicId ?? undefined);
-      setProfile(prev => prev ? { ...prev, avatarUrl: undefined, profileImage: undefined, profileImagePublicId: undefined } : null);
+      setProfile(prev => prev ? { ...prev, avatarUrl: undefined, profileImage: undefined, profileImagePublicId: undefined, profileImageCrop: undefined } : null);
     } catch (error: any) {
       console.error('Error deleting avatar:', error);
       showToast('Failed to delete profile picture', 'error');
@@ -481,6 +484,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
             <div className="flex items-start space-x-6">
               <ProfilePictureUploader
                 currentImageUrl={profile.avatarUrl || profile.profileImage}
+                currentCrop={profile.profileImageCrop ?? null}
                 onUploadSuccess={handleAvatarUpload}
                 onUploadError={handleAvatarError}
                 size="lg"

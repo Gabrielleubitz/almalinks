@@ -15,6 +15,12 @@ import {
 import { db } from '../firebase/config';
 import { nanoid } from 'nanoid';
 
+export interface ImageCropData {
+  scale: number;
+  panX: number;
+  panY: number;
+}
+
 export interface EventData {
   id: string;
   name: string;
@@ -23,6 +29,8 @@ export interface EventData {
   date: string; // ISO string
   description: string;
   imageUrl: string;
+  /** User-selected crop/position for event image: zoom and pan as % of frame */
+  imageCrop?: ImageCropData | null;
   status: 'active' | 'non-active' | 'sold-out' | 'completed';
   createdBy: string;
   createdAt: any;

@@ -1,8 +1,17 @@
+/** Crop/position for group image: zoom and pan as % of frame */
+export interface ImageCropData {
+  scale: number;
+  panX: number;
+  panY: number;
+}
+
 export interface ChatGroup {
   id: string;
   name: string;
   description?: string;
   imageUrl?: string;
+  /** User-selected crop/position for group image */
+  imageCrop?: ImageCropData | null;
   createdAt: any; // Firestore timestamp
   createdBy: string; // User ID
   allowRequests: boolean; // Whether users can request to join
@@ -91,6 +100,7 @@ export interface CreateChatGroupForm {
   name: string;
   description: string;
   imageUrl?: string;
+  imageCrop?: ImageCropData | null;
   allowRequests: boolean;
   isPublic: boolean;
   initialAdmins: string[]; // User IDs

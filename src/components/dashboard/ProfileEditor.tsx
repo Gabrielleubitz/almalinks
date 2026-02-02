@@ -79,6 +79,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, onCancel, onSuccess
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [profileImageCrop, setProfileImageCrop] = useState<{ scale: number; panX: number; panY: number } | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -99,6 +100,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, onCancel, onSuccess
       
       setSelectedCountryCode(countryCode);
       setProfileImageUrl(user.profileImage || null);
+      setProfileImageCrop((user as { profileImageCrop?: { scale: number; panX: number; panY: number } | null })?.profileImageCrop ?? null);
     }
   }, [user]);
 
@@ -161,7 +163,8 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, onCancel, onSuccess
         work: formData.work,
         linkedinUsername: formattedLinkedin,
         position: formData.position,
-        profileImage: profileImageUrl
+        profileImage: profileImageUrl,
+        profileImageCrop: profileImageCrop ?? undefined
       });
       setLastSavedAt(Date.now());
     } catch (err: any) {
@@ -198,8 +201,9 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, onCancel, onSuccess
   };
 
   // Handle profile picture upload success
-  const handleProfilePictureSuccess = (imageUrl: string) => {
+  const handleProfilePictureSuccess = (imageUrl: string, crop?: { scale: number; panX: number; panY: number }) => {
     setProfileImageUrl(imageUrl);
+    setProfileImageCrop(crop ?? null);
     setImageUploadError(null);
   };
 
@@ -221,7 +225,8 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, onCancel, onSuccess
       {/* Profile Picture Section */}
       <div className="flex flex-col items-center mb-6">
         <ProfilePictureUploader
-          currentImageUrl={user?.profileImage || null}
+          currentImageUrl={user?.profileImage || profileImageUrl || null}
+          currentCrop={profileImageCrop ?? (user as { profileImageCrop?: { scale: number; panX: number; panY: number } | null })?.profileImageCrop ?? null}
           onUploadSuccess={handleProfilePictureSuccess}
           onUploadError={handleProfilePictureError}
           size="lg"

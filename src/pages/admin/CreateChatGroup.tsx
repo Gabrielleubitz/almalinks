@@ -22,6 +22,8 @@ import { UserCard } from '../../types/user';
 import AdminHeader from '../../components/admin/AdminHeader';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { auth } from '../../firebase/config';
+import CoverPhotoCropModal, { type CoverCrop } from '../../components/profile/CoverPhotoCropModal';
+import CropImage from '../../components/profile/CropImage';
 
 const CreateChatGroup: React.FC = () => {
   const navigate = useNavigate();
@@ -31,6 +33,7 @@ const CreateChatGroup: React.FC = () => {
     name: '',
     description: '',
     imageUrl: '',
+    imageCrop: null,
     allowRequests: false,
     isPublic: false,
     initialAdmins: [],
@@ -407,21 +410,15 @@ const CreateChatGroup: React.FC = () => {
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={async (e) => {
+                    onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (!file) return;
-                      setImageUploading(true);
+                      if (!file || !file.type.startsWith('image/')) return;
                       setError(null);
-                      try {
-                        const url = await uploadImageToLibrary('chat-groups', file);
-                        setFormData(prev => ({ ...prev, imageUrl: url }));
-                      } catch (err: any) {
-                        setError(err.message || 'Image upload failed');
-                      } finally {
-                        setImageUploading(false);
-                        e.target.value = '';
-                        if (imageInputRef.current) imageInputRef.current.value = '';
-                      }
+                      setPendingImageFile(file);
+                      setCropPreviewUrl(URL.createObjectURL(file));
+                      setShowImageCropModal(true);
+                      e.target.value = '';
+                      if (imageInputRef.current) imageInputRef.current.value = '';
                     }}
                   />
                   <div className="flex flex-wrap gap-2 items-center">
@@ -458,19 +455,48 @@ const CreateChatGroup: React.FC = () => {
                     Optional: paste a URL or upload an image to the image library (Cloudinary)
                   </p>
                   {formData.imageUrl && (
-                    <div className="mt-2">
-                      <img
+                    <div className="mt-2 w-12 h-12 rounded-full overflow-hidden border border-gray-200 relative">
+                      <CropImage
                         src={formData.imageUrl}
+                        crop={formData.imageCrop ?? null}
                         alt="Group preview"
-                        className="w-12 h-12 rounded-full object-cover border border-gray-200"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                        }}
+                        mode="block"
+                        className="w-full h-full rounded-full"
                       />
                     </div>
                   )}
                 </div>
+
+                {showImageCropModal && cropPreviewUrl && (
+                  <CoverPhotoCropModal
+                    imageUrl={cropPreviewUrl}
+                    aspectRatio="1/1"
+                    title="Position group image"
+                    onConfirm={async (_url, crop: CoverCrop) => {
+                      if (!pendingImageFile) return;
+                      setImageUploading(true);
+                      setError(null);
+                      try {
+                        const url = await uploadImageToLibrary('chat-groups', pendingImageFile);
+                        setFormData(prev => ({ ...prev, imageUrl: url, imageCrop: crop }));
+                      } catch (err: any) {
+                        setError(err.message || 'Image upload failed');
+                      } finally {
+                        setImageUploading(false);
+                        URL.revokeObjectURL(cropPreviewUrl);
+                        setCropPreviewUrl(null);
+                        setPendingImageFile(null);
+                        setShowImageCropModal(false);
+                      }
+                    }}
+                    onCancel={() => {
+                      if (cropPreviewUrl) URL.revokeObjectURL(cropPreviewUrl);
+                      setCropPreviewUrl(null);
+                      setPendingImageFile(null);
+                      setShowImageCropModal(false);
+                    }}
+                  />
+                )}
 
                 {/* Settings Toggles */}
                 <div className="space-y-4">

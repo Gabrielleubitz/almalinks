@@ -7,6 +7,8 @@ import { auth } from '../../firebase/config';
 import { EventService, generateSlug } from '../../services/eventService';
 import { uploadImageToLibrary } from '../../services/imageUploadService';
 import AdminHeader from '../../components/admin/AdminHeader';
+import CoverPhotoCropModal, { type CoverCrop } from '../../components/profile/CoverPhotoCropModal';
+import CropImage from '../../components/profile/CropImage';
 
 const AddEvent: React.FC = () => {
   const navigate = useNavigate();
@@ -306,21 +308,15 @@ const AddEvent: React.FC = () => {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={async (e) => {
+                onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (!file) return;
-                  setImageUploading(true);
+                  if (!file || !file.type.startsWith('image/')) return;
                   setError(null);
-                  try {
-                    const url = await uploadImageToLibrary('events', file);
-                    setFormData(prev => ({ ...prev, imageUrl: url }));
-                  } catch (err: any) {
-                    setError(err.message || 'Image upload failed');
-                  } finally {
-                    setImageUploading(false);
-                    e.target.value = '';
-                    if (imageInputRef.current) imageInputRef.current.value = '';
-                  }
+                  setPendingImageFile(file);
+                  setCropPreviewUrl(URL.createObjectURL(file));
+                  setShowImageCropModal(true);
+                  e.target.value = '';
+                  if (imageInputRef.current) imageInputRef.current.value = '';
                 }}
               />
               <div className="flex flex-wrap gap-2 items-center">
@@ -359,19 +355,48 @@ const AddEvent: React.FC = () => {
                 Paste a URL or upload an image to the image library (Cloudinary)
               </p>
               {formData.imageUrl && (
-                <div className="mt-3">
-                  <img
+                <div className="mt-3 w-full h-48 rounded-xl border border-gray-200 overflow-hidden relative">
+                  <CropImage
                     src={formData.imageUrl}
+                    crop={formData.imageCrop}
                     alt="Event preview"
-                    className="w-full h-48 object-cover rounded-xl border border-gray-200"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                    }}
+                    mode="block"
+                    className="w-full h-full"
                   />
                 </div>
               )}
             </div>
+
+            {showImageCropModal && cropPreviewUrl && (
+              <CoverPhotoCropModal
+                imageUrl={cropPreviewUrl}
+                aspectRatio="16/9"
+                title="Position event image"
+                onConfirm={async (_url, crop) => {
+                  if (!pendingImageFile) return;
+                  setImageUploading(true);
+                  setError(null);
+                  try {
+                    const url = await uploadImageToLibrary('events', pendingImageFile);
+                    setFormData(prev => ({ ...prev, imageUrl: url, imageCrop: crop }));
+                  } catch (err: any) {
+                    setError(err.message || 'Image upload failed');
+                  } finally {
+                    setImageUploading(false);
+                    URL.revokeObjectURL(cropPreviewUrl);
+                    setCropPreviewUrl(null);
+                    setPendingImageFile(null);
+                    setShowImageCropModal(false);
+                  }
+                }}
+                onCancel={() => {
+                  if (cropPreviewUrl) URL.revokeObjectURL(cropPreviewUrl);
+                  setCropPreviewUrl(null);
+                  setPendingImageFile(null);
+                  setShowImageCropModal(false);
+                }}
+              />
+            )}
 
             {/* Description */}
             <div>

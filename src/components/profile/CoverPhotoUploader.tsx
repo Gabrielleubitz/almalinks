@@ -3,16 +3,17 @@ import { Camera, X, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { uploadCoverPhoto, deleteCoverPhoto } from '../../services/profileService';
 import imageCompression from 'browser-image-compression';
+import CoverPhotoCropModal, { type CoverCrop } from './CoverPhotoCropModal';
 
 /** Cover-style crop for Cloudinary (3:1 banner). */
 const COVER_TRANSFORM = 'ar_3:1,c_fill,w_1200';
 
-/** Six template cover images: landscapes and animals only (no people). Wide 3:1 crop. */
+/** Six template cover images: landscapes, nature, and animals only (no people). Labels match actual photo content. */
 const COVER_TEMPLATES: { url: string; label: string }[] = [
-  { url: `https://res.cloudinary.com/demo/image/upload/${COVER_TRANSFORM}/sample.jpg`, label: 'Beach' },
+  { url: `https://res.cloudinary.com/demo/image/upload/${COVER_TRANSFORM}/sample.jpg`, label: 'Flowers' },
   { url: `https://res.cloudinary.com/demo/image/upload/${COVER_TRANSFORM}/balloons.jpg`, label: 'Hot air balloons' },
   { url: `https://res.cloudinary.com/demo/image/upload/${COVER_TRANSFORM}/bird.jpg`, label: 'Bird' },
-  { url: `https://res.cloudinary.com/demo/image/upload/ar_3:1,c_fill,g_north,w_1200/sample.jpg`, label: 'Beach shore' },
+  { url: `https://res.cloudinary.com/demo/image/upload/ar_3:1,c_fill,g_north,w_1200/sample.jpg`, label: 'Garden' },
   { url: `https://res.cloudinary.com/demo/image/upload/ar_3:1,c_fill,g_south,w_1200/balloons.jpg`, label: 'Balloons in sky' },
   { url: `https://res.cloudinary.com/demo/image/upload/ar_3:1,c_fill,g_auto,w_1200/bird.jpg`, label: 'Bird close-up' },
 ];
@@ -32,6 +33,8 @@ interface CoverPhotoUploaderProps {
   onRemove?: () => void;
   /** When user picks a template (no upload), call this so the parent can save the URL. */
   onTemplateSelect?: (url: string) => void;
+  /** When set, after template select or upload we open the crop modal; on confirm this is called with (url, crop). */
+  onCoverConfirm?: (url: string, crop: CoverCrop) => void;
   /** When set (e.g. admin editing another user), upload/delete apply to this user instead of current user. */
   targetUserId?: string | null;
 }
@@ -42,6 +45,7 @@ const CoverPhotoUploader: React.FC<CoverPhotoUploaderProps> = ({
   onUploadError,
   onRemove,
   onTemplateSelect,
+  onCoverConfirm,
   targetUserId = null,
 }) => {
   const { user } = useAuth();
@@ -49,6 +53,7 @@ const CoverPhotoUploader: React.FC<CoverPhotoUploaderProps> = ({
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [cropModalUrl, setCropModalUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,7 +67,11 @@ const CoverPhotoUploader: React.FC<CoverPhotoUploaderProps> = ({
     try {
       const compressed = await imageCompression(file, COVER_OPTIONS);
       const url = await uploadCoverPhoto(effectiveUserId, compressed);
-      onUploadSuccess(url);
+      if (onCoverConfirm) {
+        setCropModalUrl(url);
+      } else {
+        onUploadSuccess(url);
+      }
     } catch (err: unknown) {
       onUploadError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
@@ -87,7 +96,20 @@ const CoverPhotoUploader: React.FC<CoverPhotoUploaderProps> = ({
 
   const handleTemplateSelect = (url: string) => {
     setShowTemplates(false);
-    if (onTemplateSelect) {
+    if (onCoverConfirm) {
+      setCropModalUrl(url);
+    } else if (onTemplateSelect) {
+      onTemplateSelect(url);
+    } else {
+      onUploadSuccess(url);
+    }
+  };
+
+  const handleCropConfirm = (url: string, crop: CoverCrop) => {
+    setCropModalUrl(null);
+    if (onCoverConfirm) {
+      onCoverConfirm(url, crop);
+    } else if (onTemplateSelect) {
       onTemplateSelect(url);
     } else {
       onUploadSuccess(url);
@@ -96,6 +118,13 @@ const CoverPhotoUploader: React.FC<CoverPhotoUploaderProps> = ({
 
   return (
     <div className="space-y-4">
+      {cropModalUrl && (
+        <CoverPhotoCropModal
+          imageUrl={cropModalUrl}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCropModalUrl(null)}
+        />
+      )}
       <p className="text-sm text-gray-600">
         <strong>Add or change:</strong> upload a photo below or choose a template. <strong>Remove:</strong> use the &quot;Remove cover photo&quot; link below when a cover is set.
       </p>

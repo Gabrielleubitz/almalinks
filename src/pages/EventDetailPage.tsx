@@ -9,6 +9,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import EventPositionChart from '../components/analytics/EventPositionChart';
 import ReviewSection from '../components/reviews/ReviewSection';
+import CropImage from '../components/profile/CropImage';
 
 const EventDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -349,11 +350,13 @@ const EventDetailPage: React.FC = () => {
 
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Event Image */}
-            <div className="order-2 lg:order-1">
-              <img
+            <div className="order-2 lg:order-1 w-full h-96 rounded-3xl shadow-xl overflow-hidden relative">
+              <CropImage
                 src={event.imageUrl}
+                crop={event.imageCrop ?? null}
                 alt={event.name}
-                className="w-full h-96 object-cover rounded-3xl shadow-xl"
+                mode="block"
+                className="w-full h-full"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjM4NCIgdmlld0JveD0iMCAwIDYwMCAzODQiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI2MDAiIGhlaWdodD0iMzg0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMDAgMTkyQzMwNS41MjMgMTkyIDMxMCAxODcuNTIzIDMxMCAxODJTMzA1LjUyMyAxNzIgMzAwIDE3MlMyOTAgMTc2LjQ3NyAyOTAgMTgyUzI5NC40NzcgMTkyIDMwMCAxOTJaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg==';

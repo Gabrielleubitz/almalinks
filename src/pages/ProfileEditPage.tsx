@@ -252,7 +252,7 @@ const ProfileEditPage: React.FC = () => {
     
     try {
       await deleteProfilePicture(user.uid);
-      setProfile(prev => prev ? { ...prev, avatarUrl: undefined, profileImage: undefined } : null);
+      setProfile(prev => prev ? { ...prev, avatarUrl: undefined, profileImage: undefined, profileImageCrop: undefined } : null);
     } catch (error: any) {
       console.error('Error deleting avatar:', error);
       showToast('Failed to delete profile picture', 'error');
@@ -433,6 +433,7 @@ const ProfileEditPage: React.FC = () => {
             <div className="flex items-start space-x-6">
               <ProfilePictureUploader
                 currentImageUrl={profile.avatarUrl || profile.profileImage}
+                currentCrop={profile.profileImageCrop ?? null}
                 onUploadSuccess={handleAvatarUpload}
                 onUploadError={handleAvatarError}
                 size="lg"

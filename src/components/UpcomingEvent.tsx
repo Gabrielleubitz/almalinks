@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { MapPin, Calendar, Clock, Users, ArrowRight } from 'lucide-react';
 import { EventService, EventData } from '../services/eventService';
 import { useAuth } from '../hooks/useAuth';
+import CropImage from './profile/CropImage';
 
 const UpcomingEvent = () => {
   const [upcomingEvent, setUpcomingEvent] = useState<EventData | null>(null);
@@ -132,11 +133,13 @@ const UpcomingEvent = () => {
           {/* Event Card - Same design as events listing page */}
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden hover-lift slide-up">
             {/* Event Image */}
-            <div className="h-64 md:h-80 bg-gray-200 relative">
-              <img
+            <div className="h-64 md:h-80 bg-gray-200 relative overflow-hidden">
+              <CropImage
                 src={upcomingEvent.imageUrl}
+                crop={upcomingEvent.imageCrop ?? null}
                 alt={upcomingEvent.name}
-                className="w-full h-full object-cover"
+                mode="block"
+                className="w-full h-full"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjMyMCIgdmlld0JveD0iMCAwIDYwMCAzMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI2MDAiIGhlaWdodD0iMzIwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMDAgMTYwQzMwNS41MjMgMTYwIDMxMCAxNTUuNTIzIDMxMCAxNTBTMzA1LjUyMyAxNDAgMzAwIDE0MFMyOTAgMTQ0LjQ3NyAyOTAgMTUwUzI5NC40NzcgMTYwIDMwMCAxNjBaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg==';

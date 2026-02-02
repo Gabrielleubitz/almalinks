@@ -43,6 +43,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import MessageBubble from '../components/chat/MessageBubble';
+import CropImage from '../components/profile/CropImage';
 import { formatMessageTime, shouldGroupMessages } from '../utils/dateUtils';
 
 const ChatViewPage: React.FC = () => {
@@ -805,17 +806,26 @@ const ChatViewPage: React.FC = () => {
 
     if (chat?.imageUrl) {
       return (
-        <img
-          src={chat.imageUrl}
-          alt={chat.name}
-          className={`${sizeClasses[size]} rounded-full object-cover`}
-          onError={(e) => {
-            // Fallback to letter avatar if image fails
-            const target = e.target as HTMLImageElement;
-            target.style.display = 'none';
-            target.nextElementSibling?.classList.remove('hidden');
-          }}
-        />
+        <div className={`${sizeClasses[size]} rounded-full overflow-hidden relative flex-shrink-0`}>
+          <CropImage
+            src={chat.imageUrl}
+            crop={chat.imageCrop ?? null}
+            alt={chat.name}
+            mode="fill"
+            className="rounded-full"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              const wrapper = target.closest('.relative');
+              if (wrapper?.children[0]) {
+                (wrapper.children[0] as HTMLElement).classList.add('hidden');
+                wrapper.querySelector('.chat-icon-fallback')?.classList.remove('hidden');
+              }
+            }}
+          />
+          <div className="chat-icon-fallback hidden absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+            {chat?.name.charAt(0).toUpperCase()}
+          </div>
+        </div>
       );
     }
 

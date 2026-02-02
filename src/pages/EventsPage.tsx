@@ -5,6 +5,7 @@ import { EventService, EventData } from '../services/eventService';
 import { useAuth } from '../hooks/useAuth';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import CropImage from '../components/profile/CropImage';
 
 type EventFilter = 'all' | 'active' | 'completed';
 
@@ -219,11 +220,13 @@ const EventsPage: React.FC = () => {
                     className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 overflow-hidden hover-lift cursor-pointer slide-up transition-all duration-300"
                   >
                     {/* Event Image */}
-                    <div className="h-48 sm:h-56 md:h-64 bg-gray-200 relative">
-                      <img
+                    <div className="h-48 sm:h-56 md:h-64 bg-gray-200 relative overflow-hidden">
+                      <CropImage
                         src={event.imageUrl}
-                        alt={event.title}
-                        className="w-full h-full object-cover"
+                        crop={event.imageCrop ?? null}
+                        alt={event.title ?? event.name}
+                        mode="block"
+                        className="w-full h-full"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjMyMCIgdmlld0JveD0iMCAwIDYwMCAzMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI2MDAiIGhlaWdodD0iMzIwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMDAgMTYwQzMwNS41MjMgMTYwIDMxMCAxNTUuNTIzIDMxMCAxNTBTMzA1LjUyMyAxNDAgMzAwIDE0MFMyOTAgMTQ0LjQ3NyAyOTAgMTUwUzI5NC40NzcgMTYwIDMwMCAxNjBaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg==';

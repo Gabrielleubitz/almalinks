@@ -291,11 +291,21 @@ const UserProfilePage: React.FC = () => {
                   className={`w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white flex-shrink-0 ${(profile.profileImage || profile.avatarUrl) ? 'cursor-pointer hover:ring-4 hover:ring-brand-blue/30 transition-all' : ''}`}
                 >
                   {profile.profileImage || profile.avatarUrl ? (
-                    <img 
-                      src={profile.profileImage || profile.avatarUrl || ''} 
-                      alt={displayName}
-                      className="w-full h-full object-cover"
-                    />
+                    profile.profileImageCrop ? (
+                      <CropImage
+                        src={profile.profileImage || profile.avatarUrl || ''}
+                        crop={profile.profileImageCrop}
+                        alt={displayName}
+                        mode="fill"
+                        className="rounded-full"
+                      />
+                    ) : (
+                      <img
+                        src={profile.profileImage || profile.avatarUrl || ''}
+                        alt={displayName}
+                        className="w-full h-full object-cover"
+                      />
+                    )
                   ) : (
                     <div className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-3xl`}>
                       {displayName.charAt(0)}

@@ -18,6 +18,7 @@ const EditEvent: React.FC = () => {
     date: '',
     description: '',
     imageUrl: '',
+    imageCrop: null as CoverCrop | null,
     status: 'active' as const
   });
   
@@ -27,6 +28,9 @@ const EditEvent: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [previewSlug, setPreviewSlug] = useState('');
   const [imageUploading, setImageUploading] = useState(false);
+  const [showImageCropModal, setShowImageCropModal] = useState(false);
+  const [cropPreviewUrl, setCropPreviewUrl] = useState<string | null>(null);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const imageInputRef = React.useRef<HTMLInputElement>(null);
 
   // Load event data on component mount
@@ -75,6 +79,7 @@ const EditEvent: React.FC = () => {
         date: dateForInput,
         description: event.description,
         imageUrl: event.imageUrl,
+        imageCrop: event.imageCrop ?? null,
         status: event.status
       });
       
@@ -137,6 +142,7 @@ const EditEvent: React.FC = () => {
       formData.date !== originalDateForInput ||
       formData.description !== originalEvent.description ||
       formData.imageUrl !== originalEvent.imageUrl ||
+      JSON.stringify(formData.imageCrop) !== JSON.stringify(originalEvent.imageCrop) ||
       formData.status !== originalEvent.status
     );
   };
@@ -173,6 +179,7 @@ const EditEvent: React.FC = () => {
         date: formData.date,
         description: formData.description,
         imageUrl: formData.imageUrl,
+        imageCrop: formData.imageCrop ?? undefined,
         status: formData.status
       });
       
@@ -385,21 +392,15 @@ const EditEvent: React.FC = () => {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={async (e) => {
+                onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (!file) return;
-                  setImageUploading(true);
+                  if (!file || !file.type.startsWith('image/')) return;
                   setError(null);
-                  try {
-                    const url = await uploadImageToLibrary('events', file);
-                    setFormData(prev => ({ ...prev, imageUrl: url }));
-                  } catch (err: any) {
-                    setError(err.message || 'Image upload failed');
-                  } finally {
-                    setImageUploading(false);
-                    e.target.value = '';
-                    if (imageInputRef.current) imageInputRef.current.value = '';
-                  }
+                  setPendingImageFile(file);
+                  setCropPreviewUrl(URL.createObjectURL(file));
+                  setShowImageCropModal(true);
+                  e.target.value = '';
+                  if (imageInputRef.current) imageInputRef.current.value = '';
                 }}
               />
               <div className="flex flex-wrap gap-2 items-center">
@@ -438,19 +439,48 @@ const EditEvent: React.FC = () => {
                 Paste a URL or upload an image to the image library (Cloudinary)
               </p>
               {formData.imageUrl && (
-                <div className="mt-3">
-                  <img
+                <div className="mt-3 w-full h-48 rounded-xl border border-gray-200 overflow-hidden relative">
+                  <CropImage
                     src={formData.imageUrl}
+                    crop={formData.imageCrop}
                     alt="Event preview"
-                    className="w-full h-48 object-cover rounded-xl border border-gray-200"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                    }}
+                    mode="block"
+                    className="w-full h-full"
                   />
                 </div>
               )}
             </div>
+
+            {showImageCropModal && cropPreviewUrl && (
+              <CoverPhotoCropModal
+                imageUrl={cropPreviewUrl}
+                aspectRatio="16/9"
+                title="Position event image"
+                onConfirm={async (_url, crop) => {
+                  if (!pendingImageFile) return;
+                  setImageUploading(true);
+                  setError(null);
+                  try {
+                    const url = await uploadImageToLibrary('events', pendingImageFile);
+                    setFormData(prev => ({ ...prev, imageUrl: url, imageCrop: crop }));
+                  } catch (err: any) {
+                    setError(err.message || 'Image upload failed');
+                  } finally {
+                    setImageUploading(false);
+                    URL.revokeObjectURL(cropPreviewUrl);
+                    setCropPreviewUrl(null);
+                    setPendingImageFile(null);
+                    setShowImageCropModal(false);
+                  }
+                }}
+                onCancel={() => {
+                  if (cropPreviewUrl) URL.revokeObjectURL(cropPreviewUrl);
+                  setCropPreviewUrl(null);
+                  setPendingImageFile(null);
+                  setShowImageCropModal(false);
+                }}
+              />
+            )}
 
             {/* Description */}
             <div>

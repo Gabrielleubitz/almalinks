@@ -7,6 +7,7 @@ import JoinRequestModal from '../components/chat/JoinRequestModal';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import CropImage from '../components/profile/CropImage';
 
 interface DiscoverableChatGroup {
   id: string;
@@ -246,16 +247,23 @@ const DiscoverChatsPage: React.FC = () => {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       {chat.imageUrl ? (
-                        <img
-                          src={chat.imageUrl}
-                          alt={chat.name}
-                          className="w-10 h-10 rounded-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            target.nextElementSibling?.classList.remove('hidden');
-                          }}
-                        />
+                        <div className="w-10 h-10 rounded-full overflow-hidden relative">
+                          <CropImage
+                            src={chat.imageUrl}
+                            crop={chat.imageCrop ?? null}
+                            alt={chat.name}
+                            mode="block"
+                            className="w-full h-full rounded-full"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              const wrapper = target.closest('.relative');
+                              if (wrapper) {
+                                (wrapper as HTMLElement).style.display = 'none';
+                                (wrapper.nextElementSibling as HTMLElement)?.classList.remove('hidden');
+                              }
+                            }}
+                          />
+                        </div>
                       ) : (
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                           {chat.name.charAt(0).toUpperCase()}

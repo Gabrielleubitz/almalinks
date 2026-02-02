@@ -283,11 +283,21 @@ const EnhancedUserProfilePage: React.FC = () => {
                   className={`w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl bg-white flex-shrink-0 ${hasProfileImage ? 'cursor-pointer hover:ring-4 hover:ring-brand-blue/30 transition-all' : ''}`}
                 >
                   {hasProfileImage ? (
-                    <img 
-                      src={profile.avatarUrl || profile.profileImage || ''} 
-                      alt={displayName}
-                      className="w-full h-full object-cover"
-                    />
+                    profile.profileImageCrop ? (
+                      <CropImage
+                        src={profile.avatarUrl || profile.profileImage || ''}
+                        crop={profile.profileImageCrop}
+                        alt={displayName}
+                        mode="fill"
+                        className="rounded-full"
+                      />
+                    ) : (
+                      <img
+                        src={profile.avatarUrl || profile.profileImage || ''}
+                        alt={displayName}
+                        className="w-full h-full object-cover"
+                      />
+                    )
                   ) : (
                     <div className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-4xl`}>
                       {displayName.charAt(0)}

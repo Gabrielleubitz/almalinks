@@ -11,6 +11,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import MemberMap from '../components/MemberMap';
+import CropImage from '../components/profile/CropImage';
 
 interface MemberCard extends UserCardType {
   firstName?: string;
@@ -380,13 +381,23 @@ const MembersPage: React.FC = () => {
         >
           <div className="flex items-center space-x-4">
             {/* Avatar - links to profile */}
-            <Link to={`/profile/${member.uid}`} className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-100 flex-shrink-0 block shrink-0">
+            <Link to={`/profile/${member.uid}`} className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-100 flex-shrink-0 block shrink-0 relative">
               {member.avatarUrl ? (
-                <img 
-                  src={member.avatarUrl} 
-                  alt={displayName}
-                  className="w-full h-full object-cover"
-                />
+                member.profileImageCrop ? (
+                  <CropImage
+                    src={member.avatarUrl}
+                    crop={member.profileImageCrop}
+                    alt={displayName}
+                    mode="fill"
+                    className="rounded-full"
+                  />
+                ) : (
+                  <img
+                    src={member.avatarUrl}
+                    alt={displayName}
+                    className="w-full h-full object-cover"
+                  />
+                )
               ) : (
                 <div className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-lg`}>
                   {displayName.charAt(0).toUpperCase()}
@@ -511,13 +522,23 @@ const MembersPage: React.FC = () => {
       >
         {/* Avatar - links to profile */}
         <div className="flex justify-center mb-4">
-          <Link to={`/profile/${member.uid}`} className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-100 flex-shrink-0 block">
+          <Link to={`/profile/${member.uid}`} className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-100 flex-shrink-0 block relative">
             {member.avatarUrl ? (
-              <img
-                src={member.avatarUrl}
-                alt={displayName}
-                className="w-full h-full object-cover"
-              />
+              member.profileImageCrop ? (
+                <CropImage
+                  src={member.avatarUrl}
+                  crop={member.profileImageCrop}
+                  alt={displayName}
+                  mode="fill"
+                  className="rounded-full"
+                />
+              ) : (
+                <img
+                  src={member.avatarUrl}
+                  alt={displayName}
+                  className="w-full h-full object-cover"
+                />
+              )
             ) : (
               <div className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-xl`}>
                 {displayName.charAt(0).toUpperCase()}
