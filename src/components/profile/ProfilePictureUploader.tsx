@@ -1,8 +1,17 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Camera, Upload, X, RefreshCw } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Camera, Upload, X, RefreshCw, ImagePlus } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { uploadProfilePicture } from '../../services/profileService';
 import imageCompression from 'browser-image-compression';
+
+/** Normalize and compress to JPEG for consistent storage (max 300KB, 500px). */
+const TARGET_JPEG_OPTIONS = {
+  maxSizeMB: 0.3,
+  maxWidthOrHeight: 500,
+  useWebWorker: true,
+  fileType: 'image/jpeg' as const,
+  initialQuality: 0.85,
+};
 
 interface ProfilePictureUploaderProps {
   currentImageUrl?: string | null;
@@ -23,7 +32,11 @@ const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showSourceMenu, setShowSourceMenu] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Size classes based on the size prop
   const sizeClasses = {
@@ -32,101 +45,100 @@ const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
     lg: 'w-40 h-40'
   };
 
-  // Resize and compress image before upload
+  // Normalize to JPEG and compress for consistent storage
   const processImage = async (file: File): Promise<File> => {
-    try {
-      // Compression options
-      const options = {
-        maxSizeMB: 0.3, // 300KB
-        maxWidthOrHeight: 500,
-        useWebWorker: true,
-        fileType: 'image/jpeg'
-      };
-
-      // Compress the image
-      const compressedFile = await imageCompression(file, options);
-      console.log('✅ Image compressed successfully');
-      console.log('Original size:', file.size / 1024 / 1024, 'MB');
-      console.log('Compressed size:', compressedFile.size / 1024 / 1024, 'MB');
-      
-      return compressedFile;
-    } catch (error) {
-      console.error('❌ Error compressing image:', error);
-      throw error;
-    }
+    const compressed = await imageCompression(file, TARGET_JPEG_OPTIONS);
+    return compressed;
   };
 
-  // Handle file selection
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !user?.uid) return;
 
     const file = files[0];
-    
-    // Validate file type
     if (!file.type.startsWith('image/')) {
-      onUploadError('Please select an image file (JPEG, PNG, etc.)');
+      onUploadError('Please select an image file (JPEG, PNG, HEIC, etc.).');
       return;
     }
 
+    setShowSourceMenu(false);
     try {
-      // Create preview
+      setSelectedFile(file);
       const objectUrl = URL.createObjectURL(file);
       setPreviewUrl(objectUrl);
       setShowPreview(true);
-      
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     } catch (error) {
-      console.error('❌ Error creating preview:', error);
+      console.error('Error creating preview:', error);
       onUploadError('Failed to create image preview');
     }
+    e.target.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
   };
 
-  // Cancel preview and reset
+  // Choose from files or photo library (no capture)
+  const handleChooseFilesOrPhotos = () => {
+    setShowSourceMenu(false);
+    fileInputRef.current?.click();
+  };
+
+  // Take photo (camera; on mobile opens camera, on desktop may show file picker)
+  const handleTakePhoto = () => {
+    setShowSourceMenu(false);
+    cameraInputRef.current?.click();
+  };
+
+  useEffect(() => {
+    setPreviewUrl((prev) => (currentImageUrl != null ? currentImageUrl : prev));
+  }, [currentImageUrl]);
+
+  useEffect(() => {
+    if (!showSourceMenu) return;
+    const onOutside = (ev: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(ev.target as Node)) {
+        setShowSourceMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', onOutside);
+    return () => document.removeEventListener('mousedown', onOutside);
+  }, [showSourceMenu]);
+
   const handleCancelPreview = () => {
+    if (previewUrl && previewUrl !== currentImageUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setPreviewUrl(currentImageUrl || null);
+    setSelectedFile(null);
     setShowPreview(false);
-    // Don't reset previewUrl to keep showing the current profile picture
   };
 
-  // Upload the image
   const handleUpload = async () => {
-    if (!previewUrl || !user?.uid) return;
+    if (!user?.uid) return;
+    const fileToUse = selectedFile;
+    if (!fileToUse) return;
 
     setIsUploading(true);
-    
     try {
-      // Convert preview URL to blob
-      const response = await fetch(previewUrl);
-      const blob = await response.blob();
-      const file = new File([blob], 'profile-picture.jpg', { type: 'image/jpeg' });
-      
-      // Process the image (resize and compress)
-      const processedFile = await processImage(file);
-      
-      // Upload to storage
+      const processedFile = await processImage(fileToUse);
       const imageUrl = await uploadProfilePicture(user.uid, processedFile);
-      
-      // Call success callback
       onUploadSuccess(imageUrl);
-      
-      // Reset preview state
+      if (previewUrl && previewUrl !== currentImageUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setPreviewUrl(imageUrl);
+      setSelectedFile(null);
       setShowPreview(false);
     } catch (error: any) {
-      console.error('❌ Error uploading profile picture:', error);
+      console.error('Error uploading profile picture:', error);
       onUploadError(error.message || 'Failed to upload profile picture');
     } finally {
       setIsUploading(false);
     }
   };
 
-  // Trigger file input click
-  const handleSelectImage = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+  const handleOpenSourceMenu = () => {
+    if (showPreview) return;
+    setShowSourceMenu((prev) => !prev);
   };
 
   // Determine if we're showing a placeholder or an actual image
@@ -143,21 +155,28 @@ const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
 
   return (
     <div className="flex flex-col items-center">
-      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
         onChange={handleFileChange}
         className="hidden"
+        aria-label="Choose from files or photos"
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
         capture="environment"
+        onChange={handleFileChange}
+        className="hidden"
+        aria-label="Take a photo"
       />
 
-      {/* Profile Picture Container */}
-      <div className="relative mb-4">
-        <div 
+      <div className="relative mb-4" ref={menuRef}>
+        <div
           className={`${sizeClasses[size]} rounded-full overflow-hidden border-2 border-gray-200 relative group cursor-pointer`}
-          onClick={handleSelectImage}
+          onClick={handleOpenSourceMenu}
         >
           {hasImage ? (
             <img 
@@ -176,16 +195,36 @@ const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
             </div>
           )}
 
-          {/* Overlay on hover */}
           <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <Camera className="h-8 w-8 text-white" />
+            <ImagePlus className="h-8 w-8 text-white" />
           </div>
         </div>
 
-        {/* Edit button overlay */}
-        {showButtons && !showPreview && (
+        {showSourceMenu && showButtons && !showPreview && (
+          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-20 min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+            <button
+              type="button"
+              onClick={handleChooseFilesOrPhotos}
+              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+            >
+              <Upload className="h-4 w-4 text-gray-500" />
+              Files or photos
+            </button>
+            <button
+              type="button"
+              onClick={handleTakePhoto}
+              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+            >
+              <Camera className="h-4 w-4 text-gray-500" />
+              Take photo
+            </button>
+          </div>
+        )}
+
+        {showButtons && !showPreview && !showSourceMenu && (
           <button
-            onClick={handleSelectImage}
+            type="button"
+            onClick={handleOpenSourceMenu}
             className="absolute bottom-0 right-0 bg-brand-dark text-white p-2 rounded-full shadow-md hover:bg-brand-mid transition-colors"
             title="Change profile picture"
           >
