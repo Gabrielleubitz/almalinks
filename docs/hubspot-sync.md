@@ -2,17 +2,20 @@
 
 ## Overview
 
-**POST /api/sync-hubspot-contacts** imports all HubSpot CRM contacts into Firestore in two places:
+**POST /api/sync-hubspot-contacts** imports all HubSpot CRM contacts and creates sign-in–ready accounts:
 
 1. **hubspotContacts** – one doc per contact (doc ID = HubSpot contact ID).
-2. **users** – one doc per contact as a *pending user* (doc ID = `hubspot_<hubspotId>`), so they appear in your users list (e.g. in Admin) and can be approved or invited.
+2. **Firebase Auth** – one account per contact with email: `email` + default password (e.g. `123456789`), so contacts can sign in and complete onboarding.
+3. **users** – one doc per contact (doc ID = Firebase Auth UID), `status: 'approved'`, `registrationComplete: false`, so they do not appear on the Members page until they complete onboarding.
 
-Each contact is upserted using `set(..., { merge: true })`.
+Each contact is upserted; Auth users are created (or looked up by email if already existing).
 
 - Pages through HubSpot API (limit=100, `after` cursor) until all contacts are fetched.
 - Requests properties: `email`, `firstname`, `lastname`, `phone`.
-- Uses Firestore batch writes per page (hubspotContacts + users, under 500 ops per batch).
+- For each contact with email: creates Firebase Auth user (or gets existing by email), then writes hubspotContacts + users.
 - Returns `{ ok: true, totalUpserted: number }`.
+
+**POST /api/remove-hubspot-users** removes all HubSpot-synced users from Firestore and deletes their Firebase Auth accounts. Optionally clears `hubspotContacts` (body: `{ removeContacts: true }`).
 
 ## Environment Variables
 
@@ -20,6 +23,7 @@ Each contact is upserted using `set(..., { merge: true })`.
 |----------|----------|-------------|
 | **HUBSPOT_ACCESS_TOKEN** | Yes | HubSpot Private App or OAuth access token. Used **server-side only**; never expose in frontend. |
 | **SYNC_SECRET** | No | If set, requests must include header `x-sync-secret: <value>`. If unset, endpoint requires Firebase Auth ID token with admin role. |
+| **HUBSPOT_IMPORT_DEFAULT_PASSWORD** | No | Default password for imported contacts. They sign in with email + this password, then complete onboarding. Default: `123456789`. |
 
 Add in Vercel: Project → Settings → Environment Variables. Locally: add to `.env` (do not commit).
 
@@ -44,13 +48,15 @@ Only one is used: if `SYNC_SECRET` is set, the secret header is required; otherw
 - **Document ID:** HubSpot contact ID (string)
 - **Data:** `hubspotId`, `email`, `properties`, `syncedAt` (server timestamp)
 
-### users (HubSpot-synced as pending users)
+### users (HubSpot-synced, sign-in ready)
 
-- **Document ID:** `hubspot_<hubspotId>` (e.g. `hubspot_12345`)
-- **Data (merged):** `email`, `name` / `displayName` (firstname + lastname), `phone`, `status: 'pending'`, `role: 'member'`, `source: 'hubspot'`, `hubspotId`, `createdAt`, `updatedAt` (server timestamps)
-- **When created:** Only contacts with a non-empty **email** get a user doc; contacts without email are still written to `hubspotContacts` only (avoids invalid user records).
+- **Document ID:** Firebase Auth UID (same as the Auth user created for that contact).
+- **Data (merged):** `email`, `name` / `displayName` (firstname + lastname), `phone`, `status: 'approved'`, `role: 'member'`, `source: 'hubspot'`, `hubspotId`, `registrationComplete: false`, `avatarUrl`, `profileImage`, `createdAt`, `updatedAt` (server timestamps).
+- **When created:** Only contacts with a non-empty **email** get an Auth account and user doc; contacts without email are still written to `hubspotContacts` only.
 
-These docs appear in your users collection so you can see HubSpot contacts in Admin (e.g. User Management, Pending). They have **no Firebase Auth account** until the person signs up; when they do, you may want to match by email and merge or de-dupe. Re-running the sync updates existing `hubspot_*` users (email, name, phone, updatedAt).
+Contacts can sign in with **email + default password** (e.g. `123456789` or `HUBSPOT_IMPORT_DEFAULT_PASSWORD`), then complete onboarding. They do not appear on the Members page until `registrationComplete` is true (set when they complete profile). If an email already exists in Firebase Auth, the sync reuses that UID and updates the user doc (merge).
+
+**Remove HubSpot users:** **POST /api/remove-hubspot-users** deletes Firestore user docs where `source === 'hubspot'` or doc id starts with `hubspot_`, and deletes the corresponding Firebase Auth users so they can no longer sign in.
 
 **Rules:** `hubspotContacts` and `users` are configured in `firestore.rules`. Backend writes via Admin SDK bypass rules.
 

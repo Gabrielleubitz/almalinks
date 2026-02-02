@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, setPersistence, browserLocalPersistence, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, linkWithCredential, getAdditionalUserInfo } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, setPersistence, browserLocalPersistence, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, linkWithPopup, getAdditionalUserInfo } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, retryOnNetworkFailure } from '../firebase/config';
 import { ActivityService } from '../services/activityService';
@@ -41,6 +41,7 @@ export interface ProfileData {
   position?: string;
   status?: string;
   profileImage?: string | null;
+  profileImagePublicId?: string | null;
   bioTitle?: string;
   bio?: string;
   city?: string;
@@ -184,7 +185,7 @@ export const useAuth = () => {
         
         const { JoinRequestService } = await import('../services/joinRequestService');
         
-        // Create join request with all provided data
+        // Create join request with all provided data (including Google profile picture)
         const joinRequestData = {
           email: firebaseUser.email || '',
           name: profileData?.name || firebaseUser.displayName || '',
@@ -194,6 +195,8 @@ export const useAuth = () => {
           work: profileData?.work,
           linkedinUsername: profileData?.linkedinUsername,
           position: profileData?.position,
+          profileImage: profileData?.profileImage ?? undefined,
+          profileImagePublicId: profileData?.profileImagePublicId ?? undefined,
           bioTitle: profileData?.bioTitle,
           bio: profileData?.bio,
           city: profileData?.city,
@@ -239,6 +242,7 @@ export const useAuth = () => {
         if (profileData?.linkedinUsername) updatedData.linkedinUsername = profileData.linkedinUsername;
         if (profileData?.position) updatedData.position = profileData.position;
         if (profileData?.profileImage !== undefined) updatedData.profileImage = profileData.profileImage;
+        if (profileData?.profileImagePublicId !== undefined) updatedData.profileImagePublicId = profileData.profileImagePublicId;
         if (profileData?.bioTitle !== undefined && profileData.bioTitle !== null) updatedData.bioTitle = profileData.bioTitle;
         if (profileData?.bio !== undefined && profileData.bio !== null) updatedData.bio = profileData.bio;
         if (profileData?.city !== undefined && profileData.city !== null) updatedData.city = profileData.city;
@@ -720,11 +724,12 @@ export const useAuth = () => {
       const userProfile = await getUserProfile(result.user.uid);
       
       if (!userProfile) {
-        // Create new user profile from Google account
+        // Create new user profile from Google account (profile picture from Google)
         console.log('📝 Creating new user profile from Google account');
         await createOrUpdateUserProfile(result.user, {
           name: result.user.displayName || '',
-          profileImage: result.user.photoURL || null
+          profileImage: result.user.photoURL || null, // Google profile picture
+          profileImagePublicId: null // not Cloudinary
         });
         
         // Mark as Google linked for new accounts
@@ -734,13 +739,13 @@ export const useAuth = () => {
           googleEmail: result.user.email
         });
       } else {
-        // Existing profile - mark Google as linked and update info if needed
+        // Existing profile - mark Google as linked; pull profile picture from Google if none set
         console.log('📝 Updating existing user profile with Google account info');
         const userRef = doc(db, 'users', result.user.uid);
         await updateDoc(userRef, {
           googleLinked: true,
           googleEmail: result.user.email,
-          ...(result.user.photoURL && !userProfile.profileImage && { profileImage: result.user.photoURL }),
+          ...(result.user.photoURL && !userProfile.profileImage && { profileImage: result.user.photoURL, profileImagePublicId: null }), // Google photo when no image yet
           ...(result.user.displayName && !userProfile.displayName && { name: result.user.displayName })
         });
       }
@@ -787,52 +792,33 @@ export const useAuth = () => {
       
       console.log('🔗 Linking Google account to existing account:', currentEmail);
       
-      // Sign in with Google popup to get the credential
+      // Link Google to the *current* user (same UID); do not use signInWithPopup (that would switch accounts)
       const result = await retryOnNetworkFailure(async () => {
-        return signInWithPopup(auth, googleProvider);
+        return linkWithPopup(currentUser, googleProvider);
       });
       
-      // Check if the email matches the current account
-      if (result.user.email?.toLowerCase() === currentEmail.toLowerCase()) {
-        // Same email - Firebase automatically uses the same account when emails match
-        // The UID should be the same, but verify
-        if (result.user.uid === currentUid) {
-          // Update user profile to mark Google as linked
-          const userRef = doc(db, 'users', currentUid);
-          await updateDoc(userRef, {
-            googleLinked: true,
-            googleEmail: result.user.email,
-            ...(result.user.photoURL && { profileImage: result.user.photoURL })
-          });
-          
-          console.log('✅ Google account linked successfully');
-          return true;
-        } else {
-          // This shouldn't happen if emails match, but handle it
-          console.warn('⚠️ UID mismatch even though emails match');
-          // Still update the profile with the current UID
-          const userRef = doc(db, 'users', currentUid);
-          await updateDoc(userRef, {
-            googleLinked: true,
-            googleEmail: result.user.email
-          });
-          return true;
-        }
-      } else {
-        // Different email - sign out from Google account and restore original session
-        // We need to sign back in with the original credentials
-        await signOut(auth);
-        
-        // Try to restore the original session by signing in again
-        // Note: This requires the user to have their password, which they might not remember
-        // For now, we'll just show an error and let the auth state listener handle it
-        throw new Error(`Google account email (${result.user.email}) does not match your current account email (${currentEmail}). Please use a Google account with the same email address.`);
+      // result.user is the same account with Google now linked; UID unchanged
+      if (result.user.uid !== currentUid) {
+        console.warn('⚠️ UID changed after link (unexpected)');
       }
+      
+      // Update Firestore: mark Google linked and optionally pull profile picture from Google
+      const userRef = doc(db, 'users', currentUid);
+      await updateDoc(userRef, {
+        googleLinked: true,
+        googleEmail: result.user.email ?? currentEmail,
+        ...(result.user.photoURL && { profileImage: result.user.photoURL, profileImagePublicId: null })
+      });
+      
+      console.log('✅ Google account linked successfully; you can sign in with email/password or Google');
+      return true;
     } catch (err: any) {
       console.error('❌ Failed to link Google account:', err.code, err.message);
       
       if (err.code === 'auth/credential-already-in-use') {
         setError('This Google account is already linked to another account.');
+      } else if (err.code === 'auth/provider-already-linked') {
+        setError('Google is already linked to this account.');
       } else if (err.code === 'auth/popup-closed-by-user') {
         setError('Linking was cancelled. Please try again.');
       } else if (err.code === 'auth/popup-blocked') {

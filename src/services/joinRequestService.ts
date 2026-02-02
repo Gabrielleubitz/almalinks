@@ -34,7 +34,9 @@ export interface JoinRequest {
   adminNotifiedAt?: Timestamp | Date; // Timestamp when admin notification email was sent
   userNotifiedAt?: Timestamp | Date; // Timestamp when user confirmation email was sent
   welcomeEmailSentAt?: Timestamp | Date; // Set by backend when Mailchimp welcome email is sent
-  // Additional profile fields that might be provided during signup
+  // Additional profile fields that might be provided during signup (e.g. Google profile picture)
+  profileImage?: string | null;
+  profileImagePublicId?: string | null;
   bioTitle?: string;
   bio?: string;
   city?: string;
@@ -127,6 +129,12 @@ export class JoinRequestService {
       }
       if (formData.skills !== undefined && formData.skills !== null && Array.isArray(formData.skills) && formData.skills.length > 0) {
         joinRequestPayload.skills = formData.skills;
+      }
+      if (formData.profileImage !== undefined) {
+        joinRequestPayload.profileImage = formData.profileImage;
+      }
+      if (formData.profileImagePublicId !== undefined) {
+        joinRequestPayload.profileImagePublicId = formData.profileImagePublicId;
       }
 
       // Sanitize the payload to remove any undefined values (safety check)
@@ -560,8 +568,9 @@ export class JoinRequestService {
         position: request.position || '',
         role: 'member',
         status: 'approved',
-        profileImage: null,
-        avatarUrl: null,
+        profileImage: request.profileImage ?? null,
+        profileImagePublicId: request.profileImagePublicId ?? null,
+        avatarUrl: request.profileImage ?? null,
         profileVisibility: 'public',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),

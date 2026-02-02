@@ -36,6 +36,7 @@ export interface UserProfile {
   // Avatar
   avatarUrl?: string | null;
   profileImage?: string | null; // legacy field for backward compatibility
+  profileImagePublicId?: string | null; // Cloudinary public_id for delete
   
   // Privacy & Visibility
   profileVisibility: ProfileVisibility;

@@ -22,6 +22,8 @@ import welcomeEmailHandler from '../lib/server/api/welcome-email.js';
 import testMandrillHandler from '../lib/server/api/test-mandrill.js';
 import syncHubspotContactsHandler from '../lib/server/api/sync-hubspot-contacts.js';
 import removeHubspotUsersHandler from '../lib/server/api/remove-hubspot-users.js';
+import uploadProfileImageHandler from '../lib/server/api/upload-profile-image.js';
+import deleteProfileImageHandler from '../lib/server/api/delete-profile-image.js';
 
 // Legacy connection/request endpoints (kept for compatibility with current frontend paths)
 import connectionsAdminCreateHandler from '../lib/server/api/legacy/api/connections/admin-create.js';
@@ -57,6 +59,8 @@ const routeTable = new Map([
   ['/api/test-mandrill', testMandrillHandler],
   ['/api/sync-hubspot-contacts', syncHubspotContactsHandler],
   ['/api/remove-hubspot-users', removeHubspotUsersHandler],
+  ['/api/upload-profile-image', uploadProfileImageHandler],
+  ['/api/delete-profile-image', deleteProfileImageHandler],
 
   // Connections workflow (current frontend paths)
   ['/api/connections/admin-create', connectionsAdminCreateHandler],
