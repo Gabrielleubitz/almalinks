@@ -406,8 +406,22 @@ const AdminDashboard: React.FC = () => {
       <AdminHeader title="Admin Dashboard" />
 
       <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 md:py-8 lg:py-12">
-        {/* Page title */}
+        {/* Welcome Section */}
         <div className="text-center mb-6 sm:mb-8 lg:mb-12 px-2">
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
+            <div className="flex flex-col sm:flex-row items-center justify-center mb-4 gap-3 sm:gap-0">
+              <div className="bg-purple-100 p-2 sm:p-3 rounded-full mr-0 sm:mr-4 flex-shrink-0">
+                <UserCog className="h-5 w-5 sm:h-6 sm:w-6 text-brand-dark" />
+              </div>
+              <div className="text-center sm:text-left">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
+                  Welcome back, <span className="text-brand-dark">{user?.displayName?.split(' ')[0] || 'Admin'}</span>! 👋
+                </h2>
+                <p className="text-sm sm:text-base text-gray-600 mt-1">Manage events, track registrations, and oversee check-ins</p>
+              </div>
+            </div>
+          </div>
+          
           <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 mb-2 sm:mb-3 lg:mb-4">
             Admin <span className="gradient-text">Dashboard</span>
           </h1>
