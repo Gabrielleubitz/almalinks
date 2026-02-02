@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Shield,
@@ -78,22 +79,35 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title, subtitle }) => {
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const adminMenuRef = useRef<HTMLDivElement>(null);
+  const adminButtonRef = useRef<HTMLButtonElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
     setAdminMenuOpen(false);
     setMobileMenuOpen(false);
+    setDropdownPosition({ top: 0, left: 0 });
   }, [location.pathname]);
 
+  useLayoutEffect(() => {
+    if (!adminMenuOpen || !adminButtonRef.current) return;
+    const rect = adminButtonRef.current.getBoundingClientRect();
+    setDropdownPosition({
+      top: rect.bottom + 4,
+      left: rect.left,
+    });
+  }, [adminMenuOpen]);
+
   useEffect(() => {
+    if (!adminMenuOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (adminMenuRef.current && !adminMenuRef.current.contains(target)) {
-        setAdminMenuOpen(false);
-      }
+      const target = e.target as Element;
+      if (target.closest('[data-admin-dropdown]')) return;
+      if (adminMenuRef.current?.contains(target)) return;
+      setAdminMenuOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [adminMenuOpen]);
 
   const handleLogout = async () => {
     try {
@@ -142,9 +156,10 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title, subtitle }) => {
 
           {/* Center/Right: Desktop nav */}
           <div className="hidden lg:flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            {/* Admin dropdown */}
+            {/* Admin dropdown: portal into body so it's not clipped */}
             <div className="relative" ref={adminMenuRef}>
               <button
+                ref={adminButtonRef}
                 type="button"
                 onClick={() => setAdminMenuOpen(!adminMenuOpen)}
                 className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -157,35 +172,47 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title, subtitle }) => {
                 <span>Admin</span>
                 <ChevronDown className={`h-4 w-4 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} />
               </button>
-              {adminMenuOpen && (
-                <div className="absolute left-0 top-full mt-1 w-56 rounded-xl bg-white shadow-lg border border-gray-200 py-2 z-[9999] max-h-[calc(100vh-5rem)] overflow-y-auto">
-                  {adminNavGroups.map((group) => (
-                    <div key={group.label} className="py-1">
-                      <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        {group.label}
+              {typeof document !== 'undefined' &&
+                adminMenuOpen &&
+                dropdownPosition.top > 0 &&
+                createPortal(
+                  <div
+                    data-admin-dropdown
+                    className="fixed w-56 rounded-xl bg-white shadow-lg border border-gray-200 py-2 max-h-[calc(100vh-5rem)] overflow-y-auto"
+                    style={{
+                      top: dropdownPosition.top,
+                      left: dropdownPosition.left,
+                      zIndex: 99999,
+                    }}
+                  >
+                    {adminNavGroups.map((group) => (
+                      <div key={group.label} className="py-1">
+                        <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                          {group.label}
+                        </div>
+                        {group.items.map((item) => {
+                          const Icon = item.icon;
+                          const active = isActive(item.to);
+                          return (
+                            <Link
+                              key={item.to}
+                              to={item.to}
+                              className={`flex items-center gap-2 px-3 py-2 text-sm transition-colors ${
+                                active
+                                  ? 'bg-brand-light text-brand-dark font-medium'
+                                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                              }`}
+                            >
+                              <Icon className="h-4 w-4 flex-shrink-0" />
+                              {item.label}
+                            </Link>
+                          );
+                        })}
                       </div>
-                      {group.items.map((item) => {
-                        const Icon = item.icon;
-                        const active = isActive(item.to);
-                        return (
-                          <Link
-                            key={item.to}
-                            to={item.to}
-                            className={`flex items-center gap-2 px-3 py-2 text-sm transition-colors ${
-                              active
-                                ? 'bg-brand-light text-brand-dark font-medium'
-                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                            }`}
-                          >
-                            <Icon className="h-4 w-4 flex-shrink-0" />
-                            {item.label}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>,
+                  document.body
+                )}
             </div>
 
             {/* Site links */}
