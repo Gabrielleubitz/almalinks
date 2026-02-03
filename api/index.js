@@ -23,6 +23,7 @@ import testMandrillHandler from '../lib/server/api/test-mandrill.js';
 import syncHubspotContactsHandler from '../lib/server/api/sync-hubspot-contacts.js';
 import removeHubspotUsersHandler from '../lib/server/api/remove-hubspot-users.js';
 import syncHubspotEventsHandler from '../lib/server/api/sync-hubspot-events.js';
+import syncHubspotDealsHandler from '../lib/server/api/sync-hubspot-deals.js';
 import uploadProfileImageHandler from '../lib/server/api/upload-profile-image.js';
 import deleteProfileImageHandler from '../lib/server/api/delete-profile-image.js';
 import uploadImageHandler from '../lib/server/api/upload-image.js';
@@ -62,6 +63,7 @@ const routeTable = new Map([
   ['/api/sync-hubspot-contacts', syncHubspotContactsHandler],
   ['/api/remove-hubspot-users', removeHubspotUsersHandler],
   ['/api/sync-hubspot-events', syncHubspotEventsHandler],
+  ['/api/sync-hubspot-deals', syncHubspotDealsHandler],
   ['/api/upload-profile-image', uploadProfileImageHandler],
   ['/api/delete-profile-image', deleteProfileImageHandler],
   ['/api/upload-image', uploadImageHandler],
