@@ -19,6 +19,8 @@ const HubSpotImportPage: React.FC = () => {
   const [syncResult, setSyncResult] = useState<{ ok?: boolean; totalUpserted?: number; error?: string } | null>(null);
   const [syncingDeals, setSyncingDeals] = useState(false);
   const [dealsResult, setDealsResult] = useState<any | null>(null);
+  const [creatingFromDeals, setCreatingFromDeals] = useState(false);
+  const [createFromDealsResult, setCreateFromDealsResult] = useState<{ ok?: boolean; created?: number; skipped?: number; totalDeals?: number; error?: string } | null>(null);
   const [removing, setRemoving] = useState(false);
   const [removeResult, setRemoveResult] = useState<{ ok?: boolean; deletedUsers?: number; deletedContacts?: number; error?: string } | null>(null);
 
@@ -26,6 +28,7 @@ const HubSpotImportPage: React.FC = () => {
     setSyncing(true);
     setSyncResult(null);
     setDealsResult(null);
+    setCreateFromDealsResult(null);
     setRemoveResult(null);
     try {
       const res = await apiRequest('/api/sync-hubspot-contacts', { method: 'POST' });
@@ -42,6 +45,7 @@ const HubSpotImportPage: React.FC = () => {
     setSyncingDeals(true);
     setDealsResult(null);
     setSyncResult(null);
+    setCreateFromDealsResult(null);
     setRemoveResult(null);
     try {
       const res = await apiRequest('/api/sync-hubspot-deals', { method: 'POST' });
@@ -59,6 +63,8 @@ const HubSpotImportPage: React.FC = () => {
     setRemoving(true);
     setRemoveResult(null);
     setSyncResult(null);
+    setDealsResult(null);
+    setCreateFromDealsResult(null);
     try {
       const res = await apiRequest('/api/remove-hubspot-users', {
         method: 'POST',
@@ -69,8 +75,25 @@ const HubSpotImportPage: React.FC = () => {
       setRemoveResult(data);
     } catch (err: any) {
       setRemoveResult({ ok: false, error: err?.message || 'Request failed' });
+} finally {
+    setRemoving(false);
+    }
+  };
+
+  const createEventsFromDeals = async () => {
+    setCreatingFromDeals(true);
+    setCreateFromDealsResult(null);
+    setSyncResult(null);
+    setDealsResult(null);
+    setRemoveResult(null);
+    try {
+      const res = await apiRequest('/api/create-events-from-deals', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      setCreateFromDealsResult(data);
+    } catch (err: any) {
+      setCreateFromDealsResult({ ok: false, error: err?.message || 'Request failed' });
     } finally {
-      setRemoving(false);
+      setCreatingFromDeals(false);
     }
   };
 
@@ -86,6 +109,16 @@ const HubSpotImportPage: React.FC = () => {
           <ArrowLeft className="h-5 w-5" />
           <span>Back to Admin</span>
         </button>
+
+        {/* Quick steps — clear instructions */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6 border-l-4 border-l-emerald-500">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">Quick steps</h2>
+          <ol className="list-decimal list-inside space-y-2 text-gray-800 text-sm">
+            <li><strong>Import people:</strong> Click <strong>Sync HubSpot → Alma Links</strong>. Everyone in your HubSpot CRM gets a login.</li>
+            <li><strong>Import deals:</strong> Click <strong>Import HubSpot Deals</strong>. This copies your deals into Alma Links.</li>
+            <li><strong>Create past events:</strong> Click <strong>Create past events from deals</strong>. Each deal becomes a past event on the Events page. You can run this again later; deals that already have an event are skipped.</li>
+          </ol>
+        </div>
 
         {/* What it does */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
@@ -110,7 +143,7 @@ const HubSpotImportPage: React.FC = () => {
           </h2>
           <ol className="list-decimal list-inside space-y-3 text-gray-700 text-sm">
             <li><strong>Sync:</strong> Click <strong>Sync HubSpot → Alma Links</strong> below. Every contact in your HubSpot CRM will be imported and given a site account. You&apos;ll see how many were added when the sync finishes.</li>
-            <li><strong>Deals:</strong> Click <strong>Import HubSpot Deals</strong> to upsert all deals into Firestore under <code>hubspotDeals</code>. You can then use these records in custom dashboards, BigQuery exports, or backend automations. They do not automatically create users or appear on any screen in Alma Links.</li>
+            <li><strong>Deals:</strong> Click <strong>Import HubSpot Deals</strong> to upsert all deals into Firestore under <code>hubspotDeals</code>. Then click <strong>Create past events from deals</strong> to turn each deal into a past event in Alma Links (they will appear on the Events page with status &quot;completed&quot;). Deals that already have an event are skipped.</li>
             <li><strong>Logging in:</strong> Each imported person signs in with their <strong>HubSpot email</strong> and the <strong>default password</strong> (your site admin configures this). They should change it after first login.</li>
             <li><strong>After import:</strong> New users will be prompted to complete their profile (name, photo, bio, etc.) the first time they sign in.</li>
             <li><strong>Remove:</strong> To remove all users that were imported from HubSpot from the site, click <strong>Remove HubSpot users</strong>. This cannot be undone — use only if you want to clear the import and start over.</li>
@@ -144,7 +177,7 @@ const HubSpotImportPage: React.FC = () => {
             </button>
             <button
               onClick={syncHubspotDeals}
-              disabled={syncing || syncingDeals || removing}
+              disabled={syncing || syncingDeals || creatingFromDeals || removing}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
             >
               {syncingDeals ? (
@@ -160,8 +193,25 @@ const HubSpotImportPage: React.FC = () => {
               )}
             </button>
             <button
+              onClick={createEventsFromDeals}
+              disabled={syncing || syncingDeals || creatingFromDeals || removing}
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+            >
+              {creatingFromDeals ? (
+                <>
+                  <RefreshCw className="h-5 w-5 animate-spin" />
+                  <span>Creating past events...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-5 w-5" />
+                  <span>Create past events from deals</span>
+                </>
+              )}
+            </button>
+            <button
               onClick={removeHubspotUsers}
-              disabled={syncing || syncingDeals || removing}
+              disabled={syncing || syncingDeals || creatingFromDeals || removing}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-100 text-red-700 border border-red-200 rounded-xl hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
             >
               {removing ? (
@@ -206,6 +256,27 @@ const HubSpotImportPage: React.FC = () => {
               </div>
               <pre className="text-xs overflow-auto max-h-40 bg-white/60 p-3 rounded-lg">
                 {JSON.stringify(dealsResult, null, 2)}
+              </pre>
+            </div>
+          )}
+
+          {createFromDealsResult && (
+            <div className={`mt-4 p-4 rounded-xl border ${createFromDealsResult.ok !== false && !createFromDealsResult.error ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+              <div className="flex items-center gap-2 font-medium mb-2">
+                {createFromDealsResult.ok !== false && !createFromDealsResult.error ? (
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                )}
+                <span>{createFromDealsResult.ok !== false && !createFromDealsResult.error ? 'Past events created' : 'Error'}</span>
+              </div>
+              {createFromDealsResult.ok !== false && !createFromDealsResult.error ? (
+                <p className="text-sm text-gray-700">
+                  Created {createFromDealsResult.created ?? 0} past event(s), skipped {createFromDealsResult.skipped ?? 0} (already had events). Total deals: {createFromDealsResult.totalDeals ?? 0}.
+                </p>
+              ) : null}
+              <pre className="text-xs overflow-auto max-h-40 bg-white/60 p-3 rounded-lg mt-2">
+                {JSON.stringify(createFromDealsResult, null, 2)}
               </pre>
             </div>
           )}
