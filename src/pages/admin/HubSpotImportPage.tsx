@@ -17,12 +17,15 @@ const HubSpotImportPage: React.FC = () => {
   const navigate = useNavigate();
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ ok?: boolean; totalUpserted?: number; error?: string } | null>(null);
+  const [syncingEvents, setSyncingEvents] = useState(false);
+  const [eventsResult, setEventsResult] = useState<any | null>(null);
   const [removing, setRemoving] = useState(false);
   const [removeResult, setRemoveResult] = useState<{ ok?: boolean; deletedUsers?: number; deletedContacts?: number; error?: string } | null>(null);
 
   const syncHubspotContacts = async () => {
     setSyncing(true);
     setSyncResult(null);
+    setEventsResult(null);
     setRemoveResult(null);
     try {
       const res = await apiRequest('/api/sync-hubspot-contacts', { method: 'POST' });
@@ -32,6 +35,22 @@ const HubSpotImportPage: React.FC = () => {
       setSyncResult({ ok: false, error: err?.message || 'Request failed' });
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const syncHubspotEvents = async () => {
+    setSyncingEvents(true);
+    setEventsResult(null);
+    setSyncResult(null);
+    setRemoveResult(null);
+    try {
+      const res = await apiRequest('/api/sync-hubspot-events', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      setEventsResult(data);
+    } catch (err: any) {
+      setEventsResult({ ok: false, error: err?.message || 'Request failed' });
+    } finally {
+      setSyncingEvents(false);
     }
   };
 
@@ -103,10 +122,10 @@ const HubSpotImportPage: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
 
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
             <button
               onClick={syncHubspotContacts}
-              disabled={syncing || removing}
+              disabled={syncing || syncingEvents || removing}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
             >
               {syncing ? (
@@ -122,8 +141,25 @@ const HubSpotImportPage: React.FC = () => {
               )}
             </button>
             <button
+              onClick={syncHubspotEvents}
+              disabled={syncing || syncingEvents || removing}
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+            >
+              {syncingEvents ? (
+                <>
+                  <RefreshCw className="h-5 w-5 animate-spin" />
+                  <span>Import HubSpot Events...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="h-5 w-5" />
+                  <span>Import HubSpot Events</span>
+                </>
+              )}
+            </button>
+            <button
               onClick={removeHubspotUsers}
-              disabled={syncing || removing}
+              disabled={syncing || syncingEvents || removing}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-100 text-red-700 border border-red-200 rounded-xl hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
             >
               {removing ? (
@@ -152,6 +188,22 @@ const HubSpotImportPage: React.FC = () => {
               </div>
               <pre className="text-xs overflow-auto max-h-40 bg-white/60 p-3 rounded-lg">
                 {JSON.stringify(syncResult, null, 2)}
+              </pre>
+            </div>
+          )}
+
+          {eventsResult && (
+            <div className={`mt-4 p-4 rounded-xl border ${eventsResult.ok !== false && !eventsResult.error ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+              <div className="flex items-center gap-2 font-medium mb-2">
+                {eventsResult.ok !== false && !eventsResult.error ? (
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                )}
+                <span>{eventsResult.ok !== false && !eventsResult.error ? 'Events sync result' : 'Error'}</span>
+              </div>
+              <pre className="text-xs overflow-auto max-h-40 bg-white/60 p-3 rounded-lg">
+                {JSON.stringify(eventsResult, null, 2)}
               </pre>
             </div>
           )}
