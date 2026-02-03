@@ -98,6 +98,7 @@ const HubSpotImportPage: React.FC = () => {
             <li>Creates a <strong>login for each person</strong> using their HubSpot email and a default password (set by your site administrator).</li>
             <li>After first sign-in, each person is asked to <strong>complete their profile</strong> on the site.</li>
             <li>Imported contacts appear in your site&apos;s member directory and can connect with others once they finish onboarding.</li>
+            <li>Imports <strong>all deals (pipeline records)</strong> from HubSpot into a Firestore collection named <code>hubspotDeals</code> for reporting, analytics, or custom automations. These deals are not shown in the Alma Links UI by default.</li>
           </ul>
         </div>
 
@@ -109,6 +110,7 @@ const HubSpotImportPage: React.FC = () => {
           </h2>
           <ol className="list-decimal list-inside space-y-3 text-gray-700 text-sm">
             <li><strong>Sync:</strong> Click <strong>Sync HubSpot → Alma Links</strong> below. Every contact in your HubSpot CRM will be imported and given a site account. You&apos;ll see how many were added when the sync finishes.</li>
+            <li><strong>Deals:</strong> Click <strong>Import HubSpot Deals</strong> to upsert all deals into Firestore under <code>hubspotDeals</code>. You can then use these records in custom dashboards, BigQuery exports, or backend automations. They do not automatically create users or appear on any screen in Alma Links.</li>
             <li><strong>Logging in:</strong> Each imported person signs in with their <strong>HubSpot email</strong> and the <strong>default password</strong> (your site admin configures this). They should change it after first login.</li>
             <li><strong>After import:</strong> New users will be prompted to complete their profile (name, photo, bio, etc.) the first time they sign in.</li>
             <li><strong>Remove:</strong> To remove all users that were imported from HubSpot from the site, click <strong>Remove HubSpot users</strong>. This cannot be undone — use only if you want to clear the import and start over.</li>
