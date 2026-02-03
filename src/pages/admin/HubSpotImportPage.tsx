@@ -9,9 +9,11 @@ import {
   CheckCircle,
   FileText,
   Info,
+  Trash2,
 } from 'lucide-react';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { apiRequest } from '../../utils/apiClient';
+import HubspotLogo from '../../assets/hubspot-logo.svg';
 
 const HubSpotImportPage: React.FC = () => {
   const navigate = useNavigate();
@@ -23,6 +25,12 @@ const HubSpotImportPage: React.FC = () => {
   const [createFromDealsResult, setCreateFromDealsResult] = useState<{ ok?: boolean; created?: number; skipped?: number; totalDeals?: number; error?: string } | null>(null);
   const [removing, setRemoving] = useState(false);
   const [removeResult, setRemoveResult] = useState<{ ok?: boolean; deletedUsers?: number; deletedContacts?: number; error?: string } | null>(null);
+  const [pullingAll, setPullingAll] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
+  const [deletingDeals, setDeletingDeals] = useState(false);
+  const [deletingEventDeals, setDeletingEventDeals] = useState(false);
+  const [deletingUsersOnly, setDeletingUsersOnly] = useState(false);
+  const [deleteResult, setDeleteResult] = useState<{ ok?: boolean; deleted?: number; error?: string } | null>(null);
 
   const syncHubspotContacts = async () => {
     setSyncing(true);
@@ -30,6 +38,7 @@ const HubSpotImportPage: React.FC = () => {
     setDealsResult(null);
     setCreateFromDealsResult(null);
     setRemoveResult(null);
+    setDeleteResult(null);
     try {
       const res = await apiRequest('/api/sync-hubspot-contacts', { method: 'POST' });
       const data = await res.json().catch(() => ({}));
@@ -47,6 +56,7 @@ const HubSpotImportPage: React.FC = () => {
     setSyncResult(null);
     setCreateFromDealsResult(null);
     setRemoveResult(null);
+    setDeleteResult(null);
     try {
       const res = await apiRequest('/api/sync-hubspot-deals', { method: 'POST' });
       const data = await res.json().catch(() => ({}));
@@ -65,6 +75,7 @@ const HubSpotImportPage: React.FC = () => {
     setSyncResult(null);
     setDealsResult(null);
     setCreateFromDealsResult(null);
+    setDeleteResult(null);
     try {
       const res = await apiRequest('/api/remove-hubspot-users', {
         method: 'POST',
@@ -86,6 +97,7 @@ const HubSpotImportPage: React.FC = () => {
     setSyncResult(null);
     setDealsResult(null);
     setRemoveResult(null);
+    setDeleteResult(null);
     try {
       const res = await apiRequest('/api/create-events-from-deals', { method: 'POST' });
       const data = await res.json().catch(() => ({}));
@@ -96,6 +108,111 @@ const HubSpotImportPage: React.FC = () => {
       setCreatingFromDeals(false);
     }
   };
+
+  const pullAll = async () => {
+    setPullingAll(true);
+    setSyncResult(null);
+    setDealsResult(null);
+    setCreateFromDealsResult(null);
+    setRemoveResult(null);
+    setDeleteResult(null);
+    try {
+      const syncRes = await apiRequest('/api/sync-hubspot-contacts', { method: 'POST' });
+      const syncData = await syncRes.json().catch(() => ({}));
+      setSyncResult(syncData);
+      const dealsRes = await apiRequest('/api/sync-hubspot-deals', { method: 'POST' });
+      const dealsData = await dealsRes.json().catch(() => ({}));
+      setDealsResult(dealsData);
+      const eventsRes = await apiRequest('/api/create-events-from-deals', { method: 'POST' });
+      const eventsData = await eventsRes.json().catch(() => ({}));
+      setCreateFromDealsResult(eventsData);
+    } catch (err: any) {
+      setSyncResult({ ok: false, error: err?.message || 'Request failed' });
+    } finally {
+      setPullingAll(false);
+    }
+  };
+
+  const deleteAll = async () => {
+    if (!window.confirm('Delete all HubSpot data (users, contacts, deals, and past events from deals)? This cannot be undone.')) return;
+    setDeletingAll(true);
+    setRemoveResult(null);
+    setSyncResult(null);
+    setDealsResult(null);
+    setCreateFromDealsResult(null);
+    setDeleteResult(null);
+    try {
+      const removeRes = await apiRequest('/api/remove-hubspot-users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ removeContacts: true }),
+      });
+      const removeData = await removeRes.json().catch(() => ({}));
+      setRemoveResult(removeData);
+      const eventsRes = await apiRequest('/api/remove-events-from-deals', { method: 'POST' });
+      const eventsData = await eventsRes.json().catch(() => ({}));
+      setDeleteResult(eventsData);
+    } catch (err: any) {
+      setRemoveResult({ ok: false, error: err?.message || 'Request failed' });
+    } finally {
+      setDeletingAll(false);
+    }
+  };
+
+  const clearDealsOnly = async () => {
+    if (!window.confirm('Clear imported deals only? This removes all deals from the HubSpot deals import.')) return;
+    setDeletingDeals(true);
+    setDealsResult(null);
+    setDeleteResult(null);
+    try {
+      const res = await apiRequest('/api/clear-hubspot-deals', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      setDeleteResult(data);
+    } catch (err: any) {
+      setDeleteResult({ ok: false, error: err?.message || 'Request failed' });
+    } finally {
+      setDeletingDeals(false);
+    }
+  };
+
+  const removeEventsFromDealsOnly = async () => {
+    if (!window.confirm('Remove all past events that were created from deals?')) return;
+    setDeletingEventDeals(true);
+    setCreateFromDealsResult(null);
+    setDeleteResult(null);
+    try {
+      const res = await apiRequest('/api/remove-events-from-deals', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      setDeleteResult(data);
+    } catch (err: any) {
+      setDeleteResult({ ok: false, error: err?.message || 'Request failed' });
+    } finally {
+      setDeletingEventDeals(false);
+    }
+  };
+
+  const removeUsersOnly = async () => {
+    if (!window.confirm('Remove only the users imported from HubSpot? Deals and past events will stay.')) return;
+    setDeletingUsersOnly(true);
+    setSyncResult(null);
+    setRemoveResult(null);
+    setDeleteResult(null);
+    try {
+      const res = await apiRequest('/api/remove-hubspot-users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ removeContacts: false }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setRemoveResult(data);
+    } catch (err: any) {
+      setRemoveResult({ ok: false, error: err?.message || 'Request failed' });
+    } finally {
+      setDeletingUsersOnly(false);
+    }
+  };
+
+  const busy = syncing || syncingDeals || creatingFromDeals || removing || pullingAll || deletingAll || deletingDeals || deletingEventDeals || deletingUsersOnly;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -155,77 +272,109 @@ const HubSpotImportPage: React.FC = () => {
 
         {/* Actions */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
+          <div className="flex items-center gap-3 mb-6">
+            <img src={HubspotLogo} alt="HubSpot" className="h-10 w-10" />
+            <h2 className="text-lg font-semibold text-gray-900">Actions</h2>
+          </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
+          {/* Pull all / Delete all */}
+          <div className="flex flex-wrap gap-3 mb-6">
             <button
-              onClick={syncHubspotContacts}
-              disabled={syncing || syncingDeals || removing}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+              onClick={pullAll}
+              disabled={busy}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-orange-600 text-white rounded-xl hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm"
             >
-              {syncing ? (
-                <>
-                  <RefreshCw className="h-5 w-5 animate-spin" />
-                  <span>Syncing...</span>
-                </>
-              ) : (
-                <>
-                  <Download className="h-5 w-5" />
-                  <span>Sync HubSpot → Alma Links</span>
-                </>
-              )}
+              {pullingAll ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              <span>Pull all</span>
             </button>
             <button
-              onClick={syncHubspotDeals}
-              disabled={syncing || syncingDeals || creatingFromDeals || removing}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+              onClick={deleteAll}
+              disabled={busy}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm"
             >
-              {syncingDeals ? (
-                <>
-                  <RefreshCw className="h-5 w-5 animate-spin" />
-                  <span>Import HubSpot Deals...</span>
-                </>
-              ) : (
-                <>
-                  <Download className="h-5 w-5" />
-                  <span>Import HubSpot Deals</span>
-                </>
-              )}
+              {deletingAll ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              <span>Delete all</span>
             </button>
-            <button
-              onClick={createEventsFromDeals}
-              disabled={syncing || syncingDeals || creatingFromDeals || removing}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
-            >
-              {creatingFromDeals ? (
-                <>
-                  <RefreshCw className="h-5 w-5 animate-spin" />
-                  <span>Creating past events...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-5 w-5" />
-                  <span>Create past events from deals</span>
-                </>
-              )}
-            </button>
-            <button
-              onClick={removeHubspotUsers}
-              disabled={syncing || syncingDeals || creatingFromDeals || removing}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-100 text-red-700 border border-red-200 rounded-xl hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
-            >
-              {removing ? (
-                <>
-                  <RefreshCw className="h-5 w-5 animate-spin" />
-                  <span>Removing...</span>
-                </>
-              ) : (
-                <>
-                  <X className="h-5 w-5" />
-                  <span>Remove HubSpot users</span>
-                </>
-              )}
-            </button>
+          </div>
+
+          {/* Four action buttons with hover-to-delete */}
+          <div className="space-y-3">
+            <div className="group flex items-center gap-2 flex-wrap">
+              <button
+                onClick={syncHubspotContacts}
+                disabled={busy}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-orange-600 text-white rounded-xl hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm"
+              >
+                {syncing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                <span>{syncing ? 'Syncing...' : 'Sync HubSpot → Alma Links'}</span>
+              </button>
+              <button
+                onClick={removeUsersOnly}
+                disabled={busy}
+                title="Remove imported users only"
+                className="opacity-0 group-hover:opacity-100 focus:opacity-100 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 transition-all text-sm"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Delete this import</span>
+              </button>
+            </div>
+            <div className="group flex items-center gap-2 flex-wrap">
+              <button
+                onClick={syncHubspotDeals}
+                disabled={busy}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm"
+              >
+                {syncingDeals ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                <span>{syncingDeals ? 'Importing...' : 'Import HubSpot Deals'}</span>
+              </button>
+              <button
+                onClick={clearDealsOnly}
+                disabled={busy}
+                title="Clear deals import only"
+                className="opacity-0 group-hover:opacity-100 focus:opacity-100 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 transition-all text-sm"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Delete this import</span>
+              </button>
+            </div>
+            <div className="group flex items-center gap-2 flex-wrap">
+              <button
+                onClick={createEventsFromDeals}
+                disabled={busy}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm"
+              >
+                {creatingFromDeals ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                <span>{creatingFromDeals ? 'Creating...' : 'Create past events from deals'}</span>
+              </button>
+              <button
+                onClick={removeEventsFromDealsOnly}
+                disabled={busy}
+                title="Remove past events from deals only"
+                className="opacity-0 group-hover:opacity-100 focus:opacity-100 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 transition-all text-sm"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Delete this import</span>
+              </button>
+            </div>
+            <div className="group flex items-center gap-2 flex-wrap">
+              <button
+                onClick={removeHubspotUsers}
+                disabled={busy}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-red-100 text-red-700 border border-red-200 rounded-xl hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm"
+              >
+                {removing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                <span>{removing ? 'Removing...' : 'Remove HubSpot users'}</span>
+              </button>
+              <button
+                onClick={deleteAll}
+                disabled={busy}
+                title="Delete all HubSpot data"
+                className="opacity-0 group-hover:opacity-100 focus:opacity-100 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 transition-all text-sm"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Delete all</span>
+              </button>
+            </div>
           </div>
 
           {syncResult && (
@@ -293,6 +442,22 @@ const HubSpotImportPage: React.FC = () => {
               </div>
               <pre className="text-xs overflow-auto max-h-40 bg-white/60 p-3 rounded-lg">
                 {JSON.stringify(removeResult, null, 2)}
+              </pre>
+            </div>
+          )}
+
+          {deleteResult && (
+            <div className={`mt-4 p-4 rounded-xl border ${deleteResult.ok !== false && !deleteResult.error ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+              <div className="flex items-center gap-2 font-medium mb-2">
+                {deleteResult.ok !== false && !deleteResult.error ? (
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                )}
+                <span>{deleteResult.ok !== false && !deleteResult.error ? 'Delete result' : 'Error'}</span>
+              </div>
+              <pre className="text-xs overflow-auto max-h-40 bg-white/60 p-3 rounded-lg">
+                {JSON.stringify(deleteResult, null, 2)}
               </pre>
             </div>
           )}

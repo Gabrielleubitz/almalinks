@@ -25,6 +25,8 @@ import removeHubspotUsersHandler from '../lib/server/api/remove-hubspot-users.js
 import syncHubspotEventsHandler from '../lib/server/api/sync-hubspot-events.js';
 import syncHubspotDealsHandler from '../lib/server/api/sync-hubspot-deals.js';
 import createEventsFromDealsHandler from '../lib/server/api/create-events-from-deals.js';
+import clearHubspotDealsHandler from '../lib/server/api/clear-hubspot-deals.js';
+import removeEventsFromDealsHandler from '../lib/server/api/remove-events-from-deals.js';
 import uploadProfileImageHandler from '../lib/server/api/upload-profile-image.js';
 import deleteProfileImageHandler from '../lib/server/api/delete-profile-image.js';
 import uploadImageHandler from '../lib/server/api/upload-image.js';
@@ -66,6 +68,8 @@ const routeTable = new Map([
   ['/api/sync-hubspot-events', syncHubspotEventsHandler],
   ['/api/sync-hubspot-deals', syncHubspotDealsHandler],
   ['/api/create-events-from-deals', createEventsFromDealsHandler],
+  ['/api/clear-hubspot-deals', clearHubspotDealsHandler],
+  ['/api/remove-events-from-deals', removeEventsFromDealsHandler],
   ['/api/upload-profile-image', uploadProfileImageHandler],
   ['/api/delete-profile-image', deleteProfileImageHandler],
   ['/api/upload-image', uploadImageHandler],
