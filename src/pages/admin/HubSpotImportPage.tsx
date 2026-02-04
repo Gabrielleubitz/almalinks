@@ -101,6 +101,10 @@ const HubSpotImportPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     fetchContacts();
     fetchDeals();
   }, [fetchContacts, fetchDeals]);
