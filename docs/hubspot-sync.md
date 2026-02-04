@@ -15,15 +15,21 @@ Each contact is upserted; Auth users are created (or looked up by email if alrea
 - For each contact with email: creates Firebase Auth user (or gets existing by email), then writes hubspotContacts + users.
 - Returns `{ ok: true, totalUpserted: number }`.
 
-**POST /api/remove-hubspot-users** removes all HubSpot-synced users from Firestore and deletes their Firebase Auth accounts. Optionally clears `hubspotContacts` (body: `{ removeContacts: true }`).
+**POST /api/sync-hubspot-deals** imports all HubSpot deals into Firestore `hubspotDeals` (doc ID = deal id). Schema: `hubspotDealId`, `properties`, `syncedAt`. Paginates with `paging.next.after`.
+
+**GET /api/hubspot-contacts** (admin or SYNC_SECRET) returns all docs from `hubspotContacts` for the Import UI. **GET /api/hubspot-deals** returns all from `hubspotDeals`.
+
+**DELETE /api/hubspot-contacts/:id** and **DELETE /api/hubspot-deals/:id** delete one document from Firestore only (do not delete from HubSpot unless you add that separately).
+
+**POST /api/remove-hubspot-users** removes all HubSpot-synced users from Firestore and deletes their Firebase Auth accounts. Optionally clears `hubspotContacts`, `hubspotDeals`, `hubspotEvents` (body: `{ removeContacts: true }`).
 
 ## Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| **HUBSPOT_ACCESS_TOKEN** | Yes | HubSpot Private App or OAuth access token. Used **server-side only**; never expose in frontend. |
-| **SYNC_SECRET** | No | If set, requests must include header `x-sync-secret: <value>`. If unset, endpoint requires Firebase Auth ID token with admin role. |
-| **HUBSPOT_IMPORT_DEFAULT_PASSWORD** | No | Default password for imported contacts. They sign in with email + this password, then complete onboarding. Default: `123456789`. |
+| **HUBSPOT_ACCESS_TOKEN** | Yes | HubSpot Private App or OAuth access token with **READ + WRITE** scopes for Contacts and Deals. Single source of truth: read from server env only. Validation error (503) if missing. **Never expose in frontend.** |
+| **SYNC_SECRET** | No | If set, sync/list/delete requests must include header `x-sync-secret: <value>`. If unset, endpoints require Firebase Auth ID token with admin role. |
+| **HUBSPOT_IMPORT_DEFAULT_PASSWORD** | No | Default password for imported contacts. Default: `123456789`. |
 
 Add in Vercel: Project → Settings → Environment Variables. Locally: add to `.env` (do not commit).
 

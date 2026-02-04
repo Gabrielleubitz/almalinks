@@ -27,6 +27,10 @@ import syncHubspotDealsHandler from '../lib/server/api/sync-hubspot-deals.js';
 import createEventsFromDealsHandler from '../lib/server/api/create-events-from-deals.js';
 import clearHubspotDealsHandler from '../lib/server/api/clear-hubspot-deals.js';
 import removeEventsFromDealsHandler from '../lib/server/api/remove-events-from-deals.js';
+import listHubspotContactsHandler from '../lib/server/api/list-hubspot-contacts.js';
+import listHubspotDealsHandler from '../lib/server/api/list-hubspot-deals.js';
+import deleteHubspotContactHandler from '../lib/server/api/delete-hubspot-contact.js';
+import deleteHubspotDealHandler from '../lib/server/api/delete-hubspot-deal.js';
 import uploadProfileImageHandler from '../lib/server/api/upload-profile-image.js';
 import deleteProfileImageHandler from '../lib/server/api/delete-profile-image.js';
 import uploadImageHandler from '../lib/server/api/upload-image.js';
@@ -112,6 +116,30 @@ export default async function handler(req, res) {
       return res.status(404).json({ ok: false, error: 'Not found' });
     }
     return cjsHandler(req, res);
+  }
+
+  // HubSpot list + delete (dynamic paths)
+  if (pathname === '/api/hubspot-contacts') {
+    if (req.method === 'GET') return listHubspotContactsHandler(req, res);
+    return res.status(405).json({ ok: false, error: 'Method not allowed' });
+  }
+  if (pathname.startsWith('/api/hubspot-contacts/') && pathname.length > '/api/hubspot-contacts/'.length) {
+    if (req.method === 'DELETE') {
+      const id = pathname.slice('/api/hubspot-contacts/'.length);
+      return deleteHubspotContactHandler(req, res, id);
+    }
+    return res.status(405).json({ ok: false, error: 'Method not allowed' });
+  }
+  if (pathname === '/api/hubspot-deals') {
+    if (req.method === 'GET') return listHubspotDealsHandler(req, res);
+    return res.status(405).json({ ok: false, error: 'Method not allowed' });
+  }
+  if (pathname.startsWith('/api/hubspot-deals/') && pathname.length > '/api/hubspot-deals/'.length) {
+    if (req.method === 'DELETE') {
+      const id = pathname.slice('/api/hubspot-deals/'.length);
+      return deleteHubspotDealHandler(req, res, id);
+    }
+    return res.status(405).json({ ok: false, error: 'Method not allowed' });
   }
 
   const directHandler = routeTable.get(pathname);

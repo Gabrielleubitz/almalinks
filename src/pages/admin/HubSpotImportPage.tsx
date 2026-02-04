@@ -1,36 +1,143 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   RefreshCw,
-  X,
-  Download,
   AlertCircle,
   CheckCircle,
-  FileText,
-  Info,
   Trash2,
+  Users,
+  Briefcase,
+  CalendarCheck,
+  UserMinus,
+  ChevronDown,
+  ChevronUp,
+  Zap,
 } from 'lucide-react';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { apiRequest } from '../../utils/apiClient';
 import HubspotLogo from '../../assets/hubspot-logo.svg';
+
+type ResultType = 'sync' | 'deals' | 'events' | 'remove' | 'delete';
+interface LastResult {
+  type: ResultType;
+  ok: boolean;
+  data: Record<string, unknown>;
+  error?: string;
+}
+
+interface HubSpotContact {
+  id: string;
+  hubspotId?: string;
+  email?: string | null;
+  properties?: Record<string, unknown>;
+  syncedAt?: unknown;
+}
+
+interface HubSpotDeal {
+  id: string;
+  hubspotDealId?: string;
+  properties?: Record<string, unknown>;
+  syncedAt?: unknown;
+}
 
 const HubSpotImportPage: React.FC = () => {
   const navigate = useNavigate();
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ ok?: boolean; totalUpserted?: number; error?: string } | null>(null);
   const [syncingDeals, setSyncingDeals] = useState(false);
-  const [dealsResult, setDealsResult] = useState<any | null>(null);
+  const [dealsResult, setDealsResult] = useState<Record<string, unknown> | null>(null);
   const [creatingFromDeals, setCreatingFromDeals] = useState(false);
-  const [createFromDealsResult, setCreateFromDealsResult] = useState<{ ok?: boolean; created?: number; skipped?: number; totalDeals?: number; error?: string } | null>(null);
+  const [createFromDealsResult, setCreateFromDealsResult] = useState<Record<string, unknown> | null>(null);
   const [removing, setRemoving] = useState(false);
-  const [removeResult, setRemoveResult] = useState<{ ok?: boolean; deletedUsers?: number; deletedContacts?: number; error?: string } | null>(null);
+  const [removeResult, setRemoveResult] = useState<Record<string, unknown> | null>(null);
   const [pullingAll, setPullingAll] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
   const [deletingDeals, setDeletingDeals] = useState(false);
   const [deletingEventDeals, setDeletingEventDeals] = useState(false);
   const [deletingUsersOnly, setDeletingUsersOnly] = useState(false);
-  const [deleteResult, setDeleteResult] = useState<{ ok?: boolean; deleted?: number; error?: string } | null>(null);
+  const [deleteResult, setDeleteResult] = useState<Record<string, unknown> | null>(null);
+  const [lastResult, setLastResult] = useState<LastResult | null>(null);
+  const [showResultJson, setShowResultJson] = useState(false);
+
+  const [contacts, setContacts] = useState<HubSpotContact[]>([]);
+  const [deals, setDeals] = useState<HubSpotDeal[]>([]);
+  const [loadingContacts, setLoadingContacts] = useState(false);
+  const [loadingDeals, setLoadingDeals] = useState(false);
+  const [deletingContactId, setDeletingContactId] = useState<string | null>(null);
+  const [deletingDealId, setDeletingDealId] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
+
+  const fetchContacts = useCallback(async () => {
+    setLoadingContacts(true);
+    setListError(null);
+    try {
+      const res = await apiRequest('/api/hubspot-contacts', { method: 'GET' });
+      const data = await res.json().catch(() => ({})) as { ok?: boolean; contacts?: HubSpotContact[] };
+      if (data.ok && Array.isArray(data.contacts)) setContacts(data.contacts);
+      else setContacts([]);
+    } catch {
+      setListError('Failed to load contacts');
+      setContacts([]);
+    } finally {
+      setLoadingContacts(false);
+    }
+  }, []);
+
+  const fetchDeals = useCallback(async () => {
+    setLoadingDeals(true);
+    setListError(null);
+    try {
+      const res = await apiRequest('/api/hubspot-deals', { method: 'GET' });
+      const data = await res.json().catch(() => ({})) as { ok?: boolean; deals?: HubSpotDeal[] };
+      if (data.ok && Array.isArray(data.deals)) setDeals(data.deals);
+      else setDeals([]);
+    } catch {
+      setListError('Failed to load deals');
+      setDeals([]);
+    } finally {
+      setLoadingDeals(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchContacts();
+    fetchDeals();
+  }, [fetchContacts, fetchDeals]);
+
+  const deleteContact = async (id: string) => {
+    setDeletingContactId(id);
+    setListError(null);
+    try {
+      const res = await apiRequest(`/api/hubspot-contacts/${id}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({})) as { ok?: boolean; error?: string };
+      if (data.ok) setContacts((prev) => prev.filter((c) => c.id !== id));
+      else setListError(data.error || 'Delete failed');
+    } catch {
+      setListError('Delete request failed');
+    } finally {
+      setDeletingContactId(null);
+    }
+  };
+
+  const deleteDeal = async (id: string) => {
+    setDeletingDealId(id);
+    setListError(null);
+    try {
+      const res = await apiRequest(`/api/hubspot-deals/${id}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({})) as { ok?: boolean; error?: string };
+      if (data.ok) setDeals((prev) => prev.filter((d) => d.id !== id));
+      else setListError(data.error || 'Delete failed');
+    } catch {
+      setListError('Delete request failed');
+    } finally {
+      setDeletingDealId(null);
+    }
+  };
+
+  const setResult = (type: ResultType, ok: boolean, data: Record<string, unknown>, error?: string) => {
+    setLastResult({ type, ok, data, error });
+  };
 
   const syncHubspotContacts = async () => {
     setSyncing(true);
@@ -39,12 +146,17 @@ const HubSpotImportPage: React.FC = () => {
     setCreateFromDealsResult(null);
     setRemoveResult(null);
     setDeleteResult(null);
+    setLastResult(null);
     try {
       const res = await apiRequest('/api/sync-hubspot-contacts', { method: 'POST' });
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({})) as Record<string, unknown>;
       setSyncResult(data);
-    } catch (err: any) {
-      setSyncResult({ ok: false, error: err?.message || 'Request failed' });
+      setResult('sync', res.ok && !(data as { error?: string }).error, data, (data as { error?: string }).error);
+      if (res.ok) fetchContacts();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Request failed';
+      setSyncResult({ ok: false, error: msg });
+      setResult('sync', false, {}, msg);
     } finally {
       setSyncing(false);
     }
@@ -57,12 +169,17 @@ const HubSpotImportPage: React.FC = () => {
     setCreateFromDealsResult(null);
     setRemoveResult(null);
     setDeleteResult(null);
+    setLastResult(null);
     try {
       const res = await apiRequest('/api/sync-hubspot-deals', { method: 'POST' });
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({})) as Record<string, unknown>;
       setDealsResult(data);
-    } catch (err: any) {
-      setDealsResult({ ok: false, error: err?.message || 'Request failed' });
+      setResult('deals', res.ok && !(data as { error?: string }).error, data, (data as { error?: string }).error);
+      if (res.ok) fetchDeals();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Request failed';
+      setDealsResult({ ok: false, error: msg });
+      setResult('deals', false, {}, msg);
     } finally {
       setSyncingDeals(false);
     }
@@ -76,18 +193,26 @@ const HubSpotImportPage: React.FC = () => {
     setDealsResult(null);
     setCreateFromDealsResult(null);
     setDeleteResult(null);
+    setLastResult(null);
     try {
       const res = await apiRequest('/api/remove-hubspot-users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ removeContacts: true }),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({})) as Record<string, unknown>;
       setRemoveResult(data);
-    } catch (err: any) {
-      setRemoveResult({ ok: false, error: err?.message || 'Request failed' });
-} finally {
-    setRemoving(false);
+      setResult('remove', res.ok && !(data as { error?: string }).error, data, (data as { error?: string }).error);
+      if (res.ok) {
+        fetchContacts();
+        fetchDeals();
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Request failed';
+      setRemoveResult({ ok: false, error: msg });
+      setResult('remove', false, {}, msg);
+    } finally {
+      setRemoving(false);
     }
   };
 
@@ -98,12 +223,16 @@ const HubSpotImportPage: React.FC = () => {
     setDealsResult(null);
     setRemoveResult(null);
     setDeleteResult(null);
+    setLastResult(null);
     try {
       const res = await apiRequest('/api/create-events-from-deals', { method: 'POST' });
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({})) as Record<string, unknown>;
       setCreateFromDealsResult(data);
-    } catch (err: any) {
-      setCreateFromDealsResult({ ok: false, error: err?.message || 'Request failed' });
+      setResult('events', res.ok && !(data as { error?: string }).error, data, (data as { error?: string }).error);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Request failed';
+      setCreateFromDealsResult({ ok: false, error: msg });
+      setResult('events', false, {}, msg);
     } finally {
       setCreatingFromDeals(false);
     }
@@ -116,18 +245,26 @@ const HubSpotImportPage: React.FC = () => {
     setCreateFromDealsResult(null);
     setRemoveResult(null);
     setDeleteResult(null);
+    setLastResult(null);
     try {
       const syncRes = await apiRequest('/api/sync-hubspot-contacts', { method: 'POST' });
-      const syncData = await syncRes.json().catch(() => ({}));
+      const syncData = await syncRes.json().catch(() => ({})) as Record<string, unknown>;
       setSyncResult(syncData);
       const dealsRes = await apiRequest('/api/sync-hubspot-deals', { method: 'POST' });
-      const dealsData = await dealsRes.json().catch(() => ({}));
+      const dealsData = await dealsRes.json().catch(() => ({})) as Record<string, unknown>;
       setDealsResult(dealsData);
       const eventsRes = await apiRequest('/api/create-events-from-deals', { method: 'POST' });
-      const eventsData = await eventsRes.json().catch(() => ({}));
+      const eventsData = await eventsRes.json().catch(() => ({})) as Record<string, unknown>;
       setCreateFromDealsResult(eventsData);
-    } catch (err: any) {
-      setSyncResult({ ok: false, error: err?.message || 'Request failed' });
+      setLastResult({
+        type: 'events',
+        ok: eventsRes.ok && !(eventsData as { error?: string }).error,
+        data: { sync: syncData, deals: dealsData, events: eventsData },
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Request failed';
+      setSyncResult({ ok: false, error: msg });
+      setLastResult({ type: 'sync', ok: false, data: {}, error: msg });
     } finally {
       setPullingAll(false);
     }
@@ -141,19 +278,31 @@ const HubSpotImportPage: React.FC = () => {
     setDealsResult(null);
     setCreateFromDealsResult(null);
     setDeleteResult(null);
+    setLastResult(null);
     try {
       const removeRes = await apiRequest('/api/remove-hubspot-users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ removeContacts: true }),
       });
-      const removeData = await removeRes.json().catch(() => ({}));
+      const removeData = await removeRes.json().catch(() => ({})) as Record<string, unknown>;
       setRemoveResult(removeData);
       const eventsRes = await apiRequest('/api/remove-events-from-deals', { method: 'POST' });
-      const eventsData = await eventsRes.json().catch(() => ({}));
+      const eventsData = await eventsRes.json().catch(() => ({})) as Record<string, unknown>;
       setDeleteResult(eventsData);
-    } catch (err: any) {
-      setRemoveResult({ ok: false, error: err?.message || 'Request failed' });
+      setLastResult({
+        type: 'remove',
+        ok: removeRes.ok && !(removeData as { error?: string }).error,
+        data: { remove: removeData, eventsDeleted: eventsData },
+      });
+      if (removeRes.ok) {
+        fetchContacts();
+        fetchDeals();
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Request failed';
+      setRemoveResult({ ok: false, error: msg });
+      setLastResult({ type: 'remove', ok: false, data: {}, error: msg });
     } finally {
       setDeletingAll(false);
     }
@@ -164,12 +313,17 @@ const HubSpotImportPage: React.FC = () => {
     setDeletingDeals(true);
     setDealsResult(null);
     setDeleteResult(null);
+    setLastResult(null);
     try {
       const res = await apiRequest('/api/clear-hubspot-deals', { method: 'POST' });
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({})) as Record<string, unknown>;
       setDeleteResult(data);
-    } catch (err: any) {
-      setDeleteResult({ ok: false, error: err?.message || 'Request failed' });
+      setResult('delete', res.ok && !(data as { error?: string }).error, data, (data as { error?: string }).error);
+      if (res.ok) fetchDeals();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Request failed';
+      setDeleteResult({ ok: false, error: msg });
+      setResult('delete', false, {}, msg);
     } finally {
       setDeletingDeals(false);
     }
@@ -180,12 +334,16 @@ const HubSpotImportPage: React.FC = () => {
     setDeletingEventDeals(true);
     setCreateFromDealsResult(null);
     setDeleteResult(null);
+    setLastResult(null);
     try {
       const res = await apiRequest('/api/remove-events-from-deals', { method: 'POST' });
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({})) as Record<string, unknown>;
       setDeleteResult(data);
-    } catch (err: any) {
-      setDeleteResult({ ok: false, error: err?.message || 'Request failed' });
+      setResult('delete', res.ok && !(data as { error?: string }).error, data, (data as { error?: string }).error);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Request failed';
+      setDeleteResult({ ok: false, error: msg });
+      setResult('delete', false, {}, msg);
     } finally {
       setDeletingEventDeals(false);
     }
@@ -197,16 +355,20 @@ const HubSpotImportPage: React.FC = () => {
     setSyncResult(null);
     setRemoveResult(null);
     setDeleteResult(null);
+    setLastResult(null);
     try {
       const res = await apiRequest('/api/remove-hubspot-users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ removeContacts: false }),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({})) as Record<string, unknown>;
       setRemoveResult(data);
-    } catch (err: any) {
-      setRemoveResult({ ok: false, error: err?.message || 'Request failed' });
+      setResult('remove', res.ok && !(data as { error?: string }).error, data, (data as { error?: string }).error);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Request failed';
+      setRemoveResult({ ok: false, error: msg });
+      setResult('remove', false, {}, msg);
     } finally {
       setDeletingUsersOnly(false);
     }
@@ -214,254 +376,339 @@ const HubSpotImportPage: React.FC = () => {
 
   const busy = syncing || syncingDeals || creatingFromDeals || removing || pullingAll || deletingAll || deletingDeals || deletingEventDeals || deletingUsersOnly;
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminHeader title="Import from HubSpot" subtitle="Sync HubSpot CRM contacts to Alma Links" />
+  const actionCards = [
+    {
+      id: 'sync',
+      icon: Users,
+      title: 'Sync contacts',
+      description: 'Import all HubSpot CRM contacts as Alma Links users with logins.',
+      primaryLabel: 'Sync HubSpot → Alma Links',
+      loading: syncing,
+      onPrimary: syncHubspotContacts,
+      onDelete: removeUsersOnly,
+      deleteLabel: 'Remove imported users',
+      color: 'text-brand-dark',
+      bgIcon: 'bg-brand-light',
+    },
+    {
+      id: 'deals',
+      icon: Briefcase,
+      title: 'Import deals',
+      description: 'Copy pipeline deals from HubSpot into Alma Links.',
+      primaryLabel: 'Import HubSpot Deals',
+      loading: syncingDeals,
+      onPrimary: syncHubspotDeals,
+      onDelete: clearDealsOnly,
+      deleteLabel: 'Clear deals import',
+      color: 'text-blue-600',
+      bgIcon: 'bg-blue-50',
+    },
+    {
+      id: 'events',
+      icon: CalendarCheck,
+      title: 'Past events from deals',
+      description: 'Turn each deal into a completed past event on the Events page.',
+      primaryLabel: 'Create past events',
+      loading: creatingFromDeals,
+      onPrimary: createEventsFromDeals,
+      onDelete: removeEventsFromDealsOnly,
+      deleteLabel: 'Remove these events',
+      color: 'text-emerald-600',
+      bgIcon: 'bg-emerald-50',
+    },
+    {
+      id: 'remove',
+      icon: UserMinus,
+      title: 'Remove HubSpot users',
+      description: 'Delete all users and HubSpot data from Alma Links.',
+      primaryLabel: 'Remove users & data',
+      loading: removing,
+      onPrimary: removeHubspotUsers,
+      onDelete: deleteAll,
+      deleteLabel: 'Delete all',
+      color: 'text-red-600',
+      bgIcon: 'bg-red-50',
+    },
+  ];
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      <AdminHeader title="Import from HubSpot" subtitle="Sync HubSpot CRM with Alma Links" />
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <button
           onClick={() => navigate('/admin')}
-          className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 mb-6 font-medium"
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors font-medium mb-8"
         >
           <ArrowLeft className="h-5 w-5" />
-          <span>Back to Admin</span>
+          Back to Admin
         </button>
 
-        {/* Quick steps — clear instructions */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6 border-l-4 border-l-emerald-500">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Quick steps</h2>
-          <ol className="list-decimal list-inside space-y-2 text-gray-800 text-sm">
-            <li><strong>Import people:</strong> Click <strong>Sync HubSpot → Alma Links</strong>. Everyone in your HubSpot CRM gets a login.</li>
-            <li><strong>Import deals:</strong> Click <strong>Import HubSpot Deals</strong>. This copies your deals into Alma Links.</li>
-            <li><strong>Create past events:</strong> Click <strong>Create past events from deals</strong>. Each deal becomes a past event on the Events page. You can run this again later; deals that already have an event are skipped.</li>
+        {/* Hero */}
+        <div className="bg-gradient-to-r from-brand-light to-blue-50 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8 mb-8">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+            <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/80 flex items-center justify-center shadow-sm border border-gray-100">
+              <img src={HubspotLogo} alt="HubSpot" className="w-10 h-10 sm:w-12 sm:h-12" />
+            </div>
+            <div className="text-center sm:text-left">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                Import from <span className="text-brand-dark">HubSpot</span>
+              </h1>
+              <p className="text-gray-600 text-sm sm:text-base mt-1 max-w-xl">
+                Bring contacts and deals from HubSpot into Alma Links. Sync people as users, then turn deals into past events.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* How it works — compact */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6 mb-8">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">How it works</h2>
+          <ol className="grid sm:grid-cols-3 gap-4 sm:gap-6">
+            <li className="flex gap-3">
+              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-brand-light text-brand-dark flex items-center justify-center text-sm font-semibold">1</span>
+              <div>
+                <span className="font-medium text-gray-900">Sync contacts</span>
+                <p className="text-sm text-gray-600 mt-0.5">Everyone in HubSpot gets a login. They sign in with HubSpot email and a default password.</p>
+              </div>
+            </li>
+            <li className="flex gap-3">
+              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-brand-light text-brand-dark flex items-center justify-center text-sm font-semibold">2</span>
+              <div>
+                <span className="font-medium text-gray-900">Import deals</span>
+                <p className="text-sm text-gray-600 mt-0.5">Deals are copied into Alma Links. Use &quot;Create past events&quot; to show them on the Events page.</p>
+              </div>
+            </li>
+            <li className="flex gap-3">
+              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-brand-light text-brand-dark flex items-center justify-center text-sm font-semibold">3</span>
+              <div>
+                <span className="font-medium text-gray-900">Past events</span>
+                <p className="text-sm text-gray-600 mt-0.5">Each deal becomes a completed event. Re-running skips deals that already have an event.</p>
+              </div>
+            </li>
           </ol>
         </div>
 
-        {/* What it does */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-            <Info className="h-5 w-5 text-blue-600" />
-            What this does
-          </h2>
-          <ul className="space-y-2 text-gray-700 text-sm list-disc list-inside">
-            <li>Imports <strong>all contacts</strong> from your HubSpot CRM into Alma Links.</li>
-            <li>Creates a <strong>login for each person</strong> using their HubSpot email and a default password (set by your site administrator).</li>
-            <li>After first sign-in, each person is asked to <strong>complete their profile</strong> on the site.</li>
-            <li>Imported contacts appear in your site&apos;s member directory and can connect with others once they finish onboarding.</li>
-            <li>Imports <strong>all deals (pipeline records)</strong> from HubSpot into a Firestore collection named <code>hubspotDeals</code> for reporting, analytics, or custom automations. These deals are not shown in the Alma Links UI by default.</li>
-          </ul>
+        {/* Primary actions: Pull all / Delete all */}
+        <div className="flex flex-wrap gap-3 mb-6">
+          <button
+            onClick={pullAll}
+            disabled={busy}
+            className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white rounded-xl font-medium shadow-sm hover:shadow-md hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {pullingAll ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+            Pull all (contacts + deals + events)
+          </button>
+          <button
+            onClick={deleteAll}
+            disabled={busy}
+            className="inline-flex items-center gap-2 px-5 py-3 border-2 border-red-200 text-red-700 bg-red-50/50 rounded-xl font-medium hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {deletingAll ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            Delete all HubSpot data
+          </button>
         </div>
 
-        {/* How to use */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-            <FileText className="h-5 w-5 text-gray-600" />
-            How to use
-          </h2>
-          <ol className="list-decimal list-inside space-y-3 text-gray-700 text-sm">
-            <li><strong>Sync:</strong> Click <strong>Sync HubSpot → Alma Links</strong> below. Every contact in your HubSpot CRM will be imported and given a site account. You&apos;ll see how many were added when the sync finishes.</li>
-            <li><strong>Deals:</strong> Click <strong>Import HubSpot Deals</strong> to upsert all deals into Firestore under <code>hubspotDeals</code>. Then click <strong>Create past events from deals</strong> to turn each deal into a past event in Alma Links (they will appear on the Events page with status &quot;completed&quot;). Deals that already have an event are skipped.</li>
-            <li><strong>Logging in:</strong> Each imported person signs in with their <strong>HubSpot email</strong> and the <strong>default password</strong> (your site admin configures this). They should change it after first login.</li>
-            <li><strong>After import:</strong> New users will be prompted to complete their profile (name, photo, bio, etc.) the first time they sign in.</li>
-            <li><strong>Remove:</strong> To remove all users that were imported from HubSpot from the site, click <strong>Remove HubSpot users</strong>. This cannot be undone — use only if you want to clear the import and start over.</li>
-          </ol>
-          <p className="mt-4 text-gray-500 text-xs">
-            If sync fails or you see an error, your site administrator may need to connect HubSpot in the project settings.
-          </p>
+        {/* Action cards grid */}
+        <h2 className="text-base font-semibold text-gray-900 mb-4">Step-by-step</h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+          {actionCards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <div
+                key={card.id}
+                className="group bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 hover:shadow-md transition-all duration-200 flex flex-col"
+              >
+                <div className="flex items-start gap-3 mb-3">
+                  <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${card.bgIcon} ${card.color}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{card.title}</h3>
+                    <p className="text-gray-600 text-xs sm:text-sm mt-0.5">{card.description}</p>
+                  </div>
+                </div>
+                <div className="mt-auto space-y-2">
+                  <button
+                    onClick={card.onPrimary}
+                    disabled={busy}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {card.loading ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      card.primaryLabel
+                    )}
+                  </button>
+                  <button
+                    onClick={card.onDelete}
+                    disabled={busy}
+                    title={card.deleteLabel}
+                    className="w-full opacity-0 group-hover:opacity-100 focus:opacity-100 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg border border-red-100 text-xs font-medium transition-all"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    {card.deleteLabel}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Actions */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex items-center gap-3 mb-6">
-            <img src={HubspotLogo} alt="HubSpot" className="h-10 w-10" />
-            <h2 className="text-lg font-semibold text-gray-900">Actions</h2>
+        {listError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700 text-sm">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            {listError}
           </div>
+        )}
 
-          {/* Pull all / Delete all */}
-          <div className="flex flex-wrap gap-3 mb-6">
+        {/* Imported contacts list */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-gray-900">Imported contacts</h2>
             <button
-              onClick={pullAll}
-              disabled={busy}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-orange-600 text-white rounded-xl hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm"
+              type="button"
+              onClick={fetchContacts}
+              disabled={loadingContacts}
+              className="text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50"
             >
-              {pullingAll ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              <span>Pull all</span>
+              {loadingContacts ? <RefreshCw className="h-4 w-4 animate-spin inline" /> : 'Refresh'}
             </button>
+          </div>
+          <div className="max-h-64 overflow-y-auto">
+            {loadingContacts && contacts.length === 0 ? (
+              <div className="px-5 py-8 text-center text-gray-500 text-sm">Loading…</div>
+            ) : contacts.length === 0 ? (
+              <div className="px-5 py-8 text-center text-gray-500 text-sm">No contacts imported yet. Use &quot;Sync HubSpot → Alma Links&quot; above.</div>
+            ) : (
+              <ul className="divide-y divide-gray-100">
+                {contacts.map((c) => {
+                  const rawEmail = c.email ?? (c.properties?.email as { value?: string } | string) ?? '';
+                  const email = typeof rawEmail === 'string' ? rawEmail : (rawEmail?.value ?? '') || c.id;
+                  const first = (c.properties?.firstname as { value?: string } | string) ?? '';
+                  const last = (c.properties?.lastname as { value?: string } | string) ?? '';
+                  const firstStr = typeof first === 'string' ? first : first?.value ?? '';
+                  const lastStr = typeof last === 'string' ? last : last?.value ?? '';
+                  const name = [firstStr, lastStr].filter(Boolean).join(' ') || null;
+                  return (
+                    <li key={c.id} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-gray-50">
+                      <div className="min-w-0 flex-1">
+                        <span className="font-medium text-gray-900 truncate block">{name || email}</span>
+                        {name && <span className="text-sm text-gray-500 truncate block">{email}</span>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => deleteContact(c.id)}
+                        disabled={deletingContactId !== null}
+                        className="flex-shrink-0 p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
+                        title="Remove from Firestore (does not delete from HubSpot)"
+                      >
+                        {deletingContactId === c.id ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {/* Imported deals list */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-gray-900">Imported deals</h2>
             <button
-              onClick={deleteAll}
-              disabled={busy}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm"
+              type="button"
+              onClick={fetchDeals}
+              disabled={loadingDeals}
+              className="text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50"
             >
-              {deletingAll ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-              <span>Delete all</span>
+              {loadingDeals ? <RefreshCw className="h-4 w-4 animate-spin inline" /> : 'Refresh'}
             </button>
           </div>
-
-          {/* Four action buttons with hover-to-delete */}
-          <div className="space-y-3">
-            <div className="group flex items-center gap-2 flex-wrap">
-              <button
-                onClick={syncHubspotContacts}
-                disabled={busy}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-orange-600 text-white rounded-xl hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm"
-              >
-                {syncing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                <span>{syncing ? 'Syncing...' : 'Sync HubSpot → Alma Links'}</span>
-              </button>
-              <button
-                onClick={removeUsersOnly}
-                disabled={busy}
-                title="Remove imported users only"
-                className="opacity-0 group-hover:opacity-100 focus:opacity-100 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 transition-all text-sm"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                <span>Delete this import</span>
-              </button>
-            </div>
-            <div className="group flex items-center gap-2 flex-wrap">
-              <button
-                onClick={syncHubspotDeals}
-                disabled={busy}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm"
-              >
-                {syncingDeals ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                <span>{syncingDeals ? 'Importing...' : 'Import HubSpot Deals'}</span>
-              </button>
-              <button
-                onClick={clearDealsOnly}
-                disabled={busy}
-                title="Clear deals import only"
-                className="opacity-0 group-hover:opacity-100 focus:opacity-100 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 transition-all text-sm"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                <span>Delete this import</span>
-              </button>
-            </div>
-            <div className="group flex items-center gap-2 flex-wrap">
-              <button
-                onClick={createEventsFromDeals}
-                disabled={busy}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm"
-              >
-                {creatingFromDeals ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                <span>{creatingFromDeals ? 'Creating...' : 'Create past events from deals'}</span>
-              </button>
-              <button
-                onClick={removeEventsFromDealsOnly}
-                disabled={busy}
-                title="Remove past events from deals only"
-                className="opacity-0 group-hover:opacity-100 focus:opacity-100 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 transition-all text-sm"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                <span>Delete this import</span>
-              </button>
-            </div>
-            <div className="group flex items-center gap-2 flex-wrap">
-              <button
-                onClick={removeHubspotUsers}
-                disabled={busy}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-red-100 text-red-700 border border-red-200 rounded-xl hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm"
-              >
-                {removing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-                <span>{removing ? 'Removing...' : 'Remove HubSpot users'}</span>
-              </button>
-              <button
-                onClick={deleteAll}
-                disabled={busy}
-                title="Delete all HubSpot data"
-                className="opacity-0 group-hover:opacity-100 focus:opacity-100 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 transition-all text-sm"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                <span>Delete all</span>
-              </button>
-            </div>
+          <div className="max-h-64 overflow-y-auto">
+            {loadingDeals && deals.length === 0 ? (
+              <div className="px-5 py-8 text-center text-gray-500 text-sm">Loading…</div>
+            ) : deals.length === 0 ? (
+              <div className="px-5 py-8 text-center text-gray-500 text-sm">No deals imported yet. Use &quot;Import HubSpot Deals&quot; above.</div>
+            ) : (
+              <ul className="divide-y divide-gray-100">
+                {deals.map((d) => {
+                  const raw = d.properties?.dealname as { value?: string } | string | undefined;
+                  const name = (typeof raw === 'string' ? raw : raw?.value) ?? d.id;
+                  return (
+                    <li key={d.id} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-gray-50">
+                      <div className="min-w-0 flex-1">
+                        <span className="font-medium text-gray-900 truncate block">{name}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => deleteDeal(d.id)}
+                        disabled={deletingDealId !== null}
+                        className="flex-shrink-0 p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
+                        title="Remove from Firestore (does not delete from HubSpot)"
+                      >
+                        {deletingDealId === d.id ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
+        </div>
 
-          {syncResult && (
-            <div className={`mt-4 p-4 rounded-xl border ${syncResult.ok !== false && !syncResult.error ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-              <div className="flex items-center gap-2 font-medium mb-2">
-                {syncResult.ok !== false && !syncResult.error ? (
-                  <CheckCircle className="h-5 w-5 text-green-600" />
+        {/* Single results area */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <button
+            onClick={() => setShowResultJson(!showResultJson)}
+            className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              {lastResult ? (
+                lastResult.ok ? (
+                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
                 ) : (
-                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                )
+              ) : (
+                <div className="w-5 h-5 rounded-full border-2 border-gray-200 flex-shrink-0" />
+              )}
+              <div className="text-left">
+                <span className="font-medium text-gray-900">
+                  {lastResult ? (lastResult.ok ? 'Last action completed' : 'Last action had an error') : 'No action run yet'}
+                </span>
+                {lastResult?.error && (
+                  <p className="text-sm text-red-600 mt-0.5">{lastResult.error}</p>
                 )}
-                <span>{syncResult.ok !== false && !syncResult.error ? 'Sync result' : 'Error'}</span>
+                {lastResult?.ok && (
+                  <p className="text-sm text-gray-600 mt-0.5">See details below (expand for full response).</p>
+                )}
               </div>
-              <pre className="text-xs overflow-auto max-h-40 bg-white/60 p-3 rounded-lg">
-                {JSON.stringify(syncResult, null, 2)}
+            </div>
+            {lastResult && (
+              <span className="text-gray-400">
+                {showResultJson ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              </span>
+            )}
+          </button>
+          {lastResult && showResultJson && (
+            <div className="border-t border-gray-100 px-5 py-4 bg-gray-50">
+              <pre className="text-xs overflow-auto max-h-48 p-3 bg-white rounded-lg border border-gray-100">
+                {JSON.stringify(lastResult.data, null, 2)}
               </pre>
             </div>
           )}
-
-          {dealsResult && (
-            <div className={`mt-4 p-4 rounded-xl border ${dealsResult.ok !== false && !dealsResult.error ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-              <div className="flex items-center gap-2 font-medium mb-2">
-                {dealsResult.ok !== false && !dealsResult.error ? (
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-red-600" />
-                )}
-                <span>{dealsResult.ok !== false && !dealsResult.error ? 'Deals sync result' : 'Error'}</span>
-              </div>
-              <pre className="text-xs overflow-auto max-h-40 bg-white/60 p-3 rounded-lg">
-                {JSON.stringify(dealsResult, null, 2)}
-              </pre>
-            </div>
-          )}
-
-          {createFromDealsResult && (
-            <div className={`mt-4 p-4 rounded-xl border ${createFromDealsResult.ok !== false && !createFromDealsResult.error ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-              <div className="flex items-center gap-2 font-medium mb-2">
-                {createFromDealsResult.ok !== false && !createFromDealsResult.error ? (
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-red-600" />
-                )}
-                <span>{createFromDealsResult.ok !== false && !createFromDealsResult.error ? 'Past events created' : 'Error'}</span>
-              </div>
-              {createFromDealsResult.ok !== false && !createFromDealsResult.error ? (
-                <p className="text-sm text-gray-700">
-                  Created {createFromDealsResult.created ?? 0} past event(s), skipped {createFromDealsResult.skipped ?? 0} (already had events). Total deals: {createFromDealsResult.totalDeals ?? 0}.
-                </p>
-              ) : null}
-              <pre className="text-xs overflow-auto max-h-40 bg-white/60 p-3 rounded-lg mt-2">
-                {JSON.stringify(createFromDealsResult, null, 2)}
-              </pre>
-            </div>
-          )}
-
-          {removeResult && (
-            <div className={`mt-4 p-4 rounded-xl border ${removeResult.ok !== false && !removeResult.error ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-              <div className="flex items-center gap-2 font-medium mb-2">
-                {removeResult.ok !== false && !removeResult.error ? (
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-red-600" />
-                )}
-                <span>{removeResult.ok !== false && !removeResult.error ? 'Remove result' : 'Error'}</span>
-              </div>
-              <pre className="text-xs overflow-auto max-h-40 bg-white/60 p-3 rounded-lg">
-                {JSON.stringify(removeResult, null, 2)}
-              </pre>
-            </div>
-          )}
-
-          {deleteResult && (
-            <div className={`mt-4 p-4 rounded-xl border ${deleteResult.ok !== false && !deleteResult.error ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-              <div className="flex items-center gap-2 font-medium mb-2">
-                {deleteResult.ok !== false && !deleteResult.error ? (
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-red-600" />
-                )}
-                <span>{deleteResult.ok !== false && !deleteResult.error ? 'Delete result' : 'Error'}</span>
-              </div>
-              <pre className="text-xs overflow-auto max-h-40 bg-white/60 p-3 rounded-lg">
-                {JSON.stringify(deleteResult, null, 2)}
-              </pre>
+          {!lastResult && (
+            <div className="px-5 py-6 text-center text-gray-500 text-sm border-t border-gray-100">
+              Run an action above to see the result here.
             </div>
           )}
         </div>
+
+        <p className="mt-4 text-gray-500 text-xs">
+          If sync fails, check that HubSpot is connected in your project settings (e.g. HUBSPOT_ACCESS_TOKEN).
+        </p>
       </div>
     </div>
   );
