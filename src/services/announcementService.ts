@@ -30,11 +30,11 @@ export interface AnnouncementData {
     "❤️": { count: number, userIds: string[] },
     "🔥": { count: number, userIds: string[] },
     "👑": { count: number, userIds: string[] },
-    "🍷": { count: number, userIds: string[] }
+    "😊": { count: number, userIds: string[] }
   };
 }
 
-export type EmojiReaction = "👍" | "❤️" | "🔥" | "👑" | "🍷";
+export type EmojiReaction = "👍" | "❤️" | "🔥" | "👑" | "😊";
 
 export class AnnouncementService {
   // Create a new announcement
@@ -53,7 +53,7 @@ export class AnnouncementService {
           "❤️": { count: 0, userIds: [] },
           "🔥": { count: 0, userIds: [] },
           "👑": { count: 0, userIds: [] },
-          "🍷": { count: 0, userIds: [] }
+          "😊": { count: 0, userIds: [] }
         }
       };
 
@@ -171,7 +171,7 @@ export class AnnouncementService {
         "❤️": { count: 0, userIds: [] },
         "🔥": { count: 0, userIds: [] },
         "👑": { count: 0, userIds: [] },
-        "🍷": { count: 0, userIds: [] }
+        "😊": { count: 0, userIds: [] }
       };
       
       // Check if user has already reacted with this emoji

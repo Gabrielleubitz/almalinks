@@ -398,7 +398,7 @@ const AdminAnnouncements: React.FC = () => {
             <li>• <strong>Hidden announcements:</strong> Not visible to members but saved for future use</li>
             <li>• <strong>Member view:</strong> Only the 3 most recent active announcements are shown</li>
             <li>• <strong>Edit anytime:</strong> You can edit or hide announcements after publishing</li>
-            <li>• <strong>Emoji reactions:</strong> Members can react with 👍, ❤️, 🔥, 👑, and 🍷 emojis</li>
+            <li>• <strong>Emoji reactions:</strong> Members can react with 👍, ❤️, 🔥, 👑, and 😊 emojis</li>
             <li>• <strong>Best practices:</strong> Use for important updates, events, or community news</li>
           </ul>
         </div>

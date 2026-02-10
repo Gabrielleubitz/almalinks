@@ -11,7 +11,7 @@ const EmojiReactions: React.FC<EmojiReactionsProps> = ({ announcement }) => {
   const [isReacting, setIsReacting] = useState<EmojiReaction | null>(null);
   
   // Define available emojis
-  const emojis: EmojiReaction[] = ["👍", "❤️", "🔥", "👑", "🍷"];
+  const emojis: EmojiReaction[] = ["👍", "❤️", "🔥", "👑", "😊"];
   
   // Initialize reactions if not present
   const reactions = announcement.reactions || {
@@ -19,7 +19,7 @@ const EmojiReactions: React.FC<EmojiReactionsProps> = ({ announcement }) => {
     "❤️": { count: 0, userIds: [] },
     "🔥": { count: 0, userIds: [] },
     "👑": { count: 0, userIds: [] },
-    "🍷": { count: 0, userIds: [] }
+    "😊": { count: 0, userIds: [] }
   };
 
   // Get the user's current reaction (if any)
