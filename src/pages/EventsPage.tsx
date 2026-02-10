@@ -244,7 +244,7 @@ const EventsPage: React.FC = () => {
                       <CropImage
                         src={event.imageUrl}
                         crop={event.imageCrop ?? null}
-                        alt={event.title ?? event.name}
+                        alt={event.name}
                         mode="block"
                         className="w-full h-full"
                         onError={(e) => {
@@ -259,7 +259,7 @@ const EventsPage: React.FC = () => {
 
                     {/* Event Content */}
                     <div className="p-4 sm:p-6 md:p-8">
-                      <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight">{event.title}</h3>
+                      <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight">{event.name}</h3>
                       
                       <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
                         <div className="flex items-center space-x-2 sm:space-x-3 text-gray-600">
