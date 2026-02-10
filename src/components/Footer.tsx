@@ -2,7 +2,40 @@ import React from 'react';
 import { Linkedin } from 'lucide-react';
 import logoSvg from '../assets/alma-links-logo.svg';
 
-const Footer = () => {
+interface FooterProps {
+  /** Use a compact footer for in-app pages (e.g. Discover Chats) so content gets more space */
+  compact?: boolean;
+}
+
+const Footer: React.FC<FooterProps> = ({ compact = false }) => {
+  if (compact) {
+    return (
+      <footer className="flex-shrink-0 bg-gray-900 text-white py-4 sm:py-5 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-center">
+            <img
+              src={logoSvg}
+              alt="AlmaLinks"
+              className="h-6 w-auto filter brightness-0 invert inline-block"
+            />
+            <p className="text-gray-400 text-xs sm:text-sm">
+              A community of impact-driven leaders. Connect with us anytime!
+            </p>
+            <a
+              href="https://www.linkedin.com/company/almalinks/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-white transition-colors"
+              aria-label="LinkedIn"
+            >
+              <Linkedin className="h-4 w-4 sm:h-5 sm:w-5" />
+            </a>
+            <span className="text-gray-500 text-xs">&copy; 2025 AlmaLinks</span>
+          </div>
+        </div>
+      </footer>
+    );
+  }
 
   return (
     <footer className="bg-gray-900 text-white py-12 sm:py-16">

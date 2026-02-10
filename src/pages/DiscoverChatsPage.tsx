@@ -156,20 +156,20 @@ const DiscoverChatsPage: React.FC = () => {
   }
 
   return (
-    <div className="h-screen max-h-dvh bg-gradient-to-br from-gray-50 to-white flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex flex-col">
       <Header />
       
-      <div className="flex-1 flex flex-col min-h-0 pt-20 overflow-hidden">
-        {/* Page Header - fixed, no scroll */}
-        <div className="flex-shrink-0 px-4 sm:px-6 lg:px-8 pb-4">
-          <div className="max-w-4xl mx-auto">
+      <main className="flex-1 pt-20 pb-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Page Header */}
+          <div className="mb-6">
             <div className="flex items-center space-x-4 mb-4">
               <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
                 <MessageCircle className="h-5 w-5" />
               </div>
               <div className="min-w-0">
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Discover Chats</h1>
-                <p className="text-sm sm:text-base text-gray-600 truncate">Find and join public chat groups</p>
+                <p className="text-sm sm:text-base text-gray-600">Find and join public chat groups</p>
               </div>
             </div>
 
@@ -182,16 +182,14 @@ const DiscoverChatsPage: React.FC = () => {
                   placeholder="Search chats..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 text-base sm:text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 touch-manipulation"
+                  className="w-full pl-10 pr-4 py-3 text-base sm:text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 />
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Content - only this scrolls when list is long */}
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain pb-16 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Content - scrolls with page */}
+          <div className="space-y-4 pb-8">
           {/* Loading State */}
           {loading && (
             <div className="flex items-center justify-center py-12">
@@ -248,7 +246,7 @@ const DiscoverChatsPage: React.FC = () => {
 
           {/* Chats Grid */}
           {!loading && !error && filteredChats.length > 0 && (
-            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2 pb-4">
               {filteredChats.map((chat) => (
                 <div
                   key={chat.id}
@@ -346,9 +344,9 @@ const DiscoverChatsPage: React.FC = () => {
               ))}
             </div>
           )}
+          </div>
         </div>
-        </div>
-      </div>
+      </main>
 
       {/* Join Request Modal */}
       <JoinRequestModal
@@ -360,7 +358,7 @@ const DiscoverChatsPage: React.FC = () => {
         onSuccess={handleJoinSuccess}
       />
 
-      <Footer />
+      <Footer compact />
     </div>
   );
 };

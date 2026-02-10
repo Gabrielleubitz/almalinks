@@ -133,7 +133,11 @@ service cloud.firestore {
 
     match /chat_messages/{messageId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // User messages: userId must be caller; system messages (userId null) allowed for admins (e.g. "X joined" from admin panel)
+      allow create: if isAuthenticated() && (
+        request.resource.data.userId == request.auth.uid
+        || (request.resource.data.userId == null && isAdmin())
+      );
       allow update: if isAuthenticated() && (
         resource.data.userId == request.auth.uid || isAdmin()
       );
