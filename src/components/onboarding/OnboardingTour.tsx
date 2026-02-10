@@ -56,8 +56,6 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     secondaryLabel: 'Skip',
     targetSelector: '[data-tour="profile"]',
     route: null,
-    allowAutoSkip: true,
-    precondition: () => Boolean((window as unknown as { __checkProfileComplete?: () => boolean }).__checkProfileComplete?.()),
     fallbackNavigateHint: 'Header (profile or avatar button)',
   },
   {
@@ -111,10 +109,10 @@ const RESOLVE_POLL_MS = 100;
 /** Igani logo from public folder; subtle credit branding on welcome and wrap-up only */
 function IganiCredit() {
   return (
-    <p className="text-gray-400 text-xs pt-2 text-center flex items-center justify-center gap-1.5" aria-hidden>
-      <img src="/igani-logo.png" alt="" className="h-4 w-4 object-contain opacity-80" />
-      <span>Powered by Igani</span>
-    </p>
+    <div className="pt-3 text-center flex flex-col items-center gap-2" aria-hidden>
+      <span className="text-gray-400 text-xs">Powered by Igani</span>
+      <img src="/igani-logo.png" alt="" className="h-12 w-12 object-contain opacity-90" />
+    </div>
   );
 }
 
@@ -152,7 +150,7 @@ export default function OnboardingTour() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [currentStepIndex, setCurrentStepIndex] = useState(getStoredStepIndex);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [status, setStatus] = useState<TourStatus>('idle');
   const [resolvedTargetRect, setResolvedTargetRect] = useState<DOMRect | null>(null);
   const [lastResolvedStepId, setLastResolvedStepId] = useState<string | null>(null);
@@ -188,12 +186,14 @@ export default function OnboardingTour() {
     setStoredStepIndex(currentStepIndex);
   }, [shouldShow, currentStepIndex]);
 
-  // Show overlay when tour should be visible
+  // Show overlay when tour should be visible; always start from step 0 when opening tour
   useEffect(() => {
     if (!shouldShow) {
       setVisible(false);
       return;
     }
+    clearStoredStep();
+    setCurrentStepIndex(0);
     const t = setTimeout(() => {
       if (mountedRef.current) setVisible(true);
     }, 150);
