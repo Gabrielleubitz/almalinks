@@ -252,7 +252,7 @@ const EnhancedUserProfilePage: React.FC = () => {
           {/* Profile Header */}
           <div className="bg-white rounded-3xl shadow-xl overflow-hidden mb-8">
             {/* Cover Image - custom photo or gradient */}
-            <div className="relative aspect-[3/1] w-full min-h-[140px] sm:min-h-[180px] bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 overflow-hidden">
+            <div className="relative z-0 aspect-[3/1] w-full min-h-[140px] sm:min-h-[180px] bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 overflow-hidden">
               {profile.coverPhotoUrl ? (
                 <ImageWithCrop
                   src={profile.coverPhotoUrl}
@@ -262,7 +262,7 @@ const EnhancedUserProfilePage: React.FC = () => {
                   urlIsCropped={true}
                 />
               ) : null}
-              <div className="absolute inset-0 bg-black bg-opacity-20" />
+              <div className="absolute inset-0 bg-black bg-opacity-20 pointer-events-none" />
               {/* Edit Button for Owner */}
               {isOwner && (
                 <Link
@@ -275,7 +275,7 @@ const EnhancedUserProfilePage: React.FC = () => {
               )}
             </div>
 
-            <div className="relative px-8 pb-8">
+            <div className="relative z-10 px-8 pb-8 bg-white">
               {/* Avatar - click to enlarge when image present */}
               <div className="flex items-start justify-between -mt-16 mb-6">
                 <div
@@ -283,7 +283,7 @@ const EnhancedUserProfilePage: React.FC = () => {
                   tabIndex={hasProfileImage ? 0 : undefined}
                   onClick={() => hasProfileImage && setShowAvatarModal(true)}
                   onKeyDown={(e) => hasProfileImage && (e.key === 'Enter' || e.key === ' ') && setShowAvatarModal(true)}
-                  className={`w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl bg-white flex-shrink-0 ${hasProfileImage ? 'cursor-pointer hover:ring-4 hover:ring-brand-blue/30 transition-all' : ''}`}
+                  className={`relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl bg-white flex-shrink-0 ${hasProfileImage ? 'cursor-pointer hover:ring-4 hover:ring-brand-blue/30 transition-all' : ''}`}
                 >
                   {hasProfileImage ? (
                     <ImageWithCrop

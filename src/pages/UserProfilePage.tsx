@@ -270,7 +270,7 @@ const UserProfilePage: React.FC = () => {
           {/* Profile Card */}
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
             {/* Cover / banner: custom photo or blue gradient */}
-            <div className="relative aspect-[3/1] w-full min-h-[140px] sm:min-h-[160px] bg-gradient-to-r from-brand-blue-dark to-brand-blue-light overflow-hidden">
+            <div className="relative z-0 aspect-[3/1] w-full min-h-[140px] sm:min-h-[160px] bg-gradient-to-r from-brand-blue-dark to-brand-blue-light overflow-hidden">
               {(profile as any).coverPhotoUrl ? (
                 <ImageWithCrop
                   src={(profile as any).coverPhotoUrl}
@@ -280,10 +280,10 @@ const UserProfilePage: React.FC = () => {
                   urlIsCropped={true}
                 />
               ) : null}
-              <div className="absolute inset-0 bg-black bg-opacity-20" />
+              <div className="absolute inset-0 bg-black bg-opacity-20 pointer-events-none" />
             </div>
             
-            <div className="relative px-8 pb-8">
+            <div className="relative z-10 px-8 pb-8 bg-white">
               {/* Avatar - click to enlarge when image present */}
               <div className="flex items-start justify-between -mt-16 mb-6">
                 <div
@@ -291,7 +291,7 @@ const UserProfilePage: React.FC = () => {
                   tabIndex={(profile.profileImage || profile.avatarUrl) ? 0 : undefined}
                   onClick={() => (profile.profileImage || profile.avatarUrl) && setShowAvatarModal(true)}
                   onKeyDown={(e) => (profile.profileImage || profile.avatarUrl) && (e.key === 'Enter' || e.key === ' ') && setShowAvatarModal(true)}
-                  className={`w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white flex-shrink-0 ${(profile.profileImage || profile.avatarUrl) ? 'cursor-pointer hover:ring-4 hover:ring-brand-blue/30 transition-all' : ''}`}
+                  className={`relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white flex-shrink-0 ${(profile.profileImage || profile.avatarUrl) ? 'cursor-pointer hover:ring-4 hover:ring-brand-blue/30 transition-all' : ''}`}
                 >
                   {profile.profileImage || profile.avatarUrl ? (
                     <ImageWithCrop
