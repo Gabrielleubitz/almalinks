@@ -9,12 +9,15 @@ import CropImage from '../components/profile/CropImage';
 
 type EventFilter = 'all' | 'active' | 'completed';
 
+const EVENTS_PER_PAGE = 6;
+
 const EventsPage: React.FC = () => {
   const { user } = useAuth();
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<EventFilter>('all');
+  const [visibleCount, setVisibleCount] = useState(EVENTS_PER_PAGE);
 
   useEffect(() => {
     console.log('🚀 EventsPage useEffect - Starting to load events...');
@@ -88,6 +91,18 @@ const EventsPage: React.FC = () => {
     return getEventStatus(event) === filter;
   });
 
+  const visibleEvents = filteredEvents.slice(0, visibleCount);
+  const hasMore = filteredEvents.length > visibleCount;
+
+  const handleShowMore = () => {
+    setVisibleCount(prev => prev + EVENTS_PER_PAGE);
+  };
+
+  // Reset visible count when filter changes so we don't show "Show more" with few items
+  useEffect(() => {
+    setVisibleCount(EVENTS_PER_PAGE);
+  }, [filter]);
+
   const getStatusBadge = (event: EventData, status: 'active' | 'completed') => {
     const styles = {
       active: event.status === 'sold-out' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800',
@@ -143,11 +158,11 @@ const EventsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col overflow-x-hidden">
       <Header />
       
       {/* Hero Section */}
-      <section className="pt-24 sm:pt-32 pb-12 sm:pb-16 bg-gradient-to-br from-gray-50 to-white">
+      <section className="pt-24 sm:pt-32 pb-12 sm:pb-16 bg-gradient-to-br from-gray-50 to-white flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 fade-in px-2">
@@ -160,11 +175,10 @@ const EventsPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Main Content */}
-      <section className="py-8 sm:py-12 md:py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Filter Tabs */}
-          <div className="mb-8 sm:mb-12 flex justify-center overflow-x-hidden">
+      {/* Filter bar: sticky below header so it doesn't scroll away with the events list */}
+      <div className="sticky top-16 z-10 flex-shrink-0 bg-white border-b border-gray-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex justify-center overflow-x-hidden">
             <div className="flex flex-wrap sm:flex-nowrap gap-1 sm:space-x-1 bg-gray-100 p-1 rounded-full max-w-full">
               {[
                 { key: 'all', label: 'All Events' },
@@ -185,7 +199,12 @@ const EventsPage: React.FC = () => {
               ))}
             </div>
           </div>
+        </div>
+      </div>
 
+      {/* Main Content - scrollable events list */}
+      <section className="flex-1 py-8 sm:py-12 md:py-16 bg-white min-h-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Error State */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8 max-w-2xl mx-auto">
@@ -211,8 +230,9 @@ const EventsPage: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="grid gap-6 sm:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {filteredEvents.map((event) => {
+            <>
+              <div className="grid gap-6 sm:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {visibleEvents.map((event) => {
                 const status = getEventStatus(event);
                 return (
                   <div
@@ -278,7 +298,19 @@ const EventsPage: React.FC = () => {
                 </div>
               );
               })}
-            </div>
+              </div>
+
+              {hasMore && (
+                <div className="flex justify-center mt-10 sm:mt-12">
+                  <button
+                    onClick={handleShowMore}
+                    className="px-8 py-3 rounded-full font-semibold text-white bg-gradient-to-r from-brand-blue-dark to-brand-blue-light hover:shadow-lg transition-all duration-200"
+                  >
+                    Show more
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
