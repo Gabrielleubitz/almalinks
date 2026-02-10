@@ -9,7 +9,8 @@ import {
   orderBy,
   limit as firestoreLimit,
   Timestamp,
-  onSnapshot
+  onSnapshot,
+  writeBatch
 } from 'firebase/firestore';
 import { db, retryOnNetworkFailure } from '../firebase/config';
 import {
@@ -302,5 +303,114 @@ export class AdminChatService {
       console.error('❌ Error getting user chat activity:', error);
       throw error;
     }
+  }
+
+  /**
+   * Check if a user is a member of a chat
+   */
+  static async isUserInChat(chatId: string, userId: string): Promise<boolean> {
+    const q = query(
+      collection(db, 'chat_members'),
+      where('chatId', '==', chatId),
+      where('userId', '==', userId)
+    );
+    const snap = await getDocs(q);
+    return !snap.empty;
+  }
+
+  /**
+   * Add a user to a chat (app admin only). Bypasses chat-level admin check.
+   * Firestore rules must allow isAdmin() to create chat_members.
+   */
+  static async addMemberToChat(chatId: string, targetUserId: string, appAdminUserId: string): Promise<void> {
+    const existing = await this.isUserInChat(chatId, targetUserId);
+    if (existing) {
+      throw new Error('User is already a member of this chat');
+    }
+
+    const [userDoc, adminDoc, chatDoc] = await Promise.all([
+      getDoc(doc(db, 'users', targetUserId)),
+      getDoc(doc(db, 'users', appAdminUserId)),
+      getDoc(doc(db, 'chats', chatId))
+    ]);
+
+    if (!chatDoc.exists()) throw new Error('Chat not found');
+    if (!userDoc.exists()) throw new Error('User not found');
+
+    const userData = userDoc.data();
+    const adminData = adminDoc.data();
+    const displayName = userData?.displayName || userData?.name || 'User';
+    const adminName = adminData?.displayName || adminData?.name || 'Admin';
+
+    const now = Timestamp.now();
+    const batch = writeBatch(db);
+
+    const memberRef = doc(collection(db, 'chat_members'));
+    batch.set(memberRef, {
+      chatId,
+      userId: targetUserId,
+      role: 'member',
+      joinedAt: now
+    });
+
+    const systemMessageRef = doc(collection(db, 'chat_messages'));
+    batch.set(systemMessageRef, {
+      chatId,
+      userId: null,
+      type: 'system',
+      text: `${displayName} was added by ${adminName} (admin).`,
+      meta: { action: 'add', actorId: targetUserId, byAdminId: appAdminUserId },
+      createdAt: now
+    });
+
+    batch.update(doc(db, 'chats', chatId), {
+      lastMessage: { chatId, userId: null, type: 'system', text: `${displayName} was added by ${adminName} (admin).`, createdAt: now },
+      lastActivity: now
+    });
+
+    await batch.commit();
+  }
+
+  /**
+   * Join a chat as app admin (add yourself to the chat, as chat admin so you can manage it).
+   */
+  static async joinChatAsAppAdmin(chatId: string, appAdminUserId: string): Promise<void> {
+    const existing = await this.isUserInChat(chatId, appAdminUserId);
+    if (existing) {
+      throw new Error('You are already a member of this chat');
+    }
+
+    const adminDoc = await getDoc(doc(db, 'users', appAdminUserId));
+    const chatDoc = await getDoc(doc(db, 'chats', chatId));
+    if (!chatDoc.exists()) throw new Error('Chat not found');
+    const adminName = adminDoc.exists() ? (adminDoc.data()?.displayName || adminDoc.data()?.name || 'Admin') : 'Admin';
+
+    const now = Timestamp.now();
+    const batch = writeBatch(db);
+
+    const memberRef = doc(collection(db, 'chat_members'));
+    batch.set(memberRef, {
+      chatId,
+      userId: appAdminUserId,
+      role: 'admin',
+      joinedAt: now
+    });
+
+    const systemMessageRef = doc(collection(db, 'chat_messages'));
+    batch.set(systemMessageRef, {
+      chatId,
+      userId: null,
+      type: 'system',
+      text: `${adminName} joined the chat (admin).`,
+      meta: { action: 'join', actorId: appAdminUserId },
+      createdAt: now
+    });
+
+    batch.update(doc(db, 'chats', chatId), {
+      lastMessage: { chatId, userId: null, type: 'system', text: `${adminName} joined the chat (admin).`, createdAt: now },
+      lastActivity: now
+    });
+
+    await batch.commit();
   }
 }

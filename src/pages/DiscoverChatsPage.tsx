@@ -103,6 +103,16 @@ const DiscoverChatsPage: React.FC = () => {
     return `${count} members`;
   };
 
+  /** Only show description if it looks like real content (not placeholder/junk). */
+  const hasMeaningfulDescription = (desc: string | undefined): boolean => {
+    if (!desc || typeof desc !== 'string') return false;
+    const t = desc.trim();
+    if (t.length < 12) return false;
+    if (/^[\d\s]+$/.test(t)) return false;
+    if (/^(.)\1+$/.test(t)) return false;
+    return true;
+  };
+
   const formatLastActivity = (timestamp: any): string => {
     if (!timestamp) return 'Created recently';
     
@@ -290,9 +300,9 @@ const DiscoverChatsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {chat.description && (
+                  {hasMeaningfulDescription(chat.description) && (
                     <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                      {chat.description}
+                      {chat.description!.trim()}
                     </p>
                   )}
 

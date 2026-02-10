@@ -54,6 +54,7 @@ const adminNavGroups = [
   {
     label: 'Chat & Comms',
     items: [
+      { to: '/admin/chats', label: 'Manage Chats', icon: MessageCircle },
       { to: '/admin/chats/create', label: 'Create Chat Group', icon: MessageCircle },
       { to: '/admin/email', label: 'Email', icon: Mail },
       { to: '/admin/announcements', label: 'Announcements', icon: Megaphone },

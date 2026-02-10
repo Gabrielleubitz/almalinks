@@ -42,6 +42,7 @@ import ChatsPage from './pages/ChatsPage';
 import ChatViewPage from './pages/ChatViewPage';
 import DiscoverChatsPage from './pages/DiscoverChatsPage';
 import CreateChatGroup from './pages/admin/CreateChatGroup';
+import AdminChatManagement from './pages/admin/AdminChatManagement';
 import ThemePreview from './pages/ThemePreview';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AuthWrapper from './components/auth/AuthWrapper';
@@ -177,6 +178,14 @@ function App() {
           element={
             <ProtectedRoute requiredRole="admin">
               <AdminAnnouncements />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/chats" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminChatManagement />
             </ProtectedRoute>
           } 
         />
