@@ -53,60 +53,58 @@ const ConnectionManagement: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen bg-gray-100">
       <AdminHeader title="Connection Management" />
       
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8 overflow-x-hidden w-full max-w-full box-border">
-        {/* Navigation */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-4 sm:gap-0">
-          {/* Left: Back + Title */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 min-w-0 flex-1">
-            <Link
-              to="/admin"
-              className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium text-sm sm:text-base min-h-[44px] sm:min-h-0 flex-shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="whitespace-nowrap">Back to Admin Dashboard</span>
-            </Link>
-            <div className="hidden sm:block text-gray-400">|</div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 whitespace-normal break-words sm:whitespace-nowrap">
-              Connection Management
-            </h1>
-          </div>
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8 overflow-x-hidden w-full max-w-full box-border">
+        {/* Page header */}
+        <div className="mb-6 sm:mb-8">
+          <Link
+            to="/admin"
+            className="inline-flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors font-medium text-sm mb-3"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Admin Dashboard</span>
+          </Link>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            Connection Management
+          </h1>
+          <p className="mt-1 text-gray-600 text-sm sm:text-base max-w-2xl">
+            View connection stats, health status, and create or bulk-manage connections between members.
+          </p>
+        </div>
 
-          {/* Right: Actions */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-3 flex-shrink-0">
+        {/* View switcher + Export */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+          <div className="flex bg-white rounded-xl border border-gray-200 p-1 shadow-sm w-full sm:w-auto">
             <button
-              onClick={handleExportStats}
-              className="inline-flex items-center justify-center space-x-2 px-3 sm:px-4 py-2.5 sm:py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium min-h-[44px] sm:min-h-0 whitespace-nowrap w-full sm:w-auto"
+              onClick={() => setActiveView('overview')}
+              className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                activeView === 'overview'
+                  ? 'bg-gray-900 text-white shadow-sm'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
             >
-              <Download className="h-4 w-4 flex-shrink-0" />
-              <span>Export Stats</span>
+              Overview
             </button>
-
-            <div className="flex bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
-              <button
-                onClick={() => setActiveView('overview')}
-                className={`flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm font-medium transition-all min-h-[44px] sm:min-h-0 whitespace-nowrap ${
-                  activeView === 'overview'
-                    ? 'bg-white text-brand-light shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                Overview
-              </button>
-              <button
-                onClick={() => setActiveView('management')}
-                className={`flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm font-medium transition-all min-h-[44px] sm:min-h-0 whitespace-nowrap ${
-                  activeView === 'management'
-                    ? 'bg-white text-brand-light shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                Management
-              </button>
-            </div>
+            <button
+              onClick={() => setActiveView('management')}
+              className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                activeView === 'management'
+                  ? 'bg-gray-900 text-white shadow-sm'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Management
+            </button>
           </div>
+          <button
+            onClick={handleExportStats}
+            className="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium text-gray-800 whitespace-nowrap w-full sm:w-auto"
+          >
+            <Download className="h-4 w-4 flex-shrink-0" />
+            <span>Export Stats</span>
+          </button>
         </div>
 
         {/* Content */}
@@ -118,74 +116,63 @@ const ConnectionManagement: React.FC = () => {
             {/* Additional Overview Content */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {/* Connection Health */}
-              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 border border-gray-100">
-                <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">Connection Health</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Connection Health</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
                     <div>
-                      <p className="font-medium text-green-900">Auto-Connect System</p>
-                      <p className="text-sm text-green-600">Functioning normally</p>
+                      <p className="font-semibold text-green-900">Auto-Connect System</p>
+                      <p className="text-sm text-green-800">Functioning normally</p>
                     </div>
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0" />
                   </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
                     <div>
-                      <p className="font-medium text-blue-900">Global Directory</p>
-                      <p className="text-sm text-brand-light">Active and searchable</p>
+                      <p className="font-semibold text-blue-900">Global Directory</p>
+                      <p className="text-sm text-blue-800">Active and searchable</p>
                     </div>
-                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0" />
                   </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-100">
                     <div>
-                      <p className="font-medium text-orange-900">Connection system</p>
-                      <p className="text-sm text-orange-600">Legacy system active</p>
+                      <p className="font-semibold text-amber-900">Legacy System</p>
+                      <p className="text-sm text-amber-800">Active</p>
                     </div>
-                    <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-amber-500 rounded-full flex-shrink-0" />
                   </div>
                 </div>
               </div>
 
               {/* Recent Activity */}
-              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 border border-gray-100">
-                <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">Recent Activity</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2 sm:space-x-3 p-2.5 sm:p-3 bg-gray-50 rounded-lg">
-                    <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                        15 auto-connections created
-                      </p>
-                      <p className="text-xs text-gray-600 truncate">Alma Links Event - 2 hours ago</p>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-900">Auto-connections created</p>
+                      <p className="text-xs text-gray-600">Event-based</p>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center space-x-2 sm:space-x-3 p-2.5 sm:p-3 bg-gray-50 rounded-lg">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full flex-shrink-0"></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                        8 manual connections via directory
-                      </p>
-                      <p className="text-xs text-gray-600 truncate">Global directory - 4 hours ago</p>
+                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-900">Manual connections</p>
+                      <p className="text-xs text-gray-600">Via directory</p>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center space-x-2 sm:space-x-3 p-2.5 sm:p-3 bg-gray-50 rounded-lg">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0"></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                        3 connections
-                      </p>
-                      <p className="text-xs text-gray-600 truncate">Legacy - 6 hours ago</p>
+                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-900">Legacy connections</p>
+                      <p className="text-xs text-gray-600">In-person / scan</p>
                     </div>
                   </div>
                 </div>
-                
-                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200">
+                <div className="mt-4 pt-4 border-t border-gray-200">
                   <Link
                     to="/admin/connections?tab=stats"
-                    className="text-xs sm:text-sm text-brand-light hover:text-blue-700 font-medium"
+                    className="text-sm font-medium text-blue-700 hover:text-blue-800"
                   >
                     View detailed analytics →
                   </Link>
@@ -194,67 +181,57 @@ const ConnectionManagement: React.FC = () => {
             </div>
 
             {/* System Settings */}
-            <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 border border-gray-100">
-              <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
-                <Settings className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600 flex-shrink-0" />
-                <h3 className="text-base sm:text-lg font-bold text-gray-900">System Settings</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6">
+              <div className="flex items-center space-x-2 mb-4">
+                <Settings className="h-5 w-5 text-gray-700" />
+                <h3 className="text-lg font-bold text-gray-900">System Settings</h3>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-                <div className="p-3 sm:p-4 border border-gray-200 rounded-xl">
-                  <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Auto-Connect Default</h4>
-                  <p className="text-xs sm:text-sm text-gray-600 mb-3">
-                    New events automatically enable auto-connect by default.
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 border border-gray-200 rounded-xl bg-gray-50/50">
+                  <h4 className="font-semibold text-gray-900 mb-2">Auto-Connect Default</h4>
+                  <p className="text-sm text-gray-700 mb-3">
+                    New events enable auto-connect by default.
                   </p>
-                  <div className="flex items-center">
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      id="auto-connect-default"
                       defaultChecked={true}
-                      className="h-4 w-4 text-brand-light focus:ring-blue-500 border-gray-300 rounded min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <label htmlFor="auto-connect-default" className="ml-2 text-xs sm:text-sm text-gray-900">
-                      Enabled
-                    </label>
-                  </div>
+                    <span className="text-sm font-medium text-gray-900">Enabled</span>
+                  </label>
                 </div>
-
-                <div className="p-3 sm:p-4 border border-gray-200 rounded-xl">
-                  <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Rate Limiting</h4>
-                  <p className="text-xs sm:text-sm text-gray-600 mb-3">
-                    Daily manual connection request limit per user.
+                <div className="p-4 border border-gray-200 rounded-xl bg-gray-50/50">
+                  <h4 className="font-semibold text-gray-900 mb-2">Rate Limiting</h4>
+                  <p className="text-sm text-gray-700 mb-3">
+                    Daily manual connection requests per user.
                   </p>
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-2">
                     <input
                       type="number"
-                      defaultValue={50}
-                      className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 min-h-[44px] sm:min-h-0"
+                      defaultValue={5}
+                      className="w-14 px-2 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
-                    <span className="ml-2 text-xs sm:text-sm text-gray-600">requests/day</span>
+                    <span className="text-sm text-gray-700">per day</span>
                   </div>
                 </div>
-
-                <div className="p-3 sm:p-4 border border-gray-200 rounded-xl">
-                  <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Directory Search</h4>
-                  <p className="text-xs sm:text-sm text-gray-600 mb-3">
-                    Global directory search functionality.
+                <div className="p-4 border border-gray-200 rounded-xl bg-gray-50/50">
+                  <h4 className="font-semibold text-gray-900 mb-2">Directory Search</h4>
+                  <p className="text-sm text-gray-700 mb-3">
+                    Global directory search.
                   </p>
-                  <div className="flex items-center">
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      id="directory-search"
                       defaultChecked={true}
-                      className="h-4 w-4 text-brand-light focus:ring-blue-500 border-gray-300 rounded min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <label htmlFor="directory-search" className="ml-2 text-xs sm:text-sm text-gray-900">
-                      Enabled
-                    </label>
-                  </div>
+                    <span className="text-sm font-medium text-gray-900">Enabled</span>
+                  </label>
                 </div>
               </div>
-
-              <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200">
-                <button className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors font-medium text-sm sm:text-base min-h-[44px] sm:min-h-0">
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <button className="px-4 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 font-medium text-sm">
                   Save Settings
                 </button>
               </div>

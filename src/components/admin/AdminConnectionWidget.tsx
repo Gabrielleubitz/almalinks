@@ -44,14 +44,14 @@ const AdminConnectionWidget: React.FC<AdminConnectionWidgetProps> = ({
 
   if (loading) {
     return (
-      <div className={`bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 border border-gray-100 ${className}`}>
+      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 ${className}`}>
         <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="h-20 bg-gray-200 rounded"></div>
-            <div className="h-20 bg-gray-200 rounded"></div>
-            <div className="h-20 bg-gray-200 rounded"></div>
-            <div className="h-20 bg-gray-200 rounded"></div>
+          <div className="h-6 bg-gray-200 rounded w-1/3 mb-5" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="h-20 bg-gray-100 rounded-xl" />
+            <div className="h-20 bg-gray-100 rounded-xl" />
+            <div className="h-20 bg-gray-100 rounded-xl" />
+            <div className="h-20 bg-gray-100 rounded-xl" />
           </div>
         </div>
       </div>
@@ -59,105 +59,100 @@ const AdminConnectionWidget: React.FC<AdminConnectionWidgetProps> = ({
   }
 
   return (
-    <div className={`bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 border border-gray-100 ${className}`}>
+    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 ${className}`}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
-        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-          <Users className="h-5 w-5 sm:h-6 sm:w-6 text-brand-light flex-shrink-0" />
-          <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate">Connection Overview</h3>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-2">
+        <div className="flex items-center space-x-2 min-w-0">
+          <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 flex-shrink-0" />
+          <h3 className="text-lg font-bold text-gray-900 truncate">Connection Overview</h3>
         </div>
-        <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600 flex-shrink-0">
-          <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
-          <span className="whitespace-nowrap">{stats.connectionsToday} today</span>
+        <div className="flex items-center space-x-2 text-sm text-gray-700 flex-shrink-0">
+          <TrendingUp className="h-4 w-4 text-gray-500" />
+          <span className="whitespace-nowrap font-medium">{stats.connectionsToday} today</span>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-        <div className="bg-blue-50 p-3 sm:p-4 rounded-xl">
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <Link2 className="h-5 w-5 sm:h-6 sm:w-6 text-brand-light flex-shrink-0" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5">
+        <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl">
+          <div className="flex items-center space-x-2">
+            <Link2 className="h-5 w-5 text-blue-600 flex-shrink-0" />
             <div className="min-w-0">
-              <p className="text-xl sm:text-2xl font-bold text-blue-900">
+              <p className="text-2xl font-bold text-blue-900 tabular-nums">
                 {stats.totalConnections.toLocaleString()}
               </p>
-              <p className="text-xs sm:text-sm text-brand-light font-medium">Total Connections</p>
+              <p className="text-sm font-medium text-blue-800">Total Connections</p>
             </div>
           </div>
         </div>
-
-        <div className="bg-green-50 p-3 sm:p-4 rounded-xl">
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 flex-shrink-0" />
+        <div className="bg-green-50 border border-green-100 p-4 rounded-xl">
+          <div className="flex items-center space-x-2">
+            <Zap className="h-5 w-5 text-green-600 flex-shrink-0" />
             <div className="min-w-0">
-              <p className="text-xl sm:text-2xl font-bold text-green-900">
+              <p className="text-2xl font-bold text-green-900 tabular-nums">
                 {stats.autoConnections.toLocaleString()}
               </p>
-              <p className="text-xs sm:text-sm text-green-600 font-medium">Auto Connections</p>
+              <p className="text-sm font-medium text-green-800">Auto</p>
             </div>
           </div>
         </div>
-
-        <div className="bg-purple-50 p-3 sm:p-4 rounded-xl">
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <UserPlus className="h-5 w-5 sm:h-6 sm:w-6 text-brand-dark flex-shrink-0" />
+        <div className="bg-purple-50 border border-purple-100 p-4 rounded-xl">
+          <div className="flex items-center space-x-2">
+            <UserPlus className="h-5 w-5 text-purple-600 flex-shrink-0" />
             <div className="min-w-0">
-              <p className="text-xl sm:text-2xl font-bold text-purple-900">
+              <p className="text-2xl font-bold text-purple-900 tabular-nums">
                 {stats.manualConnections.toLocaleString()}
               </p>
-              <p className="text-xs sm:text-sm text-brand-dark font-medium">Manual Connections</p>
+              <p className="text-sm font-medium text-purple-800">Manual</p>
             </div>
           </div>
         </div>
-
-        <div className="bg-orange-50 p-3 sm:p-4 rounded-xl">
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <Link2 className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 flex-shrink-0" />
+        <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl">
+          <div className="flex items-center space-x-2">
+            <Link2 className="h-5 w-5 text-amber-600 flex-shrink-0" />
             <div className="min-w-0">
-              <p className="text-xl sm:text-2xl font-bold text-orange-900">
+              <p className="text-2xl font-bold text-amber-900 tabular-nums">
                 {stats.scanConnections.toLocaleString()}
               </p>
-              <p className="text-xs sm:text-sm text-orange-600 font-medium">In-person connections</p>
+              <p className="text-sm font-medium text-amber-800">In-person</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Connection Type Breakdown */}
-      <div className="bg-gray-50 rounded-xl p-3 sm:p-4">
-        <h4 className="text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3">Connection Types</h4>
+      <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+        <h4 className="text-sm font-semibold text-gray-900 mb-3">By type</h4>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span className="text-sm text-gray-600">Auto-Connect</span>
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <span className="text-sm font-medium text-gray-800">Auto-Connect</span>
             </div>
-            <span className="text-sm font-medium text-gray-900">
-              {stats.totalConnections > 0 
+            <span className="text-sm font-semibold text-gray-900">
+              {stats.totalConnections > 0
                 ? Math.round((stats.autoConnections / stats.totalConnections) * 100)
                 : 0}%
             </span>
           </div>
-          
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-              <span className="text-sm text-gray-600">Manual</span>
+              <div className="w-3 h-3 rounded-full bg-purple-500" />
+              <span className="text-sm font-medium text-gray-800">Manual</span>
             </div>
-            <span className="text-sm font-medium text-gray-900">
-              {stats.totalConnections > 0 
+            <span className="text-sm font-semibold text-gray-900">
+              {stats.totalConnections > 0
                 ? Math.round((stats.manualConnections / stats.totalConnections) * 100)
                 : 0}%
             </span>
           </div>
-          
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-              <span className="text-sm text-gray-600">In-person</span>
+              <div className="w-3 h-3 rounded-full bg-amber-500" />
+              <span className="text-sm font-medium text-gray-800">In-person</span>
             </div>
-            <span className="text-sm font-medium text-gray-900">
-              {stats.totalConnections > 0 
+            <span className="text-sm font-semibold text-gray-900">
+              {stats.totalConnections > 0
                 ? Math.round((stats.scanConnections / stats.totalConnections) * 100)
                 : 0}%
             </span>
@@ -166,13 +161,9 @@ const AdminConnectionWidget: React.FC<AdminConnectionWidgetProps> = ({
       </div>
 
       {/* Active Users */}
-      <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
-          <span className="text-xs sm:text-sm text-gray-600">Active Users (with connections)</span>
-          <span className="text-xs sm:text-sm font-semibold text-gray-900">
-            {stats.activeUsers.toLocaleString()} users
-          </span>
-        </div>
+      <div className="mt-4 pt-4 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+        <span className="text-sm font-medium text-gray-700">Active users (with connections)</span>
+        <span className="text-sm font-bold text-gray-900">{stats.activeUsers.toLocaleString()}</span>
       </div>
     </div>
   );
