@@ -91,6 +91,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
     return <Navigate to="/change-password" replace />;
   }
 
+  // First sign-in: redirect to welcome onboarding if not yet completed (except when already on /welcome)
+  if (user.hasSeenOnboarding !== true && window.location.pathname !== '/welcome') {
+    return <Navigate to="/welcome" replace />;
+  }
+
   // Check role-based access
   if (requiredRole) {
     console.log('🔍 ProtectedRoute - Role check:', { 

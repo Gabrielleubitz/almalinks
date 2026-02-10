@@ -33,6 +33,7 @@ export interface AuthUser {
   passwordResetForcedBy?: string;
   googleLinked?: boolean;
   googleEmail?: string;
+  hasSeenOnboarding?: boolean;
 }
 
 export interface ProfileData {
@@ -130,7 +131,8 @@ export const useAuth = () => {
           passwordResetForcedAt: userData.passwordResetForcedAt || null,
           passwordResetForcedBy: userData.passwordResetForcedBy || null,
           googleLinked: userData.googleLinked || false,
-          googleEmail: userData.googleEmail || null
+          googleEmail: userData.googleEmail || null,
+          hasSeenOnboarding: userData.hasSeenOnboarding === true
         };
       }
       
@@ -166,7 +168,8 @@ export const useAuth = () => {
           passwordResetForcedAt: null,
           passwordResetForcedBy: null,
           googleLinked: false,
-          googleEmail: null
+          googleEmail: null,
+          hasSeenOnboarding: false
         };
       }
       
@@ -350,6 +353,20 @@ export const useAuth = () => {
     }
   };
 
+  const markOnboardingComplete = async () => {
+    if (!user?.uid) return;
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      await retryOnNetworkFailure(() =>
+        setDoc(userDocRef, { hasSeenOnboarding: true, updatedAt: serverTimestamp() }, { merge: true })
+      );
+      setUser((prev) => (prev ? { ...prev, hasSeenOnboarding: true } : null));
+    } catch (error) {
+      console.error('❌ Error marking onboarding complete:', error);
+      throw error;
+    }
+  };
+
   // Admin view mode functions
   const switchToUserView = () => {
     console.log('🔄 Admin switching to user view');
@@ -423,12 +440,13 @@ export const useAuth = () => {
                 mustChangePassword: false,
                 tempPasswordSet: false,
                 passwordResetForcedAt: null,
-                passwordResetForcedBy: null,
-                googleLinked: false,
-                googleEmail: null
-              };
-            } else {
-              // No join request and no user doc - this is unusual
+          passwordResetForcedBy: null,
+          googleLinked: false,
+          googleEmail: null,
+          hasSeenOnboarding: false
+        };
+      } else {
+        // No join request and no user doc - this is unusual
               // Do NOT auto-create anything - user must explicitly sign up or re-request
               console.log('⚠️ No user profile or join request found. User must sign up or re-request access.');
               console.log('⚠️ NOT auto-creating join request - user must do this explicitly');
@@ -459,7 +477,8 @@ export const useAuth = () => {
                 passwordResetForcedAt: null,
                 passwordResetForcedBy: null,
                 googleLinked: false,
-                googleEmail: null
+                googleEmail: null,
+                hasSeenOnboarding: false
               };
             }
           }
@@ -910,6 +929,7 @@ export const useAuth = () => {
     roleLoading,
     checkProfileComplete,
     updateProfile: updateUserProfile,
+    markOnboardingComplete,
     // Admin view mode functions
     adminViewMode,
     isInUserView,

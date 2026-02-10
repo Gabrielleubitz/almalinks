@@ -36,6 +36,7 @@ import AdminUserEdit from './pages/admin/AdminUserEdit';
 import ActivityManagement from './pages/admin/ActivityManagement';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import ConnectPage from './pages/ConnectPage';
+import WelcomeOnboardingPage from './pages/WelcomeOnboardingPage';
 import UserProfilePage from './pages/UserProfilePage';
 import MembersPage from './pages/MembersPage';
 import ChatsPage from './pages/ChatsPage';
@@ -84,6 +85,16 @@ function App() {
         
         {/* Connection Route */}
         <Route path="/connect" element={<ConnectPage />} />
+        
+        {/* First-sign-in onboarding (protected, show only once) */}
+        <Route
+          path="/welcome"
+          element={
+            <ProtectedRoute>
+              <WelcomeOnboardingPage />
+            </ProtectedRoute>
+          }
+        />
         
         {/* Protected Routes */}
         <Route 
