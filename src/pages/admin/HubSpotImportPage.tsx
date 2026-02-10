@@ -42,6 +42,21 @@ interface HubSpotDeal {
   syncedAt?: unknown;
 }
 
+interface ActionCard {
+  id: string;
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  primaryLabel: string;
+  loading: boolean;
+  onPrimary: () => void | Promise<void>;
+  onDelete: () => void | Promise<void>;
+  deleteLabel: string;
+  deleteHelper?: string;
+  color: string;
+  bgIcon: string;
+}
+
 const HubSpotImportPage: React.FC = () => {
   const navigate = useNavigate();
   const [syncing, setSyncing] = useState(false);
@@ -117,7 +132,10 @@ const HubSpotImportPage: React.FC = () => {
       const res = await apiRequest(`/api/hubspot-contacts/${id}`, { method: 'DELETE' });
       const data = await res.json().catch(() => ({})) as { ok?: boolean; error?: string };
       if (data.ok) setContacts((prev) => prev.filter((c) => c.id !== id));
-      else setListError(data.error || 'Delete failed');
+      else {
+        const msg = res.status === 403 ? (data.error || 'This record cannot be deleted here. Only HubSpot-imported records can be removed.') : (data.error || 'Delete failed');
+        setListError(msg);
+      }
     } catch {
       setListError('Delete request failed');
     } finally {
@@ -132,7 +150,10 @@ const HubSpotImportPage: React.FC = () => {
       const res = await apiRequest(`/api/hubspot-deals/${id}`, { method: 'DELETE' });
       const data = await res.json().catch(() => ({})) as { ok?: boolean; error?: string };
       if (data.ok) setDeals((prev) => prev.filter((d) => d.id !== id));
-      else setListError(data.error || 'Delete failed');
+      else {
+        const msg = res.status === 403 ? (data.error || 'This record cannot be deleted here. Only HubSpot-imported records can be removed.') : (data.error || 'Delete failed');
+        setListError(msg);
+      }
     } catch {
       setListError('Delete request failed');
     } finally {
@@ -191,7 +212,7 @@ const HubSpotImportPage: React.FC = () => {
   };
 
   const removeHubspotUsers = async () => {
-    if (!window.confirm('Remove only users that were imported by the HubSpot sync (they have a HubSpot contact id). Your account and other admins will never be removed. Continue?')) return;
+    if (!window.confirm('This will remove HubSpot-imported data from Firebase only. HubSpot data will NOT be affected.\n\nRemove only users imported from HubSpot (and clear their contact/deal/event records in Firebase). Your account and other admins will never be removed. Continue?')) return;
     setRemoving(true);
     setRemoveResult(null);
     setSyncResult(null);
@@ -276,7 +297,7 @@ const HubSpotImportPage: React.FC = () => {
   };
 
   const deleteAll = async () => {
-    if (!window.confirm('Delete only HubSpot-imported users (and clear HubSpot contacts/deals/events data)? Your account and other admins are never deleted. This cannot be undone. Continue?')) return;
+    if (!window.confirm('This will delete only users imported from HubSpot.\n\nRemoves HubSpot-imported users and their contact/deal/event data from Firebase only. HubSpot data will NOT be affected. Your account and other admins are never deleted. This cannot be undone. Continue?')) return;
     setDeletingAll(true);
     setRemoveResult(null);
     setSyncResult(null);
@@ -314,7 +335,7 @@ const HubSpotImportPage: React.FC = () => {
   };
 
   const clearDealsOnly = async () => {
-    if (!window.confirm('Clear imported deals only? This removes all deals from the HubSpot deals import.')) return;
+    if (!window.confirm('This will remove HubSpot-imported data from Firebase only. HubSpot data will NOT be affected.\n\nClear only imported deals (HubSpot-originated records). Continue?')) return;
     setDeletingDeals(true);
     setDealsResult(null);
     setDeleteResult(null);
@@ -335,7 +356,7 @@ const HubSpotImportPage: React.FC = () => {
   };
 
   const removeEventsFromDealsOnly = async () => {
-    if (!window.confirm('Remove all past events that were created from deals?')) return;
+    if (!window.confirm('This will remove HubSpot-imported data from Firebase only. HubSpot data will NOT be affected.\n\nRemove only past events that were created from HubSpot deals. Continue?')) return;
     setDeletingEventDeals(true);
     setCreateFromDealsResult(null);
     setDeleteResult(null);
@@ -355,7 +376,7 @@ const HubSpotImportPage: React.FC = () => {
   };
 
   const removeUsersOnly = async () => {
-    if (!window.confirm('Remove only users that were imported by the HubSpot sync (they have a HubSpot contact id). Your account and admins are never removed. Deals and past events will stay. Continue?')) return;
+    if (!window.confirm('This will remove HubSpot-imported data from Firebase only. HubSpot data will NOT be affected.\n\nRemove only users imported from HubSpot. Your account and admins are never removed. Deals and past events will stay. Continue?')) return;
     setDeletingUsersOnly(true);
     setSyncResult(null);
     setRemoveResult(null);
@@ -381,7 +402,7 @@ const HubSpotImportPage: React.FC = () => {
 
   const busy = syncing || syncingDeals || creatingFromDeals || removing || pullingAll || deletingAll || deletingDeals || deletingEventDeals || deletingUsersOnly;
 
-  const actionCards = [
+  const actionCards: ActionCard[] = [
     {
       id: 'sync',
       icon: Users,
@@ -391,7 +412,8 @@ const HubSpotImportPage: React.FC = () => {
       loading: syncing,
       onPrimary: syncHubspotContacts,
       onDelete: removeUsersOnly,
-      deleteLabel: 'Remove imported users',
+      deleteLabel: 'Remove imported HubSpot users (Firebase only)',
+      deleteHelper: 'Only users with importedFrom=hubspot are removed. Native users and admins are never touched.',
       color: 'text-brand-dark',
       bgIcon: 'bg-brand-light',
     },
@@ -404,7 +426,8 @@ const HubSpotImportPage: React.FC = () => {
       loading: syncingDeals,
       onPrimary: syncHubspotDeals,
       onDelete: clearDealsOnly,
-      deleteLabel: 'Clear deals import',
+      deleteLabel: 'Clear imported HubSpot deals (Firebase only)',
+      deleteHelper: 'Only HubSpot-imported deal records in Firebase. HubSpot is not affected.',
       color: 'text-blue-600',
       bgIcon: 'bg-blue-50',
     },
@@ -417,7 +440,8 @@ const HubSpotImportPage: React.FC = () => {
       loading: creatingFromDeals,
       onPrimary: createEventsFromDeals,
       onDelete: removeEventsFromDealsOnly,
-      deleteLabel: 'Remove these events',
+      deleteLabel: 'Remove imported HubSpot events (Firebase only)',
+      deleteHelper: 'Only events created from HubSpot deals. Native events are never touched.',
       color: 'text-emerald-600',
       bgIcon: 'bg-emerald-50',
     },
@@ -425,12 +449,13 @@ const HubSpotImportPage: React.FC = () => {
       id: 'remove',
       icon: UserMinus,
       title: 'Remove HubSpot users',
-      description: 'Remove only users that were imported by the HubSpot sync (never your account or other admins). Optionally clear HubSpot contacts/deals/events data.',
+      description: 'Remove only users explicitly marked as imported from HubSpot (importedFrom=hubspot). Your account and other admins are never removed.',
       primaryLabel: 'Remove users & data',
       loading: removing,
       onPrimary: removeHubspotUsers,
       onDelete: deleteAll,
-      deleteLabel: 'Delete all',
+      deleteLabel: 'Delete all HubSpot users (Firebase only)',
+      deleteHelper: 'Deletes only HubSpot-imported users and their contact/deal/event data in Firebase. HubSpot is not affected.',
       color: 'text-red-600',
       bgIcon: 'bg-red-50',
     },
@@ -495,7 +520,7 @@ const HubSpotImportPage: React.FC = () => {
         </div>
 
         {/* Primary actions: Pull all / Delete all */}
-        <div className="flex flex-wrap gap-3 mb-6">
+        <div className="flex flex-wrap gap-3 mb-2">
           <button
             onClick={pullAll}
             disabled={busy}
@@ -510,9 +535,12 @@ const HubSpotImportPage: React.FC = () => {
             className="inline-flex items-center gap-2 px-5 py-3 border-2 border-red-200 text-red-700 bg-red-50/50 rounded-xl font-medium hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {deletingAll ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-            Delete all HubSpot data
+            Delete all HubSpot users (Firebase only)
           </button>
         </div>
+        <p className="text-gray-500 text-xs mb-6">
+          Destructive buttons remove only HubSpot-imported data from Firebase. HubSpot CRM is never modified.
+        </p>
 
         {/* Action cards grid */}
         <h2 className="text-base font-semibold text-gray-900 mb-4">Step-by-step</h2>
@@ -545,15 +573,22 @@ const HubSpotImportPage: React.FC = () => {
                       card.primaryLabel
                     )}
                   </button>
-                  <button
-                    onClick={card.onDelete}
-                    disabled={busy}
-                    title={card.deleteLabel}
-                    className="w-full opacity-0 group-hover:opacity-100 focus:opacity-100 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg border border-red-100 text-xs font-medium transition-all"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    {card.deleteLabel}
-                  </button>
+                  <div className="space-y-1">
+                    <button
+                      onClick={card.onDelete}
+                      disabled={busy}
+                      title={card.deleteLabel}
+                      className="w-full opacity-0 group-hover:opacity-100 focus:opacity-100 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg border border-red-100 text-xs font-medium transition-all"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      {card.deleteLabel}
+                    </button>
+                    {card.deleteHelper && (
+                      <p className="text-[10px] text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {card.deleteHelper}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -615,7 +650,7 @@ const HubSpotImportPage: React.FC = () => {
                         onClick={() => deleteContact(c.id)}
                         disabled={deletingContactId !== null}
                         className="flex-shrink-0 p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
-                        title="Remove from Firestore (does not delete from HubSpot)"
+                        title="Remove imported HubSpot record (Firebase only)"
                       >
                         {deletingContactId === c.id ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                       </button>
@@ -660,7 +695,7 @@ const HubSpotImportPage: React.FC = () => {
                         onClick={() => deleteDeal(d.id)}
                         disabled={deletingDealId !== null}
                         className="flex-shrink-0 p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
-                        title="Remove from Firestore (does not delete from HubSpot)"
+                        title="Remove imported HubSpot record (Firebase only)"
                       >
                         {deletingDealId === d.id ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                       </button>

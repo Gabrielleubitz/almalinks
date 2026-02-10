@@ -21,11 +21,12 @@ service cloud.firestore {
     // Profile created on signup (own uid) or when admin approves join request.
     // Read: any authenticated user (so all members can see the Members directory).
     // Update/delete: only owner or admin.
+    // Delete: ONLY allowed for HubSpot-imported users (importedFrom == 'hubspot'). Protects native users from HubSpot admin page or any client delete.
     match /users/{userId} {
       allow create: if (isAuthenticated() && request.auth.uid == userId) || isAdmin();
       allow read: if isAuthenticated();
       allow update: if isOwner(userId) || isAdmin();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() && resource.data.get('importedFrom', '') == 'hubspot';
     }
 
     // --- Join requests (pending signups); doc id = applicant uid

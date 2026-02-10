@@ -1,26 +1,48 @@
 /**
- * First-time user onboarding: step-based tour with modal and spotlight.
- * Shows only when user has not completed onboarding (hasSeenOnboarding === false).
- * Progress is persisted via markOnboardingComplete() in useAuth (Firestore).
- *
- * To extend: add or edit steps in ONBOARDING_STEPS. Each step can have:
- * - targetSelector: DOM selector for spotlight (e.g. [data-onboarding="profile"])
- * - route: path to navigate to before showing (so target is in DOM)
- * - skipIf: (user) => boolean to auto-skip (e.g. profile already complete)
+ * First-time user onboarding: deterministic step-based tour.
+ * Steps advance ONLY on user action (Next, Back, Skip) or explicit allowAutoSkip+precondition.
+ * Target resolution: retry up to 2500ms; if not found, show fallback (Try again / Skip step / Exit).
+ * Progress: persisted via markOnboardingComplete(); step index in localStorage for consistency.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import logoSvg from '../../assets/alma-links-logo.svg';
 
-const ONBOARDING_STEPS = [
+const TOUR_DEBUG = typeof window !== 'undefined' && (
+  window.location.search.includes('tourDebug=1') ||
+  (process.env.NODE_ENV === 'development' && (window as unknown as { __TOUR_DEBUG?: boolean }).__TOUR_DEBUG)
+);
+
+const STORAGE_KEY_STEP = 'alma_onboarding_step';
+
+type TourStatus = 'idle' | 'resolving' | 'showing' | 'error';
+
+interface OnboardingStep {
+  id: string;
+  title: string;
+  body: string;
+  primaryLabel: string;
+  primaryAction: 'next' | 'finish';
+  secondaryLabel: string | null;
+  targetSelector: string | null;
+  route: string | null;
+  /** When true, step can be auto-skipped when precondition returns true */
+  allowAutoSkip?: boolean;
+  /** When allowAutoSkip: when this returns true, we skip to next step (e.g. profile already complete) */
+  precondition?: (user: { uid: string; [k: string]: unknown } | null) => boolean;
+  /** Human-readable hint for fallback "navigate to X" */
+  fallbackNavigateHint?: string;
+}
+
+const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: 'welcome',
     title: 'Welcome to AlmaLinks',
     body: 'This is where you connect with your chapter, join events, and stay in the loop.',
     primaryLabel: 'Show me around',
-    primaryAction: 'next' as const,
+    primaryAction: 'next',
     secondaryLabel: 'Skip for now',
     targetSelector: null,
     route: null,
@@ -30,70 +52,110 @@ const ONBOARDING_STEPS = [
     title: 'Your profile',
     body: 'Complete your profile so other members can find you and you can get the most from chapter events and matching.',
     primaryLabel: 'Complete your profile',
-    primaryAction: 'next' as const,
+    primaryAction: 'next',
     secondaryLabel: 'Skip',
     targetSelector: '[data-onboarding="profile"]',
     route: '/dashboard',
+    allowAutoSkip: true,
+    precondition: () => Boolean((window as unknown as { __checkProfileComplete?: () => boolean }).__checkProfileComplete?.()),
+    fallbackNavigateHint: 'Dashboard (profile button in the header)',
   },
   {
     id: 'chapters',
     title: 'Chapters',
     body: 'Members belong to one of our global chapters. Your chapter unlocks local events, people near you, and relevant updates.',
     primaryLabel: 'Next',
-    primaryAction: 'next' as const,
+    primaryAction: 'next',
     secondaryLabel: 'Skip',
     targetSelector: '[data-onboarding="chapter"]',
     route: '/dashboard',
+    fallbackNavigateHint: 'Dashboard (profile section)',
   },
   {
     id: 'events',
     title: 'Events',
     body: 'Browse and RSVP to events, get reminders, and follow up with attendees.',
     primaryLabel: 'View upcoming events',
-    primaryAction: 'next' as const,
+    primaryAction: 'next',
     secondaryLabel: 'Skip',
     targetSelector: '[data-onboarding="events"]',
     route: null,
+    fallbackNavigateHint: 'Header (Events link)',
   },
   {
     id: 'community',
     title: 'Community',
     body: 'Use the Members directory and Chats to connect with others, join groups, and grow your network.',
     primaryLabel: 'Next',
-    primaryAction: 'next' as const,
+    primaryAction: 'next',
     secondaryLabel: 'Skip',
     targetSelector: '[data-onboarding="community"]',
     route: null,
+    fallbackNavigateHint: 'Header (Members link)',
   },
   {
     id: 'wrapup',
     title: "You're all set",
     body: 'You can always open your Dashboard or use the menu to explore events, members, and chats.',
     primaryLabel: 'Start exploring',
-    primaryAction: 'finish' as const,
+    primaryAction: 'finish',
     secondaryLabel: null,
     targetSelector: null,
     route: null,
   },
 ];
 
-const MAX_WAIT_MS = 5000;
-const POLL_INTERVAL_MS = 100;
+const RESOLVE_MAX_MS = 2500;
+const RESOLVE_POLL_MS = 100;
+
+function getStoredStepIndex(): number {
+  try {
+    const s = sessionStorage.getItem(STORAGE_KEY_STEP);
+    if (s != null) {
+      const n = parseInt(s, 10);
+      if (Number.isFinite(n) && n >= 0 && n < ONBOARDING_STEPS.length) return n;
+    }
+  } catch {
+    // ignore
+  }
+  return 0;
+}
+
+function setStoredStepIndex(index: number) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY_STEP, String(index));
+  } catch {
+    // ignore
+  }
+}
+
+function clearStoredStep() {
+  try {
+    sessionStorage.removeItem(STORAGE_KEY_STEP);
+  } catch {
+    // ignore
+  }
+}
 
 export default function OnboardingTour() {
   const { user, markOnboardingComplete, checkProfileComplete, isPending, isRejected } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [stepIndex, setStepIndex] = useState(0);
-  const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+
+  const [currentStepIndex, setCurrentStepIndex] = useState(getStoredStepIndex);
+  const [status, setStatus] = useState<TourStatus>('idle');
+  const [resolvedTargetRect, setResolvedTargetRect] = useState<DOMRect | null>(null);
+  const [lastResolvedStepId, setLastResolvedStepId] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
+  const resolveCancelRef = useRef<boolean>(false);
+  const mountedRef = useRef(true);
 
-  const step = ONBOARDING_STEPS[stepIndex];
+  const step = ONBOARDING_STEPS[currentStepIndex];
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const isModalOnly = !step.targetSelector || isMobile;
-  const isLastStep = stepIndex === ONBOARDING_STEPS.length - 1;
+  const isModalOnly = !step?.targetSelector || isMobile;
+  const isLastStep = currentStepIndex === ONBOARDING_STEPS.length - 1;
+  const isFirstStep = currentStepIndex === 0;
 
-  // Show tour only for authenticated, approved users who haven't completed onboarding (not pending/rejected)
   const shouldShow = Boolean(
     user &&
     user.hasSeenOnboarding !== true &&
@@ -101,88 +163,235 @@ export default function OnboardingTour() {
     !isRejected
   );
 
-  // Optional: auto-skip profile step if profile is already complete
+  // Expose checkProfileComplete for precondition (profile step)
   useEffect(() => {
-    if (!shouldShow || step?.id !== 'profile') return;
-    if (checkProfileComplete?.()) {
-      setStepIndex((i) => Math.min(i + 1, ONBOARDING_STEPS.length - 1));
-    }
-  }, [shouldShow, step?.id, checkProfileComplete]);
-
-  // Navigate to step route when needed
-  useEffect(() => {
-    if (!shouldShow || !step?.route) return;
-    if (location.pathname !== step.route) {
-      navigate(step.route, { replace: true });
-    }
-  }, [shouldShow, step?.route, location.pathname, navigate]);
-
-  // Wait for target element and measure it for spotlight
-  useEffect(() => {
-    if (!shouldShow || !step?.targetSelector) {
-      setTargetRect(null);
-      return;
-    }
-    let cancelled = false;
-    const start = Date.now();
-    const tick = () => {
-      if (cancelled || Date.now() - start > MAX_WAIT_MS) {
-        setTargetRect(null);
-        return;
-      }
-      const el = document.querySelector(step!.targetSelector!);
-      if (el) {
-        setTargetRect(el.getBoundingClientRect());
-        return;
-      }
-      setTimeout(tick, POLL_INTERVAL_MS);
-    };
-    tick();
+    if (typeof checkProfileComplete !== 'function') return;
+    (window as unknown as { __checkProfileComplete?: () => boolean }).__checkProfileComplete = checkProfileComplete;
     return () => {
-      cancelled = true;
+      delete (window as unknown as { __checkProfileComplete?: () => boolean }).__checkProfileComplete;
     };
-  }, [shouldShow, step?.targetSelector, stepIndex]);
+  }, [checkProfileComplete]);
 
-  // Show overlay after a brief delay so layout is stable
+  // Persist step index when it changes (so Back/Next is deterministic)
+  useEffect(() => {
+    if (!shouldShow) return;
+    setStoredStepIndex(currentStepIndex);
+  }, [shouldShow, currentStepIndex]);
+
+  // Show overlay when tour should be visible
   useEffect(() => {
     if (!shouldShow) {
       setVisible(false);
       return;
     }
-    const t = setTimeout(() => setVisible(true), 150);
+    const t = setTimeout(() => {
+      if (mountedRef.current) setVisible(true);
+    }, 150);
     return () => clearTimeout(t);
   }, [shouldShow]);
 
-  const handleSkip = useCallback(async () => {
-    if (!user?.uid) return;
+  // Explicit AutoSkip: only when step has allowAutoSkip and precondition returns true
+  const tryAutoSkip = useCallback(() => {
+    if (!step || !step.allowAutoSkip || typeof step.precondition !== 'function') return false;
+    if (step.precondition(user)) {
+      if (TOUR_DEBUG) console.log('[OnboardingTour] AutoSkip step (precondition true):', step.id);
+      setCurrentStepIndex((i) => Math.min(i + 1, ONBOARDING_STEPS.length - 1));
+      return true;
+    }
+    return false;
+  }, [step, user]);
+
+  // Navigate to step.route if needed; then run target resolution
+  const resolveTarget = useCallback((stepIndex: number) => {
+    const s = ONBOARDING_STEPS[stepIndex];
+    if (!s) return;
+
+    if (s.route && location.pathname !== s.route) {
+      navigate(s.route, { replace: true });
+    }
+
+    if (!s.targetSelector) {
+      setStatus('showing');
+      setResolvedTargetRect(null);
+      setLastResolvedStepId(s.id);
+      return;
+    }
+
+    setStatus('resolving');
+    setResolvedTargetRect(null);
+    resolveCancelRef.current = false;
+    const selector = s.targetSelector;
+    const start = Date.now();
+
+    const tryFind = () => {
+      if (resolveCancelRef.current || !mountedRef.current) return;
+      const el = document.querySelector(selector) as HTMLElement | null;
+      if (el) {
+        const style = window.getComputedStyle(el);
+        const rect = el.getBoundingClientRect();
+        const visible = style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+        if (visible) {
+          el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          const afterScroll = () => {
+            if (resolveCancelRef.current || !mountedRef.current) return;
+            const r = el.getBoundingClientRect();
+            setResolvedTargetRect(new DOMRect(r.x, r.y, r.width, r.height));
+            setLastResolvedStepId(s.id);
+            setStatus('showing');
+          };
+          requestAnimationFrame(() => setTimeout(afterScroll, 300));
+          return;
+        }
+      }
+      if (Date.now() - start >= RESOLVE_MAX_MS) {
+        if (!resolveCancelRef.current && mountedRef.current) {
+          setStatus('error');
+          setLastResolvedStepId(s.id);
+        }
+        return;
+      }
+      setTimeout(tryFind, RESOLVE_POLL_MS);
+    };
+
+    tryFind();
+  }, [location.pathname, navigate]);
+
+  // When step index or route changes, run resolution (no automatic index change)
+  useEffect(() => {
+    if (!shouldShow || !visible || !step) return;
+    resolveTarget(currentStepIndex);
+    return () => {
+      resolveCancelRef.current = true;
+    };
+  }, [shouldShow, visible, currentStepIndex, step?.id, resolveTarget]);
+
+  // After navigation, re-run resolution for current step when pathname matches step.route
+  useEffect(() => {
+    if (!shouldShow || !visible || !step?.route) return;
+    if (location.pathname === step.route && lastResolvedStepId !== step.id) {
+      resolveTarget(currentStepIndex);
+    }
+  }, [shouldShow, visible, step?.route, step?.id, location.pathname, lastResolvedStepId, currentStepIndex, resolveTarget]);
+
+  // AutoSkip only when step has allowAutoSkip and precondition returns true (explicit only)
+  useEffect(() => {
+    if (!shouldShow || !visible) return;
+    if (status !== 'idle' && status !== 'resolving') return;
+    if (tryAutoSkip()) {
+      // currentStepIndex advanced; resolution for new step runs from dependency
+    }
+  }, [shouldShow, visible, status, tryAutoSkip]);
+
+  // Recompute rect on scroll/resize/orientation (only when showing and we have a target)
+  useEffect(() => {
+    if (status !== 'showing' || !step?.targetSelector || !resolvedTargetRect) return;
+    const el = document.querySelector(step.targetSelector) as HTMLElement | null;
+    if (!el) return;
+
+    const updateRect = () => {
+      if (!step?.targetSelector) return;
+      const e = document.querySelector(step.targetSelector) as HTMLElement | null;
+      if (e) setResolvedTargetRect(e.getBoundingClientRect());
+    };
+
+    window.addEventListener('scroll', updateRect, true);
+    window.addEventListener('resize', updateRect);
+    window.addEventListener('orientationchange', updateRect);
+    return () => {
+      window.removeEventListener('scroll', updateRect, true);
+      window.removeEventListener('resize', updateRect);
+      window.removeEventListener('orientationchange', updateRect);
+    };
+  }, [status, step?.targetSelector, resolvedTargetRect]);
+
+  mountedRef.current = true;
+  useEffect(() => () => { mountedRef.current = false; }, []);
+
+  const goNext = useCallback(() => {
+    if (step?.primaryAction === 'finish') {
+      clearStoredStep();
+      markOnboardingComplete().then(() => setVisible(false)).catch((e) => console.error('Onboarding complete failed', e));
+      return;
+    }
+    if (step?.primaryLabel === 'View upcoming events') navigate('/events');
+    if (step?.primaryLabel === 'Complete your profile') navigate('/complete-profile');
+    setCurrentStepIndex((i) => Math.min(i + 1, ONBOARDING_STEPS.length - 1));
+  }, [step?.primaryAction, step?.primaryLabel, markOnboardingComplete, navigate]);
+
+  const goBack = useCallback(() => {
+    setCurrentStepIndex((i) => Math.max(i - 1, 0));
+  }, []);
+
+  const handleSkipTour = useCallback(async () => {
+    clearStoredStep();
     try {
       await markOnboardingComplete();
       setVisible(false);
     } catch (e) {
       console.error('Onboarding skip failed', e);
     }
-  }, [user?.uid, markOnboardingComplete]);
+  }, [markOnboardingComplete]);
 
-  const handlePrimary = useCallback(async () => {
-    if (step.primaryAction === 'finish') {
-      try {
-        await markOnboardingComplete();
-        setVisible(false);
-      } catch (e) {
-        console.error('Onboarding complete failed', e);
-      }
-      return;
-    }
-    if (step.primaryLabel === 'View upcoming events') {
-      navigate('/events');
-    }
-    if (step.primaryLabel === 'Complete your profile') {
-      navigate('/complete-profile');
-    }
-    setStepIndex((i) => Math.min(i + 1, ONBOARDING_STEPS.length - 1));
-  }, [step.primaryAction, step.primaryLabel, markOnboardingComplete, navigate]);
+  const handleSkipThisStep = useCallback(() => {
+    setStatus('idle');
+    setResolvedTargetRect(null);
+    setCurrentStepIndex((i) => Math.min(i + 1, ONBOARDING_STEPS.length - 1));
+  }, []);
+
+  const handleTryAgain = useCallback(() => {
+    setStatus('resolving');
+    setResolvedTargetRect(null);
+    resolveTarget(currentStepIndex);
+  }, [currentStepIndex, resolveTarget]);
 
   if (!shouldShow || !visible) return null;
+
+  // Fallback UI when target not found after retries
+  if (status === 'error') {
+    const fallbackStep = ONBOARDING_STEPS[currentStepIndex];
+    const hint = fallbackStep?.fallbackNavigateHint || 'the page where this section appears';
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="onboarding-fallback-title">
+        <div className="absolute inset-0 bg-black/60" aria-hidden />
+        <div className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-xl p-6 sm:p-8">
+          <h2 id="onboarding-fallback-title" className="text-xl font-semibold text-gray-900 mb-2">
+            Can&apos;t find this section
+          </h2>
+          <p className="text-gray-600 text-sm leading-relaxed mb-4">
+            We can&apos;t find the section for this step. Please navigate to {hint}, then click &quot;Try again&quot;.
+          </p>
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={handleTryAgain}
+              className="min-h-[44px] px-4 py-2.5 rounded-xl bg-[var(--brand-blue-dark)] text-white font-medium hover:opacity-95"
+            >
+              Try again
+            </button>
+            <button
+              type="button"
+              onClick={handleSkipThisStep}
+              className="min-h-[44px] px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50"
+            >
+              Skip this step
+            </button>
+            <button
+              type="button"
+              onClick={handleSkipTour}
+              className="min-h-[44px] px-4 py-2.5 rounded-xl border border-red-200 text-red-700 font-medium hover:bg-red-50"
+            >
+              Exit tour
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Always show card; when resolving with a target, show centered "Finding section…"
+  const showCard = true;
+  const targetRect = status === 'showing' ? resolvedTargetRect : null;
+  const cardIsCentered = isModalOnly || !targetRect || status === 'resolving';
 
   return (
     <div
@@ -191,73 +400,96 @@ export default function OnboardingTour() {
       aria-modal="true"
       aria-labelledby="onboarding-title"
     >
-      {/* Backdrop: dimmed for modal-only steps; for spotlight steps we draw a hole */}
-      {isModalOnly ? (
-        <div
-          className="absolute inset-0 bg-black/60"
-          onClick={(e) => e.target === e.currentTarget && handleSkip()}
-          aria-hidden
-        />
+      {cardIsCentered ? (
+        <div className="absolute inset-0 bg-black/60" onClick={(e) => e.target === e.currentTarget && handleSkipTour()} aria-hidden />
       ) : (
-        <SpotlightBackdrop targetRect={targetRect} onClick={handleSkip} />
+        <SpotlightBackdrop targetRect={targetRect} onClick={handleSkipTour} />
       )}
 
-      {/* Card: modal (centered) or tooltip (near target); when spotlight but no target yet, center the card */}
-      <div
-        id="onboarding-card"
-        className={
-          isModalOnly || !targetRect
-            ? 'relative z-10 w-full max-w-md rounded-2xl bg-white shadow-xl p-6 sm:p-8'
-            : 'absolute z-10 w-full max-w-sm rounded-2xl bg-white shadow-xl p-5 sm:p-6'
-        }
-        style={
-          !isModalOnly && targetRect
-            ? {
-                left: Math.max(16, Math.min(targetRect.left, typeof window !== 'undefined' ? window.innerWidth - 336 - 16 : 400)),
-                top:
-                  targetRect.bottom + 12 + 200 <= (typeof window !== 'undefined' ? window.innerHeight : 768)
-                    ? targetRect.bottom + 12
-                    : Math.max(16, targetRect.top - 220),
-              }
-            : undefined
-        }
-      >
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <img src={logoSvg} alt="AlmaLinks" className="h-7 w-auto" />
-            <span className="text-xs text-gray-400" aria-hidden>
-              {stepIndex + 1} of {ONBOARDING_STEPS.length}
-            </span>
-          </div>
-          <h2 id="onboarding-title" className="text-xl font-semibold text-gray-900">
-            {step.title}
-          </h2>
-          <p className="text-gray-600 text-sm leading-relaxed">{step.body}</p>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
-            <button
-              type="button"
-              onClick={handlePrimary}
-              className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl bg-[var(--brand-blue-dark)] text-white font-medium hover:bg-[var(--brand-mid)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-light)] focus:ring-offset-2"
-            >
-              {step.primaryLabel}
-            </button>
-            {step.secondaryLabel && (
+      {showCard && (
+        <div
+          id="onboarding-card"
+          className={
+            cardIsCentered
+              ? 'relative z-10 w-full max-w-md rounded-2xl bg-white shadow-xl p-6 sm:p-8'
+              : 'absolute z-10 w-full max-w-sm rounded-2xl bg-white shadow-xl p-5 sm:p-6'
+          }
+          style={
+            !cardIsCentered && targetRect
+              ? (() => {
+                  const W = typeof window !== 'undefined' ? window.innerWidth : 1024;
+                  const H = typeof window !== 'undefined' ? window.innerHeight : 768;
+                  const cardH = 220;
+                  const below = targetRect.bottom + 12 + cardH <= H;
+                  return {
+                    left: Math.max(16, Math.min(targetRect.left, W - 336 - 16)),
+                    top: below ? targetRect.bottom + 12 : Math.max(16, targetRect.top - cardH),
+                  };
+                })()
+              : undefined
+          }
+        >
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <img src={logoSvg} alt="AlmaLinks" className="h-7 w-auto" />
+              <span className="text-xs text-gray-400" aria-hidden>
+                {currentStepIndex + 1} of {ONBOARDING_STEPS.length}
+              </span>
+            </div>
+            {status === 'resolving' && step?.targetSelector ? (
+              <p className="text-gray-500 text-sm">Finding section…</p>
+            ) : (
+              <>
+                <h2 id="onboarding-title" className="text-xl font-semibold text-gray-900">
+                  {step.title}
+                </h2>
+                <p className="text-gray-600 text-sm leading-relaxed">{step.body}</p>
+              </>
+            )}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
+              {!isFirstStep && (
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50"
+                >
+                  Back
+                </button>
+              )}
               <button
                 type="button"
-                onClick={handleSkip}
-                className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                onClick={goNext}
+                disabled={status === 'resolving'}
+                className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl bg-[var(--brand-blue-dark)] text-white font-medium hover:opacity-95 disabled:opacity-70"
               >
-                {step.secondaryLabel}
+                {step.primaryLabel}
               </button>
+              {step.secondaryLabel && (
+                <button
+                  type="button"
+                  onClick={handleSkipTour}
+                  className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50"
+                >
+                  {step.secondaryLabel}
+                </button>
+              )}
+            </div>
+            {(isFirstStep || isLastStep) && (
+              <p className="text-gray-400 text-xs pt-2 text-center" aria-hidden>
+                Powered by Igani
+              </p>
             )}
           </div>
-          {isLastStep && (
-            <p className="text-gray-400 text-xs pt-2 text-center" aria-hidden>
-              Powered by Igani
-            </p>
-          )}
         </div>
-      </div>
+      )}
+
+      {TOUR_DEBUG && (
+        <div className="fixed bottom-4 left-4 right-4 z-[101] rounded-lg bg-black/80 text-white text-xs p-3 font-mono">
+          <div>Step: {step?.id} ({currentStepIndex + 1}/{ONBOARDING_STEPS.length})</div>
+          <div>Target: {step?.targetSelector ?? '—'}</div>
+          <div>Status: {status}</div>
+        </div>
+      )}
     </div>
   );
 }
