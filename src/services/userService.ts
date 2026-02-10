@@ -375,7 +375,7 @@ export class UserService {
             
             // If permission denied, throw with helpful message
             if (fallbackError.code === 'permission-denied') {
-              throw new Error('Permission denied: Unable to read users. Make sure you are logged in as an admin and have proper Firestore rules configured.');
+              throw new Error('Permission denied: Unable to read users. Make sure you are logged in and Firestore rules allow authenticated users to read the users collection.');
             }
             
             throw fallbackError;
@@ -383,7 +383,7 @@ export class UserService {
         } else {
           // For other errors (e.g., permission-denied), throw with context
           if (indexError.code === 'permission-denied') {
-            throw new Error('Permission denied: Unable to read users. Make sure you are logged in as an admin and have proper Firestore rules configured.');
+            throw new Error('Permission denied: Unable to read users. Make sure you are logged in and Firestore rules allow authenticated users to read the users collection.');
           }
           throw indexError;
         }
@@ -454,7 +454,7 @@ export class UserService {
       
       // Re-throw with context for better error handling in UI
       if (error.message?.includes('Permission denied') || error.code === 'permission-denied') {
-        throw new Error('Permission denied: Unable to load users. Please ensure you are logged in as an admin and Firestore rules allow reading users.');
+        throw new Error('Permission denied: Unable to load users. Please ensure you are logged in and Firestore rules allow authenticated users to read the users collection.');
       }
       
       if (error.code === 'failed-precondition' || error.message?.includes('index')) {

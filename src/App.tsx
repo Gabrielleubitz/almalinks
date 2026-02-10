@@ -36,7 +36,6 @@ import AdminUserEdit from './pages/admin/AdminUserEdit';
 import ActivityManagement from './pages/admin/ActivityManagement';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import ConnectPage from './pages/ConnectPage';
-import WelcomeOnboardingPage from './pages/WelcomeOnboardingPage';
 import UserProfilePage from './pages/UserProfilePage';
 import MembersPage from './pages/MembersPage';
 import ChatsPage from './pages/ChatsPage';
@@ -48,6 +47,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import AuthWrapper from './components/auth/AuthWrapper';
 import NetworkStatusIndicator from './components/ui/NetworkStatusIndicator';
 import ActivityTracker from './components/ActivityTracker';
+import OnboardingTour from './components/onboarding/OnboardingTour';
 
 // Home page component
 const HomePage = () => (
@@ -86,15 +86,8 @@ function App() {
         {/* Connection Route */}
         <Route path="/connect" element={<ConnectPage />} />
         
-        {/* First-sign-in onboarding (protected, show only once) */}
-        <Route
-          path="/welcome"
-          element={
-            <ProtectedRoute>
-              <WelcomeOnboardingPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Legacy /welcome: redirect to dashboard; onboarding tour overlay shows for first-time users */}
+        <Route path="/welcome" element={<Navigate to="/dashboard" replace />} />
         
         {/* Protected Routes */}
         <Route 
@@ -305,6 +298,8 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
+        {/* First-time onboarding overlay (modal + spotlight); only when user has not completed onboarding */}
+        <OnboardingTour />
         <PoweredByIgani />
       </div>
       

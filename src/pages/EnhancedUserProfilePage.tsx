@@ -14,7 +14,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Favicon from '../components/ui/Favicon';
-import CoverImage from '../components/profile/CoverImage';
+import ImageWithCrop from '../components/profile/ImageWithCrop';
 
 const EnhancedUserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -254,10 +254,12 @@ const EnhancedUserProfilePage: React.FC = () => {
             {/* Cover Image - custom photo or gradient */}
             <div className="relative aspect-[3/1] w-full min-h-[140px] sm:min-h-[180px] bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 overflow-hidden">
               {profile.coverPhotoUrl ? (
-                <CoverImage
+                <ImageWithCrop
                   src={profile.coverPhotoUrl}
                   crop={profile.coverCrop ?? null}
+                  shape="rect"
                   alt=""
+                  urlIsCropped={true}
                 />
               ) : null}
               <div className="absolute inset-0 bg-black bg-opacity-20" />
@@ -284,21 +286,14 @@ const EnhancedUserProfilePage: React.FC = () => {
                   className={`w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl bg-white flex-shrink-0 ${hasProfileImage ? 'cursor-pointer hover:ring-4 hover:ring-brand-blue/30 transition-all' : ''}`}
                 >
                   {hasProfileImage ? (
-                    profile.profileImageCrop ? (
-                      <CropImage
-                        src={profile.avatarUrl || profile.profileImage || ''}
-                        crop={profile.profileImageCrop}
-                        alt={displayName}
-                        mode="fill"
-                        className="rounded-full"
-                      />
-                    ) : (
-                      <img
-                        src={profile.avatarUrl || profile.profileImage || ''}
-                        alt={displayName}
-                        className="w-full h-full object-cover"
-                      />
-                    )
+                    <ImageWithCrop
+                      src={profile.avatarUrl || profile.profileImage || ''}
+                      crop={profile.profileImageCrop ?? null}
+                      shape="circle"
+                      alt={displayName}
+                      className="rounded-full"
+                      urlIsCropped={true}
+                    />
                   ) : (
                     <div className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-4xl`}>
                       {displayName.charAt(0)}

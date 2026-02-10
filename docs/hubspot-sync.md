@@ -64,7 +64,7 @@ Only one is used: if `SYNC_SECRET` is set, the secret header is required; otherw
 
 Contacts can sign in with **email + default password** (e.g. `123456789` or `HUBSPOT_IMPORT_DEFAULT_PASSWORD`), then complete onboarding. They do not appear on the Members page until `registrationComplete` is true (set when they complete profile). If an email already exists in Firebase Auth, the sync reuses that UID and updates the user doc (merge).
 
-**Remove HubSpot users:** **POST /api/remove-hubspot-users** deletes Firestore user docs where `source === 'hubspot'` or doc id starts with `hubspot_`, and deletes the corresponding Firebase Auth users so they can no longer sign in.
+**Remove HubSpot users:** **POST /api/remove-hubspot-users** deletes **only** users that were created by the HubSpot contact sync: doc id starts with `hubspot_` **or** (`source === 'hubspot'` **and** `hubspotId` is set). The requesting admin and any user with `role === 'admin'` are never deleted. It does not touch `joinRequests`.
 
 **Rules:** `hubspotContacts` and `users` are configured in `firestore.rules`. Backend writes via Admin SDK bypass rules.
 
@@ -78,6 +78,20 @@ When a member updates their profile in the app, changes are pushed to HubSpot au
 - **Field mapping:** See `lib/server/hubspot-contact-sync.js` (`HUBSPOT_PROPERTY_MAP`). Standard: email, firstname, lastname, jobtitle, company, phone, linkedinbio. Custom (confirm in HubSpot): chapter, bio_short, bio_long.
 - **Debounce:** Frontend only sends update on Save (or blur), not on every keystroke.
 - **Required HubSpot scopes:** Contacts **read** and **write** (e.g. `crm.objects.contacts.read`, `crm.objects.contacts.write`). Same token as sync: `HUBSPOT_ACCESS_TOKEN`.
+
+## Recovery after accidental removal
+
+If an admin or other user was removed by "Remove HubSpot users" (e.g. before safeguards were in place):
+
+1. **Restore admin access** (so you can log in and approve others):
+   ```bash
+   ADMIN_EMAIL=your@email.com ADMIN_PASSWORD=yourpassword node scripts/restore-admin.js
+   ```
+   Use `FIREBASE_SERVICE_ACCOUNT_KEY` (JSON string in env) or a service account file. If the Auth user exists, only claims and `users` doc are updated. If not, a new Auth user is created with that email/password and a new `users` doc with `role: 'admin'`.
+
+2. **Regular users (non-admin)** must sign up again: go to the app’s **Sign up** page, register with the same (or new) email. That creates a new Firebase Auth user and a new **join request** in the `joinRequests` collection (doc id = new Auth UID, `status: 'pending'`). An admin can then approve them from **Admin → Pending Registrations**.
+
+3. **Where to see pending signups:** In Firebase Console → Firestore → `joinRequests` collection. Pending requests have `status: 'pending'`. The admin UI at **Pending Registrations** lists those; ensure the composite index exists for `joinRequests` (status, createdAt) if the page fails to load.
 
 ## Deploy
 

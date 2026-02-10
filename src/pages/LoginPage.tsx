@@ -32,8 +32,6 @@ const LoginPage: React.FC = () => {
         navigate('/pending');
       } else if (isRejected) {
         navigate('/re-request-access');
-      } else if (user.hasSeenOnboarding !== true) {
-        navigate('/welcome');
       } else if (checkProfileComplete()) {
         navigate('/events');
       } else {

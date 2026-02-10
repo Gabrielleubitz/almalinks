@@ -18,10 +18,13 @@ service cloud.firestore {
     }
 
     // --- Users ---
-    // Profile created on signup (own uid) or when admin approves join request
+    // Profile created on signup (own uid) or when admin approves join request.
+    // Read: any authenticated user (so all members can see the Members directory).
+    // Update/delete: only owner or admin.
     match /users/{userId} {
       allow create: if (isAuthenticated() && request.auth.uid == userId) || isAdmin();
-      allow read, update: if isOwner(userId) || isAdmin();
+      allow read: if isAuthenticated();
+      allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
     }
 

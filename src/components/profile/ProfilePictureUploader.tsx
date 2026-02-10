@@ -1,24 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Upload, ImagePlus } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { uploadProfilePicture } from '../../services/profileService';
-import imageCompression from 'browser-image-compression';
-import CoverPhotoCropModal, { type CoverCrop } from './CoverPhotoCropModal';
-import CropImage from './CropImage';
-
-/** Normalize and compress to JPEG for consistent storage (max 300KB, 500px). */
-const TARGET_JPEG_OPTIONS = {
-  maxSizeMB: 0.3,
-  maxWidthOrHeight: 500,
-  useWebWorker: true,
-  fileType: 'image/jpeg' as const,
-  initialQuality: 0.85,
-};
+import { saveProfileImageWithCrop } from '../../services/profileService';
+import type { NormalizedCrop, CropValue } from '../../types/crop';
+import CropModal from './CropModal';
+import ImageWithCrop from './ImageWithCrop';
 
 interface ProfilePictureUploaderProps {
   currentImageUrl?: string | null;
-  currentCrop?: CoverCrop | null;
-  onUploadSuccess: (imageUrl: string, crop?: CoverCrop) => void;
+  currentCrop?: CropValue | null;
+  onUploadSuccess: (imageUrl: string, crop?: NormalizedCrop) => void;
   onUploadError: (error: string) => void;
   size?: 'sm' | 'md' | 'lg';
   showButtons?: boolean;
@@ -40,24 +31,16 @@ const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
   const [showSourceMenu, setShowSourceMenu] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showCropModal, setShowCropModal] = useState(false);
   const [cropPreviewUrl, setCropPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Size classes based on the size prop
   const sizeClasses = {
     sm: 'w-20 h-20',
     md: 'w-32 h-32',
     lg: 'w-40 h-40'
-  };
-
-  // Normalize to JPEG and compress for consistent storage
-  const processImage = async (file: File): Promise<File> => {
-    const compressed = await imageCompression(file, TARGET_JPEG_OPTIONS);
-    return compressed;
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,7 +55,6 @@ const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
 
     setShowSourceMenu(false);
     try {
-      setSelectedFile(file);
       const objectUrl = URL.createObjectURL(file);
       setCropPreviewUrl(objectUrl);
       setShowCropModal(true);
@@ -115,25 +97,22 @@ const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
   const handleCropCancel = () => {
     if (cropPreviewUrl) URL.revokeObjectURL(cropPreviewUrl);
     setCropPreviewUrl(null);
-    setSelectedFile(null);
     setShowCropModal(false);
   };
 
-  const handleCropConfirm = async (url: string, crop: CoverCrop) => {
-    if (!effectiveUserId || !selectedFile) return;
+  const handleCropConfirm = async (file: File, normalizedCrop: NormalizedCrop) => {
+    if (!effectiveUserId) return;
     setIsUploading(true);
     try {
-      const processedFile = await processImage(selectedFile);
-      const imageUrl = await uploadProfilePicture(effectiveUserId, processedFile);
-      onUploadSuccess(imageUrl, crop);
+      const imageUrl = await saveProfileImageWithCrop(effectiveUserId, file, normalizedCrop);
+      onUploadSuccess(imageUrl, normalizedCrop);
       if (cropPreviewUrl) URL.revokeObjectURL(cropPreviewUrl);
       setCropPreviewUrl(null);
-      setSelectedFile(null);
       setShowCropModal(false);
       setPreviewUrl(imageUrl);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error uploading profile picture:', error);
-      onUploadError(error.message || 'Failed to upload profile picture');
+      onUploadError(error instanceof Error ? error.message : 'Failed to upload profile picture');
     } finally {
       setIsUploading(false);
     }
@@ -182,27 +161,20 @@ const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
           onClick={handleOpenSourceMenu}
         >
           {hasImage ? (
-            currentCrop ? (
-              <div className="w-full h-full relative">
-                <CropImage
-                  src={previewUrl || currentImageUrl || ''}
-                  crop={currentCrop}
-                  alt="Profile"
-                  mode="fill"
-                  className="rounded-full"
-                />
-              </div>
-            ) : (
-              <img
+            <div className="w-full h-full relative">
+              <ImageWithCrop
                 src={previewUrl || currentImageUrl || ''}
+                crop={currentCrop}
+                shape="circle"
                 alt="Profile"
-                className="w-full h-full object-cover"
+                className="rounded-full"
+                urlIsCropped={true}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSIzMCIgZmlsbD0iIzlDQTNBRiIvPgo8ZWxsaXBzZSBjeD0iMTAwIiBjeT0iMTQwIiByeD0iNDAiIHJ5PSIyMCIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4=';
                 }}
               />
-            )
+            </div>
           ) : (
             <div className={`${sizeClasses[size]} bg-gradient-to-br from-red-500 to-blue-500 flex items-center justify-center text-white font-bold text-3xl`}>
               {getInitials()}
@@ -248,9 +220,10 @@ const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
       </div>
 
       {showCropModal && cropPreviewUrl && (
-        <CoverPhotoCropModal
+        <CropModal
           imageUrl={cropPreviewUrl}
-          aspectRatio="1/1"
+          aspect={1}
+          cropShape="round"
           title="Position your photo"
           onConfirm={handleCropConfirm}
           onCancel={handleCropCancel}

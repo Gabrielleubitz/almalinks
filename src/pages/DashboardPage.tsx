@@ -13,8 +13,8 @@ import ConnectionsCard from '../components/dashboard/ConnectionsCard';
 import EventTicketCard from '../components/dashboard/EventTicketCard';
 import ProfilePictureUploader from '../components/profile/ProfilePictureUploader';
 import CoverPhotoUploader from '../components/profile/CoverPhotoUploader';
-import CoverImage from '../components/profile/CoverImage';
-import type { CoverCrop } from '../components/profile/CoverPhotoCropModal';
+import ImageWithCrop from '../components/profile/ImageWithCrop';
+import type { CropValue, NormalizedCrop } from '../types/crop';
 import Favicon from '../components/ui/Favicon';
 import SavedIndicator from '../components/ui/SavedIndicator';
 
@@ -105,9 +105,9 @@ const EventsPage: React.FC = () => {
   const [profileUpdateError, setProfileUpdateError] = useState<string | null>(null);
   const [profileUpdateSuccess, setProfileUpdateSuccess] = useState<string | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
-  const [profileImageCrop, setProfileImageCrop] = useState<CoverCrop | null>(null);
+  const [profileImageCrop, setProfileImageCrop] = useState<CropValue | null>(null);
   const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(null);
-  const [coverCrop, setCoverCrop] = useState<CoverCrop | null>(null);
+  const [coverCrop, setCoverCrop] = useState<CropValue | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
   const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
   const [showCoverEditor, setShowCoverEditor] = useState(false);
@@ -219,9 +219,9 @@ const EventsPage: React.FC = () => {
       setSkillsInputValue((user.skills || []).join(', '));
       setSelectedCountryCode(countryCode);
       setProfileImageUrl(user.profileImage || null);
-      setProfileImageCrop((user as { profileImageCrop?: CoverCrop | null }).profileImageCrop || null);
+      setProfileImageCrop((user as { profileImageCrop?: CropValue | null }).profileImageCrop || null);
       setCoverPhotoUrl((user as { coverPhotoUrl?: string | null }).coverPhotoUrl || null);
-      setCoverCrop((user as { coverCrop?: CoverCrop | null }).coverCrop || null);
+      setCoverCrop((user as { coverCrop?: CropValue | null }).coverCrop || null);
     }
   }, [user, isEditingProfile]);
 
@@ -444,14 +444,14 @@ const EventsPage: React.FC = () => {
       setSkillsInputValue((user.skills || []).join(', '));
       setSelectedCountryCode(countryCode);
       setProfileImageUrl(user.profileImage || null);
-      setProfileImageCrop((user as { profileImageCrop?: CoverCrop | null }).profileImageCrop || null);
+      setProfileImageCrop((user as { profileImageCrop?: CropValue | null }).profileImageCrop || null);
       setCoverPhotoUrl((user as { coverPhotoUrl?: string | null }).coverPhotoUrl || null);
-      setCoverCrop((user as { coverCrop?: CoverCrop | null }).coverCrop || null);
+      setCoverCrop((user as { coverCrop?: CropValue | null }).coverCrop || null);
     }
   };
 
   // Handle profile picture upload success
-  const handleProfilePictureSuccess = async (imageUrl: string, crop?: CoverCrop) => {
+  const handleProfilePictureSuccess = async (imageUrl: string, crop?: CropValue) => {
     setProfileImageUrl(imageUrl);
     setProfileImageCrop(crop ?? null);
     setImageUploadError(null);
@@ -491,7 +491,7 @@ const EventsPage: React.FC = () => {
       setCoverUploadError(e instanceof Error ? e.message : 'Failed to set cover');
     }
   };
-  const handleCoverConfirm = async (url: string, crop: CoverCrop) => {
+  const handleCoverConfirm = async (url: string, crop: NormalizedCrop) => {
     setCoverPhotoUrl(url);
     setCoverCrop(crop);
     setCoverUploadError(null);
@@ -502,7 +502,7 @@ const EventsPage: React.FC = () => {
       setCoverUploadError(e instanceof Error ? e.message : 'Failed to set cover');
     }
   };
-  const handleCoverConfirmEdit = (url: string, crop: CoverCrop) => {
+  const handleCoverConfirmEdit = (url: string, crop: NormalizedCrop) => {
     setCoverPhotoUrl(url);
     setCoverCrop(crop);
     setCoverUploadError(null);
@@ -709,8 +709,8 @@ const EventsPage: React.FC = () => {
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 w-full max-w-full">
 
-              {/* Profile Section - Takes 3/4 of the space */}
-              <div ref={profileSectionRef} className="lg:col-span-3 space-y-6 w-full max-w-full min-w-0">
+              {/* Profile Section - Takes 3/4 of the space (onboarding spotlight: chapter lives in profile) */}
+              <div ref={profileSectionRef} className="lg:col-span-3 space-y-6 w-full max-w-full min-w-0" data-onboarding="chapter">
                 <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 w-full max-w-full min-w-0 overflow-hidden">
                   <div className="flex items-center justify-between mb-4 sm:mb-6">
                     <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Your Profile</h2>
@@ -758,7 +758,7 @@ const EventsPage: React.FC = () => {
                         <div className="flex flex-col items-center">
                           <ProfilePictureUploader
                             currentImageUrl={user?.profileImage || profileImageUrl || null}
-                            currentCrop={profileImageCrop ?? (user as { profileImageCrop?: CoverCrop | null })?.profileImageCrop ?? null}
+                            currentCrop={profileImageCrop ?? (user as { profileImageCrop?: CropValue | null })?.profileImageCrop ?? null}
                             onUploadSuccess={handleProfilePictureSuccess}
                             onUploadError={handleProfilePictureError}
                             size="lg"
@@ -1266,10 +1266,12 @@ const EventsPage: React.FC = () => {
                       {/* Cover photo with camera toggle (profile-page style) */}
                       <div className="relative aspect-[3/1] w-full min-h-[140px] sm:min-h-[160px] -mx-4 sm:-mx-6 -mt-2 rounded-t-2xl overflow-hidden bg-gradient-to-r from-brand-blue-dark to-brand-blue-light">
                         {coverPhotoUrl ? (
-                            <CoverImage
+                            <ImageWithCrop
                               src={coverPhotoUrl}
                               crop={coverCrop}
+                              shape="rect"
                               alt=""
+                              urlIsCropped={true}
                             />
                           ) : null}
                         <div className="absolute inset-0 bg-black bg-opacity-20" />
@@ -1289,6 +1291,7 @@ const EventsPage: React.FC = () => {
                         <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
                           <CoverPhotoUploader
                             currentCoverUrl={coverPhotoUrl}
+                            currentCoverCrop={coverCrop}
                             onUploadSuccess={(url) => {
                                 handleCoverPhotoSuccess(url);
                                 setShowCoverEditor(false);
@@ -1319,7 +1322,7 @@ const EventsPage: React.FC = () => {
                           <div className="flex flex-col items-center md:items-start">
                             <ProfilePictureUploader
                               currentImageUrl={user?.profileImage || profileImageUrl || null}
-                              currentCrop={profileImageCrop ?? (user as { profileImageCrop?: CoverCrop | null })?.profileImageCrop ?? null}
+                              currentCrop={profileImageCrop ?? (user as { profileImageCrop?: CropValue | null })?.profileImageCrop ?? null}
                               onUploadSuccess={handleProfilePictureSuccess}
                               onUploadError={handleProfilePictureError}
                               size="lg"

@@ -191,7 +191,7 @@ const HubSpotImportPage: React.FC = () => {
   };
 
   const removeHubspotUsers = async () => {
-    if (!window.confirm('Remove all users that were imported from HubSpot from this site? This cannot be undone.')) return;
+    if (!window.confirm('Remove only users that were imported by the HubSpot sync (they have a HubSpot contact id). Your account and other admins will never be removed. Continue?')) return;
     setRemoving(true);
     setRemoveResult(null);
     setSyncResult(null);
@@ -276,7 +276,7 @@ const HubSpotImportPage: React.FC = () => {
   };
 
   const deleteAll = async () => {
-    if (!window.confirm('Delete all HubSpot data (users, contacts, deals, and past events from deals)? This cannot be undone.')) return;
+    if (!window.confirm('Delete only HubSpot-imported users (and clear HubSpot contacts/deals/events data)? Your account and other admins are never deleted. This cannot be undone. Continue?')) return;
     setDeletingAll(true);
     setRemoveResult(null);
     setSyncResult(null);
@@ -355,7 +355,7 @@ const HubSpotImportPage: React.FC = () => {
   };
 
   const removeUsersOnly = async () => {
-    if (!window.confirm('Remove only the users imported from HubSpot? Deals and past events will stay.')) return;
+    if (!window.confirm('Remove only users that were imported by the HubSpot sync (they have a HubSpot contact id). Your account and admins are never removed. Deals and past events will stay. Continue?')) return;
     setDeletingUsersOnly(true);
     setSyncResult(null);
     setRemoveResult(null);
@@ -425,7 +425,7 @@ const HubSpotImportPage: React.FC = () => {
       id: 'remove',
       icon: UserMinus,
       title: 'Remove HubSpot users',
-      description: 'Delete all users and HubSpot data from Alma Links.',
+      description: 'Remove only users that were imported by the HubSpot sync (never your account or other admins). Optionally clear HubSpot contacts/deals/events data.',
       primaryLabel: 'Remove users & data',
       loading: removing,
       onPrimary: removeHubspotUsers,

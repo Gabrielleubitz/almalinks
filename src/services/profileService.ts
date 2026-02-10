@@ -2,6 +2,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { uploadProfilePictureBase64 } from './profileService-fallback';
 import { apiRequest } from '../utils/apiClient';
+import type { NormalizedCrop } from '../types/crop';
 
 /** Convert File to base64 data URL for Cloudinary API */
 function fileToDataUrl(file: File): Promise<string> {
@@ -62,6 +63,46 @@ export const uploadProfilePicture = async (userId: string, file: File): Promise<
 };
 
 /**
+ * Upload a cropped profile image and persist both URL and normalized crop in one write.
+ * Ensures crop is never lost after upload. Prefer this over uploadProfilePicture when using the new crop UI.
+ */
+export const saveProfileImageWithCrop = async (
+  userId: string,
+  file: File,
+  normalizedCrop: NormalizedCrop
+): Promise<string> => {
+  const imageDataUrl = await fileToDataUrl(file);
+  const userRef = doc(db, 'users', userId);
+
+  try {
+    const res = await apiRequest('/api/upload-profile-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, image: imageDataUrl }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok && data.url) {
+      const downloadUrl = data.url as string;
+      const publicId = (data.publicId as string) || null;
+      await updateDoc(userRef, {
+        profileImage: downloadUrl,
+        ...(publicId && { profileImagePublicId: publicId }),
+        profileImageCrop: normalizedCrop,
+        profileImageUpdatedAt: new Date().toISOString(),
+      });
+      console.log('✅ Profile picture and crop saved');
+      return downloadUrl;
+    }
+  } catch (apiError) {
+    console.warn('⚠️ Profile image API request failed, falling back to base64:', apiError);
+  }
+
+  const fallbackUrl = await uploadProfilePictureBase64(userId, file);
+  await updateDoc(userRef, { profileImageCrop: normalizedCrop });
+  return fallbackUrl;
+};
+
+/**
  * Upload a cover/background photo for the profile header (LinkedIn-style banner).
  * Uses same API as profile picture with imageType: 'cover'.
  * @param userId User ID
@@ -86,11 +127,35 @@ export const uploadCoverPhoto = async (userId: string, file: File): Promise<stri
 };
 
 /**
+ * Upload a cropped cover photo and persist both URL and normalized crop in one write.
+ */
+export const saveCoverPhotoWithCrop = async (
+  userId: string,
+  file: File,
+  normalizedCrop: NormalizedCrop
+): Promise<string> => {
+  const imageDataUrl = await fileToDataUrl(file);
+  const userRef = doc(db, 'users', userId);
+  const res = await apiRequest('/api/upload-profile-image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, image: imageDataUrl, imageType: 'cover' }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok || !data.url) {
+    throw new Error((data as { error?: string })?.error || 'Cover photo upload failed');
+  }
+  const downloadUrl = data.url as string;
+  await updateDoc(userRef, { coverPhotoUrl: downloadUrl, coverCrop: normalizedCrop });
+  return downloadUrl;
+};
+
+/**
  * Remove cover photo from user profile.
  */
 export const deleteCoverPhoto = async (userId: string): Promise<void> => {
   const userRef = doc(db, 'users', userId);
-  await updateDoc(userRef, { coverPhotoUrl: null });
+  await updateDoc(userRef, { coverPhotoUrl: null, coverCrop: null });
 };
 
 /**

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, setPersistence, browserLocalPersistence, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, linkWithPopup, getAdditionalUserInfo } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, retryOnNetworkFailure } from '../firebase/config';
+import type { CropValue } from '../types/crop';
 import { ActivityService } from '../services/activityService';
 
 export interface AuthUser {
@@ -16,9 +17,9 @@ export interface AuthUser {
   linkedinUsername?: string;
   position?: string;
   profileImage?: string | null;
-  profileImageCrop?: { scale: number; panX: number; panY: number } | null;
+  profileImageCrop?: CropValue | null;
   coverPhotoUrl?: string | null;
-  coverCrop?: { scale: number; panX: number; panY: number } | null;
+  coverCrop?: CropValue | null;
   bioTitle?: string;
   bio?: string;
   city?: string;
@@ -47,9 +48,9 @@ export interface ProfileData {
   status?: string;
   profileImage?: string | null;
   profileImagePublicId?: string | null;
-  profileImageCrop?: { scale: number; panX: number; panY: number } | null;
+  profileImageCrop?: CropValue | null;
   coverPhotoUrl?: string | null;
-  coverCrop?: { scale: number; panX: number; panY: number } | null;
+  coverCrop?: CropValue | null;
   bioTitle?: string;
   bio?: string;
   city?: string;

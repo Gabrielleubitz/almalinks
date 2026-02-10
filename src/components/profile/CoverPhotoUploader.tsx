@@ -1,14 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { Camera, X, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { uploadCoverPhoto, deleteCoverPhoto } from '../../services/profileService';
-import imageCompression from 'browser-image-compression';
-import CoverPhotoCropModal, { type CoverCrop } from './CoverPhotoCropModal';
+import { saveCoverPhotoWithCrop, deleteCoverPhoto } from '../../services/profileService';
+import type { NormalizedCrop, CropValue } from '../../types/crop';
+import CropModal from './CropModal';
+import ImageWithCrop from './ImageWithCrop';
 
-/** Cover-style crop for Cloudinary (3:1 banner). */
 const COVER_TRANSFORM = 'ar_3:1,c_fill,w_1200';
-
-/** Six template cover images: landscapes, nature, and animals only (no people). Labels match actual photo content. */
 const COVER_TEMPLATES: { url: string; label: string }[] = [
   { url: `https://res.cloudinary.com/demo/image/upload/${COVER_TRANSFORM}/sample.jpg`, label: 'Flowers' },
   { url: `https://res.cloudinary.com/demo/image/upload/${COVER_TRANSFORM}/balloons.jpg`, label: 'Hot air balloons' },
@@ -18,29 +16,22 @@ const COVER_TEMPLATES: { url: string; label: string }[] = [
   { url: `https://res.cloudinary.com/demo/image/upload/ar_3:1,c_fill,g_auto,w_1200/bird.jpg`, label: 'Bird close-up' },
 ];
 
-const COVER_OPTIONS = {
-  maxSizeMB: 0.8,
-  maxWidthOrHeight: 1600,
-  useWebWorker: true,
-  fileType: 'image/jpeg' as const,
-  initialQuality: 0.85,
-};
-
 interface CoverPhotoUploaderProps {
   currentCoverUrl?: string | null;
+  /** Current crop for preview (legacy or normalized). */
+  currentCoverCrop?: CropValue | null;
   onUploadSuccess: (url: string) => void;
   onUploadError: (error: string) => void;
   onRemove?: () => void;
-  /** When user picks a template (no upload), call this so the parent can save the URL. */
   onTemplateSelect?: (url: string) => void;
-  /** When set, after template select or upload we open the crop modal; on confirm this is called with (url, crop). */
-  onCoverConfirm?: (url: string, crop: CoverCrop) => void;
-  /** When set (e.g. admin editing another user), upload/delete apply to this user instead of current user. */
+  /** Called with (url, normalizedCrop) after user crops. Parent should persist both. */
+  onCoverConfirm?: (url: string, crop: NormalizedCrop) => void;
   targetUserId?: string | null;
 }
 
 const CoverPhotoUploader: React.FC<CoverPhotoUploaderProps> = ({
   currentCoverUrl,
+  currentCoverCrop = null,
   onUploadSuccess,
   onUploadError,
   onRemove,
@@ -56,29 +47,17 @@ const CoverPhotoUploader: React.FC<CoverPhotoUploaderProps> = ({
   const [cropModalUrl, setCropModalUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !effectiveUserId) return;
     if (!file.type.startsWith('image/')) {
       onUploadError('Please select an image file (JPEG, PNG, etc.).');
       return;
     }
-    setUploading(true);
-    try {
-      const compressed = await imageCompression(file, COVER_OPTIONS);
-      const url = await uploadCoverPhoto(effectiveUserId, compressed);
-      if (onCoverConfirm) {
-        setCropModalUrl(url);
-      } else {
-        onUploadSuccess(url);
-      }
-    } catch (err: unknown) {
-      onUploadError(err instanceof Error ? err.message : 'Upload failed');
-    } finally {
-      setUploading(false);
-      e.target.value = '';
-      inputRef.current && (inputRef.current.value = '');
-    }
+    const objectUrl = URL.createObjectURL(file);
+    setCropModalUrl(objectUrl);
+    e.target.value = '';
+    inputRef.current && (inputRef.current.value = '');
   };
 
   const handleRemove = async () => {
@@ -105,24 +84,40 @@ const CoverPhotoUploader: React.FC<CoverPhotoUploaderProps> = ({
     }
   };
 
-  const handleCropConfirm = (url: string, crop: CoverCrop) => {
-    setCropModalUrl(null);
-    if (onCoverConfirm) {
-      onCoverConfirm(url, crop);
-    } else if (onTemplateSelect) {
-      onTemplateSelect(url);
-    } else {
-      onUploadSuccess(url);
+  const handleCropConfirm = async (file: File, normalizedCrop: NormalizedCrop) => {
+    if (!effectiveUserId) return;
+    setUploading(true);
+    try {
+      const url = await saveCoverPhotoWithCrop(effectiveUserId, file, normalizedCrop);
+      if (cropModalUrl) URL.revokeObjectURL(cropModalUrl);
+      setCropModalUrl(null);
+      if (onCoverConfirm) {
+        onCoverConfirm(url, normalizedCrop);
+      } else {
+        onUploadSuccess(url);
+      }
+    } catch (err: unknown) {
+      onUploadError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
     }
+  };
+
+  const handleCropCancel = () => {
+    if (cropModalUrl) URL.revokeObjectURL(cropModalUrl);
+    setCropModalUrl(null);
   };
 
   return (
     <div className="space-y-4">
       {cropModalUrl && (
-        <CoverPhotoCropModal
+        <CropModal
           imageUrl={cropModalUrl}
+          aspect={3}
+          cropShape="rect"
+          title="Position cover photo"
           onConfirm={handleCropConfirm}
-          onCancel={() => setCropModalUrl(null)}
+          onCancel={handleCropCancel}
         />
       )}
       <p className="text-sm text-gray-600">
@@ -131,10 +126,13 @@ const CoverPhotoUploader: React.FC<CoverPhotoUploaderProps> = ({
       <div className="rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 group">
       <div className="relative aspect-[3/1] min-h-[120px] max-h-[200px]">
         {currentCoverUrl ? (
-          <img
+          <ImageWithCrop
             src={currentCoverUrl}
+            crop={currentCoverCrop}
+            shape="rect"
             alt="Cover"
-            className="w-full h-full object-cover"
+            className="w-full h-full"
+            urlIsCropped={true}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light flex items-center justify-center text-white/80">
