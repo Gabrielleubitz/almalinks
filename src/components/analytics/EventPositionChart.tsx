@@ -162,7 +162,7 @@ const EventPositionChart: React.FC<EventPositionChartProps> = ({ eventId, classN
     ],
   };
 
-  // Chart options
+  // Visual-only chart: no numbers, percentages, or count labels (qualitative only)
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -173,16 +173,12 @@ const EventPositionChart: React.FC<EventPositionChartProps> = ({ eventId, classN
           generateLabels: (chart: any) => {
             const data = chart.data;
             if (data.labels.length && data.datasets.length) {
-              return data.labels.map((label: string, i: number) => {
-                const value = data.datasets[0].data[i];
-                const percentage = totalRegistrations > 0 ? ((value / totalRegistrations) * 100).toFixed(1) : '0';
-                return {
-                  text: `${label} (${value}, ${percentage}%)`,
-                  fillStyle: data.datasets[0].backgroundColor[i],
-                  hidden: false,
-                  index: i
-                };
-              });
+              return data.labels.map((label: string, i: number) => ({
+                text: label,
+                fillStyle: data.datasets[0].backgroundColor[i],
+                hidden: false,
+                index: i
+              }));
             }
             return [];
           }
@@ -192,15 +188,20 @@ const EventPositionChart: React.FC<EventPositionChartProps> = ({ eventId, classN
         callbacks: {
           label: (context: any) => {
             const label = context.label || '';
-            const value = context.raw || 0;
-            const percentage = totalRegistrations > 0 ? ((value / totalRegistrations) * 100).toFixed(1) : '0';
-            return `${label}: ${value} (${percentage}%)`;
+            const value = context.raw as number;
+            // Qualitative only: no numbers or percentages
+            if (totalRegistrations <= 0) return label;
+            const pct = value / totalRegistrations;
+            if (pct >= 0.8) return `${label} — Mostly this group`;
+            if (pct >= 0.5) return `${label} — Majority`;
+            if (pct >= 0.2) return `${label} — Good share`;
+            return `${label} — Smaller share`;
           }
         }
       },
       title: {
         display: true,
-        text: 'Attendee Positions Breakdown',
+        text: 'Attendee Positions',
         font: {
           size: 16,
           weight: 'bold'
@@ -216,7 +217,7 @@ const EventPositionChart: React.FC<EventPositionChartProps> = ({ eventId, classN
       <div className={`bg-white rounded-3xl shadow-xl p-6 border border-gray-100 ${className}`}>
         <div className="flex items-center space-x-3 mb-4">
           <PieChart className="h-5 w-5 text-brand-light" />
-          <h3 className="text-lg font-semibold text-gray-900">Attendee Positions Breakdown</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Attendee Positions</h3>
         </div>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
@@ -233,7 +234,7 @@ const EventPositionChart: React.FC<EventPositionChartProps> = ({ eventId, classN
       <div className={`bg-white rounded-3xl shadow-xl p-6 border border-gray-100 ${className}`}>
         <div className="flex items-center space-x-3 mb-4">
           <PieChart className="h-5 w-5 text-brand-light" />
-          <h3 className="text-lg font-semibold text-gray-900">Attendee Positions Breakdown</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Attendee Positions</h3>
         </div>
         <div className="flex items-center justify-center h-64">
           <p className="text-red-600">{error}</p>
@@ -247,12 +248,12 @@ const EventPositionChart: React.FC<EventPositionChartProps> = ({ eventId, classN
       <div className={`bg-white rounded-3xl shadow-xl p-6 border border-gray-100 ${className}`}>
         <div className="flex items-center space-x-3 mb-4">
           <PieChart className="h-5 w-5 text-brand-light" />
-          <h3 className="text-lg font-semibold text-gray-900">Attendee Positions Breakdown</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Attendee Positions</h3>
         </div>
         <div className="flex flex-col items-center justify-center h-64">
           <Users className="h-12 w-12 text-gray-300 mb-4" />
           <p className="text-gray-500 text-center">No registrations yet for this event</p>
-          <p className="text-gray-400 text-sm text-center mt-2">Analytics will appear as attendees register</p>
+          <p className="text-gray-400 text-sm text-center mt-2">Chart will appear as attendees register</p>
         </div>
       </div>
     );
@@ -260,14 +261,9 @@ const EventPositionChart: React.FC<EventPositionChartProps> = ({ eventId, classN
 
   return (
     <div className={`bg-white rounded-3xl shadow-xl p-6 border border-gray-100 ${className}`}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <PieChart className="h-5 w-5 text-brand-light" />
-          <h3 className="text-lg font-semibold text-gray-900">Attendee Positions Breakdown</h3>
-        </div>
-        <div className="text-sm text-gray-500">
-          Total: {totalRegistrations} {totalRegistrations === 1 ? 'attendee' : 'attendees'}
-        </div>
+      <div className="flex items-center space-x-3 mb-4">
+        <PieChart className="h-5 w-5 text-brand-light" />
+        <h3 className="text-lg font-semibold text-gray-900">Attendee Positions</h3>
       </div>
       
       <div className="h-64 md:h-80">

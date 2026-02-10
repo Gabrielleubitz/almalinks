@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { UserService } from '../services/userService';
 import { ConnectionService } from '../services/connectionService';
+import { getDailyRequestCount, isOverDailyLimit, DAILY_LIMIT_MESSAGE } from '../services/connectionRequestLimitService';
 import { FilteredProfile } from '../utils/privacy';
 import { getVisibilityDescription, getContactPermissionExplanation } from '../utils/privacy';
 import Header from '../components/Header';
@@ -27,6 +28,7 @@ const EnhancedUserProfilePage: React.FC = () => {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [dailyRequestCount, setDailyRequestCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (userId) {
@@ -34,6 +36,12 @@ const EnhancedUserProfilePage: React.FC = () => {
       checkConnectionStatus();
     }
   }, [userId, currentUser]);
+
+  useEffect(() => {
+    if (currentUser?.uid) {
+      getDailyRequestCount(currentUser.uid).then(setDailyRequestCount);
+    }
+  }, [currentUser?.uid]);
 
   const loadUserProfile = async () => {
     if (!userId) return;
@@ -304,7 +312,12 @@ const EnhancedUserProfilePage: React.FC = () => {
                 {/* Action Bar */}
                 {!isOwner && (
                   <div className="flex items-center space-x-3 mt-4">
-                    {profile.canConnect && connectionStatus === 'none' && (
+                    {profile.canConnect && connectionStatus === 'none' && dailyRequestCount !== null && isOverDailyLimit(dailyRequestCount) && (
+                      <div className="inline-flex items-center px-6 py-3 bg-amber-50 text-amber-800 rounded-xl font-semibold text-sm">
+                        {DAILY_LIMIT_MESSAGE}
+                      </div>
+                    )}
+                    {profile.canConnect && connectionStatus === 'none' && (dailyRequestCount === null || !isOverDailyLimit(dailyRequestCount)) && (
                       <button
                         onClick={handleConnect}
                         className="inline-flex items-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid transition-colors duration-200 font-semibold"

@@ -19,6 +19,12 @@ import { nanoid } from 'nanoid';
 import { ConnectionRequest, ConnectionRequestStatus } from '../types/connection';
 import { PrivacyService } from './privacyService';
 import { ConnectionService, ConnectionReason } from './connectionService';
+import {
+  getDailyRequestCount,
+  isOverDailyLimit,
+  DAILY_LIMIT_MESSAGE,
+  incrementDailyRequestCount
+} from './connectionRequestLimitService';
 
 // Helper to generate consistent pair key for uniqueness checks
 // This MUST match ConnectionService.generateConnectionId for consistency
@@ -120,6 +126,12 @@ export class ConnectionRequestService {
       throw new Error('Cannot send connection request to yourself');
     }
 
+    // Daily limit: 5 manual requests per day (UTC). Auto post-event connections do not use this path.
+    const dailyCount = await getDailyRequestCount(fromUid);
+    if (isOverDailyLimit(dailyCount)) {
+      throw new Error(DAILY_LIMIT_MESSAGE);
+    }
+
     const pairKey = generatePairKey(fromUid, toUid);
 
     // Check if connection already exists using SAME query-based approach as UI
@@ -147,7 +159,7 @@ export class ConnectionRequestService {
     }
 
     // Use transaction to ensure atomicity
-    return await retryOnNetworkFailure(() => 
+    const requestId = await retryOnNetworkFailure(() => 
       runTransaction(db, async (transaction) => {
         // Double-check inside transaction (for race condition protection)
         // Check doc by pairKey (admin creator uses this ID format)
@@ -279,6 +291,8 @@ export class ConnectionRequestService {
         return requestId;
       })
     );
+    await incrementDailyRequestCount(fromUid);
+    return requestId;
   }
 
   /**

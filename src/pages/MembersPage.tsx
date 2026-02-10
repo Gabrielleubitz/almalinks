@@ -5,6 +5,11 @@ import { useAuth } from '../hooks/useAuth';
 import { UserService } from '../services/userService';
 import { ConnectionService } from '../services/connectionService';
 import { ConnectionRequestService } from '../services/connectionRequestService';
+import {
+  getDailyRequestCount,
+  isOverDailyLimit,
+  DAILY_LIMIT_MESSAGE
+} from '../services/connectionRequestLimitService';
 import { ConnectionRequest } from '../types/connection';
 import { UserCard as UserCardType } from '../types/user';
 import Header from '../components/Header';
@@ -36,11 +41,13 @@ const MembersPage: React.FC = () => {
   const [sentRequestIds, setSentRequestIds] = useState<Set<string>>(new Set()); // Track which users we've sent requests to
   const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
   const [respondingRequestId, setRespondingRequestId] = useState<string | null>(null);
+  const [dailyRequestCount, setDailyRequestCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!currentUser?.uid) return;
     loadSentRequests();
     loadIncomingRequests();
+    getDailyRequestCount(currentUser.uid).then(setDailyRequestCount);
     if (import.meta.env.DEV) {
       ConnectionRequestService.getRecentRequests(20).catch(err => {
         console.warn('[debug] Could not load recent requests:', err);
@@ -302,6 +309,7 @@ const MembersPage: React.FC = () => {
         
         // Track sent request
         setSentRequestIds(prev => new Set([...prev, memberId]));
+        getDailyRequestCount(currentUser.uid).then(setDailyRequestCount);
 
         console.log('✅ Connection request sent successfully');
       }
@@ -370,6 +378,7 @@ const MembersPage: React.FC = () => {
     const avatarColor = getAvatarColor(displayName);
     const isConnecting = connectingUsers.has(member.uid);
     const hasPendingRequest = member.connectionPending || sentRequestIds.has(member.uid);
+    const atDailyLimit = dailyRequestCount !== null && isOverDailyLimit(dailyRequestCount);
 
     const cardOutlineClass = hasIncomingRequest ? 'ring-2 ring-blue-500 border-blue-500' : '';
 
@@ -467,7 +476,12 @@ const MembersPage: React.FC = () => {
                     </div>
                   )}
 
-                  {!hasIncomingRequest && currentUser && !member.isConnected && !isSelf && !hasPendingRequest && (
+                  {!hasIncomingRequest && currentUser && !member.isConnected && !isSelf && !hasPendingRequest && atDailyLimit && (
+                    <span className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-lg" title={DAILY_LIMIT_MESSAGE}>
+                      Limit reached
+                    </span>
+                  )}
+                  {!hasIncomingRequest && currentUser && !member.isConnected && !isSelf && !hasPendingRequest && !atDailyLimit && (
                     <button
                       onClick={() => handleConnect(member.uid)}
                       disabled={isConnecting}
@@ -626,7 +640,12 @@ const MembersPage: React.FC = () => {
             </div>
           )}
 
-          {!hasIncomingRequest && currentUser && !member.isConnected && !isSelf && !hasPendingRequest && (
+          {!hasIncomingRequest && currentUser && !member.isConnected && !isSelf && !hasPendingRequest && atDailyLimit && (
+            <div className="px-4 py-2.5 rounded-lg bg-amber-50 text-amber-800 text-sm font-medium">
+              {DAILY_LIMIT_MESSAGE}
+            </div>
+          )}
+          {!hasIncomingRequest && currentUser && !member.isConnected && !isSelf && !hasPendingRequest && !atDailyLimit && (
             <button
               onClick={() => handleConnect(member.uid)}
               disabled={isConnecting}

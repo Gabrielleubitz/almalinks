@@ -67,6 +67,12 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // --- Daily manual connection request count (limit 5/day; resets at midnight UTC) ---
+    // Used only for manual requests from Members/profile. Auto post-event connections do not touch this.
+    match /connection_request_daily/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
     // --- Connection requests ---
     match /connection_requests/{requestId} {
       allow read: if isAuthenticated() && (

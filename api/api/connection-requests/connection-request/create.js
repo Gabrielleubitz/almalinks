@@ -78,6 +78,22 @@ export default async function handler(req, res) {
       return res.status(409).json({ ok: false, error: 'Connection request already sent and not yet responded to' });
     }
 
+    // Daily limit: 5 manual connection requests per calendar day (UTC). Resets at midnight UTC.
+    // Applies only to manual requests from Members/profile; auto post-event connections do NOT use this endpoint.
+    const DAILY_LIMIT = 5;
+    const todayUTC = new Date().toISOString().slice(0, 10);
+    const dailyRef = db.collection('connection_request_daily').doc(requesterId);
+    const dailySnap = await dailyRef.get();
+    if (dailySnap.exists) {
+      const d = dailySnap.data();
+      if (d && d.date === todayUTC && typeof d.count === 'number' && d.count >= DAILY_LIMIT) {
+        return res.status(403).json({
+          ok: false,
+          error: "You've reached today's connection limit. Try again tomorrow."
+        });
+      }
+    }
+
     // Create connection request
     const requestId = db.collection('connection_requests').doc().id;
     const now = admin.firestore.FieldValue.serverTimestamp();
@@ -106,6 +122,15 @@ export default async function handler(req, res) {
     };
 
     await db.collection('connection_requests').doc(requestId).set(requestData);
+
+    // Increment daily manual request count (calendar day UTC)
+    if (dailySnap.exists && dailySnap.data()?.date === todayUTC) {
+      await dailyRef.update({
+        count: admin.firestore.FieldValue.increment(1)
+      });
+    } else {
+      await dailyRef.set({ date: todayUTC, count: 1 });
+    }
 
     // Create in-app notification for target user (so it appears in notification center)
     const fromName = requesterData.displayName || requesterData.name || 'Someone';

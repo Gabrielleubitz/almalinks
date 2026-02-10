@@ -4,6 +4,7 @@ import { CheckCircle, AlertCircle, ArrowLeft, UserPlus, Loader } from 'lucide-re
 import { useAuth } from '../hooks/useAuth';
 import { ConnectionService } from '../services/connectionService';
 import { ConnectionRequestService } from '../services/connectionRequestService';
+import { getDailyRequestCount, isOverDailyLimit, DAILY_LIMIT_MESSAGE } from '../services/connectionRequestLimitService';
 import { EventService } from '../services/eventService';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -119,6 +120,14 @@ const ConnectPage: React.FC = () => {
         if (existingRequest) {
           setRequestId(existingRequest.id);
           setPending(true);
+          setLoading(false);
+          return;
+        }
+        
+        // Check daily connection limit (manual requests only; auto event connections bypass this)
+        const dailyCount = await getDailyRequestCount(user.uid);
+        if (isOverDailyLimit(dailyCount)) {
+          setError(DAILY_LIMIT_MESSAGE);
           setLoading(false);
           return;
         }
