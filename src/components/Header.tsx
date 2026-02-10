@@ -183,6 +183,7 @@ const SpeakerAwareHeader: React.FC = () => {
             </button>
             <button
               data-onboarding="events"
+              data-tour="events"
               onClick={() => navigate('/events')}
               className={`text-sm font-medium transition-colors duration-200 ${
                 location.pathname === '/events'
@@ -194,6 +195,7 @@ const SpeakerAwareHeader: React.FC = () => {
             </button>
             <button
               data-onboarding="community"
+              data-tour="members"
               onClick={() => navigate('/members')}
               className={`flex items-center gap-2 text-sm font-medium transition-colors duration-200 ${
                 location.pathname === '/members'
@@ -209,6 +211,7 @@ const SpeakerAwareHeader: React.FC = () => {
               )}
             </button>
             <button
+              data-tour="chats"
               onClick={() => navigate('/chats')}
               className={`flex items-center gap-2 text-sm font-medium transition-colors duration-200 ${
                 location.pathname === '/chats'
@@ -258,6 +261,7 @@ const SpeakerAwareHeader: React.FC = () => {
             {/* Profile Button - View own profile (onboarding spotlight target) */}
             <button
               data-onboarding="profile"
+              data-tour="profile"
               onClick={() => navigate(`/profile/${user?.uid}`)}
               className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
             >

@@ -40,7 +40,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: 'welcome',
     title: 'Welcome to AlmaLinks',
-    body: 'This is where you connect with your chapter, join events, and stay in the loop.',
+    body: 'AlmaLinks is where you connect with other members, discover events, and join conversations. This short tour will show you the basics.',
     primaryLabel: 'Show me around',
     primaryAction: 'next',
     secondaryLabel: 'Skip for now',
@@ -49,49 +49,49 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   },
   {
     id: 'profile',
-    title: 'Your profile',
-    body: 'Complete your profile so other members can find you and you can get the most from chapter events and matching.',
-    primaryLabel: 'Complete your profile',
-    primaryAction: 'next',
-    secondaryLabel: 'Skip',
-    targetSelector: '[data-onboarding="profile"]',
-    route: '/dashboard',
-    allowAutoSkip: true,
-    precondition: () => Boolean((window as unknown as { __checkProfileComplete?: () => boolean }).__checkProfileComplete?.()),
-    fallbackNavigateHint: 'Dashboard (profile button in the header)',
-  },
-  {
-    id: 'chapters',
-    title: 'Chapters',
-    body: 'Members belong to one of our global chapters. Your chapter unlocks local events, people near you, and relevant updates.',
+    title: 'Profile & editing your info',
+    body: 'Your profile and photo live here. You can edit your bio, chapter, LinkedIn, and other details anytime. Keeping your profile updated helps other members find and connect with you.',
     primaryLabel: 'Next',
     primaryAction: 'next',
     secondaryLabel: 'Skip',
-    targetSelector: '[data-onboarding="chapter"]',
-    route: '/dashboard',
-    fallbackNavigateHint: 'Dashboard (profile section)',
+    targetSelector: '[data-tour="profile"]',
+    route: null,
+    allowAutoSkip: true,
+    precondition: () => Boolean((window as unknown as { __checkProfileComplete?: () => boolean }).__checkProfileComplete?.()),
+    fallbackNavigateHint: 'Header (profile or avatar button)',
+  },
+  {
+    id: 'members',
+    title: 'Members & connections',
+    body: 'This is where you can browse other members. Click a member to view their profile. From there, you can connect or send a connection request.',
+    primaryLabel: 'Next',
+    primaryAction: 'next',
+    secondaryLabel: 'Skip',
+    targetSelector: '[data-tour="members"]',
+    route: null,
+    fallbackNavigateHint: 'Header (Members link)',
+  },
+  {
+    id: 'chats',
+    title: 'Chats & messaging',
+    body: 'Once you’re connected with someone, you can chat here. This is where your direct conversations and group chats live.',
+    primaryLabel: 'Next',
+    primaryAction: 'next',
+    secondaryLabel: 'Skip',
+    targetSelector: '[data-tour="chats"]',
+    route: null,
+    fallbackNavigateHint: 'Header (Chats link)',
   },
   {
     id: 'events',
-    title: 'Events',
-    body: 'Browse and RSVP to events, get reminders, and follow up with attendees.',
-    primaryLabel: 'View upcoming events',
-    primaryAction: 'next',
-    secondaryLabel: 'Skip',
-    targetSelector: '[data-onboarding="events"]',
-    route: null,
-    fallbackNavigateHint: 'Header (Events link)',
-  },
-  {
-    id: 'community',
-    title: 'Community',
-    body: 'Use the Members directory and Chats to connect with others, join groups, and grow your network.',
+    title: 'Events & registration',
+    body: 'Browse upcoming events here. Click an event to see details and register or RSVP directly from the event page. This is how you join events.',
     primaryLabel: 'Next',
     primaryAction: 'next',
     secondaryLabel: 'Skip',
-    targetSelector: '[data-onboarding="community"]',
+    targetSelector: '[data-tour="events"]',
     route: null,
-    fallbackNavigateHint: 'Header (Members link)',
+    fallbackNavigateHint: 'Header (Events link)',
   },
   {
     id: 'wrapup',
@@ -107,6 +107,16 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
 
 const RESOLVE_MAX_MS = 2500;
 const RESOLVE_POLL_MS = 100;
+
+/** Igani logo from public folder; subtle credit branding on welcome and wrap-up only */
+function IganiCredit() {
+  return (
+    <p className="text-gray-400 text-xs pt-2 text-center flex items-center justify-center gap-1.5" aria-hidden>
+      <img src="/igani-logo.png" alt="" className="h-4 w-4 object-contain opacity-80" />
+      <span>Powered by Igani</span>
+    </p>
+  );
+}
 
 function getStoredStepIndex(): number {
   try {
@@ -313,10 +323,9 @@ export default function OnboardingTour() {
       markOnboardingComplete().then(() => setVisible(false)).catch((e) => console.error('Onboarding complete failed', e));
       return;
     }
-    if (step?.primaryLabel === 'View upcoming events') navigate('/events');
-    if (step?.primaryLabel === 'Complete your profile') navigate('/complete-profile');
+    // No forced navigation: onboarding only points and explains
     setCurrentStepIndex((i) => Math.min(i + 1, ONBOARDING_STEPS.length - 1));
-  }, [step?.primaryAction, step?.primaryLabel, markOnboardingComplete, navigate]);
+  }, [step?.primaryAction, markOnboardingComplete]);
 
   const goBack = useCallback(() => {
     setCurrentStepIndex((i) => Math.max(i - 1, 0));
@@ -474,11 +483,7 @@ export default function OnboardingTour() {
                 </button>
               )}
             </div>
-            {(isFirstStep || isLastStep) && (
-              <p className="text-gray-400 text-xs pt-2 text-center" aria-hidden>
-                Powered by Igani
-              </p>
-            )}
+            {(isFirstStep || isLastStep) && <IganiCredit />}
           </div>
         </div>
       )}
