@@ -71,10 +71,13 @@ export default function AdminChatManagement() {
       const snap = await getDocs(q);
       const list = snap.docs.map((d) => {
         const data = d.data();
-        const name = [data.displayName, data.name, data.firstName, data.lastName]
-          .filter(Boolean)
-          .join(' ')
-          .trim() || data.email || d.id;
+        const firstLast = [data.firstName, data.lastName].filter(Boolean).join(' ').trim();
+        const name =
+          (data.displayName && String(data.displayName).trim()) ||
+          firstLast ||
+          (data.name && String(data.name).trim()) ||
+          data.email ||
+          d.id;
         return { id: d.id, name: String(name), email: String(data.email || '') };
       });
       setUserList(list);
