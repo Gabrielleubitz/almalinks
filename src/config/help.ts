@@ -1,6 +1,6 @@
 /**
  * Help / support form URL. Used for "Report a bug" and support links.
- * Override via VITE_HELP_URL (e.g. in .env: VITE_HELP_URL=https://igani.co/help).
+ * AlmaLinks-specific form with src param. Override via VITE_HELP_URL if needed.
  */
 export const HELP_URL =
-  (import.meta.env.VITE_HELP_URL as string | undefined)?.trim() || 'https://igani.co/help';
+  (import.meta.env.VITE_HELP_URL as string | undefined)?.trim() || 'https://igani.co/help/almalinks?src=almalinks';

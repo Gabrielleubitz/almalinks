@@ -54,7 +54,7 @@ const HelpPage: React.FC = () => {
                 rel="noopener noreferrer"
                 className="text-gray-900 font-medium underline hover:no-underline"
               >
-                igani.co/help
+                igani.co/help/almalinks
               </a>{' '}
               so it reaches the right team.
             </p>
