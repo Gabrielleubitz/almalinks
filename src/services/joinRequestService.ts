@@ -25,6 +25,7 @@ export interface JoinRequest {
   work?: string;
   linkedinUsername?: string;
   position?: string;
+  chapter?: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: Timestamp | Date;
   approvedAt?: Timestamp | Date;
@@ -56,6 +57,7 @@ export interface JoinRequestFormData {
   work?: string;
   linkedinUsername?: string;
   position?: string;
+  chapter?: string;
   bioTitle?: string;
   bio?: string;
   city?: string;
@@ -101,6 +103,7 @@ export class JoinRequestService {
         work: formData.work || '',
         linkedinUsername: formData.linkedinUsername || '',
         position: formData.position || '',
+        chapter: formData.chapter || '',
         status: 'pending',
         createdAt: serverTimestamp()
       };
@@ -566,12 +569,15 @@ export class JoinRequestService {
         work: request.work || '',
         linkedinUsername: request.linkedinUsername || '',
         position: request.position || '',
+        chapter: request.chapter || '',
         role: 'member',
         status: 'approved',
         profileImage: request.profileImage ?? null,
         profileImagePublicId: request.profileImagePublicId ?? null,
         avatarUrl: request.profileImage ?? null,
         profileVisibility: 'public',
+        hubspotContactId: null,
+        hubspotSyncStatus: 'pending',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         joinedAt: serverTimestamp(),

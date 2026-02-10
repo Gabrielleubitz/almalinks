@@ -61,6 +61,8 @@ export class UserService {
         role: 'member',
         status: 'approved', // UserService.createUser is only used for admin-created users
         registrationComplete: true,
+        hubspotContactId: null,
+        hubspotSyncStatus: 'pending',
         createdAt: now,
         updatedAt: now,
         joinedAt: now,

@@ -30,6 +30,7 @@ interface HubSpotContact {
   id: string;
   hubspotId?: string;
   email?: string | null;
+  chapter?: string | null;
   properties?: Record<string, unknown>;
   syncedAt?: unknown;
 }
@@ -594,11 +595,20 @@ const HubSpotImportPage: React.FC = () => {
                   const firstStr = typeof first === 'string' ? first : first?.value ?? '';
                   const lastStr = typeof last === 'string' ? last : last?.value ?? '';
                   const name = [firstStr, lastStr].filter(Boolean).join(' ') || null;
+                  const chapter = c.chapter ?? (c.properties?.chapter as { value?: string } | string);
+                  const chapterStr = typeof chapter === 'string' ? chapter : (chapter as { value?: string })?.value ?? '';
                   return (
                     <li key={c.id} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-gray-50">
                       <div className="min-w-0 flex-1">
                         <span className="font-medium text-gray-900 truncate block">{name || email}</span>
-                        {name && <span className="text-sm text-gray-500 truncate block">{email}</span>}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {name && <span className="text-sm text-gray-500 truncate">{email}</span>}
+                          {chapterStr && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-brand-light text-brand-dark font-medium" title="Chapter">
+                              {chapterStr}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <button
                         type="button"

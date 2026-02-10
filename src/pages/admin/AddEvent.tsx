@@ -29,6 +29,9 @@ const AddEvent: React.FC = () => {
   const [announcementFailedReason, setAnnouncementFailedReason] = useState<string | null>(null);
   const [previewSlug, setPreviewSlug] = useState('');
   const [imageUploading, setImageUploading] = useState(false);
+  const [showImageCropModal, setShowImageCropModal] = useState(false);
+  const [cropPreviewUrl, setCropPreviewUrl] = useState<string | null>(null);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const imageInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

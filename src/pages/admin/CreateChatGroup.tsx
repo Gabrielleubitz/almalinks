@@ -48,6 +48,9 @@ const CreateChatGroup: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
+  const [showImageCropModal, setShowImageCropModal] = useState(false);
+  const [cropPreviewUrl, setCropPreviewUrl] = useState<string | null>(null);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const imageInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {

@@ -72,6 +72,9 @@ const SignupPage: React.FC = () => {
     work: '',
     linkedinUsername: '',
     position: '',
+    chapter: '',
+    bioTitle: '',
+    bio: '',
     password: ''
   });
   const [selectedCountryCode, setSelectedCountryCode] = useState('+972'); // Default to Israel
@@ -186,6 +189,11 @@ const SignupPage: React.FC = () => {
       setValidationError('Please select your position');
       return false;
     }
+
+    if (!formData.chapter.trim()) {
+      setValidationError('Please enter your chapter');
+      return false;
+    }
     
     if (!formData.password.trim()) {
       setValidationError('Please create a password');
@@ -235,6 +243,9 @@ const SignupPage: React.FC = () => {
         work: formData.work,
         linkedinUsername: formData.linkedinUsername,
         position: formData.position,
+        chapter: formData.chapter || undefined,
+        bioTitle: formData.bioTitle || undefined,
+        bio: formData.bio || undefined,
         status: 'pending' // Set initial status as pending
       });
       
@@ -260,6 +271,7 @@ const SignupPage: React.FC = () => {
                      formData.work.trim() &&
                      formData.linkedinUsername.trim() &&
                      formData.position &&
+                     formData.chapter.trim() &&
                      formData.password.trim() &&
                      formData.password.length >= 6;
 
@@ -547,6 +559,63 @@ const SignupPage: React.FC = () => {
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
               </div>
+            </div>
+
+            {/* Chapter */}
+            <div>
+              <label htmlFor="chapter" className="block text-sm font-medium text-gray-700 mb-2">
+                Chapter *
+              </label>
+              <div className="relative">
+                <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  id="chapter"
+                  name="chapter"
+                  type="text"
+                  required
+                  value={formData.chapter}
+                  onChange={handleInputChange}
+                  className="w-full pl-10 pr-4 py-4 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                  placeholder="e.g., North America, Europe"
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+
+            {/* Bio (short) - optional */}
+            <div>
+              <label htmlFor="bioTitle" className="block text-sm font-medium text-gray-700 mb-2">
+                Bio (short)
+              </label>
+              <input
+                id="bioTitle"
+                name="bioTitle"
+                type="text"
+                value={formData.bioTitle}
+                onChange={handleInputChange}
+                maxLength={60}
+                className="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                placeholder="A short tagline (max 60 characters)"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            {/* Bio (long) - optional */}
+            <div>
+              <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
+                Bio (long)
+              </label>
+              <textarea
+                id="bio"
+                name="bio"
+                value={formData.bio}
+                onChange={handleInputChange}
+                maxLength={400}
+                rows={3}
+                className="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 resize-none"
+                placeholder="Tell us about your background (max 400 characters)"
+                disabled={isSubmitting}
+              />
             </div>
 
             {/* Password */}

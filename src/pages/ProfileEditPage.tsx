@@ -18,6 +18,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { useActivityTracking } from '../hooks/useActivityTracking';
 import { UserService } from '../services/userService';
+import { apiRequest } from '../utils/apiClient';
 import { UserProfile, UserProfileForm } from '../types/user';
 import { validateUserProfile } from '../utils/validation';
 import { uploadProfilePicture, deleteProfilePicture } from '../services/profileService';
@@ -41,6 +42,7 @@ const ProfileEditPage: React.FC = () => {
     email: '',
     title: '',
     company: '',
+    chapter: '',
     bioTitle: '',
     bio: '',
     skills: [],
@@ -141,6 +143,7 @@ const ProfileEditPage: React.FC = () => {
           email: userProfile.email || '',
           title: userProfile.title || userProfile.position || '',
           company: userProfile.company || '',
+          chapter: userProfile.chapter || '',
           bioTitle: userProfile.bioTitle || userProfile.work || '',
           bio: userProfile.bio || '',
           skills: userProfile.skills || [],
@@ -184,18 +187,20 @@ const ProfileEditPage: React.FC = () => {
           ? formData.linkedin.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '')
           : formData.linkedin;
       }
-      const updateData = {
-        name: `${formData.firstName} ${formData.lastName}`.trim() || formData.displayName,
+      const updatePayload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        fullName: `${formData.firstName} ${formData.lastName}`.trim() || formData.displayName,
         displayName: formData.displayName,
         email: formData.email,
-        position: formData.title,
+        title: formData.title,
         company: formData.company,
-        work: formData.bioTitle,
+        chapter: formData.chapter || null,
+        bioTitle: formData.bioTitle,
         bio: formData.bio,
         skills: formData.skills,
         phone: formData.phone,
-        linkedin: formData.linkedin,
-        linkedinUsername,
+        linkedinUrl: formData.linkedin,
         website: formData.website,
         twitter: formData.twitter,
         city: formData.city,
@@ -204,11 +209,19 @@ const ProfileEditPage: React.FC = () => {
         showPhone: formData.showPhone,
         profileVisibility: formData.profileVisibility
       };
-      await UserService.updateUser(user.uid, updateData);
-      setProfile(prev => prev ? { ...prev, ...updateData } : null);
+      const res = await apiRequest('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatePayload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error((data as { error?: string }).error || 'Failed to update profile');
+      }
+      setProfile(prev => prev ? { ...prev, ...updatePayload } : null);
       setLastSavedAt(Date.now());
-      showToast('Profile updated', 'success');
-      logProfileUpdate(Object.keys(updateData));
+      showToast((data as { hubspotSync?: boolean }).hubspotSync ? 'Profile updated and synced to HubSpot' : 'Profile updated', 'success');
+      logProfileUpdate(Object.keys(updatePayload));
       await loadProfile();
     } catch (error: any) {
       console.error('❌ Error saving profile:', error);

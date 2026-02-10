@@ -42,6 +42,7 @@ export interface ProfileData {
   work?: string;
   linkedinUsername?: string;
   position?: string;
+  chapter?: string;
   status?: string;
   profileImage?: string | null;
   profileImagePublicId?: string | null;
@@ -204,6 +205,7 @@ export const useAuth = () => {
           work: profileData?.work,
           linkedinUsername: profileData?.linkedinUsername,
           position: profileData?.position,
+          chapter: profileData?.chapter,
           profileImage: profileData?.profileImage ?? undefined,
           profileImagePublicId: profileData?.profileImagePublicId ?? undefined,
           bioTitle: profileData?.bioTitle,

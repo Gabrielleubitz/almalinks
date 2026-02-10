@@ -22,6 +22,8 @@ export interface UserProfile {
   // Role & Organization
   title?: string;
   company?: string;
+  /** Chapter (e.g. one of 9 global chapters); synced to HubSpot */
+  chapter?: string | null;
   
   // Bio
   bioTitle?: string; // short description, max 60 chars
@@ -54,7 +56,12 @@ export interface UserProfile {
   updatedAt: any; // Firestore timestamp
   joinedAt?: any; // Firestore timestamp
   profileImageUpdatedAt?: string;
-  
+  /** HubSpot contact id after sync */
+  hubspotContactId?: string | null;
+  hubspotLastSyncedAt?: any; // Firestore timestamp
+  hubspotSyncStatus?: 'ok' | 'error' | 'pending';
+  hubspotSyncError?: string;
+
   // Profile completion
   profileCompletionPercentage?: number;
   lastProfileUpdate?: any; // Firestore timestamp
@@ -70,6 +77,7 @@ export interface UserProfileForm {
   // Step 2: About You  
   title: string;
   company: string;
+  chapter: string;
   bioTitle: string;
   bio: string;
   skills: string[];

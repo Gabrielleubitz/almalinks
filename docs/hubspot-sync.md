@@ -11,7 +11,7 @@
 Each contact is upserted; Auth users are created (or looked up by email if already existing).
 
 - Pages through HubSpot API (limit=100, `after` cursor) until all contacts are fetched.
-- Requests properties: `email`, `firstname`, `lastname`, `phone`.
+- Requests properties: `email`, `firstname`, `lastname`, `phone`, and **Chapter** (internal name configurable; see below).
 - For each contact with email: creates Firebase Auth user (or gets existing by email), then writes hubspotContacts + users.
 - Returns `{ ok: true, totalUpserted: number }`.
 
@@ -52,7 +52,9 @@ Only one is used: if `SYNC_SECRET` is set, the secret header is required; otherw
 ### hubspotContacts
 
 - **Document ID:** HubSpot contact ID (string)
-- **Data:** `hubspotId`, `email`, `properties`, `syncedAt` (server timestamp)
+- **Data:** `hubspotId`, `email`, `chapter` (string | null, for querying/filtering), `properties` (all requested HubSpot properties including chapter), `syncedAt` (server timestamp)
+
+**Chapter:** The sync requests the HubSpot Contact property whose label in the UI is "Chapter" (assigns members to one of 9 global chapters). The internal property name is set in `lib/server/api/sync-hubspot-contacts.js` as `CHAPTER_PROPERTY_NAME`. Default is `"chapter"`. If your portal uses a different internal name (e.g. `hs_chapter` or a custom name), change it there. To find the internal name: HubSpot → Settings → Properties → Contact → find "Chapter" → use the **Internal name**.
 
 ### users (HubSpot-synced, sign-in ready)
 
@@ -65,6 +67,17 @@ Contacts can sign in with **email + default password** (e.g. `123456789` or `HUB
 **Remove HubSpot users:** **POST /api/remove-hubspot-users** deletes Firestore user docs where `source === 'hubspot'` or doc id starts with `hubspot_`, and deletes the corresponding Firebase Auth users so they can no longer sign in.
 
 **Rules:** `hubspotContacts` and `users` are configured in `firestore.rules`. Backend writes via Admin SDK bypass rules.
+
+## Profile → HubSpot real-time sync
+
+When a member updates their profile in the app, changes are pushed to HubSpot automatically (no manual button).
+
+- **PATCH /api/profile** (or POST): Authenticated user sends profile fields (fullName, title, organization, chapter, linkedinUrl, email, phone, bioShort, bioLong, etc.). Server writes Firestore `users/{uid}` (merge) then calls HubSpot upsert (create or update contact by email). Server never exposes `HUBSPOT_ACCESS_TOKEN`; all HubSpot API calls are server-side.
+- **Flow:** Profile Edit page saves via PATCH /api/profile → backend updates Firestore → backend calls `upsertHubspotContact(profile)` → HubSpot search by email or PATCH/POST contact → backend writes `hubspotContactId`, `hubspotLastSyncedAt`, `hubspotSyncStatus`, `hubspotSyncError` on `users/{uid}`.
+- **Data model (users doc):** `fullName`/`name`/`displayName`, `title`/`position`, `organization`/`company`, `bioShort`/`bioTitle`, `bioLong`/`bio`, `chapter`, `linkedinUrl`/`linkedin`, `email`, `phone`, and `hubspotContactId`, `hubspotLastSyncedAt`, `hubspotSyncStatus`, `hubspotSyncError`.
+- **Field mapping:** See `lib/server/hubspot-contact-sync.js` (`HUBSPOT_PROPERTY_MAP`). Standard: email, firstname, lastname, jobtitle, company, phone, linkedinbio. Custom (confirm in HubSpot): chapter, bio_short, bio_long.
+- **Debounce:** Frontend only sends update on Save (or blur), not on every keystroke.
+- **Required HubSpot scopes:** Contacts **read** and **write** (e.g. `crm.objects.contacts.read`, `crm.objects.contacts.write`). Same token as sync: `HUBSPOT_ACCESS_TOKEN`.
 
 ## Deploy
 
