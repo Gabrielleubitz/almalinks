@@ -12,7 +12,8 @@ import {
   Menu,
   X,
   MessageCircle,
-  Heart
+  Heart,
+  HelpCircle
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNotifications } from '../hooks/useNotifications';
@@ -126,6 +127,12 @@ const SpeakerAwareHeader: React.FC = () => {
             
             {/* Auth Buttons */}
             <div className="flex items-center space-x-3">
+              <button
+                onClick={() => navigate('/help')}
+                className="text-gray-600 hover:text-gray-900 transition-colors font-medium text-sm"
+              >
+                Help
+              </button>
               <a
                 href="https://almalinks.org/donate.html"
                 target="_blank"
@@ -225,6 +232,16 @@ const SpeakerAwareHeader: React.FC = () => {
                   {notificationCounts.unreadChats > 99 ? '99+' : notificationCounts.unreadChats}
                 </span>
               )}
+            </button>
+            <button
+              onClick={() => navigate('/help')}
+              className={`text-sm font-medium transition-colors duration-200 ${
+                location.pathname === '/help'
+                  ? 'text-brand-dark font-semibold'
+                  : 'text-gray-600 hover:text-brand-blue'
+              }`}
+            >
+              Help
             </button>
             {isAdmin && (
               <button
@@ -370,6 +387,18 @@ const SpeakerAwareHeader: React.FC = () => {
                   {notificationCounts.unreadChats > 99 ? '99+' : notificationCounts.unreadChats}
                 </span>
               )}
+            </button>
+
+            <button
+              onClick={() => handleNavigation('/help')}
+              className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
+                location.pathname === '/help'
+                  ? 'text-brand-dark bg-brand-light font-semibold'
+                  : 'text-gray-600 hover:text-brand-blue hover:bg-gray-50'
+              }`}
+            >
+              <HelpCircle className="h-4 w-4" />
+              <span>Help</span>
             </button>
 
             {/* Admin Mobile Menu Item */}

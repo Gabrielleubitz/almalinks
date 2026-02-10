@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Linkedin } from 'lucide-react';
 import logoSvg from '../assets/alma-links-logo.svg';
 
@@ -18,6 +19,9 @@ const Footer: React.FC<FooterProps> = ({ compact = false }) => {
               alt="AlmaLinks"
               className="h-6 w-auto filter brightness-0 invert inline-block"
             />
+            <Link to="/help" className="text-gray-400 hover:text-white text-xs sm:text-sm">
+              Need help? Report a bug
+            </Link>
             <p className="text-gray-400 text-xs sm:text-sm">
               A community of impact-driven leaders. Connect with us anytime!
             </p>
@@ -56,6 +60,12 @@ const Footer: React.FC<FooterProps> = ({ compact = false }) => {
           </p>
           
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-6 sm:mb-8 px-4">
+            <Link
+              to="/help"
+              className="text-gray-400 hover:text-white transition-colors duration-200 font-medium text-sm"
+            >
+              Need help? Report a bug
+            </Link>
             <a
               href="https://www.linkedin.com/company/almalinks/"
               target="_blank"
