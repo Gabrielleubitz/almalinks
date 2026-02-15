@@ -20,6 +20,9 @@ import mailchimpImportUsersHandler from '../lib/server/api/mailchimp-import-user
 import sendEventAnnouncementHandler from '../lib/server/api/send-event-announcement.js';
 import welcomeEmailHandler from '../lib/server/api/welcome-email.js';
 import testMandrillHandler from '../lib/server/api/test-mandrill.js';
+import adminTestMailjetHandler from '../lib/server/api/admin-test-mailjet.js';
+import adminTestMailchimpHandler from '../lib/server/api/admin-test-mailchimp.js';
+import adminEmailConfigHandler from '../lib/server/api/admin-email-config.js';
 import syncHubspotContactsHandler from '../lib/server/api/sync-hubspot-contacts.js';
 import removeHubspotUsersHandler from '../lib/server/api/remove-hubspot-users.js';
 import syncHubspotEventsHandler from '../lib/server/api/sync-hubspot-events.js';
@@ -142,6 +145,17 @@ export default async function handler(req, res) {
       return deleteHubspotDealHandler(req, res, id);
     }
     return res.status(405).json({ ok: false, error: 'Method not allowed' });
+  }
+
+  // Admin test email (Mailjet / Mailchimp)
+  if (pathname === '/api/admin/test/mailjet') {
+    return adminTestMailjetHandler(req, res);
+  }
+  if (pathname === '/api/admin/test/mailchimp') {
+    return adminTestMailchimpHandler(req, res);
+  }
+  if (pathname === '/api/admin/test/email-config') {
+    return adminEmailConfigHandler(req, res);
   }
 
   const directHandler = routeTable.get(pathname);

@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Mail, 
-  MessageSquare, 
   Zap, 
   Check, 
   X, 
   AlertCircle, 
   Send, 
-  Bot, 
   RefreshCw,
   Cpu,
   Database,
@@ -18,6 +16,7 @@ import {
 } from 'lucide-react';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { useAuth } from '../../hooks/useAuth';
+import { auth } from '../../firebase/config';
 
 interface TestResult {
   id: string;
@@ -33,20 +32,54 @@ const SystemTestPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const [emailTest, setEmailTest] = useState({
-    recipient: '',
-    subject: 'Alma Links System Test',
-    message: 'This is a test email from the Alma Links admin panel.'
+  const [emailRecipient, setEmailRecipient] = useState('');
+  const [lastEmailResponse, setLastEmailResponse] = useState<{
+    provider: string;
+    sentTo: string;
+    ok: boolean;
+    providerMessageId?: string;
+    error?: string;
+    timestamp: string;
+  } | null>(null);
+  const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({
+    visible: false,
+    message: '',
+    type: 'success',
   });
-  
-  const [gptTest, setGptTest] = useState({
-    prompt: 'Briefly describe Alma Links in one sentence.'
-  });
+  const [emailConfig, setEmailConfig] = useState<{ mailjet: boolean; mailchimp: boolean } | null>(null);
   
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [isRunningTests, setIsRunningTests] = useState(false);
   const [runningTest, setRunningTest] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Default recipient to logged-in admin email
+  useEffect(() => {
+    if (user?.email && !emailRecipient) {
+      setEmailRecipient(user.email);
+    }
+  }, [user?.email]);
+
+  // Load email provider config (admin-only endpoint)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+      try {
+        const token = await currentUser.getIdToken();
+        const res = await fetch('/api/admin/test/email-config', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (data?.ok && !cancelled) setEmailConfig({ mailjet: !!data.mailjet, mailchimp: !!data.mailchimp });
+      } catch {
+        // ignore
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.uid]);
   
   // Scroll to top synchronously before paint to prevent visible scroll jump
   useLayoutEffect(() => {
@@ -89,152 +122,98 @@ const SystemTestPage: React.FC = () => {
     );
   };
   
-  // Test Email API
-  const testEmailApi = async () => {
-    const testId = `email-${Date.now()}`;
-    
-    // Add initial test result
+  const sendTestEmail = async (provider: 'mailjet' | 'mailchimp') => {
+    const to = emailRecipient.trim().toLowerCase();
+    if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+      addTestResult({
+        id: `email-${Date.now()}`,
+        name: `${provider === 'mailjet' ? 'Mailjet' : 'Mailchimp'} Test`,
+        status: 'error',
+        message: 'Please enter a valid recipient email',
+        timestamp: new Date(),
+      });
+      return;
+    }
+
+    const testId = `${provider}-${Date.now()}`;
+    const label = provider === 'mailjet' ? 'Mailjet Test Email' : 'Mailchimp Test Email';
     addTestResult({
       id: testId,
-      name: 'Email API',
+      name: label,
       status: 'pending',
-      message: 'Testing email delivery...',
-      timestamp: new Date()
+      message: `Sending test email via ${provider}...`,
+      timestamp: new Date(),
     });
-    
-    setRunningTest('email');
-    const startTime = performance.now();
-    
+    setRunningTest(provider);
+    setLastEmailResponse(null);
+
     try {
-      // Call the consolidated system test API
-      const response = await fetch('/api/system-test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          testType: 'email',
-          recipient: emailTest.recipient,
-          subject: emailTest.subject,
-          message: emailTest.message
-        })
-      });
-      
-      const endTime = performance.now();
-      const duration = Math.round(endTime - startTime);
-      
-      // Get response text first to debug parsing issues
-      const responseText = await response.text();
-      console.log('Raw API Response:', responseText);
-      
-      let responseData;
-      try {
-        responseData = JSON.parse(responseText);
-      } catch (parseError) {
-        updateTestResult(testId, {
-          status: 'error',
-          message: `JSON parsing failed: ${parseError.message}`,
-          duration,
-          details: {
-            rawResponse: responseText.substring(0, 200) + '...',
-            parseError: parseError.message,
-            status: response.status,
-            statusText: response.statusText
-          }
-        });
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        updateTestResult(testId, { status: 'error', message: 'Not authenticated' });
+        setRunningTest(null);
         return;
       }
-      
-      if (response.ok) {
-        updateTestResult(testId, {
-          status: 'success',
-          message: 'Email sent successfully',
-          duration,
-          details: responseData
-        });
-      } else {
-        updateTestResult(testId, {
-          status: 'error',
-          message: `Failed to send email: ${responseData.error || response.statusText}`,
-          duration,
-          details: responseData
-        });
-      }
-    } catch (error: any) {
-      const endTime = performance.now();
-      const duration = Math.round(endTime - startTime);
-      
-      updateTestResult(testId, {
-        status: 'error',
-        message: `Error: ${error.message}`,
-        duration,
-        details: error
-      });
-    } finally {
-      setRunningTest(null);
-    }
-  };
-  
-  // Test SMS API
-  // Test OpenAI GPT API
-  const testGptApi = async () => {
-    const testId = `gpt-${Date.now()}`;
-    
-    // Add initial test result
-    addTestResult({
-      id: testId,
-      name: 'OpenAI GPT API',
-      status: 'pending',
-      message: 'Testing GPT API...',
-      timestamp: new Date()
-    });
-    
-    setRunningTest('gpt');
-    const startTime = performance.now();
-    
-    try {
-      // Call the Vercel API function to test GPT (Updated)
-      const response = await fetch('/api/system-test', {
+      const idToken = await currentUser.getIdToken();
+      const url = provider === 'mailjet' ? '/api/admin/test/mailjet' : '/api/admin/test/mailchimp';
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
         },
-        body: JSON.stringify({
-          testType: 'gpt',
-          prompt: gptTest.prompt
-        })
+        body: JSON.stringify({ to }),
       });
-      
-      const endTime = performance.now();
-      const duration = Math.round(endTime - startTime);
-      
-      const responseData = await response.json();
-      
-      if (response.ok) {
+      const data = await response.json().catch(() => ({}));
+      const duration = 0;
+
+      const payload = {
+        provider: data.provider ?? provider,
+        sentTo: data.sentTo ?? to,
+        ok: data.ok === true,
+        providerMessageId: data.providerMessageId,
+        error: data.error,
+        timestamp: new Date().toISOString(),
+      };
+      setLastEmailResponse(payload);
+
+      if (response.ok && data.ok) {
         updateTestResult(testId, {
           status: 'success',
-          message: 'GPT API test successful',
+          message: `Test email sent to ${data.sentTo}`,
           duration,
-          details: responseData
+          details: payload,
         });
+        setToast({ visible: true, message: `Test email sent to ${data.sentTo}`, type: 'success' });
+        setTimeout(() => setToast((t) => ({ ...t, visible: false })), 4000);
       } else {
+        const errMsg = data.error || response.statusText || 'Send failed';
         updateTestResult(testId, {
           status: 'error',
-          message: `Failed to test GPT API: ${responseData.error || response.statusText}`,
+          message: errMsg,
           duration,
-          details: responseData
+          details: payload,
         });
+        setToast({ visible: true, message: errMsg, type: 'error' });
+        setTimeout(() => setToast((t) => ({ ...t, visible: false })), 5000);
       }
-    } catch (error: any) {
-      const endTime = performance.now();
-      const duration = Math.round(endTime - startTime);
-      
+    } catch (err: any) {
+      const payload = {
+        provider,
+        sentTo: to,
+        ok: false,
+        error: err?.message || 'Request failed',
+        timestamp: new Date().toISOString(),
+      };
+      setLastEmailResponse(payload);
+      const errMsg = err?.message || 'Request failed';
       updateTestResult(testId, {
         status: 'error',
-        message: `Error: ${error.message}`,
-        duration,
-        details: error
+        message: errMsg,
+        details: payload,
       });
+      setToast({ visible: true, message: errMsg, type: 'error' });
+      setTimeout(() => setToast((t) => ({ ...t, visible: false })), 5000);
     } finally {
       setRunningTest(null);
     }
@@ -345,27 +324,13 @@ const SystemTestPage: React.FC = () => {
     }
   };
   
-  // Run all tests
+  // Run all tests (Firebase + Network only; email tests are run separately)
   const runAllTests = async () => {
     setIsRunningTests(true);
     setError(null);
-    
     try {
-      // Run tests sequentially to avoid overwhelming the system
       await testNetworkConnectivity();
       await testFirebaseConnection();
-      
-      // Only run these if we have the required inputs
-      if (emailTest.recipient) {
-        await testEmailApi();
-      }
-      
-      if (smsTest.recipient) {
-        await testSmsApi();
-      }
-      
-      await testGptApi();
-      
     } catch (error: any) {
       console.error('❌ Error running tests:', error);
       setError(`Failed to run all tests: ${error.message}`);
@@ -416,122 +381,111 @@ const SystemTestPage: React.FC = () => {
           </div>
         )}
 
+        {/* Toast for email test result */}
+        {toast.visible && (
+          <div className="fixed top-4 right-4 z-50 max-w-sm animate-in fade-in duration-200">
+            <div className={`p-4 rounded-xl border shadow-lg flex items-center space-x-3 ${
+              toast.type === 'success' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+            }`}>
+              {toast.type === 'success' ? <Check className="h-5 w-5 text-green-600 flex-shrink-0" /> : <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />}
+              <p className={toast.type === 'success' ? 'text-green-800 text-sm' : 'text-red-800 text-sm'}>{toast.message}</p>
+            </div>
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Test Configuration Panel */}
           <div className="space-y-8">
-            {/* Email Test */}
+            {/* Email Tests — Mailjet & Mailchimp (branded test email) */}
             <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
               <div className="flex items-center space-x-3 mb-6">
                 <Mail className="h-6 w-6 text-brand-light" />
-                <h2 className="text-xl font-bold text-gray-900">Email API Test</h2>
+                <h2 className="text-xl font-bold text-gray-900">Email Tests</h2>
               </div>
-              
+              <p className="text-sm text-gray-600 mb-4">
+                Send a branded AlmaLinks test email to preview how transactional emails look. Uses the same template as event and registration emails.
+              </p>
+              {emailConfig && (!emailConfig.mailjet || !emailConfig.mailchimp) && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start space-x-2">
+                  <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-800">
+                    {!emailConfig.mailjet && !emailConfig.mailchimp
+                      ? 'Mailjet and Mailchimp are not configured. Set MAILJET_* or MAILCHIMP_API_KEY to send test emails.'
+                      : !emailConfig.mailjet
+                        ? 'Mailjet is not configured. Set MAILJET_API_KEY and MAILJET_SECRET_KEY to use Mailjet.'
+                        : 'Mailchimp Transactional (Mandrill) is not configured. Set MAILCHIMP_API_KEY to use Mailchimp.'}
+                  </div>
+                </div>
+              )}
               <div className="space-y-4">
                 <div>
                   <label htmlFor="email-recipient" className="block text-sm font-medium text-gray-700 mb-2">
-                    Recipient Email
+                    Recipient email
                   </label>
                   <input
                     id="email-recipient"
                     type="email"
-                    value={emailTest.recipient}
-                    onChange={(e) => setEmailTest(prev => ({ ...prev, recipient: e.target.value }))}
+                    value={emailRecipient}
+                    onChange={(e) => setEmailRecipient(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter test recipient email"
-                    disabled={runningTest === 'email'}
+                    placeholder="email@example.com"
+                    disabled={runningTest !== null}
                   />
                 </div>
-                
-                <div>
-                  <label htmlFor="email-subject" className="block text-sm font-medium text-gray-700 mb-2">
-                    Subject
-                  </label>
-                  <input
-                    id="email-subject"
-                    type="text"
-                    value={emailTest.subject}
-                    onChange={(e) => setEmailTest(prev => ({ ...prev, subject: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter test email subject"
-                    disabled={runningTest === 'email'}
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => sendTestEmail('mailjet')}
+                    disabled={!emailRecipient.trim() || runningTest !== null || (emailConfig !== null && !emailConfig.mailjet)}
+                    className="bg-brand-dark text-white px-4 py-3 rounded-xl hover:bg-brand-mid transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    title={emailConfig && !emailConfig.mailjet ? 'Mailjet is not configured' : undefined}
+                  >
+                    {runningTest === 'mailjet' ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-5 w-5" />
+                        <span>Send Mailjet Test</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => sendTestEmail('mailchimp')}
+                    disabled={!emailRecipient.trim() || runningTest !== null || (emailConfig !== null && !emailConfig.mailchimp)}
+                    className="bg-brand-mid text-white px-4 py-3 rounded-xl hover:bg-brand-light transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    title={emailConfig && !emailConfig.mailchimp ? 'Mailchimp is not configured' : undefined}
+                  >
+                    {runningTest === 'mailchimp' ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-5 w-5" />
+                        <span>Send Mailchimp Test</span>
+                      </>
+                    )}
+                  </button>
                 </div>
-                
-                <div>
-                  <label htmlFor="email-message" className="block text-sm font-medium text-gray-700 mb-2">
-                    Message
-                  </label>
-                  <textarea
-                    id="email-message"
-                    value={emailTest.message}
-                    onChange={(e) => setEmailTest(prev => ({ ...prev, message: e.target.value }))}
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
-                    placeholder="Enter test email message"
-                    disabled={runningTest === 'email'}
-                  />
-                </div>
-                
-                <button
-                  onClick={testEmailApi}
-                  disabled={!emailTest.recipient || runningTest !== null}
-                  className="w-full bg-brand-dark text-white px-4 py-3 rounded-xl hover:bg-brand-mid transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                >
-                  {runningTest === 'email' ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Testing Email API...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-5 w-5" />
-                      <span>Test Email API</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-            
-            {/* GPT Test */}
-            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-              <div className="flex items-center space-x-3 mb-6">
-                <Bot className="h-6 w-6 text-brand-dark" />
-                <h2 className="text-xl font-bold text-gray-900">OpenAI GPT API Test</h2>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="gpt-prompt" className="block text-sm font-medium text-gray-700 mb-2">
-                    Test Prompt
-                  </label>
-                  <textarea
-                    id="gpt-prompt"
-                    value={gptTest.prompt}
-                    onChange={(e) => setGptTest(prev => ({ ...prev, prompt: e.target.value }))}
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 resize-none"
-                    placeholder="Enter test prompt for GPT"
-                    disabled={runningTest === 'gpt'}
-                  />
-                </div>
-                
-                <button
-                  onClick={testGptApi}
-                  disabled={!gptTest.prompt || runningTest !== null}
-                  className="w-full bg-brand-dark text-white px-4 py-3 rounded-xl hover:bg-brand-mid transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                >
-                  {runningTest === 'gpt' ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Testing GPT API...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Bot className="h-5 w-5" />
-                      <span>Test GPT API</span>
-                    </>
-                  )}
-                </button>
+                {lastEmailResponse && (
+                  <div className={`mt-4 p-4 rounded-xl border ${lastEmailResponse.ok ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                    <div className="text-sm font-medium text-gray-900 mb-1">Last response</div>
+                    <div className="text-xs text-gray-700 space-y-1">
+                      <div><span className="font-medium">Provider:</span> {lastEmailResponse.provider}</div>
+                      <div><span className="font-medium">Sent to:</span> {lastEmailResponse.sentTo}</div>
+                      <div><span className="font-medium">Time:</span> {new Date(lastEmailResponse.timestamp).toLocaleTimeString()}</div>
+                      {lastEmailResponse.providerMessageId && (
+                        <div><span className="font-medium">Message ID:</span> {lastEmailResponse.providerMessageId}</div>
+                      )}
+                      {lastEmailResponse.error && (
+                        <div className="text-red-600"><span className="font-medium">Error:</span> {lastEmailResponse.error}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             
