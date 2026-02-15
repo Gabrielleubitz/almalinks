@@ -7,7 +7,7 @@ import { auth } from '../../firebase/config';
 import { EventService, generateSlug } from '../../services/eventService';
 import { uploadImageToLibrary } from '../../services/imageUploadService';
 import AdminHeader from '../../components/admin/AdminHeader';
-import CoverPhotoCropModal, { type CoverCrop } from '../../components/profile/CoverPhotoCropModal';
+import CropModal from '../../components/profile/CropModal';
 import CropImage from '../../components/profile/CropImage';
 
 const AddEvent: React.FC = () => {
@@ -20,6 +20,7 @@ const AddEvent: React.FC = () => {
     date: '',
     description: '',
     imageUrl: '',
+    imageCrop: null as { scale: number; panX: number; panY: number } | null,
     status: 'active' as const
   });
   
@@ -31,7 +32,6 @@ const AddEvent: React.FC = () => {
   const [imageUploading, setImageUploading] = useState(false);
   const [showImageCropModal, setShowImageCropModal] = useState(false);
   const [cropPreviewUrl, setCropPreviewUrl] = useState<string | null>(null);
-  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const imageInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -144,6 +144,7 @@ const AddEvent: React.FC = () => {
         date: '',
         description: '',
         imageUrl: '',
+        imageCrop: null,
         status: 'active'
       });
       setPreviewSlug('');
@@ -315,7 +316,6 @@ const AddEvent: React.FC = () => {
                   const file = e.target.files?.[0];
                   if (!file || !file.type.startsWith('image/')) return;
                   setError(null);
-                  setPendingImageFile(file);
                   setCropPreviewUrl(URL.createObjectURL(file));
                   setShowImageCropModal(true);
                   e.target.value = '';
@@ -371,31 +371,29 @@ const AddEvent: React.FC = () => {
             </div>
 
             {showImageCropModal && cropPreviewUrl && (
-              <CoverPhotoCropModal
+              <CropModal
                 imageUrl={cropPreviewUrl}
-                aspectRatio="16/9"
-                title="Position event image"
-                onConfirm={async (_url, crop) => {
-                  if (!pendingImageFile) return;
+                aspect={16 / 9}
+                cropShape="rect"
+                title="Crop event image"
+                onConfirm={async (croppedFile, _normalizedCrop) => {
                   setImageUploading(true);
                   setError(null);
                   try {
-                    const url = await uploadImageToLibrary('events', pendingImageFile);
-                    setFormData(prev => ({ ...prev, imageUrl: url, imageCrop: crop }));
+                    const url = await uploadImageToLibrary('events', croppedFile);
+                    setFormData(prev => ({ ...prev, imageUrl: url, imageCrop: null }));
                   } catch (err: any) {
                     setError(err.message || 'Image upload failed');
                   } finally {
                     setImageUploading(false);
                     URL.revokeObjectURL(cropPreviewUrl);
                     setCropPreviewUrl(null);
-                    setPendingImageFile(null);
                     setShowImageCropModal(false);
                   }
                 }}
                 onCancel={() => {
                   if (cropPreviewUrl) URL.revokeObjectURL(cropPreviewUrl);
                   setCropPreviewUrl(null);
-                  setPendingImageFile(null);
                   setShowImageCropModal(false);
                 }}
               />
