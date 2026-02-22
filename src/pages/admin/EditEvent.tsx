@@ -5,6 +5,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { EventService, EventData, generateSlug } from '../../services/eventService';
 import { uploadImageToLibrary } from '../../services/imageUploadService';
 import AdminHeader from '../../components/admin/AdminHeader';
+import CropImage from '../../components/profile/CropImage';
+import CoverPhotoCropModal, { type CoverCrop } from '../../components/profile/CoverPhotoCropModal';
 
 const EditEvent: React.FC = () => {
   const navigate = useNavigate();
