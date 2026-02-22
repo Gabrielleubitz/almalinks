@@ -585,8 +585,12 @@ const EventsPage: React.FC = () => {
     return cleanUsername.replace(/\/$/, '');
   };
 
-  const upcomingEvents = events.filter(event => isUpcoming(event.date));
-  const pastEvents = events.filter(event => !isUpcoming(event.date));
+  const upcomingEvents = events
+    .filter(event => isUpcoming(event.date))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const pastEvents = events
+    .filter(event => !isUpcoming(event.date))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   const upcomingDisplay = showAllUpcoming ? upcomingEvents : upcomingEvents.slice(0, DASHBOARD_EVENTS_INITIAL);
   const pastDisplay = showAllPast ? pastEvents : pastEvents.slice(0, DASHBOARD_EVENTS_INITIAL);
   const hasMoreUpcoming = upcomingEvents.length > DASHBOARD_EVENTS_INITIAL;
