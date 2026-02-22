@@ -96,9 +96,11 @@
   background-clip: text;
 }
 
-/* Bio rich text (bold, italic, underline, highlight) */
-.bio-content p { margin: 0 0 0.5em; }
-.bio-content p:last-child { margin-bottom: 0; }
+/* Bio rich text (bold, italic, underline, highlight); preserve paragraph breaks */
+.bio-content p,
+.bio-content div { margin: 0 0 0.75em; }
+.bio-content p:last-child,
+.bio-content div:last-child { margin-bottom: 0; }
 .bio-content b, .bio-content strong { font-weight: 700; }
 .bio-content i, .bio-content em { font-style: italic; }
 .bio-content u { text-decoration: underline; }

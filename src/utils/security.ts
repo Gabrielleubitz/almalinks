@@ -52,10 +52,10 @@ export function sanitizeHTML(input: string | null | undefined): string {
     .trim();
 }
 
-const BIO_ALLOWED_TAGS = new Set(['b', 'i', 'u', 'mark', 'p', 'br', 'span', 'strong', 'em']);
+const BIO_ALLOWED_TAGS = new Set(['b', 'i', 'u', 'mark', 'p', 'br', 'span', 'strong', 'em', 'div']);
 
 /**
- * Sanitize HTML for bio/rich text display. Only allows b, i, u, mark, p, br, span (class only), strong, em.
+ * Sanitize HTML for bio/rich text display. Only allows b, i, u, mark, p, br, div, span (class only), strong, em.
  * Use for rendering user bio with formatting (bold, italic, underline, highlight).
  */
 export function sanitizeBioHtml(html: string | null | undefined): string {

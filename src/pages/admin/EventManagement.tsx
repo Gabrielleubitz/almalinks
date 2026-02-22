@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, ArrowLeft, UserCheck, CheckCircle, Clock } from 'lucide-react';
+import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, ArrowLeft, UserCheck, CheckCircle, Clock, Search, List, LayoutGrid } from 'lucide-react';
 import { EventService, EventData } from '../../services/eventService';
 import AdminHeader from '../../components/admin/AdminHeader';
 import EventPositionChart from '../../components/analytics/EventPositionChart';
+
+type EventFilter = 'all' | 'upcoming' | 'past';
+type ViewMode = 'cards' | 'list';
 
 const EventManagement: React.FC = () => {
   const [events, setEvents] = useState<EventData[]>([]);
@@ -14,6 +17,8 @@ const EventManagement: React.FC = () => {
     eventId: string;
     eventName: string;
   } | null>(null);
+  const [eventFilter, setEventFilter] = useState<EventFilter>('upcoming');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   
   // State for registrations modal
   const [showRegistrations, setShowRegistrations] = useState(false);
@@ -21,6 +26,8 @@ const EventManagement: React.FC = () => {
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [loadingRegistrations, setLoadingRegistrations] = useState(false);
   const [checkingInUsers, setCheckingInUsers] = useState<Set<string>>(new Set());
+  const [registrationSearch, setRegistrationSearch] = useState('');
+  const [registrationsTab, setRegistrationsTab] = useState<'awaiting' | 'checked-in' | 'all'>('awaiting');
 
   useEffect(() => {
     loadEvents();
@@ -36,6 +43,20 @@ const EventManagement: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const isEventUpcoming = (dateString: string) => new Date(dateString) > new Date();
+
+  const filteredAndSortedEvents = useMemo(() => {
+    let list = [...events];
+    if (eventFilter === 'upcoming') list = list.filter(e => isEventUpcoming(e.date));
+    if (eventFilter === 'past') list = list.filter(e => !isEventUpcoming(e.date));
+    list.sort((a, b) => {
+      const da = new Date(a.date).getTime();
+      const db = new Date(b.date).getTime();
+      return eventFilter === 'past' ? db - da : da - db;
+    });
+    return list;
+  }, [events, eventFilter]);
 
   const handleStatusUpdate = async (eventId: string, newStatus: EventData['status']) => {
     setUpdatingStatus(eventId);
@@ -92,6 +113,9 @@ const EventManagement: React.FC = () => {
   const handleShowRegistrations = async (event: EventData) => {
     setSelectedEvent(event);
     setShowRegistrations(true);
+    setLoadingRegistrations(false);
+    setRegistrationSearch('');
+    setRegistrationsTab('awaiting');
     setLoadingRegistrations(true);
     
     try {
@@ -129,7 +153,21 @@ const EventManagement: React.FC = () => {
     setShowRegistrations(false);
     setSelectedEvent(null);
     setRegistrations([]);
+    setRegistrationSearch('');
+    setRegistrationsTab('awaiting');
   };
+
+  const awaitingCheckIn = useMemo(() => registrations.filter(r => !r.checkedIn), [registrations]);
+  const checkedIn = useMemo(() => registrations.filter(r => r.checkedIn), [registrations]);
+  const searchLower = registrationSearch.trim().toLowerCase();
+  const filterBySearch = (list: typeof registrations) =>
+    !searchLower ? list : list.filter(r =>
+      (r.name || '').toLowerCase().includes(searchLower) ||
+      (r.email || '').toLowerCase().includes(searchLower)
+    );
+  const awaitingFiltered = filterBySearch(awaitingCheckIn);
+  const checkedInFiltered = filterBySearch(checkedIn);
+  const allFiltered = filterBySearch(registrations);
 
   // Function to handle manual check-in
   const handleManualCheckIn = async (userId: string, userName: string) => {
@@ -332,9 +370,9 @@ const EventManagement: React.FC = () => {
         </div>
 
         {/* Header with Create Button */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0 mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0 mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            All Events ({events.length})
+            Event Management
           </h1>
           <Link
             to="/admin/events/create"
@@ -345,25 +383,110 @@ const EventManagement: React.FC = () => {
           </Link>
         </div>
 
-        {/* Events Grid */}
-        {events.length === 0 ? (
+        {/* Filter, sort, view mode */}
+        <div className="flex flex-wrap items-center gap-3 mb-6">
+          <div className="flex rounded-lg border border-gray-200 p-0.5 bg-gray-50">
+            {(['upcoming', 'past', 'all'] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setEventFilter(f)}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize min-h-[36px] sm:min-h-0 ${
+                  eventFilter === f ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {f === 'all' ? 'All' : f === 'upcoming' ? 'Upcoming' : 'Past'}
+              </button>
+            ))}
+          </div>
+          <div className="flex rounded-lg border border-gray-200 p-0.5 bg-gray-50">
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-white shadow-sm' : ''}`}
+              title="List view"
+            >
+              <List className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('cards')}
+              className={`p-2 rounded-md ${viewMode === 'cards' ? 'bg-white shadow-sm' : ''}`}
+              title="Card view"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+          </div>
+          <span className="text-sm text-gray-500">
+            {filteredAndSortedEvents.length} event{filteredAndSortedEvents.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+
+        {/* Events List / Grid */}
+        {filteredAndSortedEvents.length === 0 ? (
           <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-6 sm:p-12 border border-gray-100 text-center">
             <Calendar className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No Events Yet</h3>
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+              {events.length === 0 ? 'No Events Yet' : `No ${eventFilter === 'all' ? '' : eventFilter} events`}
+            </h3>
             <p className="text-sm sm:text-base text-gray-600 mb-6">
-              Get started by creating your first Alma Links event.
+              {events.length === 0
+                ? 'Get started by creating your first Alma Links event.'
+                : `Try switching to "${eventFilter === 'upcoming' ? 'Past' : eventFilter === 'past' ? 'Upcoming' : 'All'}" or create a new event.`}
             </p>
-            <Link
-              to="/admin/events/create"
-              className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center justify-center space-x-2 text-sm sm:text-base min-h-[44px] sm:min-h-0"
-            >
-              <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span>Create First Event</span>
-            </Link>
+            {events.length === 0 && (
+              <Link
+                to="/admin/events/create"
+                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center justify-center space-x-2 text-sm sm:text-base min-h-[44px] sm:min-h-0"
+              >
+                <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span>Create First Event</span>
+              </Link>
+            )}
+          </div>
+        ) : viewMode === 'list' ? (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Event</th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Date & location</th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredAndSortedEvents.map((event) => (
+                  <tr key={event.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900">{event.name}</div>
+                    </td>
+                    <td className="px-4 py-3 hidden sm:table-cell text-sm text-gray-600">
+                      {formatDate(event.date)}
+                      <span className="text-gray-400 mx-1">•</span>
+                      <span className="truncate max-w-[180px] inline-block align-bottom" title={event.location}>{event.location}</span>
+                    </td>
+                    <td className="px-4 py-3">{getStatusBadge(event.status)}</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex flex-wrap items-center justify-end gap-1 sm:gap-2">
+                        <Link to={`/events/${event.slug}`} className="text-gray-500 hover:text-gray-700 p-1.5 rounded" title="View"><Eye className="h-4 w-4" /></Link>
+                        <Link to={`/admin/events/${event.id}/edit`} className="text-gray-500 hover:text-gray-700 p-1.5 rounded" title="Edit"><Edit className="h-4 w-4" /></Link>
+                        <button type="button" onClick={() => handleShowRegistrations(event)} className="text-blue-600 hover:text-blue-800 p-1.5 rounded font-medium flex items-center gap-1" title="Registrations & check-in">
+                          <Users className="h-4 w-4" /><span className="hidden sm:inline">Registrations</span>
+                        </button>
+                        <button type="button" onClick={() => handleDeleteClick(event)} disabled={deletingEvent === event.id} className="text-red-500 hover:text-red-700 p-1.5 rounded disabled:opacity-50" title="Delete">
+                          {deletingEvent === event.id ? <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-            {events.map((event) => (
+            {filteredAndSortedEvents.map((event) => (
               <div key={event.id} className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 overflow-hidden hover-lift">
                 {/* Event Image */}
                 <div className="h-40 sm:h-48 bg-gray-200 relative">
@@ -583,40 +706,127 @@ const EventManagement: React.FC = () => {
                 </div>
               ) : (
                 <div className="p-3 sm:p-4 lg:p-6">
-                  <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-                    <div className="text-xs sm:text-sm text-gray-500">
-                      Showing {registrations.length} {registrations.length === 1 ? 'registration' : 'registrations'}
+                  {/* Search + Tabs */}
+                  <div className="mb-4 space-y-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search by name or email..."
+                        value={registrationSearch}
+                        onChange={(e) => setRegistrationSearch(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
                     </div>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 sm:space-x-0">
-                      <div className="flex items-center space-x-2 text-xs sm:text-sm">
-                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-gray-700">
-                          {registrations.filter(reg => reg.checkedIn).length} Checked In
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-xs sm:text-sm">
-                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-yellow-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-gray-700">
-                          {registrations.filter(reg => !reg.checkedIn).length} Not Checked In
-                        </span>
-                      </div>
+                    <div className="flex rounded-lg border border-gray-200 p-0.5 bg-gray-50">
+                      <button
+                        type="button"
+                        onClick={() => setRegistrationsTab('awaiting')}
+                        className={`flex-1 px-3 py-2 rounded-md text-sm font-medium min-h-[36px] ${
+                          registrationsTab === 'awaiting' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'
+                        }`}
+                      >
+                        Awaiting check-in ({searchLower ? awaitingFiltered.length : awaitingCheckIn.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRegistrationsTab('checked-in')}
+                        className={`flex-1 px-3 py-2 rounded-md text-sm font-medium min-h-[36px] ${
+                          registrationsTab === 'checked-in' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'
+                        }`}
+                      >
+                        Checked in ({searchLower ? checkedInFiltered.length : checkedIn.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRegistrationsTab('all')}
+                        className={`flex-1 px-3 py-2 rounded-md text-sm font-medium min-h-[36px] ${
+                          registrationsTab === 'all' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'
+                        }`}
+                      >
+                        All ({registrations.length})
+                      </button>
                     </div>
                   </div>
-                  
-                  {/* Position Chart */}
-                  <div className="mb-4 sm:mb-6 overflow-x-auto -mx-3 sm:mx-0">
-                    <div className="min-w-[300px] sm:min-w-0 px-3 sm:px-0">
-                      <EventPositionChart eventId={selectedEvent.id} />
+
+                  {/* Check-in focused: Awaiting tab — compact list */}
+                  {registrationsTab === 'awaiting' && (
+                    <div className="mb-6">
+                      {awaitingFiltered.length === 0 ? (
+                        <p className="text-sm text-gray-500 py-4">
+                          {awaitingCheckIn.length === 0 ? 'Everyone is checked in.' : 'No matches for your search.'}
+                        </p>
+                      ) : (
+                        <ul className="space-y-2">
+                          {awaitingFiltered.map((reg) => (
+                            <li key={reg.userId} className="flex items-center justify-between gap-3 py-2 px-3 rounded-lg bg-gray-50 hover:bg-gray-100">
+                              <div className="min-w-0 flex-1">
+                                <span className="font-medium text-gray-900">{reg.name}</span>
+                                {reg.email && <span className="text-gray-500 text-sm ml-2 truncate">({reg.email})</span>}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleManualCheckIn(reg.userId, reg.name)}
+                                disabled={checkingInUsers.has(reg.userId)}
+                                className="flex-shrink-0 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium text-sm flex items-center gap-2 disabled:opacity-50"
+                              >
+                                {checkingInUsers.has(reg.userId) ? (
+                                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Checking in...</>
+                                ) : (
+                                  <><UserCheck className="h-4 w-4" /> Check in</>
+                                )}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
-                  </div>
-                  
-                  <div className="overflow-x-auto -mx-3 sm:mx-0">
+                  )}
+
+                  {/* Checked-in tab: read-only list */}
+                  {registrationsTab === 'checked-in' && (
+                    <div className="mb-6">
+                      {checkedInFiltered.length === 0 ? (
+                        <p className="text-sm text-gray-500 py-4">
+                          {checkedIn.length === 0 ? 'No one checked in yet.' : 'No matches for your search.'}
+                        </p>
+                      ) : (
+                        <ul className="space-y-2">
+                          {checkedInFiltered.map((reg) => (
+                            <li key={reg.userId} className="flex items-center justify-between gap-3 py-2 px-3 rounded-lg bg-green-50">
+                              <div>
+                                <span className="font-medium text-gray-900">{reg.name}</span>
+                                {reg.email && <span className="text-gray-500 text-sm ml-2">({reg.email})</span>}
+                              </div>
+                              <div className="flex items-center text-green-700 text-sm">
+                                <CheckCircle className="h-4 w-4 mr-1" /> Checked in
+                                {reg.checkedInAt && <span className="text-gray-500 ml-1">{formatDateForExport(reg.checkedInAt)}</span>}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+
+                  {/* All tab: full table + chart */}
+                  {registrationsTab === 'all' && (
+                    <>
+                      <div className="mb-4 flex flex-wrap items-center gap-4 text-xs sm:text-sm text-gray-500">
+                        <span>{registrations.length} total</span>
+                        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-green-500 rounded-full" /> {checkedIn.length} checked in</span>
+                        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-yellow-500 rounded-full" /> {awaitingCheckIn.length} awaiting</span>
+                      </div>
+                      <div className="mb-4 overflow-x-auto -mx-3 sm:mx-0">
+                        <div className="min-w-[300px] px-3 sm:px-0">
+                          <EventPositionChart eventId={selectedEvent.id} />
+                        </div>
+                      </div>
+                      <div className="overflow-x-auto -mx-3 sm:mx-0">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th scope="col" className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Name
-                          </th>
+                          <th scope="col" className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                           <th scope="col" className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Email
                           </th>
@@ -644,7 +854,7 @@ const EventManagement: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {registrations.map((registration) => (
+                        {allFiltered.map((registration) => (
                           <tr key={registration.userId} className="hover:bg-gray-50">
                             <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                               <div className="flex items-center space-x-2 sm:space-x-3">
@@ -762,6 +972,8 @@ const EventManagement: React.FC = () => {
                       </tbody>
                     </table>
                   </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
