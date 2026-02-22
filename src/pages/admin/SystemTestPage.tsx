@@ -47,11 +47,23 @@ const SystemTestPage: React.FC = () => {
     type: 'success',
   });
   const [emailConfig, setEmailConfig] = useState<{ mailjet: boolean; mailchimp: boolean } | null>(null);
+  const [runningTemplate, setRunningTemplate] = useState<string | null>(null);
   
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [isRunningTests, setIsRunningTests] = useState(false);
   const [runningTest, setRunningTest] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const EMAIL_TEMPLATES: { key: string; label: string }[] = [
+    { key: 'test', label: 'Test email' },
+    { key: 'welcome', label: 'Welcome (signup received)' },
+    { key: 'welcome-approved', label: 'Welcome approved' },
+    { key: 'event-announcement', label: 'Event announcement' },
+    { key: 'registration-confirmation', label: 'Registration confirmation' },
+    { key: 'event-reminder', label: 'Event reminder' },
+    { key: 'password-reset', label: 'Password reset' },
+    { key: 'user-credentials', label: 'User credentials' },
+  ];
 
   // Default recipient to logged-in admin email
   useEffect(() => {
@@ -216,6 +228,64 @@ const SystemTestPage: React.FC = () => {
       setTimeout(() => setToast((t) => ({ ...t, visible: false })), 5000);
     } finally {
       setRunningTest(null);
+    }
+  };
+
+  const sendTemplateEmail = async (templateKey: string) => {
+    const to = emailRecipient.trim().toLowerCase();
+    if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+      setToast({ visible: true, message: 'Please enter a valid recipient email', type: 'error' });
+      setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
+      return;
+    }
+    const label = EMAIL_TEMPLATES.find((t) => t.key === templateKey)?.label ?? templateKey;
+    setRunningTemplate(templateKey);
+    setLastEmailResponse(null);
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        setToast({ visible: true, message: 'Not authenticated', type: 'error' });
+        setRunningTemplate(null);
+        return;
+      }
+      const idToken = await currentUser.getIdToken();
+      const response = await fetch('/api/admin/test/send-template-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ to, template: templateKey }),
+      });
+      const data = await response.json().catch(() => ({}));
+      const payload = {
+        provider: 'transactional',
+        sentTo: data.sentTo ?? to,
+        ok: data.ok === true,
+        providerMessageId: data.messageId,
+        error: data.error,
+        timestamp: new Date().toISOString(),
+      };
+      setLastEmailResponse(payload);
+      if (data.ok) {
+        setToast({ visible: true, message: `${label} sent to ${data.sentTo}`, type: 'success' });
+        setTimeout(() => setToast((t) => ({ ...t, visible: false })), 4000);
+      } else {
+        setToast({ visible: true, message: data.error || 'Send failed', type: 'error' });
+        setTimeout(() => setToast((t) => ({ ...t, visible: false })), 5000);
+      }
+    } catch (err: any) {
+      setLastEmailResponse({
+        provider: 'transactional',
+        sentTo: to,
+        ok: false,
+        error: err?.message || 'Request failed',
+        timestamp: new Date().toISOString(),
+      });
+      setToast({ visible: true, message: err?.message || 'Request failed', type: 'error' });
+      setTimeout(() => setToast((t) => ({ ...t, visible: false })), 5000);
+    } finally {
+      setRunningTemplate(null);
     }
   };
   
@@ -469,6 +539,28 @@ const SystemTestPage: React.FC = () => {
                       </>
                     )}
                   </button>
+                </div>
+                <div className="pt-4 border-t border-gray-100">
+                  <p className="text-sm font-medium text-gray-700 mb-3">Send by template</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {EMAIL_TEMPLATES.map(({ key, label }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => sendTemplateEmail(key)}
+                        disabled={!emailRecipient.trim() || runningTemplate !== null || (emailConfig !== null && !emailConfig.mailjet && !emailConfig.mailchimp)}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-1.5"
+                        title={!emailRecipient.trim() ? 'Enter recipient email' : emailConfig && !emailConfig.mailjet && !emailConfig.mailchimp ? 'Configure Mailjet or Mailchimp' : `Send ${label}`}
+                      >
+                        {runningTemplate === key ? (
+                          <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                        ) : (
+                          <Send className="h-4 w-4 flex-shrink-0" />
+                        )}
+                        <span className="truncate">{label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 {lastEmailResponse && (
                   <div className={`mt-4 p-4 rounded-xl border ${lastEmailResponse.ok ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
