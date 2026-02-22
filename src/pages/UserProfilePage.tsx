@@ -17,6 +17,7 @@ import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Favicon from '../components/ui/Favicon';
 import ImageWithCrop from '../components/profile/ImageWithCrop';
+import BioHtml from '../components/profile/BioHtml';
 
 interface Connection {
   id: string;
@@ -489,7 +490,7 @@ const UserProfilePage: React.FC = () => {
               {profile.bio && (
                 <div className="mb-8">
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">About</h3>
-                  <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{profile.bio}</p>
+                  <BioHtml html={profile.bio} />
                 </div>
               )}
 

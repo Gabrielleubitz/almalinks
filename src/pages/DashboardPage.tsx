@@ -14,6 +14,8 @@ import EventTicketCard from '../components/dashboard/EventTicketCard';
 import ProfilePictureUploader from '../components/profile/ProfilePictureUploader';
 import CoverPhotoUploader from '../components/profile/CoverPhotoUploader';
 import ImageWithCrop from '../components/profile/ImageWithCrop';
+import RichTextBioEditor from '../components/profile/RichTextBioEditor';
+import BioHtml from '../components/profile/BioHtml';
 import type { CropValue, NormalizedCrop } from '../types/crop';
 import Favicon from '../components/ui/Favicon';
 import SavedIndicator from '../components/ui/SavedIndicator';
@@ -1151,25 +1153,17 @@ const EventsPage: React.FC = () => {
                             <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
                               Personal Bio
                             </label>
-                            <textarea
-                              id="bio"
-                              name="bio"
-                              rows={4}
+                            <RichTextBioEditor
                               value={editFormData.bio}
-                              onChange={handleEditFormChange}
+                              onChange={(html) => handleEditFormChange({ target: { name: 'bio', value: html } } as React.ChangeEvent<HTMLTextAreaElement>)}
                               onBlur={handleBlurSave}
-                              className="w-full max-w-full px-4 py-3 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none text-base sm:text-base min-h-[120px] sm:min-h-[100px] box-border"
                               placeholder="Tell us about yourself, your background, interests, and what you're passionate about..."
                               disabled={profileUpdateLoading}
+                              maxLength={2000}
                             />
-                            <div className="flex justify-between items-center mt-1">
-                              <p className="text-xs text-gray-500">
-                                Share your story, interests, and what drives you professionally.
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {editFormData.bio.length}/500 characters
-                              </p>
-                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Share your story, interests, and what drives you professionally. Use the toolbar for bold, italic, underline, and highlight.
+                            </p>
                           </div>
 
                           {/* Skills */}
@@ -1546,9 +1540,7 @@ const EventsPage: React.FC = () => {
                               <div>
                                 <h4 className="text-sm font-medium text-gray-700 mb-3">Personal Bio</h4>
                                 <div className="bg-gray-50 rounded-xl p-4">
-                                  <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
-                                    {user.bio}
-                                  </p>
+                                  <BioHtml html={user.bio} />
                                 </div>
                               </div>
                             )}

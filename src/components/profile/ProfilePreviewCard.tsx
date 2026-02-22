@@ -3,6 +3,7 @@ import { MapPin, Mail, Phone, Linkedin, Globe, Twitter, Clock, Calendar, Shield,
 import { UserProfile } from '../../types/user';
 import { getVisibilityDescription } from '../../utils/privacy';
 import Favicon from '../ui/Favicon';
+import BioHtml from './BioHtml';
 
 interface ProfilePreviewCardProps {
   profile: UserProfile;
@@ -126,9 +127,7 @@ const ProfilePreviewCard: React.FC<ProfilePreviewCardProps> = ({
         {profile.bio && (
           <div>
             <h5 className="text-sm font-semibold text-gray-900 mb-2">About</h5>
-            <p className="text-gray-700 text-sm leading-relaxed">
-              {profile.bio}
-            </p>
+            <BioHtml html={profile.bio} className="text-gray-700 text-sm" />
           </div>
         )}
 

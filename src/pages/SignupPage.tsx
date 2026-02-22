@@ -4,6 +4,7 @@ import { Eye, EyeOff, Mail, Lock, User, Phone, Briefcase, ArrowRight, ArrowLeft,
 import { useAuth } from '../hooks/useAuth';
 import logoSvg from '../assets/alma-links-logo.svg';
 import IganiWatermark from '../components/IganiWatermark';
+import RichTextBioEditor from '../components/profile/RichTextBioEditor';
 
 // Country codes data
 const COUNTRY_CODES = [
@@ -605,16 +606,12 @@ const SignupPage: React.FC = () => {
               <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
                 Bio (long)
               </label>
-              <textarea
-                id="bio"
-                name="bio"
+              <RichTextBioEditor
                 value={formData.bio}
-                onChange={handleInputChange}
-                maxLength={400}
-                rows={3}
-                className="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 resize-none"
-                placeholder="Tell us about your background (max 400 characters)"
+                onChange={(html) => setFormData(prev => ({ ...prev, bio: html }))}
+                placeholder="Tell us about your background. Use the toolbar for bold, italic, underline, and highlight."
                 disabled={isSubmitting}
+                maxLength={2000}
               />
             </div>
 

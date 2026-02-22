@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Briefcase, Building2, Lightbulb, FileText, Plus, X } from 'lucide-react';
 import { UserProfileForm } from '../../../types/user';
 import FormField from '../FormField';
+import RichTextBioEditor from '../../profile/RichTextBioEditor';
+import BioHtml from '../../profile/BioHtml';
 
 interface AboutYouStepProps {
   formData: UserProfileForm;
@@ -162,29 +164,15 @@ const AboutYouStep: React.FC<AboutYouStepProps> = ({
       <FormField
         label="About You"
         error={touchedFields.has('bio') ? errors.bio : undefined}
-        helpText="Tell others about your background, interests, and what you're passionate about (max 400 characters)"
+        helpText="Tell others about your background, interests, and what you're passionate about. Use the toolbar for bold, italic, underline, and highlight."
       >
-        <div className="relative">
-          <FileText className="absolute left-3 top-4 h-5 w-5 text-gray-400" />
-          <textarea
-            value={formData.bio}
-            onChange={(e) => onUpdate('bio', e.target.value)}
-            maxLength={400}
-            rows={4}
-            className={`
-              block w-full pl-11 pr-4 py-3 border rounded-xl transition-colors duration-200 resize-none
-              ${errors.bio && touchedFields.has('bio')
-                ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-              }
-              focus:ring-2 focus:ring-opacity-20
-            `}
-            placeholder="Share your story, what drives you, and what you're looking to achieve..."
-          />
-          <div className="absolute right-3 bottom-3 text-xs text-gray-400">
-            {formData.bio.length}/400
-          </div>
-        </div>
+        <RichTextBioEditor
+          value={formData.bio}
+          onChange={(html) => onUpdate('bio', html)}
+          placeholder="Share your story, what drives you, and what you're looking to achieve..."
+          maxLength={2000}
+          className={touchedFields.has('bio') && errors.bio ? 'border-red-300 focus-within:ring-red-500' : ''}
+        />
       </FormField>
 
       {/* Skills */}
@@ -270,7 +258,9 @@ const AboutYouStep: React.FC<AboutYouStepProps> = ({
           )}
           
           {formData.bio && (
-            <p className="text-gray-700 text-sm">{formData.bio}</p>
+            <div className="text-gray-700 text-sm">
+              <BioHtml html={formData.bio} />
+            </div>
           )}
           
           {formData.skills.length > 0 && (

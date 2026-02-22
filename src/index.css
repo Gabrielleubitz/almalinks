@@ -96,6 +96,14 @@
   background-clip: text;
 }
 
+/* Bio rich text (bold, italic, underline, highlight) */
+.bio-content p { margin: 0 0 0.5em; }
+.bio-content p:last-child { margin-bottom: 0; }
+.bio-content b, .bio-content strong { font-weight: 700; }
+.bio-content i, .bio-content em { font-style: italic; }
+.bio-content u { text-decoration: underline; }
+.bio-content mark, .bio-content [style*="background-color"] { background-color: #fef08a; padding: 0 0.1em; border-radius: 0.15em; }
+
 .hover-lift {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }

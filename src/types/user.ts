@@ -27,7 +27,7 @@ export interface UserProfile {
   
   // Bio
   bioTitle?: string; // short description, max 60 chars
-  bio?: string; // long description, max 400 chars
+  bio?: string; // long description (plain or HTML), max 2000 chars
   skills?: string[]; // up to 12 tags, each 2-20 chars
   
   // Location
@@ -152,7 +152,7 @@ export interface ValidationRules {
   website: { format: 'url' };
   twitter: { format: 'url' };
   bioTitle: { maxLength: 60 };
-  bio: { maxLength: 400 };
+  bio: { maxLength: 2000 };
   skills: { maxItems: 12; itemMinLength: 2; itemMaxLength: 20 };
   city: { maxLength: 100 };
   country: { maxLength: 100 };

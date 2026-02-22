@@ -137,8 +137,8 @@ export const validateField = (field: string, value: any): ValidationError[] => {
       break;
       
     case 'bio':
-      if (value && value.length > 400) {
-        errors.push({ field, message: 'Bio must be 400 characters or less' });
+      if (value && value.length > 2000) {
+        errors.push({ field, message: 'Bio must be 2000 characters or less' });
       }
       break;
       

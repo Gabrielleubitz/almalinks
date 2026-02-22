@@ -52,6 +52,43 @@ export function sanitizeHTML(input: string | null | undefined): string {
     .trim();
 }
 
+const BIO_ALLOWED_TAGS = new Set(['b', 'i', 'u', 'mark', 'p', 'br', 'span', 'strong', 'em']);
+
+/**
+ * Sanitize HTML for bio/rich text display. Only allows b, i, u, mark, p, br, span (class only), strong, em.
+ * Use for rendering user bio with formatting (bold, italic, underline, highlight).
+ */
+export function sanitizeBioHtml(html: string | null | undefined): string {
+  if (!html || typeof html !== 'string') return '';
+  let out = html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+    .replace(/on\w+=["'][^"']*["']/gi, '')
+    .replace(/javascript:/gi, '');
+  const tagRe = /<\/?([a-z][a-z0-9]*)(\s[^>]*)?\/?>/gi;
+  out = out.replace(tagRe, (match, tagName, attrs) => {
+    const lower = (tagName || '').toLowerCase();
+    if (!BIO_ALLOWED_TAGS.has(lower)) return '';
+    if (lower === 'br') return '<br>';
+    if (lower === 'span' && attrs) {
+      const classMatch = attrs.match(/class=["']([^"']*)["']/i);
+      const styleMatch = attrs.match(/style=["']([^"']*)["']/i);
+      const cls = classMatch ? classMatch[1].replace(/[^a-zA-Z0-9\-_\s]/g, '').trim() : '';
+      let style = '';
+      if (styleMatch) {
+        const bg = styleMatch[1].match(/background-color:\s*([^;]+)/i);
+        if (bg && /^(#[a-fA-F0-9]{3,8}|rgb\([^)]+\)|rgba\([^)]+\))$/.test(bg[1].trim())) style = ` style="background-color: ${bg[1].trim()}"`;
+      }
+      if (cls) return `<span class="${cls}"${style}>`;
+      if (style) return `<span${style}>`;
+      return '<span>';
+    }
+    if (attrs && lower !== 'span') return `<${lower}>`;
+    return match.charAt(1) === '/' ? `</${lower}>` : `<${lower}>`;
+  });
+  return out.trim();
+}
+
 /**
  * Validate and sanitize email address
  */
