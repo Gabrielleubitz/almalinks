@@ -222,7 +222,7 @@ const UserDirectoryPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
         <Header />
-        <div className="pt-20 pb-16 flex items-center justify-center">
+        <div className="pt-[var(--content-offset-top)] pb-16 flex items-center justify-center">
           <LoadingSpinner size="lg" />
         </div>
         <Footer />
@@ -234,7 +234,7 @@ const UserDirectoryPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <Header />
       
-      <div className="pt-20 pb-16">
+      <div className="pt-[var(--content-offset-top)] pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="text-center mb-12">

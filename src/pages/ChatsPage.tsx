@@ -100,7 +100,7 @@ const ChatsPage: React.FC = () => {
     <div className="h-screen max-h-dvh bg-white flex flex-col overflow-hidden">
       <Header />
       
-      <div className="flex-1 flex flex-col min-h-0 pt-20 overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 pt-[var(--content-offset-top)] overflow-hidden">
         {/* Page Header - fixed, does not scroll */}
         <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
           <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3">

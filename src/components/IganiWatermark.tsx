@@ -19,7 +19,7 @@ const IganiWatermark: React.FC<IganiWatermarkProps> = ({
 
   const positionClasses = {
     'footer': 'flex items-center justify-center gap-1.5 sm:gap-2',
-    'bottom-right': 'fixed bottom-4 right-4 z-10',
+    'bottom-right': 'fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-10',
     'bottom-center': 'flex items-center justify-center'
   };
 

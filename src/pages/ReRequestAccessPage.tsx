@@ -256,7 +256,7 @@ const ReRequestAccessPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-4 relative">
-      <div className="absolute top-6 left-6 z-10">
+      <div className="absolute top-[max(1.5rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))] z-10">
         <img src={logoSvg} alt="AlmaLinks Logo" className="h-8 md:h-10 w-auto" />
       </div>
 

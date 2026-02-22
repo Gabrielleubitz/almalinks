@@ -318,7 +318,7 @@ const CreateChatGroup: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
         <AdminHeader />
-        <div className="pt-20 pb-16 flex items-center justify-center">
+        <div className="pt-[var(--content-offset-top)] pb-16 flex items-center justify-center">
           <LoadingSpinner size="lg" color="border-blue-600" />
         </div>
       </div>
@@ -333,7 +333,7 @@ const CreateChatGroup: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <AdminHeader />
       
-      <div className="pt-20 pb-12 sm:pb-16">
+      <div className="pt-[var(--content-offset-top)] pb-12 sm:pb-16">
         <div className="max-w-4xl mx-auto px-3 sm:px-4 lg:px-8 overflow-x-hidden w-full max-w-full box-border">
           {/* Page Header */}
           <div className="mb-6 sm:mb-8">

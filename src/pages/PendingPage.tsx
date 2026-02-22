@@ -32,7 +32,7 @@ const PendingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-4 relative">
       {/* Logo in top left corner */}
-      <div className="absolute top-6 left-6 z-10">
+      <div className="absolute top-[max(1.5rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))] z-10">
         <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
           <img 
             src={logoSvg}

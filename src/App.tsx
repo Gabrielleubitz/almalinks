@@ -45,6 +45,8 @@ import CreateChatGroup from './pages/admin/CreateChatGroup';
 import AdminChatManagement from './pages/admin/AdminChatManagement';
 import ThemePreview from './pages/ThemePreview';
 import HelpPage from './pages/HelpPage';
+import TermsPage from './pages/TermsPage';
+import TermsAgreementModal, { getTermsAgreed } from './components/TermsAgreementModal';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AuthWrapper from './components/auth/AuthWrapper';
 import NetworkStatusIndicator from './components/ui/NetworkStatusIndicator';
@@ -66,15 +68,27 @@ const HomePage = () => (
 );
 
 function App() {
+  const [showTermsModal, setShowTermsModal] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!getTermsAgreed()) {
+      setShowTermsModal(true);
+    }
+  }, []);
+
   return (
     <Router>
       <ActivityTracker />
+      {showTermsModal && (
+        <TermsAgreementModal onAgree={() => setShowTermsModal(false)} />
+      )}
       <div className="min-h-screen flex flex-col">
         <div className="flex-1 flex flex-col">
           <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/theme-preview" element={<ThemePreview />} />
         <Route path="/help" element={<HelpPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         
         {/* Auth Routes */}
         <Route path="/login" element={<LoginPage />} />

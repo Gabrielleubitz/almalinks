@@ -34,12 +34,12 @@ const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
     };
   }, []);
 
-  // Position classes
+  // Position classes (safe-area for notched devices)
   const positionClasses = {
-    'top-right': 'top-4 right-4',
-    'top-left': 'top-4 left-4',
-    'bottom-right': 'bottom-4 right-4',
-    'bottom-left': 'bottom-4 left-4'
+    'top-right': 'top-[max(1rem,env(safe-area-inset-top))] right-[max(1rem,env(safe-area-inset-right))]',
+    'top-left': 'top-[max(1rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))]',
+    'bottom-right': 'bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))]',
+    'bottom-left': 'bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))]'
   };
 
   if (isOnline && !showOnlineMessage) {

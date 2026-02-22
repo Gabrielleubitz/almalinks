@@ -694,7 +694,7 @@ const MembersPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
         <Header />
-        <div className="pt-32 pb-16 flex items-center justify-center">
+        <div className="pt-[var(--content-offset-top)] pb-16 flex items-center justify-center">
           <div className="text-center">
             <LoadingSpinner size="lg" color="border-blue-600" />
             <p className="text-gray-600 mt-4">Loading members...</p>
@@ -709,8 +709,8 @@ const MembersPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <Header />
       
-      {/* Hero Section - pt-28 so content is below fixed header */}
-      <section className="pt-28 pb-12 bg-gradient-to-br from-blue-50 to-indigo-50">
+      {/* Hero Section - content below fixed header + safe area */}
+      <section className="pt-[var(--content-offset-top)] sm:pt-28 pb-12 bg-gradient-to-br from-blue-50 to-indigo-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">

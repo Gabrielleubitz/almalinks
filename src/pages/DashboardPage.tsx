@@ -590,7 +590,7 @@ const EventsPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-white">
         <Header />
-        <div className="pt-32 pb-16">
+        <div className="pt-[var(--content-offset-top)] pb-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <div className="w-12 h-12 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mx-auto mb-4"></div>
@@ -608,7 +608,7 @@ const EventsPage: React.FC = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="pt-20 sm:pt-24 md:pt-32 pb-8 sm:pb-12 md:pb-16 bg-gradient-to-br from-gray-50 to-white">
+      <section className="pt-[var(--content-offset-top)] sm:pt-24 md:pt-32 pb-8 sm:pb-12 md:pb-16 bg-gradient-to-br from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-3 sm:mb-4 md:mb-6 fade-in px-2">

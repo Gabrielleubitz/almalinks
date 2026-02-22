@@ -24,7 +24,7 @@ const DesktopLayout: React.FC<DesktopLayoutProps> = ({
       {showHeader && <Header />}
       
       {/* Main Content Area */}
-      <main className={`flex-1 ${showHeader ? 'pt-20' : ''}`}>
+      <main className={`flex-1 ${showHeader ? 'pt-[var(--content-offset-top)]' : ''}`}>
         {children}
       </main>
       

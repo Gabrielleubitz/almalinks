@@ -144,7 +144,7 @@ const EventsPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-white">
         <Header />
-        <section className="pt-32 pb-16 bg-gradient-to-br from-gray-50 to-white">
+        <section className="pt-[var(--content-offset-top)] pb-16 bg-gradient-to-br from-gray-50 to-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <div className="w-12 h-12 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mx-auto mb-4"></div>
@@ -162,7 +162,7 @@ const EventsPage: React.FC = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="pt-24 sm:pt-32 pb-12 sm:pb-16 bg-gradient-to-br from-gray-50 to-white flex-shrink-0">
+      <section className="pt-[var(--content-offset-top)] sm:pt-32 pb-12 sm:pb-16 bg-gradient-to-br from-gray-50 to-white flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 fade-in px-2">
@@ -176,7 +176,7 @@ const EventsPage: React.FC = () => {
       </section>
 
       {/* Filter bar: sticky below header so it doesn't scroll away with the events list */}
-      <div className="sticky top-16 z-10 flex-shrink-0 bg-white border-b border-gray-100 shadow-sm">
+      <div className="sticky z-10 flex-shrink-0 bg-white border-b border-gray-100 shadow-sm top-[var(--content-offset-top)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-center overflow-x-hidden">
             <div className="flex flex-wrap sm:flex-nowrap gap-1 sm:space-x-1 bg-gray-100 p-1 rounded-full max-w-full">

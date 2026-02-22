@@ -7,7 +7,7 @@ const Hero = () => {
   const { user, isPending } = useAuth();
 
   return (
-    <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white pt-16 md:pt-20 pb-8 md:pb-0">
+    <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white pt-[var(--content-offset-top)] md:pt-20 pb-8 md:pb-0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-4xl mx-auto">
           {/* Main heading - using Outfit as per brand guidelines */}

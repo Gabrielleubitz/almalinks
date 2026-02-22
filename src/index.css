@@ -324,8 +324,25 @@ html, body {
   max-width: 100vw;
 }
 
+/* Mobile: use full viewport height including address bar (iOS) */
+@supports (min-height: 100dvh) {
+  html, body {
+    min-height: 100dvh;
+  }
+}
+
 * {
   box-sizing: border-box;
+}
+
+/* Safe area insets for notched devices (e.g. iPhone X+) */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  /* Content offset below fixed header: 5rem (80px) + safe area */
+  --content-offset-top: calc(5rem + var(--safe-area-inset-top));
 }
 
 /* Prevent elements from causing horizontal scroll */
@@ -341,10 +358,15 @@ html, body {
   overflow-x: hidden;
 }
 
-/* Mobile responsiveness improvements */
+/* Mobile responsiveness improvements (tablet and below) */
 @media (max-width: 768px) {
   .animate-float-gentle {
     animation-duration: 6s;
+  }
+  
+  /* Touch-friendly: reduce double-tap zoom delay */
+  a, button, input, select, textarea, [role="button"] {
+    touch-action: manipulation;
   }
   
   /* Ensure containers don't exceed viewport */
@@ -360,6 +382,7 @@ html, body {
     overflow-x: auto;
     white-space: nowrap;
     max-width: 100%;
+    -webkit-overflow-scrolling: touch;
   }
   
   /* Prevent pre and code blocks from overflowing */

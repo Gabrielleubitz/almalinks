@@ -174,7 +174,7 @@ const UserProfilePage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
         <Header />
-        <div className="pt-20 pb-16 flex items-center justify-center">
+        <div className="pt-[var(--content-offset-top)] pb-16 flex items-center justify-center">
           <div className="text-center">
             <LoadingSpinner size="lg" color="border-purple-600" />
             <p className="text-gray-600 mt-4">Loading profile...</p>
@@ -189,7 +189,7 @@ const UserProfilePage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
         <Header />
-        <div className="pt-20 pb-16">
+        <div className="pt-[var(--content-offset-top)] pb-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center">
               <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -256,7 +256,7 @@ const UserProfilePage: React.FC = () => {
       )}
       
       {/* Profile Header */}
-      <div className="pt-20 pb-8">
+      <div className="pt-[var(--content-offset-top)] pb-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back Button */}
           <button

@@ -11,8 +11,8 @@ interface FooterProps {
 const Footer: React.FC<FooterProps> = ({ compact = false }) => {
   if (compact) {
     return (
-      <footer className="flex-shrink-0 bg-gray-900 text-white py-4 sm:py-5 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <footer className="flex-shrink-0 bg-gray-900 text-white py-4 sm:py-5 mt-auto pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-center">
             <img
               src={logoSvg}
@@ -21,6 +21,9 @@ const Footer: React.FC<FooterProps> = ({ compact = false }) => {
             />
             <Link to="/help" className="text-gray-400 hover:text-white text-xs sm:text-sm">
               Need help? Report a bug
+            </Link>
+            <Link to="/terms" className="text-gray-400 hover:text-white text-xs sm:text-sm">
+              Terms &amp; Conditions
             </Link>
             <p className="text-gray-400 text-xs sm:text-sm">
               A community of impact-driven leaders. Connect with us anytime!
@@ -42,8 +45,8 @@ const Footer: React.FC<FooterProps> = ({ compact = false }) => {
   }
 
   return (
-    <footer className="bg-gray-900 text-white py-12 sm:py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="bg-gray-900 text-white py-12 sm:py-16 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
         <div className="text-center">
           <div className="flex items-center justify-center space-x-3 mb-6 sm:mb-8">
             <img 
@@ -65,6 +68,12 @@ const Footer: React.FC<FooterProps> = ({ compact = false }) => {
               className="text-gray-400 hover:text-white transition-colors duration-200 font-medium text-sm"
             >
               Need help? Report a bug
+            </Link>
+            <Link
+              to="/terms"
+              className="text-gray-400 hover:text-white transition-colors duration-200 font-medium text-sm"
+            >
+              Terms &amp; Conditions
             </Link>
             <a
               href="https://www.linkedin.com/company/almalinks/"

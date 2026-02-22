@@ -7,7 +7,7 @@ import React from 'react';
 const PoweredByIgani: React.FC = () => {
   return (
     <footer
-      className="w-full border-t border-gray-200 bg-gray-50/95 backdrop-blur-sm shrink-0"
+      className="w-full border-t border-gray-200 bg-gray-50/95 backdrop-blur-sm shrink-0 pb-[env(safe-area-inset-bottom)]"
       aria-label="Powered by Igani"
     >
       <a

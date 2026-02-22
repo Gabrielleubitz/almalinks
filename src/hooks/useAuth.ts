@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, setPersistence, browserLocalPersistence, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, linkWithPopup, getAdditionalUserInfo } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, setPersistence, browserLocalPersistence, sendPasswordResetEmail, signInWithPopup, signInWithCredential, GoogleAuthProvider, linkWithPopup, getAdditionalUserInfo, fetchSignInMethodsForEmail } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, retryOnNetworkFailure } from '../firebase/config';
 import type { CropValue } from '../types/crop';
@@ -77,6 +77,8 @@ const getAuthErrorMessage = (errorCode: string): string => {
       return 'Too many failed attempts. Please try again later.';
     case 'auth/email-already-in-use':
       return 'An account with this email already exists. Please try logging in instead.';
+    case 'auth/account-exists-with-different-credential':
+      return 'This email is already registered with another sign-in method. Please use the method you used when you first signed up.';
     case 'auth/weak-password':
       return 'Password should be at least 6 characters long.';
     case 'auth/network-request-failed':
@@ -603,10 +605,22 @@ export const useAuth = () => {
       console.error('❌ Sign in failed:', err.code, err.message);
       
       // Handle specific Firebase Auth errors
-      if (err.code === 'auth/user-not-found') {
+      if (err.code === 'auth/account-exists-with-different-credential') {
+        setError('This email is registered with Google. Please use "Sign in with Google" to access your account.');
+      } else if (err.code === 'auth/user-not-found') {
         setError('No account found with this email address. Please sign up first.');
       } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
-        setError('Invalid email or password. Please try again.');
+        // Check if this email is registered with Google only (no password set)
+        try {
+          const methods = await fetchSignInMethodsForEmail(auth, email);
+          if (methods.length > 0 && methods.includes('google.com') && !methods.includes('password')) {
+            setError('This email is registered with Google. Please use "Sign in with Google" to access your account.');
+          } else {
+            setError('Invalid email or password. Please try again.');
+          }
+        } catch (_) {
+          setError('Invalid email or password. Please try again.');
+        }
       } else if (err.code === 'auth/network-request-failed') {
         setError('Network error. Please check your connection and try again.');
         setNetworkError(true);
@@ -750,15 +764,23 @@ export const useAuth = () => {
       // Ensure local persistence is set
       await setPersistence(auth, browserLocalPersistence);
       
-      // Sign in with Google popup
-      const result = await retryOnNetworkFailure(async () => {
-        return signInWithPopup(auth, googleProvider);
-      });
+      let result: { user: User };
+      try {
+        result = await retryOnNetworkFailure(async () => {
+          return signInWithPopup(auth, googleProvider);
+        });
+      } catch (popupErr: any) {
+        // Same email already exists with email/password → sign in to that account and link Google
+        if (popupErr.code === 'auth/account-exists-with-different-credential' && popupErr.credential) {
+          console.log('🔗 Account exists with same email; signing in and linking Google credential');
+          result = await signInWithCredential(auth, popupErr.credential);
+          console.log('✅ Signed in to existing account and linked Google:', result.user.email);
+        } else {
+          throw popupErr;
+        }
+      }
       
       console.log('✅ Google sign-in successful:', result.user.email);
-      
-      const additionalUserInfo = getAdditionalUserInfo(result);
-      const isNewUser = additionalUserInfo?.isNewUser;
       
       // Check if Firestore profile exists
       const userProfile = await getUserProfile(result.user.uid);
@@ -772,12 +794,16 @@ export const useAuth = () => {
           profileImagePublicId: null // not Cloudinary
         });
         
-        // Mark as Google linked for new accounts
-        const userRef = doc(db, 'users', result.user.uid);
-        await updateDoc(userRef, {
-          googleLinked: true,
-          googleEmail: result.user.email
-        });
+        // Mark as Google linked for new accounts (only if we have a user doc - join request path may not create one yet)
+        try {
+          const userRef = doc(db, 'users', result.user.uid);
+          await updateDoc(userRef, {
+            googleLinked: true,
+            googleEmail: result.user.email
+          });
+        } catch (_) {
+          // User doc may not exist yet (join request flow)
+        }
       } else {
         // Existing profile - mark Google as linked; pull profile picture from Google if none set
         console.log('📝 Updating existing user profile with Google account info');
@@ -790,8 +816,7 @@ export const useAuth = () => {
         });
       }
 
-      // Welcome email for new Google sign-ups is sent from joinRequestService when the join request is created (createOrUpdateUserProfile path).
-      // The onAuthStateChanged listener will handle role fetching and navigation
+      // onAuthStateChanged will handle role fetching and navigation
     } catch (err: any) {
       console.error('❌ Google sign-in failed:', err.code, err.message);
       

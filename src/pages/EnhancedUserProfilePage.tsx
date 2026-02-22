@@ -178,7 +178,7 @@ const EnhancedUserProfilePage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
         <Header />
-        <div className="pt-20 pb-16 flex items-center justify-center">
+        <div className="pt-[var(--content-offset-top)] pb-16 flex items-center justify-center">
           <LoadingSpinner size="lg" />
         </div>
         <Footer />
@@ -190,7 +190,7 @@ const EnhancedUserProfilePage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
         <Header />
-        <div className="pt-20 pb-16">
+        <div className="pt-[var(--content-offset-top)] pb-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center">
               <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -246,7 +246,7 @@ const EnhancedUserProfilePage: React.FC = () => {
         </div>
       )}
       
-      <div className="pt-20 pb-16">
+      <div className="pt-[var(--content-offset-top)] pb-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back Button */}
           <button

@@ -76,11 +76,11 @@ const SpeakerAwareHeader: React.FC = () => {
   // If user is pending, don't render navigation options that would lead to protected routes
   if (user && isPending) {
     return (
-      <header className="fixed top-0 left-0 right-0 bg-white shadow-sm border-b border-gray-200 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="fixed top-0 left-0 right-0 bg-white shadow-sm border-b border-gray-200 z-50 pt-[env(safe-area-inset-top)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
           <div className="flex justify-between items-center py-4">
             {/* Logo */}
-            <div className="flex items-center">
+            <div className="flex items-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0">
               <img
                 src={logoSvg}
                 alt="Logo"
@@ -111,11 +111,11 @@ const SpeakerAwareHeader: React.FC = () => {
 
   if (!user) {
     return (
-      <header className="fixed top-0 left-0 right-0 bg-white shadow-sm border-b border-gray-200 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="fixed top-0 left-0 right-0 bg-white shadow-sm border-b border-gray-200 z-50 pt-[env(safe-area-inset-top)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
           <div className="flex justify-between items-center py-4">
             {/* Logo */}
-            <div className="flex items-center">
+            <div className="flex items-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0">
               <img
                 src={logoSvg}
                 alt="Logo"
@@ -129,7 +129,7 @@ const SpeakerAwareHeader: React.FC = () => {
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => navigate('/help')}
-                className="text-gray-600 hover:text-gray-900 transition-colors font-medium text-sm"
+                className="text-gray-600 hover:text-gray-900 transition-colors font-medium text-sm min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center touch-manipulation"
               >
                 Help
               </button>
@@ -162,11 +162,11 @@ const SpeakerAwareHeader: React.FC = () => {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white shadow-sm border-b border-gray-200 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="fixed top-0 left-0 right-0 bg-white shadow-sm border-b border-gray-200 z-50 pt-[env(safe-area-inset-top)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
         <div className="flex justify-between items-center py-4">
           {/* Logo and Mobile Menu Toggle */}
-          <div className="flex items-center">
+          <div className="flex items-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0">
             <img
               src={logoSvg}
               alt="Logo"

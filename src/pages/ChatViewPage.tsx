@@ -953,7 +953,7 @@ const ChatViewPage: React.FC = () => {
   return (
     <div className="h-screen max-h-dvh bg-white flex flex-col overflow-hidden">
       <Header />
-      <div className="flex-1 flex min-h-0 pt-20 overflow-hidden">
+      <div className="flex-1 flex min-h-0 pt-[var(--content-offset-top)] overflow-hidden">
         {/* Chat Layout - Sidebar on desktop, hidden on mobile */}
         <div className="flex-1 flex min-h-0 w-full overflow-hidden">
           

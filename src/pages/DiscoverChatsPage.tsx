@@ -143,7 +143,7 @@ const DiscoverChatsPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
         <Header />
-        <div className="pt-20 pb-16 flex items-center justify-center">
+        <div className="pt-[var(--content-offset-top)] pb-16 flex items-center justify-center">
           <div className="text-center">
             <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign In Required</h2>
@@ -159,7 +159,7 @@ const DiscoverChatsPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex flex-col">
       <Header />
       
-      <main className="flex-1 pt-20 pb-8">
+      <main className="flex-1 pt-[var(--content-offset-top)] pb-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Page Header */}
           <div className="mb-6">

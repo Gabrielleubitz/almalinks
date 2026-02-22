@@ -192,7 +192,7 @@ const ConnectPage: React.FC = () => {
     <div className="min-h-screen bg-white">
       <Header />
       
-      <section className="pt-32 pb-16 bg-gradient-to-br from-gray-50 to-white">
+      <section className="pt-[var(--content-offset-top)] sm:pt-32 pb-16 bg-gradient-to-br from-gray-50 to-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back Button */}
           <div className="mb-8">
