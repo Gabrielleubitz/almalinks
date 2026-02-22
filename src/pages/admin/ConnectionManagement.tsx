@@ -4,6 +4,7 @@ import { ArrowLeft, Download, Settings } from 'lucide-react';
 import AdminHeader from '../../components/admin/AdminHeader';
 import AdminConnectionManager from '../../components/admin/AdminConnectionManager';
 import AdminConnectionWidget from '../../components/admin/AdminConnectionWidget';
+import { AdminConnectionService } from '../../services/adminConnectionService';
 
 const ConnectionManagement: React.FC = () => {
   const [activeView, setActiveView] = useState<'overview' | 'management'>('overview');
@@ -37,18 +38,24 @@ const ConnectionManagement: React.FC = () => {
 
   const handleExportStats = async () => {
     try {
-      // TODO: Implement export functionality
-      // This would export connection statistics to CSV
-      // Implementation would depend on your requirements
-      console.log('Export functionality not yet implemented');
-      // For now, show a user-friendly message
-      const shouldProceed = window.confirm('Export functionality is not yet implemented. Would you like to be notified when it becomes available?');
-      if (shouldProceed) {
-        // Could integrate with a notification system here
-        console.log('User requested export notification');
-      }
+      const rows = await AdminConnectionService.getConnectionsForExport();
+      const headers = ['Connection ID', 'From UID', 'To UID', 'From Name', 'To Name', 'From Email', 'To Email', 'Type', 'Date'];
+      const escape = (v: string) => {
+        const s = String(v ?? '');
+        if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+        return s;
+      };
+      const csv = [headers.map(escape).join(','), ...rows.map(r => [r.id, r.fromUid, r.toUid, r.fromName, r.toName, r.fromEmail, r.toEmail, r.connectionType, r.date].map(escape).join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `almalinks-connections-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('❌ Error exporting stats:', error);
+      window.alert('Export failed. Please try again.');
     }
   };
 

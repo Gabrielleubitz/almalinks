@@ -8,47 +8,36 @@ export const useActivityTracking = () => {
   const { user } = useAuth();
   const lastPageRef = useRef<string | null>(null);
 
-  // Track page views when location changes
-  // DISABLED: Page view tracking generates too many activity logs
-  // To re-enable, uncomment the useEffect below
+  // Track page views when location changes (throttled: max once per 5 min per page)
+  const PAGE_VIEW_THROTTLE_MS = 5 * 60 * 1000;
   useEffect(() => {
-    // Page view tracking is disabled to reduce Firebase quota usage
-    // This was the largest source of activity logs (every page navigation)
-    // If you need to track page views, consider implementing:
-    // 1. Session-based tracking (only first view per session)
-    // 2. Longer throttle periods (5-10 minutes between logs)
-    // 3. Only track specific high-value pages
-
-    /* ORIGINAL CODE (DISABLED):
     if (!user?.uid) return;
 
     const currentPage = window.location.pathname;
-
-    // Don't track the same page twice in a row
     if (lastPageRef.current === currentPage) return;
     lastPageRef.current = currentPage;
 
-    // Only track meaningful pages (skip admin pages and edit pages for regular users)
-    const pagesToTrack = [
-      '/dashboard',
-      '/events',
-      '/members',
-      '/chats',
-      '/profile'
-    ];
-
+    const pagesToTrack = ['/dashboard', '/events', '/members', '/chats', '/profile'];
     const isTrackedPage = pagesToTrack.some(page => currentPage.startsWith(page));
+    if (!isTrackedPage) return;
 
-    if (isTrackedPage) {
-      const pageDisplayName = getPageDisplayName(currentPage);
-      ActivityService.logPageView(
-        user.uid,
-        user.email || '',
-        user.displayName || user.name || 'User',
-        pageDisplayName
-      );
+    try {
+      const key = `pv_${currentPage}`;
+      const last = sessionStorage.getItem(key);
+      const now = Date.now();
+      if (last && now - parseInt(last, 10) < PAGE_VIEW_THROTTLE_MS) return;
+      sessionStorage.setItem(key, String(now));
+    } catch {
+      // sessionStorage full or unavailable
     }
-    */
+
+    const pageDisplayName = getPageDisplayName(currentPage);
+    ActivityService.logPageView(
+      user.uid,
+      user.email || '',
+      user.displayName || user.name || 'User',
+      pageDisplayName
+    );
   }, [user]);
 
   // Helper function to get display name for pages

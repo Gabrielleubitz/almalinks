@@ -3,6 +3,7 @@ import {
   doc, 
   getDocs, 
   getDoc,
+  setDoc,
   addDoc, 
   updateDoc, 
   deleteDoc,
@@ -1221,23 +1222,46 @@ export class ChatService {
   }
 
   private static async checkJoinRequestRateLimit(userId: string): Promise<void> {
-    // Implementation would check daily rate limit
-    // For now, just a placeholder
+    const ref = doc(db, 'chat_rate_limits', `join_${userId}`);
+    const snap = await retryOnNetworkFailure(() => getDoc(ref));
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const data = snap.data();
+    if (data?.date === today && (data?.count ?? 0) >= CHAT_LIMITS.MAX_JOIN_REQUESTS_PER_DAY) {
+      throw new Error(`You can only submit ${CHAT_LIMITS.MAX_JOIN_REQUESTS_PER_DAY} join requests per day. Try again tomorrow.`);
+    }
   }
 
   private static async updateJoinRequestRateLimit(userId: string): Promise<void> {
-    // Implementation would update daily counter
-    // For now, just a placeholder
+    const ref = doc(db, 'chat_rate_limits', `join_${userId}`);
+    const today = new Date().toISOString().slice(0, 10);
+    const snap = await retryOnNetworkFailure(() => getDoc(ref));
+    const data = snap.data();
+    const count = (data?.date === today ? (data?.count ?? 0) : 0) + 1;
+    await retryOnNetworkFailure(() =>
+      setDoc(ref, { date: today, count, updatedAt: Timestamp.now() }, { merge: true })
+    );
   }
 
   private static async checkMessageRateLimit(userId: string): Promise<void> {
-    // Implementation would check per-minute rate limit
-    // For now, just a placeholder
+    const ref = doc(db, 'chat_rate_limits', `msg_${userId}`);
+    const snap = await retryOnNetworkFailure(() => getDoc(ref));
+    const now = Date.now();
+    const minute = Math.floor(now / 60000);
+    const data = snap.data();
+    if (data?.minute === minute && (data?.count ?? 0) >= CHAT_LIMITS.MAX_MESSAGES_PER_MINUTE) {
+      throw new Error(`You can send up to ${CHAT_LIMITS.MAX_MESSAGES_PER_MINUTE} messages per minute. Please wait a moment.`);
+    }
   }
 
   private static async updateMessageRateLimit(userId: string): Promise<void> {
-    // Implementation would update per-minute counter
-    // For now, just a placeholder
+    const ref = doc(db, 'chat_rate_limits', `msg_${userId}`);
+    const minute = Math.floor(Date.now() / 60000);
+    const snap = await retryOnNetworkFailure(() => getDoc(ref));
+    const data = snap.data();
+    const count = (data?.minute === minute ? (data?.count ?? 0) : 0) + 1;
+    await retryOnNetworkFailure(() =>
+      setDoc(ref, { minute, count, updatedAt: Timestamp.now() }, { merge: true })
+    );
   }
 
   private static sanitizeMessage(text: string): string {

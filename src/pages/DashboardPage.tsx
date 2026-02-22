@@ -73,12 +73,16 @@ const POSITION_OPTIONS = [
   { value: 'other', label: 'Other' }
 ];
 
+const DASHBOARD_EVENTS_INITIAL = 6;
+
 const EventsPage: React.FC = () => {
   const [events, setEvents] = useState<EventData[]>([]);
   const [userRegistrations, setUserRegistrations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [registrationsLoading, setRegistrationsLoading] = useState(true);
   const [connectionsCount, setConnectionsCount] = useState<number>(0);
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
+  const [showAllPast, setShowAllPast] = useState(false);
   
   // Edit profile state
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -583,6 +587,10 @@ const EventsPage: React.FC = () => {
 
   const upcomingEvents = events.filter(event => isUpcoming(event.date));
   const pastEvents = events.filter(event => !isUpcoming(event.date));
+  const upcomingDisplay = showAllUpcoming ? upcomingEvents : upcomingEvents.slice(0, DASHBOARD_EVENTS_INITIAL);
+  const pastDisplay = showAllPast ? pastEvents : pastEvents.slice(0, DASHBOARD_EVENTS_INITIAL);
+  const hasMoreUpcoming = upcomingEvents.length > DASHBOARD_EVENTS_INITIAL;
+  const hasMorePast = pastEvents.length > DASHBOARD_EVENTS_INITIAL;
 
   const selectedCountry = COUNTRY_CODES.find(country => country.code === selectedCountryCode);
 
@@ -1881,7 +1889,7 @@ const EventsPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              {upcomingEvents.map((event, index) => {
+              {upcomingDisplay.map((event, index) => {
                 const isRegistered = userRegistrations.some(reg => reg.eventId === event.id);
                 
                 return (
@@ -1968,6 +1976,18 @@ const EventsPage: React.FC = () => {
                 );
               })}
             </div>
+            {hasMoreUpcoming && !showAllUpcoming && (
+              <div className="mt-6 sm:mt-8 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setShowAllUpcoming(true)}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors min-h-[44px] touch-manipulation"
+                >
+                  Show more upcoming events ({upcomingEvents.length - DASHBOARD_EVENTS_INITIAL} more)
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -1990,7 +2010,7 @@ const EventsPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {pastEvents.map((event, index) => (
+              {pastDisplay.map((event, index) => (
                 <div
                   key={event.id}
                   className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover-lift cursor-pointer slide-up`}
@@ -2037,6 +2057,18 @@ const EventsPage: React.FC = () => {
                 </div>
               ))}
             </div>
+            {hasMorePast && !showAllPast && (
+              <div className="mt-6 sm:mt-8 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setShowAllPast(true)}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors min-h-[44px] touch-manipulation"
+                >
+                  Show more past events ({pastEvents.length - DASHBOARD_EVENTS_INITIAL} more)
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
         </section>
       )}

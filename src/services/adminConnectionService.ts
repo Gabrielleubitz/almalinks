@@ -623,4 +623,63 @@ export class AdminConnectionService {
       };
     }
   }
+
+  /**
+   * Get all connections for CSV export (admin only).
+   * Returns rows with connection id, user ids, names, emails, type, date.
+   */
+  static async getConnectionsForExport(): Promise<{
+    id: string;
+    fromUid: string;
+    toUid: string;
+    fromName: string;
+    toName: string;
+    fromEmail: string;
+    toEmail: string;
+    connectionType: string;
+    date: string;
+  }[]> {
+    const connectionsSnapshot = await retryOnNetworkFailure(() =>
+      getDocs(collection(db, 'connections'))
+    );
+    const connections = connectionsSnapshot.docs.map(d => ({ id: d.id, ...d.data() })) as (Connection & { fromUid?: string; toUid?: string; connectionType?: string; timestamp?: any })[];
+    const userIds = new Set<string>();
+    connections.forEach(c => {
+      const from = (c as any).fromUid ?? c.uid1;
+      const to = (c as any).toUid ?? c.uid2;
+      if (from) userIds.add(from);
+      if (to) userIds.add(to);
+    });
+    const userDocs = new Map<string, { name: string; email: string }>();
+    for (const uid of userIds) {
+      const snap = await getDoc(doc(db, 'users', uid));
+      const d = snap.data();
+      userDocs.set(uid, {
+        name: d?.name ?? d?.displayName ?? uid,
+        email: d?.email ?? ''
+      });
+    }
+    const rows: { id: string; fromUid: string; toUid: string; fromName: string; toName: string; fromEmail: string; toEmail: string; connectionType: string; date: string }[] = [];
+    for (const c of connections) {
+      const fromUid = (c as any).fromUid ?? c.uid1 ?? '';
+      const toUid = (c as any).toUid ?? c.uid2 ?? '';
+      const from = userDocs.get(fromUid) ?? { name: fromUid, email: '' };
+      const to = userDocs.get(toUid) ?? { name: toUid, email: '' };
+      const connType = (c as any).connectionType ?? 'scan';
+      const ts = (c as any).timestamp;
+      const date = ts?.toDate?.() ? ts.toDate().toISOString().slice(0, 10) : (ts ? new Date(ts).toISOString().slice(0, 10) : '');
+      rows.push({
+        id: c.id,
+        fromUid,
+        toUid,
+        fromName: from.name,
+        toName: to.name,
+        fromEmail: from.email,
+        toEmail: to.email,
+        connectionType: connType,
+        date
+      });
+    }
+    return rows;
+  }
 }
