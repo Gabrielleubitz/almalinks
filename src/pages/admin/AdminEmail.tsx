@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Send, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail, Send, ArrowLeft, AlertCircle, CheckCircle, Inbox, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { sendAdminEmail } from '../../services/emailService';
@@ -10,9 +10,36 @@ import RecipientPreview from '../../components/admin/RecipientPreview';
 import { auth } from '../../firebase/config';
 import { apiRequest } from '../../utils/apiClient';
 
+const EMAIL_TEMPLATES: { key: string; label: string }[] = [
+  { key: 'test', label: 'Test email' },
+  { key: 'welcome', label: 'Welcome (signup received)' },
+  { key: 'welcome-approved', label: 'Welcome approved' },
+  { key: 'event-announcement', label: 'Event announcement' },
+  { key: 'registration-confirmation', label: 'Registration confirmation' },
+  { key: 'event-reminder', label: 'Event reminder' },
+  { key: 'password-reset', label: 'Password reset' },
+  { key: 'user-credentials', label: 'User credentials' },
+];
+
+interface EmailLogEntry {
+  id: string;
+  to: string;
+  subject: string;
+  sentAt: string | null;
+  provider: string;
+  template: string | null;
+}
+
 const AdminEmail: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  const [emailLogItems, setEmailLogItems] = useState<EmailLogEntry[]>([]);
+  const [emailLogTotalCount, setEmailLogTotalCount] = useState<number | null>(null);
+  const [emailLogLoading, setEmailLogLoading] = useState(true);
+  const [quickEmailRecipient, setQuickEmailRecipient] = useState('');
+  const [runningTemplate, setRunningTemplate] = useState<string | null>(null);
+  const [emailConfig, setEmailConfig] = useState<{ mailjet: boolean; mailchimp: boolean } | null>(null);
   
   // Recipient mode and selection
   const [recipientMode, setRecipientMode] = useState<RecipientMode>('individuals');
@@ -41,6 +68,92 @@ const AdminEmail: React.FC = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [importingMailchimp, setImportingMailchimp] = useState(false);
   const [importResult, setImportResult] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.email && !quickEmailRecipient) setQuickEmailRecipient(user.email);
+  }, [user?.email]);
+
+  const fetchEmailLog = useCallback(async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+    setEmailLogLoading(true);
+    try {
+      const token = await currentUser.getIdToken();
+      const res = await fetch('/api/admin/email-log?limit=50', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.items)) {
+        setEmailLogItems(data.items);
+        setEmailLogTotalCount(data.totalCount ?? null);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setEmailLogLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchEmailLog();
+  }, [fetchEmailLog]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+      try {
+        const token = await currentUser.getIdToken();
+        const res = await fetch('/api/admin/test/email-config', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (data?.ok && !cancelled) setEmailConfig({ mailjet: !!data.mailjet, mailchimp: !!data.mailchimp });
+      } catch {
+        // ignore
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const sendTemplateEmail = async (templateKey: string) => {
+    const to = quickEmailRecipient.trim().toLowerCase();
+    if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+      setError('Please enter a valid recipient email for Quick email');
+      return;
+    }
+    const label = EMAIL_TEMPLATES.find((t) => t.key === templateKey)?.label ?? templateKey;
+    setRunningTemplate(templateKey);
+    setError(null);
+    setSuccess(null);
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        setError('Not authenticated');
+        setRunningTemplate(null);
+        return;
+      }
+      const response = await fetch('/api/admin/test/send-template-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ to, template: templateKey }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (data.ok) {
+        setSuccess(`${label} sent to ${data.sentTo}`);
+        fetchEmailLog();
+      } else {
+        setError(data.error || 'Send failed');
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Request failed');
+    } finally {
+      setRunningTemplate(null);
+    }
+  };
 
   const validateForm = (): boolean => {
     if (!subject.trim()) {
@@ -136,6 +249,7 @@ const AdminEmail: React.FC = () => {
 
         if (result.success) {
           setSuccess(`Email sent successfully to ${recipientList.length} recipient(s)!`);
+          fetchEmailLog();
           // Clear form on success
           setRecipients('');
           setRecipientObjects([]);
@@ -169,7 +283,7 @@ const AdminEmail: React.FC = () => {
         }
 
         setSuccess(`Email sent successfully! ${data.sent} sent, ${data.failed} failed out of ${data.total} recipients.`);
-        
+        fetchEmailLog();
         // Clear form on success
         setSubject('');
         setMessage('');
@@ -202,6 +316,107 @@ const AdminEmail: React.FC = () => {
             <ArrowLeft className="h-5 w-5" />
             <span>Back to Admin Tools</span>
           </button>
+        </div>
+
+        {/* Email log: sent count and recent list */}
+        <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <Inbox className="h-6 w-6 text-brand-light" />
+              <h2 className="text-xl font-bold text-gray-900">Sent emails</h2>
+            </div>
+            <button
+              type="button"
+              onClick={fetchEmailLog}
+              disabled={emailLogLoading}
+              className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+              title="Refresh"
+            >
+              <RefreshCw className={`h-5 w-5 ${emailLogLoading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+          {emailLogTotalCount !== null && (
+            <p className="text-sm text-gray-600 mb-4">
+              <strong>{emailLogTotalCount}</strong> email{emailLogTotalCount !== 1 ? 's' : ''} sent
+            </p>
+          )}
+          {emailLogLoading ? (
+            <p className="text-sm text-gray-500">Loading…</p>
+          ) : emailLogItems.length === 0 ? (
+            <p className="text-sm text-gray-500">No sent emails recorded yet.</p>
+          ) : (
+            <div className="overflow-x-auto -mx-2">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-2 px-2 font-medium text-gray-700">To</th>
+                    <th className="text-left py-2 px-2 font-medium text-gray-700">Subject</th>
+                    <th className="text-left py-2 px-2 font-medium text-gray-700">Sent</th>
+                    <th className="text-left py-2 px-2 font-medium text-gray-700">Provider</th>
+                    <th className="text-left py-2 px-2 font-medium text-gray-700">Template</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {emailLogItems.map((row) => (
+                    <tr key={row.id} className="border-b border-gray-100">
+                      <td className="py-2 px-2 text-gray-800">{row.to}</td>
+                      <td className="py-2 px-2 text-gray-800 max-w-[200px] truncate" title={row.subject}>{row.subject}</td>
+                      <td className="py-2 px-2 text-gray-600">
+                        {row.sentAt ? new Date(row.sentAt).toLocaleString() : '—'}
+                      </td>
+                      <td className="py-2 px-2 text-gray-600">{row.provider}</td>
+                      <td className="py-2 px-2 text-gray-600">{row.template || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Quick email: send by template */}
+        <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 mb-8">
+          <div className="flex items-center space-x-3 mb-4">
+            <Send className="h-6 w-6 text-brand-light" />
+            <h2 className="text-xl font-bold text-gray-900">Quick email</h2>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            Send a test or template email to one recipient. Uses the same AlmaLinks templates as transactional emails.
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="quick-email-recipient" className="block text-sm font-medium text-gray-700 mb-2">
+                Recipient email
+              </label>
+              <input
+                id="quick-email-recipient"
+                type="email"
+                value={quickEmailRecipient}
+                onChange={(e) => setQuickEmailRecipient(e.target.value)}
+                placeholder="email@example.com"
+                className="w-full max-w-md px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {EMAIL_TEMPLATES.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => sendTemplateEmail(key)}
+                  disabled={!quickEmailRecipient.trim() || runningTemplate !== null || (emailConfig !== null && !emailConfig.mailjet && !emailConfig.mailchimp)}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-1.5"
+                  title={!quickEmailRecipient.trim() ? 'Enter recipient' : `Send ${label}`}
+                >
+                  {runningTemplate === key ? (
+                    <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                  ) : (
+                    <Send className="h-4 w-4 flex-shrink-0" />
+                  )}
+                  <span className="truncate">{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
