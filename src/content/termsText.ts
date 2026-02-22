@@ -210,3 +210,45 @@ Upon termination of these Terms for any reason: (i) all rights granted to you he
     content: `For information, questions or notification of errors, please contact us. If you have any questions (or comments) concerning the Terms, you are most welcome to send us an email.`
   }
 ];
+
+// --- Privacy Policy ---
+export const PRIVACY_TITLE = 'AlmaLinks – Privacy Policy';
+
+export const PRIVACY_SECTIONS: { title: string; content: string }[] = [
+  {
+    title: 'Introduction',
+    content: `AlmaLinks LTD (CC) ("AlmaLinks", "we", "our", "us") is committed to protecting your privacy. This Privacy Policy describes how we collect, use, store, and disclose information when you use our global collaborative networking platform, including the website and member services (the "Platform"). It applies to all users and visitors. By using the Platform, you consent to the practices described in this policy.`
+  },
+  {
+    title: '1. Information We Collect',
+    content: `We collect information you provide directly (e.g. when you register, complete your profile, or contact us), such as name, email address, phone number, company, position, LinkedIn profile, location, timezone, and any other details you choose to add. We also collect information from your use of the Platform (e.g. log data, device information, IP address) and, if you sign in via a third party (e.g. Google, LinkedIn), we may receive basic profile information from that provider.`
+  },
+  {
+    title: '2. How We Use Your Information',
+    content: `We use the information to provide, operate, and improve the Platform; to process registrations and event sign-ups; to communicate with you; to enforce our Terms and Conditions; to protect security and prevent abuse; and to comply with legal obligations. We may use aggregated or anonymized data for analytics and improving our services.`
+  },
+  {
+    title: '3. Sharing of Information',
+    content: `We do not sell your personal information. We may share information with service providers who assist us (e.g. hosting, analytics), and as needed to operate the Platform (e.g. to show other members limited profile information in line with your settings). We may disclose information if required by law or to protect our rights, users, or safety.`
+  },
+  {
+    title: '4. Cookies and Similar Technologies',
+    content: `We and our service providers may use cookies and similar technologies to maintain sessions, remember preferences, and understand how the Platform is used. You can control cookies through your browser settings; disabling them may limit some features.`
+  },
+  {
+    title: '5. Data Security and Retention',
+    content: `We implement reasonable technical and organizational measures to protect your data. We retain your information for as long as your account is active or as needed to provide services and comply with legal obligations.`
+  },
+  {
+    title: '6. Your Rights',
+    content: `Depending on your location, you may have rights to access, correct, delete, or restrict use of your personal data, or to object to certain processing. To exercise these rights or ask questions, contact us at the email address provided below.`
+  },
+  {
+    title: '7. Changes to This Policy',
+    content: `We may update this Privacy Policy from time to time. We will post the updated version on the Platform and indicate the last revised date. Continued use of the Platform after changes constitutes acceptance of the updated policy.`
+  },
+  {
+    title: '8. Contact',
+    content: `For privacy-related questions or requests, please contact us at: contact@almalinks.org`
+  }
+];
