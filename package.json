@@ -20,6 +20,7 @@
     "fix-user-claims": "node scripts/fix-user-claims.js",
     "check-activities": "node scripts/check-activities.js",
     "test:mailchimp": "node scripts/test-mailchimp-campaign.js",
+    "build:email-logos": "node scripts/email-logos-to-png.js",
     "deploy:backend": "echo 'Backend is now consolidated in api/index.js. All handlers are in lib/server/api/. Use git add/commit/push as needed.'",
     "verify:deployment": "echo 'Check Vercel dashboard: https://vercel.com/your-project/deployments'"
   },
