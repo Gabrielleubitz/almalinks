@@ -168,7 +168,7 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] flex flex-col items-center justify-center px-3 sm:px-4 pt-16 sm:pt-20 pb-16 sm:pb-20 relative overflow-x-hidden w-full max-w-full box-border">
+    <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] flex flex-col items-center justify-center px-3 sm:px-4 pt-16 sm:pt-20 pb-8 sm:pb-10 relative overflow-x-hidden w-full max-w-full box-border">
       <div className="w-full max-w-4xl flex-shrink-0 mb-5 sm:mb-6">
         <AlmaAuthCard
           title="Alma Links"
