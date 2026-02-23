@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, ArrowRight, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import logoSvg from '../assets/alma-links-logo.svg';
 import IganiWatermark from '../components/IganiWatermark';
@@ -170,27 +170,12 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] flex flex-col items-center justify-center px-3 sm:px-4 pt-16 sm:pt-20 pb-12 sm:pb-16 relative overflow-x-hidden w-full max-w-full box-border">
-      <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] left-[max(0.75rem,env(safe-area-inset-left))] sm:top-6 sm:left-6 z-10">
-        <Link to="/login" className="hover:opacity-80 transition-opacity duration-200 inline-block touch-manipulation py-2 pr-2">
-          <img src={logoSvg} alt="Alma Links" className="h-7 sm:h-8 md:h-10 w-auto" />
-        </Link>
-      </div>
-
       <div className="w-full max-w-4xl flex-shrink-0">
         <AlmaAuthCard
           title="Alma Links"
           subtitle="Sign in to connect with members, discover events, and join conversations worldwide."
           logoUrl={logoSvg}
         >
-          <div className="mb-3 sm:mb-4">
-            <Link
-              to="/login"
-              className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-xs sm:text-sm font-medium"
-            >
-              <ArrowLeft className="h-4 w-4 flex-shrink-0" />
-              <span>Back</span>
-            </Link>
-          </div>
           <div className="w-full">
           {showForgotPassword ? (
             <>

@@ -157,7 +157,7 @@ const AlmaAuthCard: React.FC<AlmaAuthCardProps> = ({
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-4xl overflow-hidden rounded-2xl flex flex-col md:flex-row bg-white shadow-xl border border-gray-100"
+        className="w-full max-w-4xl overflow-hidden rounded-2xl flex flex-col md:flex-row bg-white shadow-[0_4px_24px_rgba(0,0,0,0.08)] ring-1 ring-black/[0.06] border border-gray-200/80"
       >
         {/* Left - Map + Alma branding (original style: blue-50 to indigo-100, centered p-8) */}
         <div className="hidden md:flex md:w-1/2 md:min-h-[560px] relative overflow-hidden border-r border-gray-100 bg-gradient-to-br from-blue-50 to-indigo-100">
