@@ -159,10 +159,10 @@ const AlmaAuthCard: React.FC<AlmaAuthCardProps> = ({
         transition={{ duration: 0.4 }}
         className="w-full max-w-4xl overflow-hidden rounded-2xl flex flex-col md:flex-row bg-white shadow-xl border border-gray-100"
       >
-        {/* Left - Map + Alma branding */}
+        {/* Left - Map + Alma branding (generous top padding so logo isn't cut) */}
         <div className="hidden md:flex md:w-1/2 md:min-h-[560px] relative overflow-hidden border-r border-gray-100 bg-gradient-to-br from-[#DCE8F6] to-[#eef4fc]">
           <DotMap />
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-8 z-10">
+          <div className="absolute inset-0 flex flex-col items-center justify-center pt-16 pb-16 px-10 z-10">
             <motion.div
               initial={{ opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -170,7 +170,7 @@ const AlmaAuthCard: React.FC<AlmaAuthCardProps> = ({
               className="mb-6"
             >
               {logoUrl ? (
-                <img src={logoUrl} alt={title} className="h-12 w-auto object-contain" />
+                <img src={logoUrl} alt={title} className="h-11 w-auto object-contain object-center" />
               ) : (
                 <div
                   className="h-14 w-14 rounded-xl flex items-center justify-center shadow-lg"
@@ -199,13 +199,13 @@ const AlmaAuthCard: React.FC<AlmaAuthCardProps> = ({
           </div>
         </div>
 
-        {/* Right - Form (scrollable when content is tall e.g. signup) */}
-        <div className="w-full md:w-1/2 p-6 sm:p-8 md:p-10 flex flex-col bg-white min-h-[400px] max-h-[85vh] md:max-h-[600px] overflow-y-auto">
+        {/* Right - Form (no inner scroll; page scrolls if needed) */}
+        <div className="w-full md:w-1/2 p-6 sm:p-8 md:p-10 flex flex-col bg-white min-h-[420px]">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="w-full max-w-sm mx-auto md:mx-0 flex flex-col justify-center min-h-0"
+            className="w-full max-w-sm mx-auto md:mx-0 flex flex-col justify-center"
           >
             {children}
           </motion.div>

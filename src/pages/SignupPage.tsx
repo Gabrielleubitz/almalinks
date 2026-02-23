@@ -373,7 +373,7 @@ const SignupPage: React.FC = () => {
                   required
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-4 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
                   placeholder="Enter your full name"
                   disabled={isSubmitting}
                   autoCapitalize="words"
@@ -397,7 +397,7 @@ const SignupPage: React.FC = () => {
                   required
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-4 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
                   placeholder="Enter your email"
                   disabled={isSubmitting}
                   autoCapitalize="none"
@@ -419,7 +419,7 @@ const SignupPage: React.FC = () => {
                     value={selectedCountryCode}
                     onChange={(e) => setSelectedCountryCode(e.target.value)}
                     disabled={isSubmitting}
-                    className="appearance-none bg-white border border-gray-300 rounded-xl px-3 py-3 pr-8 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 text-sm disabled:opacity-50"
+                    className="appearance-none bg-white border border-gray-300 rounded-xl px-3 py-3 pr-8 focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 text-sm min-h-[44px] touch-manipulation disabled:opacity-50"
                   >
                     {COUNTRY_CODES.map((country) => (
                       <option key={country.code} value={country.code}>
@@ -440,8 +440,9 @@ const SignupPage: React.FC = () => {
                     required
                     value={formData.phoneNumber}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-4 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                    className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
                     placeholder={selectedCountryCode === '+972' ? '0501234567' : 'Phone number'}
+                    autoComplete="tel"
                     disabled={isSubmitting}
                   />
                 </div>
@@ -476,8 +477,9 @@ const SignupPage: React.FC = () => {
                   required
                   value={formData.company}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-4 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
                   placeholder="e.g., TechCorp, Google, Self-Employed"
+                  autoComplete="organization"
                   disabled={isSubmitting}
                 />
               </div>
@@ -497,7 +499,7 @@ const SignupPage: React.FC = () => {
                   required
                   value={formData.work}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-4 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
                   placeholder="e.g., Leading product development, Managing investments"
                   disabled={isSubmitting}
                 />
@@ -518,7 +520,7 @@ const SignupPage: React.FC = () => {
                   required
                   value={formData.linkedinUsername}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-4 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
                   placeholder="e.g., johndoe (without linkedin.com/in/)"
                   disabled={isSubmitting}
                 />
@@ -542,8 +544,9 @@ const SignupPage: React.FC = () => {
                   required
                   value={formData.position}
                   onChange={handleInputChange}
-                  className="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 appearance-none"
+                  className="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 appearance-none min-h-[44px] touch-manipulation"
                   disabled={isSubmitting}
+                  aria-label="Position"
                 >
                   <option value="" disabled>Select your position...</option>
                   {POSITION_OPTIONS.map(option => (
@@ -570,7 +573,7 @@ const SignupPage: React.FC = () => {
                   required
                   value={formData.chapter}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-4 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
                   placeholder="e.g., North America, Europe"
                   disabled={isSubmitting}
                 />
@@ -589,7 +592,7 @@ const SignupPage: React.FC = () => {
                 value={formData.bioTitle}
                 onChange={handleInputChange}
                 maxLength={60}
-                className="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                className="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
                 placeholder="A short tagline (max 60 characters)"
                 disabled={isSubmitting}
               />
@@ -623,16 +626,18 @@ const SignupPage: React.FC = () => {
                   required
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
                   placeholder="Create a password (min. 6 characters)"
                   minLength={6}
                   disabled={isSubmitting}
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation"
                   disabled={isSubmitting}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -642,7 +647,7 @@ const SignupPage: React.FC = () => {
             <button
               type="submit"
               disabled={isSubmitting || !isFormValid}
-              className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] touch-manipulation"
             >
               {isSubmitting ? (
                 <>
@@ -682,9 +687,9 @@ const SignupPage: React.FC = () => {
               }
             }}
             disabled={isSubmitting}
-            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] touch-manipulation"
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" aria-hidden viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"

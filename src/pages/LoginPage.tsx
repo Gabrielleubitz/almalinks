@@ -169,23 +169,23 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] flex flex-col items-center justify-center px-3 sm:px-4 py-4 sm:py-6 pb-20 sm:pb-6 relative overflow-x-hidden w-full max-w-full box-border">
+    <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] flex flex-col items-center justify-center px-3 sm:px-4 pt-16 sm:pt-20 pb-12 sm:pb-16 relative overflow-x-hidden w-full max-w-full box-border">
       <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] left-[max(0.75rem,env(safe-area-inset-left))] sm:top-6 sm:left-6 z-10">
         <Link to="/login" className="hover:opacity-80 transition-opacity duration-200 inline-block touch-manipulation py-2 pr-2">
           <img src={logoSvg} alt="Alma Links" className="h-7 sm:h-8 md:h-10 w-auto" />
         </Link>
       </div>
 
-      <div className="w-full max-w-4xl flex-shrink-0 mb-8 sm:mb-0">
+      <div className="w-full max-w-4xl flex-shrink-0">
         <AlmaAuthCard
           title="Alma Links"
           subtitle="Sign in to connect with members, discover events, and join conversations worldwide."
           logoUrl={logoSvg}
         >
-          <div className="mb-4 sm:mb-6">
+          <div className="mb-3 sm:mb-4">
             <Link
               to="/login"
-              className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-xs sm:text-sm font-medium min-h-[44px] sm:min-h-0"
+              className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-xs sm:text-sm font-medium"
             >
               <ArrowLeft className="h-4 w-4 flex-shrink-0" />
               <span>Back</span>
@@ -235,7 +235,7 @@ const LoginPage: React.FC = () => {
                       required
                       value={forgotPasswordEmail}
                       onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                      className="w-full pl-9 sm:pl-10 pr-4 py-3 sm:py-4 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 min-h-[44px] sm:min-h-0"
+                      className="w-full pl-9 sm:pl-10 pr-4 py-3 sm:py-4 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] sm:min-h-0"
                       placeholder="Enter your email"
                       disabled={isResettingPassword}
                       autoCapitalize="none"
@@ -276,15 +276,12 @@ const LoginPage: React.FC = () => {
             </>
           ) : (
             <>
-              <div className="text-center mb-6 sm:mb-8">
-                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-full mb-3 sm:mb-4">
-                  <Lock className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                  Welcome Back
+              <div className="mb-5 sm:mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-0.5">
+                  Welcome back
                 </h2>
-                <p className="text-sm sm:text-base text-gray-600">
-                  Sign in to your AlmaLinks account
+                <p className="text-sm text-gray-600">
+                  Sign in to your Alma Links account
                 </p>
               </div>
 
@@ -332,7 +329,7 @@ const LoginPage: React.FC = () => {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Email Address */}
                 <div>
                   <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
@@ -347,11 +344,12 @@ const LoginPage: React.FC = () => {
                       required
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full pl-9 sm:pl-10 pr-4 py-3 sm:py-4 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 min-h-[44px] sm:min-h-0"
+                      className="w-full pl-9 sm:pl-10 pr-4 py-3 sm:py-4 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] sm:min-h-0 touch-manipulation"
                       placeholder="Enter your email"
                       disabled={isSubmitting}
                       autoCapitalize="none"
                       autoCorrect="off"
+                      autoComplete="email"
                     />
                   </div>
                 </div>
@@ -370,7 +368,7 @@ const LoginPage: React.FC = () => {
                       required
                       value={formData.password}
                       onChange={handleInputChange}
-                      className="w-full pl-9 sm:pl-10 pr-11 sm:pr-12 py-3 sm:py-4 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 min-h-[44px] sm:min-h-0"
+                      className="w-full pl-9 sm:pl-10 pr-11 sm:pr-12 py-3 sm:py-4 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] sm:min-h-0 touch-manipulation"
                       placeholder="Enter your password"
                       disabled={isSubmitting}
                       autoCapitalize="none"
@@ -409,7 +407,7 @@ const LoginPage: React.FC = () => {
               </form>
 
               {/* Divider */}
-              <div className="relative my-4 sm:my-6">
+              <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300"></div>
                 </div>
@@ -455,7 +453,7 @@ const LoginPage: React.FC = () => {
                 <span className="whitespace-nowrap">Continue with Google</span>
               </button>
 
-              <div className="mt-3 sm:mt-4 text-center">
+              <div className="mt-3 text-center">
                 <Link
                   to="/forgot-password"
                   className="text-red-600 hover:text-red-700 text-xs sm:text-sm font-medium min-h-[44px] sm:min-h-0 inline-flex items-center justify-center"
@@ -464,7 +462,7 @@ const LoginPage: React.FC = () => {
                 </Link>
               </div>
 
-              <div className="mt-6 sm:mt-8 text-center">
+              <div className="mt-5 text-center">
                 <p className="text-xs sm:text-sm text-gray-600">
                   Don't have an account?{' '}
                   <Link
