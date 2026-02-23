@@ -722,7 +722,6 @@ const SignupPage: React.FC = () => {
               We will review your LinkedIn profile before granting access. All signups require admin approval.
             </p>
           </div>
-        </div>
         </AlmaAuthCard>
       </div>
 
