@@ -13,7 +13,8 @@ import {
   AlertCircle,
   X,
   Camera,
-  Trash2
+  Trash2,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useActivityTracking } from '../hooks/useActivityTracking';
@@ -30,7 +31,7 @@ import ContactLocationStep from '../components/signup/steps/ContactLocationStep'
 import PrivacyStep from '../components/signup/steps/PrivacyStep';
 
 const ProfileEditPage: React.FC = () => {
-  const { user, linkGoogleAccount, isGoogleLinked } = useAuth();
+  const { user, linkGoogleAccount, isGoogleLinked, getSignInMethods, setPasswordForGoogleUser } = useAuth();
   const navigate = useNavigate();
   const { logProfileUpdate } = useActivityTracking();
   
@@ -64,6 +65,11 @@ const ProfileEditPage: React.FC = () => {
   const [profilePictureUploadError, setProfilePictureUploadError] = useState<string | null>(null);
   const [googleLinked, setGoogleLinked] = useState(false);
   const [linkingGoogle, setLinkingGoogle] = useState(false);
+  const [signInMethods, setSignInMethods] = useState<{ hasPassword: boolean; hasGoogle: boolean } | null>(null);
+  const [setPasswordLoading, setSetPasswordLoading] = useState(false);
+  const [setPasswordError, setSetPasswordError] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [toast, setToast] = useState<{
     visible: boolean;
     message: string;
@@ -85,6 +91,7 @@ const ProfileEditPage: React.FC = () => {
     if (user?.uid) {
       loadProfile();
       checkGoogleLinkStatus();
+      getSignInMethods().then(setSignInMethods);
     }
   }, [user]);
 
@@ -103,15 +110,47 @@ const ProfileEditPage: React.FC = () => {
       await linkGoogleAccount();
       setGoogleLinked(true);
       showToast('Google account linked successfully!', 'success');
-      // Reload profile to get updated data
       if (user?.uid) {
         await loadProfile();
       }
+      getSignInMethods().then(setSignInMethods);
     } catch (error: any) {
       console.error('Failed to link Google account:', error);
       showToast(error.message || 'Failed to link Google account. Please try again.', 'error');
     } finally {
       setLinkingGoogle(false);
+    }
+  };
+
+  const handleSetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSetPasswordError(null);
+    if (newPassword.length < 8) {
+      setSetPasswordError('Password must be at least 8 characters long');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setSetPasswordError('Passwords do not match');
+      return;
+    }
+    const hasUpper = /[A-Z]/.test(newPassword);
+    const hasLower = /[a-z]/.test(newPassword);
+    const hasNumber = /[0-9]/.test(newPassword);
+    if (!hasUpper || !hasLower || !hasNumber) {
+      setSetPasswordError('Password must include uppercase, lowercase, and a number');
+      return;
+    }
+    setSetPasswordLoading(true);
+    try {
+      await setPasswordForGoogleUser(newPassword);
+      showToast('Password set! You can now sign in with email/password or Google.', 'success');
+      setNewPassword('');
+      setConfirmPassword('');
+      getSignInMethods().then(setSignInMethods);
+    } catch (err: any) {
+      setSetPasswordError(err.message || 'Failed to set password.');
+    } finally {
+      setSetPasswordLoading(false);
     }
   };
 
@@ -382,6 +421,48 @@ const ProfileEditPage: React.FC = () => {
           </div>
 
           {/* Google Account Linking - Compact at Top */}
+          {/* Set password for Google-only accounts (so they can also sign in with email/password) */}
+          {signInMethods?.hasGoogle && !signInMethods?.hasPassword && (
+            <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="flex items-center space-x-2 mb-3">
+                <Lock className="h-5 w-5 text-gray-600" />
+                <h3 className="text-sm font-medium text-gray-900">Set a password</h3>
+              </div>
+              <p className="text-xs text-gray-600 mb-3">
+                Add a password so you can sign in with email/password or Google.
+              </p>
+              <form onSubmit={handleSetPassword} className="space-y-2">
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => { setNewPassword(e.target.value); setSetPasswordError(null); }}
+                  placeholder="New password (min 8 chars)"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                  minLength={8}
+                  disabled={setPasswordLoading}
+                />
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => { setConfirmPassword(e.target.value); setSetPasswordError(null); }}
+                  placeholder="Confirm password"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                  disabled={setPasswordLoading}
+                />
+                {setPasswordError && (
+                  <p className="text-xs text-red-600">{setPasswordError}</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={setPasswordLoading || !newPassword || !confirmPassword}
+                  className="px-3 py-1.5 text-xs font-medium bg-brand-dark text-white rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {setPasswordLoading ? 'Setting...' : 'Set password'}
+                </button>
+              </form>
+            </div>
+          )}
+
           <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">

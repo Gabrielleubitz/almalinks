@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, setPersistence, browserLocalPersistence, sendPasswordResetEmail, signInWithPopup, signInWithCredential, GoogleAuthProvider, linkWithPopup, getAdditionalUserInfo, fetchSignInMethodsForEmail } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, setPersistence, browserLocalPersistence, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, linkWithPopup, getAdditionalUserInfo, fetchSignInMethodsForEmail, reauthenticateWithPopup, updatePassword } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, retryOnNetworkFailure } from '../firebase/config';
 import type { CropValue } from '../types/crop';
@@ -614,7 +614,7 @@ export const useAuth = () => {
         try {
           const methods = await fetchSignInMethodsForEmail(auth, email);
           if (methods.length > 0 && methods.includes('google.com') && !methods.includes('password')) {
-            setError('This email is registered with Google. Please use "Sign in with Google" to access your account.');
+            setError('This account uses Google sign-in. Sign in with Google below, then you can set a password in Profile so both work.');
           } else {
             setError('Invalid email or password. Please try again.');
           }
@@ -764,21 +764,11 @@ export const useAuth = () => {
       // Ensure local persistence is set
       await setPersistence(auth, browserLocalPersistence);
       
-      let result: { user: User };
-      try {
-        result = await retryOnNetworkFailure(async () => {
-          return signInWithPopup(auth, googleProvider);
-        });
-      } catch (popupErr: any) {
-        // Same email already exists with email/password → sign in to that account and link Google
-        if (popupErr.code === 'auth/account-exists-with-different-credential' && popupErr.credential) {
-          console.log('🔗 Account exists with same email; signing in and linking Google credential');
-          result = await signInWithCredential(auth, popupErr.credential);
-          console.log('✅ Signed in to existing account and linked Google:', result.user.email);
-        } else {
-          throw popupErr;
-        }
-      }
+      // Sign in with Google. If this email is already registered with email/password,
+      // user must sign in with password first, then link Google in Profile (same account, both methods work).
+      const result = await retryOnNetworkFailure(async () => {
+        return signInWithPopup(auth, googleProvider);
+      });
       
       console.log('✅ Google sign-in successful:', result.user.email);
       
@@ -819,8 +809,10 @@ export const useAuth = () => {
       // onAuthStateChanged will handle role fetching and navigation
     } catch (err: any) {
       console.error('❌ Google sign-in failed:', err.code, err.message);
-      
-      if (err.code === 'auth/popup-closed-by-user') {
+
+      if (err.code === 'auth/account-exists-with-different-credential') {
+        setError('This email is already registered with email and password. Sign in with your password above, then go to Profile to link Google so you can use both.');
+      } else if (err.code === 'auth/popup-closed-by-user') {
         setError('Sign-in was cancelled. Please try again.');
       } else if (err.code === 'auth/popup-blocked') {
         setError('Popup was blocked. Please allow popups and try again.');
@@ -913,6 +905,53 @@ export const useAuth = () => {
     }
   };
 
+  /** Get which sign-in methods are enabled for the current account (password and/or Google). */
+  const getSignInMethods = async (): Promise<{ hasPassword: boolean; hasGoogle: boolean }> => {
+    const fbUser = auth.currentUser;
+    if (!fbUser || !fbUser.providerData?.length) {
+      return { hasPassword: false, hasGoogle: false };
+    }
+    const hasPassword = fbUser.providerData.some((p) => p.providerId === 'password');
+    const hasGoogle = fbUser.providerData.some((p) => p.providerId === 'google.com');
+    return { hasPassword, hasGoogle };
+  };
+
+  /**
+   * Add a password to an account that currently has only Google sign-in.
+   * User must be signed in with Google. Re-authenticates with Google, then sets the password.
+   * After this, the user can sign in with either Google or email/password.
+   */
+  const setPasswordForGoogleUser = async (newPassword: string): Promise<void> => {
+    const fbUser = auth.currentUser;
+    if (!fbUser) {
+      throw new Error('You must be signed in to set a password.');
+    }
+    const { hasPassword, hasGoogle } = await getSignInMethods();
+    if (hasPassword) {
+      throw new Error('Your account already has a password. Use Change password if you want to update it.');
+    }
+    if (!hasGoogle) {
+      throw new Error('Set password is only available for accounts that sign in with Google.');
+    }
+    setError(null);
+    setLoading(true);
+    try {
+      await reauthenticateWithPopup(fbUser, googleProvider);
+      await updatePassword(fbUser, newPassword);
+      console.log('✅ Password set successfully; you can now sign in with email/password or Google.');
+    } catch (err: any) {
+      if (err.code === 'auth/popup-closed-by-user') {
+        throw new Error('Sign-in was cancelled. Please try again.');
+      }
+      if (err.code === 'auth/weak-password') {
+        throw new Error('Password should be at least 6 characters long.');
+      }
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Computed values with explicit logging
   const isAdmin = user?.role === 'admin';
   const isMember = user?.role === 'member';
@@ -947,6 +986,8 @@ export const useAuth = () => {
     signInWithGoogle,
     linkGoogleAccount,
     isGoogleLinked,
+    getSignInMethods,
+    setPasswordForGoogleUser,
     isAdmin,
     isMember,
     isPending,
