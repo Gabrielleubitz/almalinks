@@ -303,7 +303,7 @@ export class JoinRequestService {
               // Don't throw - notification was sent successfully
             }
           } else if (notificationResult.skipped) {
-            console.log('ℹ️ Admin notification skipped:', notificationResult.reason);
+            console.warn('⚠️ Admin signup email not sent to admins:', notificationResult.reason, '— Set ADMIN_NOTIFICATION_EMAILS in your deployment env (e.g. Vercel) to receive new signup alerts.');
           } else {
             console.error('❌ Admin notification failed:', notificationResult.error);
             // Don't throw - signup should still succeed

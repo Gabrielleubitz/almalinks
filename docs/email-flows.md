@@ -4,7 +4,7 @@ All email steps use the same config for **links** (APP_URL) and **from** address
 
 ## Production behavior
 
-1. **Admin notifications** → sent to **ADMIN_NOTIFICATION_EMAILS** (one or more real admin emails).
+1. **Admin notifications** → sent to **every address** in **ADMIN_NOTIFICATION_EMAILS** (comma-separated; multiple admins each receive the email).
 2. **User signup confirmation** → sent to the **actual user’s email** (from join request).
 3. **Acceptance / registration** → sent to the **actual user email** (no rerouting).
 4. **APP_URL** is used **only to build links** (login, events, admin pending page). It does **not** control who receives emails.
@@ -46,3 +46,11 @@ No recipient lists or secrets are sent to the client.
 ## Development-only (optional)
 
 - **TEST_EMAIL**, **TEST_EMAIL_SIGNUP_USER**, **TEST_EMAIL_SIGNUP_ADMIN**, **SIGNUP_TEST_RECIPIENT** — only used when `NODE_ENV !== 'production'` to redirect emails to a test address. Never applied in production.
+
+## Troubleshooting: Admins not receiving "new signup" emails
+
+If the new user receives their pending confirmation email but admins do **not** receive a "New registration pending approval" email:
+
+1. **Set `ADMIN_NOTIFICATION_EMAILS`** in your deployment (e.g. Vercel → Project → Settings → Environment Variables). Use a comma-separated list so multiple admins all receive the email (e.g. `admin@org.com,coadmin@org.com,team@org.com`).
+2. Ensure transactional email is configured (Mailjet or `MAILCHIMP_API_KEY` for Mandrill) so the server can send the notification.
+3. In the browser console after signup, a warning like "Admin signup email not sent to admins: ADMIN_NOTIFICATION_EMAILS not configured" confirms the env var is missing or invalid.

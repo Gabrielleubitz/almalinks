@@ -1,12 +1,31 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, CheckCircle, MessageSquare } from 'lucide-react';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../hooks/useAuth';
+import { db } from '../firebase/config';
 import logoSvg from '../assets/alma-links-logo.svg';
 
 const PendingPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout, loading } = useAuth();
+
+  // When admin approves, the user document is created. Redirect to dashboard for onboarding.
+  useEffect(() => {
+    if (!user?.uid) return;
+    const userRef = doc(db, 'users', user.uid);
+    const unsubscribe = onSnapshot(userRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data?.status === 'approved') {
+          navigate('/dashboard', { replace: true });
+        }
+      }
+    }, (err) => {
+      console.warn('[PendingPage] Listener error:', err?.message);
+    });
+    return () => unsubscribe();
+  }, [user?.uid, navigate]);
 
   const handleLogout = async () => {
     try {
