@@ -325,7 +325,21 @@ const SignupPage: React.FC = () => {
               <span>Back to sign in</span>
             </Link>
           </div>
-          <div className="text-center mb-6">
+
+          {/* Sticky centered branding: stays in middle of viewport while scrolling, CSS-only (no lag) */}
+          <div
+            className="sticky top-[50%] left-0 right-0 z-10 mb-6 -translate-y-1/2 pointer-events-none"
+            aria-hidden
+          >
+            <div className="rounded-2xl border-2 border-[var(--brand-blue-dark)]/20 bg-white/95 shadow-lg backdrop-blur-sm px-6 py-5 text-center max-w-sm mx-auto">
+              <h2 className="text-xl font-bold text-[var(--brand-blue-dark)] mb-1.5">Join Alma Links</h2>
+              <p className="text-sm text-gray-600 leading-snug">
+                Create your account to connect with members, discover events, and join conversations worldwide.
+              </p>
+            </div>
+          </div>
+
+          <div className="text-center mb-6 pointer-events-auto">
             <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-[var(--brand-blue-dark)] to-[var(--brand-blue-light)] rounded-full mb-3">
               <User className="h-7 w-7 text-white" />
             </div>
