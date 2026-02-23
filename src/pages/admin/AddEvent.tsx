@@ -170,7 +170,7 @@ const AddEvent: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
       <AdminHeader 
         title="Create New Event" 
         subtitle="Add a new Alma Links event to the system"

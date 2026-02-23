@@ -179,7 +179,7 @@ const ConnectPage: React.FC = () => {
   
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-3 sm:px-4 overflow-x-hidden w-full max-w-full">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Processing connection...</p>
@@ -189,7 +189,7 @@ const ConnectPage: React.FC = () => {
   }
   
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden w-full max-w-full">
       <Header />
       
       <section className="pt-[var(--content-offset-top)] sm:pt-32 pb-16 bg-gradient-to-br from-gray-50 to-white">

@@ -141,7 +141,7 @@ const DiscoverChatsPage: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
         <Header />
         <div className="pt-[var(--content-offset-top)] pb-16 flex items-center justify-center">
           <div className="text-center">
@@ -156,7 +156,7 @@ const DiscoverChatsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full flex flex-col">
       <Header />
       
       <main className="flex-1 pt-[var(--content-offset-top)] pb-8">

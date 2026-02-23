@@ -300,7 +300,7 @@ const AdminEmail: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
       <AdminHeader 
         title="Email Panel" 
         subtitle="Send emails to members and sync with Mailchimp audience"

@@ -60,7 +60,7 @@ const WelcomeOnboardingPage: React.FC = () => {
   const firstName = user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 flex flex-col overflow-x-hidden w-full max-w-full">
       <header className="flex justify-center py-6 px-4">
         <img src={logoSvg} alt="AlmaLinks" className="h-8 md:h-9" />
       </header>

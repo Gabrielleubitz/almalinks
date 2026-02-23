@@ -298,7 +298,7 @@ const EventDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white overflow-x-hidden w-full max-w-full">
         <Header />
         <div className="pt-[var(--content-offset-top)] pb-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -315,7 +315,7 @@ const EventDetailPage: React.FC = () => {
 
   if (error && !event) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white overflow-x-hidden w-full max-w-full">
         <Header />
         <div className="pt-[var(--content-offset-top)] pb-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -352,7 +352,7 @@ const EventDetailPage: React.FC = () => {
   const formattedDate = formatDate(event.date);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden w-full max-w-full">
       <Header />
       
       {/* Reference for scrolling to top */}

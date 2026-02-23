@@ -210,7 +210,7 @@ const EditEvent: React.FC = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
         <AdminHeader 
           title="Edit Event" 
           subtitle="Loading event details..."
@@ -231,7 +231,7 @@ const EditEvent: React.FC = () => {
   // Error state
   if (error && !originalEvent) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
         <AdminHeader 
           title="Edit Event" 
           subtitle="Unable to load event"
@@ -256,7 +256,7 @@ const EditEvent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
       <AdminHeader 
         title="Edit Event" 
         subtitle={`Editing "${originalEvent?.name}"`}

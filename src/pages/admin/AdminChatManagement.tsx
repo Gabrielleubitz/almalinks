@@ -149,7 +149,7 @@ export default function AdminChatManagement() {
   const selectedChat = addUserChatId ? chats.find((c) => c.id === addUserChatId) : null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden w-full max-w-full">
       <AdminHeader title="Manage Chats" subtitle="View all chats, add users, and join any chat" />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6 flex items-center justify-between">

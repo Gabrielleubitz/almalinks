@@ -173,7 +173,7 @@ const UserProfilePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
         <Header />
         <div className="pt-[var(--content-offset-top)] pb-16 flex items-center justify-center">
           <div className="text-center">
@@ -188,7 +188,7 @@ const UserProfilePage: React.FC = () => {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
         <Header />
         <div className="pt-[var(--content-offset-top)] pb-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -227,7 +227,7 @@ const UserProfilePage: React.FC = () => {
   const profileImageUrl = profile.profileImage || profile.avatarUrl;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
       <Header />
 
       {/* Avatar lightbox */}

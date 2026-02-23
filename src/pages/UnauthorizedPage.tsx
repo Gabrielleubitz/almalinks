@@ -7,7 +7,7 @@ const UnauthorizedPage: React.FC = () => {
   const navigate = useNavigate();
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-3 sm:px-4 overflow-x-hidden w-full max-w-full">
       {/* Logo in top left corner */}
       <div className="absolute top-[max(1.5rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))] z-10">
         <Link to="/" className="hover:opacity-80 transition-opacity duration-200 min-h-[44px] min-w-[44px] flex items-center touch-manipulation">

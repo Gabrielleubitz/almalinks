@@ -42,7 +42,7 @@ const TermsPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="min-h-screen bg-gray-100 flex flex-col overflow-x-hidden w-full max-w-full">
       <Header />
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 pt-[var(--content-offset-top)] sm:pt-24 pb-12 sm:pb-16">
         <div className="mb-6">

@@ -353,7 +353,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
   // Show loading while currentUser is being loaded
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
         <AdminHeader title="Edit User" subtitle="Loading..." />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
@@ -367,7 +367,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
         <AdminHeader title="Edit User" subtitle="Loading user profile..." />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
@@ -381,7 +381,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
         <AdminHeader title="Edit User" subtitle="User not found" />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
@@ -401,7 +401,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
       <AdminHeader 
         title="Edit User" 
         subtitle={`Editing profile for ${profile.displayName || profile.firstName || 'User'}`}

@@ -142,7 +142,7 @@ const EventsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white overflow-x-hidden w-full max-w-full">
         <Header />
         <section className="pt-[var(--content-offset-top)] pb-16 bg-gradient-to-br from-gray-50 to-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

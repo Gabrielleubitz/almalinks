@@ -60,7 +60,7 @@ const ConnectionManagement: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 overflow-x-hidden w-full max-w-full">
       <AdminHeader title="Connection Management" />
       
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8 overflow-x-hidden w-full max-w-full box-border">

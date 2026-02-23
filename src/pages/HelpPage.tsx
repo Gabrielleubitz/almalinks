@@ -7,7 +7,7 @@ import logoSvg from '../assets/alma-links-logo.svg';
 
 const HelpPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col overflow-x-hidden w-full max-w-full">
       <Header />
       {/* pt-20 clears the fixed navbar */}
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 pt-[var(--content-offset-top)] sm:pt-24 pb-12 sm:pb-16">

@@ -22,7 +22,7 @@ const ThemePreview: React.FC = () => {
   const [showAlert, setShowAlert] = useState(false);
 
   return (
-    <div className="min-h-screen bg-bg p-8">
+    <div className="min-h-screen bg-bg p-4 sm:p-8 overflow-x-hidden w-full max-w-full">
       <div className="max-w-6xl mx-auto space-y-12">
         
         {/* Header */}

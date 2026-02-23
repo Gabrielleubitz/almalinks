@@ -1,13 +1,5 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Header from './components/Header';
-import Hero from './components/Hero';
-import About from './components/About';
-import MarqueeDemo from './components/MarqueeDemo';
-import InThePress from './components/InThePress';
-import UpcomingEvent from './components/UpcomingEvent';
-import FAQ from './components/FAQ';
-import Footer from './components/Footer';
 import PoweredByIgani from './components/PoweredByIgani';
 import DashboardPage from './pages/DashboardPage';
 import EventsPage from './pages/EventsPage';
@@ -54,20 +46,6 @@ import NetworkStatusIndicator from './components/ui/NetworkStatusIndicator';
 import ActivityTracker from './components/ActivityTracker';
 import OnboardingTour from './components/onboarding/OnboardingTour';
 
-// Home page component
-const HomePage = () => (
-  <div className="min-h-screen bg-white">
-    <Header />
-    <Hero />
-    <About />
-    <MarqueeDemo />
-    <InThePress />
-    <UpcomingEvent />
-    <FAQ />
-    <Footer />
-  </div>
-);
-
 function App() {
   const { user, loading: authLoading } = useAuth();
   const [showTermsModal, setShowTermsModal] = React.useState(false);
@@ -92,7 +70,7 @@ function App() {
       <div className="min-h-screen flex flex-col">
         <div className="flex-1 flex flex-col">
           <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/theme-preview" element={<ThemePreview />} />
         <Route path="/help" element={<HelpPage />} />
         <Route path="/terms" element={<TermsPage />} />
