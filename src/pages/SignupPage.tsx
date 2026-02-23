@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, Phone, Briefcase, ArrowRight, ArrowLeft, AlertCircle, ChevronDown, Linkedin, CheckCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import logoSvg from '../assets/alma-links-logo.svg';
@@ -310,13 +310,14 @@ const SignupPage: React.FC = () => {
           logoUrl={logoSvg}
         >
           <div className="mb-6">
-            <Link
-              to="/login"
-              className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm font-medium"
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm font-medium bg-transparent border-0 cursor-pointer p-0"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Back to sign in</span>
-            </Link>
+            </button>
           </div>
 
           <div className="text-center mb-6">
@@ -338,13 +339,14 @@ const SignupPage: React.FC = () => {
                       <p className="text-red-700 text-sm mb-2">
                         This email already has an account. Please log in to submit a new approval request.
                       </p>
-                      <Link
-                        to="/login"
-                        className="inline-flex items-center space-x-2 text-red-700 hover:text-red-800 font-semibold text-sm transition-colors duration-200"
+                      <button
+                        type="button"
+                        onClick={() => navigate('/login')}
+                        className="inline-flex items-center space-x-2 text-red-700 hover:text-red-800 font-semibold text-sm transition-colors duration-200 bg-transparent border-0 cursor-pointer p-0"
                       >
                         <span>Go to Login</span>
                         <ArrowRight className="h-4 w-4" />
-                      </Link>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -707,12 +709,13 @@ const SignupPage: React.FC = () => {
           <div className="mt-8 text-center">
             <p className="text-gray-600">
               Already have an account?{' '}
-              <Link
-                to="/login"
-                className="text-red-600 hover:text-red-700 font-semibold transition-colors duration-200"
+              <button
+                type="button"
+                onClick={() => navigate('/login')}
+                className="text-red-600 hover:text-red-700 font-semibold transition-colors duration-200 bg-transparent border-0 cursor-pointer p-0 inline"
               >
                 Sign in
-              </Link>
+              </button>
             </p>
           </div>
 
