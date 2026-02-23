@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import logoSvg from '../assets/alma-links-logo.svg';
 import IganiWatermark from '../components/IganiWatermark';
 import RichTextBioEditor from '../components/profile/RichTextBioEditor';
+import AlmaAuthCard from '../components/ui/AlmaAuthCard';
 
 // Country codes data
 const COUNTRY_CODES = [
@@ -302,41 +303,34 @@ const SignupPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-3 sm:px-4 relative overflow-x-hidden w-full max-w-full">
-      {/* Logo in top left corner */}
-      <div className="absolute top-[max(1.5rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))] z-10">
-        <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
-          <img 
-            src={logoSvg}
-            alt="AlmaLinks Logo" 
-            className="h-8 md:h-10 w-auto"
-          />
+    <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] flex flex-col items-center justify-center px-3 sm:px-4 py-4 sm:py-6 relative overflow-x-hidden w-full max-w-full">
+      <div className="absolute top-[max(1rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))] z-10">
+        <Link to="/login" className="hover:opacity-80 transition-opacity duration-200">
+          <img src={logoSvg} alt="Alma Links" className="h-8 md:h-10 w-auto" />
         </Link>
       </div>
 
-      <div className="max-w-md w-full">
-        {/* Back button */}
-        <div className="mb-6">
-          <Link 
-            to="/"
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm font-medium"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back to site</span>
-          </Link>
-        </div>
-
-        <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-full mb-4">
-              <User className="h-8 w-8 text-white" />
+      <div className="w-full max-w-4xl flex-shrink-0 my-4">
+        <AlmaAuthCard
+          title="Join Alma Links"
+          subtitle="Create your account to connect with members, discover events, and join conversations worldwide."
+          logoUrl={logoSvg}
+        >
+          <div className="mb-6">
+            <Link
+              to="/login"
+              className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm font-medium"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back to sign in</span>
+            </Link>
+          </div>
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-[var(--brand-blue-dark)] to-[var(--brand-blue-light)] rounded-full mb-3">
+              <User className="h-7 w-7 text-white" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Join AlmaLinks
-            </h2>
-            <p className="text-gray-600">
-              Create your account to access exclusive events
-            </p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">Create your account</h2>
+            <p className="text-sm text-gray-600">Fill in your details to join Alma Links</p>
           </div>
 
           {displayError && (
@@ -729,9 +723,9 @@ const SignupPage: React.FC = () => {
             </p>
           </div>
         </div>
+        </AlmaAuthCard>
       </div>
 
-      {/* Igani Watermark */}
       <IganiWatermark position="bottom-center" size="sm" opacity={0.3} />
     </div>
   );

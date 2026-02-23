@@ -4,6 +4,7 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight, ArrowLeft, AlertCircle, CheckCircl
 import { useAuth } from '../hooks/useAuth';
 import logoSvg from '../assets/alma-links-logo.svg';
 import IganiWatermark from '../components/IganiWatermark';
+import AlmaAuthCard from '../components/ui/AlmaAuthCard';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -168,31 +169,29 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex flex-col items-center justify-center px-3 sm:px-4 py-4 sm:py-6 pb-20 sm:pb-6 relative overflow-x-hidden w-full max-w-full box-border">
-      {/* Logo in top left corner */}
+    <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] flex flex-col items-center justify-center px-3 sm:px-4 py-4 sm:py-6 pb-20 sm:pb-6 relative overflow-x-hidden w-full max-w-full box-border">
       <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] left-[max(0.75rem,env(safe-area-inset-left))] sm:top-6 sm:left-6 z-10">
-        <Link to="/" className="hover:opacity-80 transition-opacity duration-200 inline-block touch-manipulation py-2 pr-2">
-          <img 
-            src={logoSvg}
-            alt="AlmaLinks Logo" 
-            className="h-7 sm:h-8 md:h-10 w-auto"
-          />
+        <Link to="/login" className="hover:opacity-80 transition-opacity duration-200 inline-block touch-manipulation py-2 pr-2">
+          <img src={logoSvg} alt="Alma Links" className="h-7 sm:h-8 md:h-10 w-auto" />
         </Link>
       </div>
 
-      <div className="max-w-md w-full px-0 sm:px-0 flex-shrink-0 mb-8 sm:mb-0">
-        {/* Back button */}
-        <div className="mb-4 sm:mb-6">
-          <Link 
-            to="/"
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-xs sm:text-sm font-medium min-h-[44px] sm:min-h-0"
-          >
-            <ArrowLeft className="h-4 w-4 flex-shrink-0" />
-            <span>Back to site</span>
-          </Link>
-        </div>
-
-        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-5 sm:p-6 lg:p-8 border border-gray-100 w-full max-w-full">
+      <div className="w-full max-w-4xl flex-shrink-0 mb-8 sm:mb-0">
+        <AlmaAuthCard
+          title="Alma Links"
+          subtitle="Sign in to connect with members, discover events, and join conversations worldwide."
+          logoUrl={logoSvg}
+        >
+          <div className="mb-4 sm:mb-6">
+            <Link
+              to="/login"
+              className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-xs sm:text-sm font-medium min-h-[44px] sm:min-h-0"
+            >
+              <ArrowLeft className="h-4 w-4 flex-shrink-0" />
+              <span>Back</span>
+            </Link>
+          </div>
+          <div className="w-full">
           {showForgotPassword ? (
             <>
               <div className="text-center mb-6 sm:mb-8">
@@ -491,10 +490,10 @@ const LoginPage: React.FC = () => {
               </div>
             </>
           )}
-        </div>
+          </div>
+        </AlmaAuthCard>
       </div>
 
-      {/* Igani Watermark - Responsive positioning */}
       <div className="w-full flex items-center justify-center mt-auto sm:mt-6 pb-4 sm:pb-0 z-0">
         <IganiWatermark position="bottom-center" size="sm" opacity={0.3} />
       </div>
