@@ -302,8 +302,8 @@ const SignupPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] flex flex-col items-center justify-center px-3 sm:px-4 py-4 sm:py-6 relative overflow-x-hidden w-full max-w-full">
-      <div className="w-full max-w-4xl flex-shrink-0 my-4 mb-10 sm:mb-12">
+    <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] flex flex-col items-center justify-center px-3 sm:px-4 pt-4 sm:pt-6 pb-16 sm:pb-20 relative overflow-x-hidden w-full max-w-full">
+      <div className="w-full max-w-4xl flex-shrink-0 my-4 mb-5 sm:mb-6">
         <AlmaAuthCard
           title="Join Alma Links"
           subtitle="Create your account to connect with members, discover events, and join conversations worldwide."
