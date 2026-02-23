@@ -13,7 +13,11 @@ import {
   Briefcase, 
   Linkedin,
   ChevronDown,
-  Check
+  ChevronRight,
+  Check,
+  FileText,
+  MapPin,
+  Globe
 } from 'lucide-react';
 import { collection, getDocs, doc, updateDoc, query, where, orderBy, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../firebase/config';
@@ -25,11 +29,21 @@ interface UserData {
   uid: string;
   email: string;
   name: string;
+  displayName?: string;
   phone: string;
   company: string;
   work: string;
   linkedinUsername: string;
   position: string;
+  chapter?: string;
+  bioTitle?: string;
+  bio?: string;
+  city?: string;
+  country?: string;
+  timezone?: string;
+  website?: string;
+  twitter?: string;
+  skills?: string[];
   status: 'pending' | 'approved' | 'rejected';
   createdAt?: any;
   profileImage?: string | null;
@@ -39,6 +53,32 @@ interface ToastState {
   visible: boolean;
   message: string;
   type: 'success' | 'error';
+}
+
+function mapRequestToUserData(request: any): UserData {
+  return {
+    uid: request.uid,
+    email: request.email || '',
+    name: request.name || request.displayName || '',
+    displayName: request.displayName || request.name || '',
+    phone: request.phone || '',
+    company: request.company || '',
+    work: request.work || '',
+    linkedinUsername: request.linkedinUsername || '',
+    position: request.position || '',
+    chapter: request.chapter || '',
+    bioTitle: request.bioTitle || '',
+    bio: request.bio || '',
+    city: request.city || '',
+    country: request.country || '',
+    timezone: request.timezone || '',
+    website: request.website || '',
+    twitter: request.twitter || '',
+    skills: Array.isArray(request.skills) ? request.skills : [],
+    status: 'pending',
+    createdAt: request.createdAt,
+    profileImage: request.profileImage ?? null
+  };
 }
 
 const PendingRegistrations: React.FC = () => {
@@ -57,6 +97,7 @@ const PendingRegistrations: React.FC = () => {
   });
   const [processingUser, setProcessingUser] = useState<string | null>(null);
   const [confirmReject, setConfirmReject] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     // Use realtime listener for immediate updates when new signups occur
@@ -130,21 +171,8 @@ const PendingRegistrations: React.FC = () => {
             };
           });
 
-          // Convert join requests to UserData format for compatibility
-          const usersData: UserData[] = pendingRequests.map((request: any) => ({
-            uid: request.uid,
-            email: request.email || '',
-            name: request.name || request.displayName || '',
-            displayName: request.displayName || request.name || '',
-            phone: request.phone || '',
-            company: request.company || '',
-            work: request.work || '',
-            linkedinUsername: request.linkedinUsername || '',
-            position: request.position || '',
-            status: 'pending' as const,
-            createdAt: request.createdAt,
-            profileImage: null // Join requests don't have profile images yet
-          }));
+          // Convert join requests to UserData format (include all signup fields)
+          const usersData: UserData[] = pendingRequests.map((request: any) => mapRequestToUserData(request));
 
           console.log(`✅ Updated pending requests list: ${usersData.length} requests`);
           
@@ -229,20 +257,7 @@ const PendingRegistrations: React.FC = () => {
       const { JoinRequestService } = await import('../../services/joinRequestService');
       const pendingRequests = await JoinRequestService.getPendingRequests();
       
-      const usersData: UserData[] = pendingRequests.map(request => ({
-        uid: request.uid,
-        email: request.email || '',
-        name: request.name || request.displayName || '',
-        displayName: request.displayName || request.name || '',
-        phone: request.phone || '',
-        company: request.company || '',
-        work: request.work || '',
-        linkedinUsername: request.linkedinUsername || '',
-        position: request.position || '',
-        status: 'pending' as const,
-        createdAt: request.createdAt,
-        profileImage: null
-      }));
+      const usersData: UserData[] = pendingRequests.map((request: any) => mapRequestToUserData(request));
 
       setPendingUsers(usersData);
       setFilteredUsers(usersData);
@@ -263,19 +278,7 @@ const PendingRegistrations: React.FC = () => {
       const { JoinRequestService } = await import('../../services/joinRequestService');
       const pendingRequests = await JoinRequestService.getPendingRequests();
       
-      // Convert join requests to UserData format for compatibility
-      const usersData: UserData[] = pendingRequests.map(request => ({
-        uid: request.uid,
-        email: request.email,
-        name: request.name || request.displayName || '',
-        displayName: request.displayName || request.name || '',
-        phone: request.phone || '',
-        company: request.company || '',
-        work: request.work || '',
-        linkedinUsername: request.linkedinUsername || '',
-        position: request.position || '',
-        status: 'pending' as const
-      }));
+      const usersData: UserData[] = pendingRequests.map((request: any) => mapRequestToUserData(request));
 
       setPendingUsers(usersData);
       setFilteredUsers(usersData);
@@ -455,9 +458,8 @@ const PendingRegistrations: React.FC = () => {
   };
 
   const formatDate = (timestamp: any): string => {
-    if (!timestamp) return 'N/A';
-    
-    let date;
+    if (timestamp === undefined || timestamp === null) return 'N/A';
+    let date: Date;
     if (timestamp?.toDate) {
       date = timestamp.toDate();
     } else if (timestamp instanceof Date) {
@@ -465,7 +467,7 @@ const PendingRegistrations: React.FC = () => {
     } else {
       date = new Date(timestamp);
     }
-    
+    if (Number.isNaN(date.getTime())) return 'N/A';
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -495,13 +497,16 @@ const PendingRegistrations: React.FC = () => {
     return positionMap[position] || position;
   };
 
+  const hasExtraDetails = (u: UserData) =>
+    !!(u.bioTitle || u.bio || u.chapter || u.city || u.country || u.website || u.twitter || (u.skills && u.skills.length > 0));
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
+      <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] overflow-x-hidden w-full max-w-full">
         <AdminHeader title="Pending Registrations" />
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
-            <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <div className="w-12 h-12 border-4 border-brand-blue-dark/20 border-t-brand-blue-dark rounded-full animate-spin mx-auto mb-4" />
             <p className="text-gray-600">Loading pending registrations...</p>
           </div>
         </div>
@@ -510,244 +515,316 @@ const PendingRegistrations: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-      <AdminHeader 
-        title="Pending Registrations" 
+    <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] overflow-x-hidden w-full max-w-full">
+      <AdminHeader
+        title="Pending Registrations"
         subtitle="Review and approve new user registrations"
       />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Back Button */}
-        <div className="mb-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="mb-6">
           <button
             onClick={() => navigate('/admin')}
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
+            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors font-medium"
           >
             <ArrowLeft className="h-5 w-5" />
             <span>Back to Admin Tools</span>
           </button>
         </div>
 
-        {/* Toast Notification */}
         {toast.visible && (
-          <Toast 
+          <Toast
             message={toast.message}
             type={toast.type}
             onClose={() => setToast(prev => ({ ...prev, visible: false }))}
           />
         )}
 
-        {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-3">
             <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
             <p className="text-red-600 text-sm">{error}</p>
-            <button
-              onClick={() => setError(null)}
-              className="text-red-600 hover:text-red-700 ml-auto"
-            >
+            <button onClick={() => setError(null)} className="text-red-600 hover:text-red-700 ml-auto" aria-label="Dismiss">
               <X className="h-4 w-4" />
             </button>
           </div>
         )}
 
-        {/* Pending Registrations Section */}
-        <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Pending Registrations</h2>
-            <div className="text-sm text-gray-500">
-              {filteredUsers.length} of {pendingUsers.length} pending users
+        <div className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] ring-1 ring-black/[0.06] border border-gray-200/80 overflow-hidden">
+          <div className="p-6 sm:p-8 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Pending Registrations</h2>
+              <span className="text-sm text-gray-500">
+                {filteredUsers.length} of {pendingUsers.length} pending
+              </span>
             </div>
-          </div>
-
-          {/* Search Input */}
-          <div className="mb-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <div className="mt-4 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search by name, email, or work..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue-dark/20 focus:border-brand-blue-dark transition-all"
               />
             </div>
           </div>
 
-          {/* Users Table */}
-          <div className="overflow-x-auto">
+          <div className="divide-y divide-gray-100">
             {filteredUsers.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <div className="text-center py-16 px-4">
+                <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-600 font-medium">No pending registrations</p>
                 <p className="text-gray-500 text-sm mt-1">
                   {searchTerm ? `No results for "${searchTerm}"` : 'All registrations have been processed'}
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {filteredUsers.map((userData) => (
-                  <div 
+              filteredUsers.map((userData) => {
+                const expanded = expandedId === userData.uid;
+                const hasExtra = hasExtraDetails(userData);
+                return (
+                  <div
                     key={userData.uid}
-                    className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
+                    className="bg-white hover:bg-gray-50/50 transition-colors"
                   >
-                    <div className="p-6">
-                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-                        {/* User Info */}
-                        <div className="flex-1 space-y-4">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-12 h-12 rounded-full overflow-hidden">
+                    <div className="p-6 sm:p-8">
+                      <div className="flex flex-col gap-6">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                          <div className="flex gap-4 min-w-0">
+                            <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light">
                               {userData.profileImage ? (
-                                <img 
-                                  src={userData.profileImage} 
-                                  alt={userData.name || 'User'} 
+                                <img
+                                  src={userData.profileImage}
+                                  alt=""
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSIzMCIgZmlsbD0iIzlDQTNBRiIvPgo8ZWxsaXBzZSBjeD0iMTAwIiBjeT0iMTQwIiByeD0iNDAiIHJ5PSIyMCIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4=';
+                                    (e.target as HTMLImageElement).style.display = 'none';
                                   }}
                                 />
                               ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-lg">
+                                <div className="w-full h-full flex items-center justify-center text-white font-bold text-xl">
                                   {userData.name?.charAt(0) || userData.email?.charAt(0) || '?'}
                                 </div>
                               )}
                             </div>
-                            <div>
-                              <h3 className="text-xl font-bold text-gray-900">{userData.name || 'No Name'}</h3>
-                              <p className="text-gray-600">{formatPosition(userData.position)}</p>
-                              <p className="text-sm text-gray-500">
-                                Registered: {formatDate(userData.createdAt)}
-                              </p>
+                            <div className="min-w-0">
+                              <h3 className="text-lg font-bold text-gray-900 truncate">{userData.name || 'No Name'}</h3>
+                              <p className="text-gray-600 text-sm">{formatPosition(userData.position)}</p>
+                              <p className="text-xs text-gray-500 mt-0.5">Registered on {formatDate(userData.createdAt)}</p>
                             </div>
                           </div>
-                          
-                          <div className="grid md:grid-cols-2 gap-4">
-                            <div className="flex items-center space-x-3">
-                              <Mail className="h-5 w-5 text-gray-400" />
-                              <div>
-                                <div className="text-sm text-gray-500">Email</div>
-                                <div className="font-medium text-gray-900">{userData.email || 'Not provided'}</div>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center space-x-3">
-                              <Phone className="h-5 w-5 text-gray-400" />
-                              <div>
-                                <div className="text-sm text-gray-500">Phone</div>
-                                <div className="font-medium text-gray-900">{userData.phone || 'Not provided'}</div>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center space-x-3">
-                              <Briefcase className="h-5 w-5 text-gray-400" />
-                              <div>
-                                <div className="text-sm text-gray-500">Company</div>
-                                <div className="font-medium text-gray-900">{userData.company || 'Not provided'}</div>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center space-x-3">
-                              <User className="h-5 w-5 text-gray-400" />
-                              <div>
-                                <div className="text-sm text-gray-500">Job Description</div>
-                                <div className="font-medium text-gray-900">{userData.work || 'Not provided'}</div>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center space-x-3">
-                              <Linkedin className="h-5 w-5 text-gray-400" />
-                              <div>
-                                <div className="text-sm text-gray-500">LinkedIn</div>
-                                <div className="font-medium text-gray-900">
-                                  {userData.linkedinUsername ? (
-                                    <a 
-                                      href={`https://linkedin.com/in/${userData.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '')}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-brand-light hover:text-brand-mid hover:underline"
-                                    >
-                                      View Profile
-                                    </a>
-                                  ) : (
-                                    'Not provided'
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Action Buttons */}
-                        <div className="flex flex-col space-y-3 min-w-[180px]">
-                          {confirmReject === userData.uid ? (
-                            <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                              <p className="text-sm text-red-700 mb-2">Are you sure?</p>
-                              <div className="flex space-x-2">
+                          <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:flex-shrink-0">
+                            {confirmReject === userData.uid ? (
+                              <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <span className="text-sm text-red-700">Reject?</span>
                                 <button
                                   onClick={() => handleRejectUser(userData.uid)}
                                   disabled={processingUser === userData.uid}
-                                  className="flex-1 bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
+                                  className="bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
                                 >
                                   {processingUser === userData.uid ? (
-                                    <div className="flex items-center justify-center">
-                                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    </div>
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                   ) : (
-                                    'Confirm'
+                                    'Yes'
                                   )}
                                 </button>
                                 <button
                                   onClick={() => setConfirmReject(null)}
-                                  className="flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
+                                  className="bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300"
                                 >
                                   Cancel
                                 </button>
                               </div>
-                            </div>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => handleApproveUser(userData.uid)}
-                                disabled={processingUser === userData.uid}
-                                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center space-x-2 disabled:opacity-50"
-                              >
-                                {processingUser === userData.uid ? (
-                                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                ) : (
-                                  <>
-                                    <Check className="h-5 w-5" />
-                                    <span>Approve</span>
-                                  </>
-                                )}
-                              </button>
-                              <button
-                                onClick={() => setConfirmReject(userData.uid)}
-                                disabled={processingUser === userData.uid}
-                                className="bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 transition-colors font-medium flex items-center justify-center space-x-2 disabled:opacity-50"
-                              >
-                                <X className="h-5 w-5" />
-                                <span>Reject</span>
-                              </button>
-                            </>
-                          )}
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleApproveUser(userData.uid)}
+                                  disabled={processingUser === userData.uid}
+                                  className="inline-flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2.5 rounded-xl font-medium hover:bg-green-700 disabled:opacity-50 text-sm"
+                                >
+                                  {processingUser === userData.uid ? (
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <>
+                                      <Check className="h-5 w-5" />
+                                      Approve
+                                    </>
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => setConfirmReject(userData.uid)}
+                                  disabled={processingUser === userData.uid}
+                                  className="inline-flex items-center justify-center gap-2 bg-red-50 text-red-700 px-4 py-2.5 rounded-xl font-medium hover:bg-red-100 disabled:opacity-50 text-sm"
+                                >
+                                  <X className="h-5 w-5" />
+                                  Reject
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                          <div className="flex items-start gap-3">
+                            <Mail className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <div className="text-gray-500">Email</div>
+                              <div className="font-medium text-gray-900 break-all">{userData.email || '—'}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <Phone className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <div className="text-gray-500">Phone</div>
+                              <div className="font-medium text-gray-900">{userData.phone || '—'}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <Briefcase className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <div className="text-gray-500">Company</div>
+                              <div className="font-medium text-gray-900">{userData.company || '—'}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <User className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <div className="text-gray-500">Work</div>
+                              <div className="font-medium text-gray-900">{userData.work || '—'}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3 sm:col-span-2">
+                            <Linkedin className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <div className="text-gray-500">LinkedIn</div>
+                              {userData.linkedinUsername ? (
+                                <a
+                                  href={`https://linkedin.com/in/${userData.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-brand-blue-light hover:underline font-medium"
+                                >
+                                  View profile
+                                </a>
+                              ) : (
+                                <span className="font-medium text-gray-500">—</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {hasExtra && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setExpandedId(expanded ? null : userData.uid)}
+                              className="inline-flex items-center gap-2 text-sm font-medium text-brand-blue-dark hover:text-brand-blue-light transition-colors"
+                            >
+                              {expanded ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                              {expanded ? 'Hide full details' : 'View full details'}
+                            </button>
+
+                            {expanded && (
+                              <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 sm:p-5 space-y-4 text-sm">
+                                {userData.bioTitle && (
+                                  <div>
+                                    <div className="flex items-center gap-2 text-gray-500 mb-1">
+                                      <FileText className="h-4 w-4" />
+                                      Short bio
+                                    </div>
+                                    <p className="text-gray-900 font-medium">{userData.bioTitle}</p>
+                                  </div>
+                                )}
+                                {userData.bio && (
+                                  <div>
+                                    <div className="flex items-center gap-2 text-gray-500 mb-1">
+                                      <FileText className="h-4 w-4" />
+                                      Bio
+                                    </div>
+                                    {userData.bio.includes('<') ? (
+                                      <div
+                                        className="text-gray-700 prose prose-sm max-w-none prose-p:my-1"
+                                        dangerouslySetInnerHTML={{ __html: userData.bio }}
+                                      />
+                                    ) : (
+                                      <p className="text-gray-700 whitespace-pre-wrap">{userData.bio}</p>
+                                    )}
+                                  </div>
+                                )}
+                                {userData.chapter && (
+                                  <div>
+                                    <div className="flex items-center gap-2 text-gray-500 mb-1">
+                                      <MapPin className="h-4 w-4" />
+                                      Chapter
+                                    </div>
+                                    <p className="text-gray-900">{userData.chapter}</p>
+                                  </div>
+                                )}
+                                {(userData.city || userData.country) && (
+                                  <div>
+                                    <div className="flex items-center gap-2 text-gray-500 mb-1">
+                                      <MapPin className="h-4 w-4" />
+                                      Location
+                                    </div>
+                                    <p className="text-gray-900">{[userData.city, userData.country].filter(Boolean).join(', ')}</p>
+                                  </div>
+                                )}
+                                {userData.timezone && (
+                                  <div>
+                                    <div className="text-gray-500 mb-1">Timezone</div>
+                                    <p className="text-gray-900">{userData.timezone}</p>
+                                  </div>
+                                )}
+                                {(userData.website || userData.twitter) && (
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <Globe className="h-4 w-4 text-gray-400" />
+                                    {userData.website && (
+                                      <a href={userData.website.startsWith('http') ? userData.website : `https://${userData.website}`} target="_blank" rel="noopener noreferrer" className="text-brand-blue-light hover:underline">
+                                        Website
+                                      </a>
+                                    )}
+                                    {userData.twitter && (
+                                      <a href={userData.twitter.startsWith('http') ? userData.twitter : `https://${userData.twitter}`} target="_blank" rel="noopener noreferrer" className="text-brand-blue-light hover:underline">
+                                        Twitter
+                                      </a>
+                                    )}
+                                  </div>
+                                )}
+                                {userData.skills && userData.skills.length > 0 && (
+                                  <div>
+                                    <div className="text-gray-500 mb-2">Skills</div>
+                                    <div className="flex flex-wrap gap-2">
+                                      {userData.skills.map((s, i) => (
+                                        <span key={i} className="px-2.5 py-1 rounded-lg bg-brand-blue-dark/10 text-brand-blue-dark text-xs font-medium">
+                                          {s}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })
             )}
           </div>
 
-          {/* Information Box */}
-          <div className="mt-8 bg-gray-50 rounded-2xl p-6">
-            <h3 className="font-semibold text-gray-900 mb-3">👥 Registration Approval Process:</h3>
-            <ul className="text-sm text-gray-600 space-y-2">
-              <li>• <strong>Approve:</strong> Grants access to the platform and sends an email notification</li>
-              <li>• <strong>Reject:</strong> Marks the request as rejected. The user can log in again to submit a new request</li>
-              <li>• <strong>LinkedIn:</strong> Review the user's LinkedIn profile before approving</li>
-              <li>• <strong>Email Notification:</strong> Approved users receive an email notification automatically</li>
+          <div className="p-6 sm:p-8 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl">
+            <h3 className="font-semibold text-gray-900 mb-2">Registration approval</h3>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li><strong>Approve</strong> — Grants access and sends an email notification. All signup data (including bio, chapter, skills) is copied to the user&apos;s profile.</li>
+              <li><strong>Reject</strong> — Marks the request as rejected. The user can sign in again to submit a new request.</li>
+              <li>Use <strong>View full details</strong> to see short bio, bio, chapter, location, and skills before deciding.</li>
             </ul>
           </div>
         </div>

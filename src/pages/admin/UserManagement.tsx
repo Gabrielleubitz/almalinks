@@ -43,6 +43,7 @@ interface UserData {
   name: string;
   role: 'member' | 'admin';
   createdAt?: any;
+  joinedAt?: any; // when approved (use for "join date" / "Member since")
   profileImage?: string | null;
   phone?: string;
   company?: string;
@@ -300,9 +301,8 @@ const UserManagement: React.FC = () => {
   };
 
   const formatDate = (timestamp: any): string => {
-    if (!timestamp) return 'N/A';
-    
-    let date;
+    if (timestamp === undefined || timestamp === null) return 'N/A';
+    let date: Date;
     if (timestamp?.toDate) {
       date = timestamp.toDate();
     } else if (timestamp instanceof Date) {
@@ -310,7 +310,7 @@ const UserManagement: React.FC = () => {
     } else {
       date = new Date(timestamp);
     }
-    
+    if (Number.isNaN(date.getTime())) return 'N/A';
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -529,7 +529,7 @@ const UserManagement: React.FC = () => {
                             </div>
                             <div className="text-xs sm:text-sm text-gray-500 flex items-center">
                               <Calendar className="h-3 w-3 inline mr-1 flex-shrink-0" />
-                              <span className="truncate">{formatDate(userData.createdAt)}</span>
+                              <span className="truncate" title={userData.joinedAt ? 'Joined (approval date)' : 'Account created'}>{formatDate(userData.joinedAt ?? userData.createdAt)}</span>
                             </div>
                           </div>
                         </div>
@@ -927,8 +927,8 @@ const UserManagement: React.FC = () => {
                   <div className="flex items-center space-x-3">
                     <Calendar className="h-5 w-5 text-gray-400" />
                     <div>
-                      <div className="text-sm text-gray-500">Member Since</div>
-                      <div className="font-medium text-gray-900">{formatDate(selectedUser.createdAt)}</div>
+                      <div className="text-sm text-gray-500">Member Since (joined when approved)</div>
+                      <div className="font-medium text-gray-900">{formatDate(selectedUser.joinedAt ?? selectedUser.createdAt)}</div>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">

@@ -231,17 +231,19 @@ const ProfilePreviewCard: React.FC<ProfilePreviewCardProps> = ({
         </div>
 
         {/* Member Since */}
-        {profile.joinedAt && (
-          <div className="flex items-center text-gray-500 text-xs">
-            <Calendar className="h-3 w-3 mr-2" />
-            <span>
-              Member since {new Date(profile.joinedAt.toDate ? profile.joinedAt.toDate() : profile.joinedAt).toLocaleDateString('en-US', {
-                month: 'long',
-                year: 'numeric'
-              })}
-            </span>
-          </div>
-        )}
+        {(profile.joinedAt || profile.createdAt) && (() => {
+          const ts = profile.joinedAt ?? profile.createdAt;
+          const date = ts?.toDate ? ts.toDate() : (ts instanceof Date ? ts : new Date(ts));
+          if (Number.isNaN(date.getTime())) return null;
+          return (
+            <div className="flex items-center text-gray-500 text-xs">
+              <Calendar className="h-3 w-3 mr-2" />
+              <span>
+                Member since {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </span>
+            </div>
+          );
+        })()}
 
         {/* Completion Percentage */}
         {showEditMode && profile.profileCompletionPercentage !== undefined && (

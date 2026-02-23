@@ -422,10 +422,10 @@ const UserProfilePage: React.FC = () => {
                       </div>
                     )}
                     
-                    {profile.joinedAt && (
+                    {(profile.joinedAt || profile.createdAt) && (
                       <div className="flex items-center text-gray-600">
                         <Calendar className="h-5 w-5 mr-3 text-gray-400" />
-                        Joined {formatDate(profile.joinedAt)}
+                        Joined {formatDate(profile.joinedAt ?? profile.createdAt)}
                       </div>
                     )}
                   </div>

@@ -557,13 +557,19 @@ export class JoinRequestService {
         approvedBy
       }));
 
-      // Create user document from join request data
-      // Build payload with required fields first
+      // Create user document from join request data (all signup fields flow to profile)
+      const fullName = (request.name || request.displayName || '').trim();
+      const nameParts = fullName ? fullName.split(/\s+/) : [];
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
       const userProfilePayload: any = {
         uid,
         email: request.email,
-        name: request.name || request.displayName || '',
-        displayName: request.displayName || request.name || '',
+        name: fullName || request.displayName || '',
+        displayName: request.displayName || request.name || fullName || '',
+        firstName: firstName || 'User',
+        lastName: lastName,
         phone: request.phone || '',
         company: request.company || '',
         work: request.work || '',
