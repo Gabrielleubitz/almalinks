@@ -49,6 +49,7 @@ import TermsPage from './pages/TermsPage';
 import TermsAgreementModal, { getTermsAgreed } from './components/TermsAgreementModal';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AuthWrapper from './components/auth/AuthWrapper';
+import { useAuth } from './hooks/useAuth';
 import NetworkStatusIndicator from './components/ui/NetworkStatusIndicator';
 import ActivityTracker from './components/ActivityTracker';
 import OnboardingTour from './components/onboarding/OnboardingTour';
@@ -68,18 +69,24 @@ const HomePage = () => (
 );
 
 function App() {
+  const { user, loading: authLoading } = useAuth();
   const [showTermsModal, setShowTermsModal] = React.useState(false);
 
   React.useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setShowTermsModal(false);
+      return;
+    }
     if (!getTermsAgreed()) {
       setShowTermsModal(true);
     }
-  }, []);
+  }, [user, authLoading]);
 
   return (
     <Router>
       <ActivityTracker />
-      {showTermsModal && (
+      {showTermsModal && user && (
         <TermsAgreementModal onAgree={() => setShowTermsModal(false)} />
       )}
       <div className="min-h-screen flex flex-col">
