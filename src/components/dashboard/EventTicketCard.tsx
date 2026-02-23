@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDown, ChevronUp, Calendar, MapPin, Clock, User, Mail, Phone, Briefcase, X } from 'lucide-react';
+import logoSvg from '../../assets/alma-links-logo.svg';
 
 export interface EventTicketCardProps {
   eventName: string;
@@ -15,8 +17,8 @@ export interface EventTicketCardProps {
 }
 
 /**
- * Event ticket card styled to match the site: white card, brand blue gradient header,
- * same typography and borders as the rest of the dashboard.
+ * Minimal event ticket card that matches site UI. Shows logo, event name, and date.
+ * On click, content "comes out of the card" (expandable panel below) with full event + attendee details.
  */
 const EventTicketCard: React.FC<EventTicketCardProps> = ({
   eventName,
@@ -31,57 +33,131 @@ const EventTicketCard: React.FC<EventTicketCardProps> = ({
   isExpired = false,
   className = '',
 }) => {
+  const [expanded, setExpanded] = useState(false);
+
   const displayDate = eventDate?.trim() || '—';
   const displayTime = eventTime?.trim() || '—';
   const displayLocation = eventLocation?.trim() || '—';
 
-  return (
-    <article
-      aria-label={`Ticket for ${eventName}`}
-      className={`
-        w-full max-w-[280px] bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden
-        hover:shadow-md transition-shadow duration-200
-        ${isExpired ? 'opacity-75' : ''}
-        ${className}
-      `}
-    >
-      {/* Header - site brand blue gradient (matches Browse Events button) */}
-      <div className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light px-4 py-3">
-        <h3 className="text-white font-semibold text-base truncate" title={eventName}>
-          {eventName || 'Event'}
-        </h3>
-        {ticketId && (
-          <p className="text-white/80 text-xs mt-0.5">#{ticketId}</p>
-        )}
-      </div>
+  // Compact date line for minimal view: "Mon, Feb 23 · 6:59 PM"
+  const dateTimeLine = [displayDate, displayTime].filter(Boolean).join(' · ') || '—';
 
-      {/* Body - same gray text as rest of site */}
-      <div className="p-4">
-        <div className="grid grid-cols-3 gap-2 text-center border-b border-gray-100 pb-3">
-          <div>
-            <p className="text-gray-900 font-medium text-sm truncate" title={displayDate}>{displayDate}</p>
-            <p className="text-gray-500 text-xs">Date</p>
+  return (
+    <div className={`w-full max-w-[320px] ${className}`}>
+      {/* Minimal card - clickable */}
+      <button
+        type="button"
+        onClick={() => setExpanded((e) => !e)}
+        aria-expanded={expanded}
+        aria-label={expanded ? 'Close ticket details' : `View ticket details for ${eventName}`}
+        className={`
+          w-full text-left bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden
+          hover:border-brand-dark/20 hover:shadow-md transition-all duration-200
+          focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2
+          ${isExpired ? 'opacity-80' : ''}
+        `}
+      >
+        <div className="flex items-center gap-3 p-3 sm:p-4">
+          {/* Logo - match site header */}
+          <div className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-gray-50 border border-gray-100">
+            <img src={logoSvg} alt="" className="h-5 w-auto" aria-hidden />
           </div>
-          <div className="border-x border-gray-100 px-1">
-            <p className="text-gray-900 font-medium text-sm truncate" title={displayTime}>{displayTime}</p>
-            <p className="text-gray-500 text-xs">Time</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-gray-900 font-medium text-sm truncate" title={eventName}>
+              {eventName || 'Event'}
+            </p>
+            <p className="text-gray-500 text-xs mt-0.5 truncate" title={dateTimeLine}>
+              {dateTimeLine}
+            </p>
           </div>
-          <div>
-            <p className="text-gray-900 font-medium text-sm truncate" title={displayLocation}>{displayLocation}</p>
-            <p className="text-gray-500 text-xs">Location</p>
+          <div className="flex-shrink-0 text-gray-400">
+            {expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
           </div>
         </div>
-        {(attendeeName || attendeeEmail) && (
-          <div className="mt-3 pt-3">
-            <p className="text-gray-500 text-xs">Attendee</p>
-            <p className="text-gray-900 font-medium text-sm truncate">{attendeeName || '—'}</p>
-            {attendeeEmail && <p className="text-gray-500 text-xs truncate">{attendeeEmail}</p>}
-            {attendeePhone && <p className="text-gray-500 text-xs truncate">{attendeePhone}</p>}
-            {attendeeWork && <p className="text-gray-500 text-xs truncate">{attendeeWork}</p>}
+      </button>
+
+      {/* Expandable detail - "comes out of the file" (not full screen) */}
+      <div
+        className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${expanded ? 'max-h-[480px] opacity-100' : 'max-h-0 opacity-0'}`}
+      >
+        <div
+          className="bg-white rounded-b-xl border border-t-0 border-gray-200 shadow-lg rounded-t-none"
+          style={{ boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}
+        >
+          {/* Header strip with logo + event name */}
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+            <img src={logoSvg} alt="Alma Links" className="h-6 w-auto flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h3 className="text-gray-900 font-semibold text-sm truncate">{eventName || 'Event'}</h3>
+              {ticketId && (
+                <p className="text-gray-500 text-xs">#{ticketId}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setExpanded(false); }}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-        )}
+
+          <div className="p-4 space-y-4">
+            {/* Event details */}
+            <div className="grid grid-cols-1 gap-3 text-sm">
+              <div className="flex items-start gap-2">
+                <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-gray-500 text-xs">Date & time</p>
+                  <p className="text-gray-900">{displayDate} · {displayTime}</p>
+                </div>
+              </div>
+              {displayLocation !== '—' && (
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-gray-500 text-xs">Location</p>
+                    <p className="text-gray-900">{displayLocation}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Attendee */}
+            {(attendeeName || attendeeEmail) && (
+              <div className="pt-3 border-t border-gray-100">
+                <p className="text-gray-500 text-xs font-medium uppercase tracking-wide mb-2">Attendee</p>
+                <div className="flex items-start gap-2">
+                  <User className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <div className="space-y-1 text-sm">
+                    <p className="text-gray-900 font-medium">{attendeeName || '—'}</p>
+                    {attendeeEmail && (
+                      <p className="text-gray-600 flex items-center gap-1.5">
+                        <Mail className="h-3.5 w-3 text-gray-400" />
+                        {attendeeEmail}
+                      </p>
+                    )}
+                    {attendeePhone && (
+                      <p className="text-gray-600 flex items-center gap-1.5">
+                        <Phone className="h-3.5 w-3 text-gray-400" />
+                        {attendeePhone}
+                      </p>
+                    )}
+                    {attendeeWork && (
+                      <p className="text-gray-600 flex items-center gap-1.5">
+                        <Briefcase className="h-3.5 w-3 text-gray-400" />
+                        {attendeeWork}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </article>
+    </div>
   );
 };
 
