@@ -199,13 +199,13 @@ const AlmaAuthCard: React.FC<AlmaAuthCardProps> = ({
           </div>
         </div>
 
-        {/* Right - Form (scrollable so long sign-up form scrolls inside card) */}
-        <div className="w-full md:w-1/2 p-6 sm:p-8 md:p-10 flex flex-col bg-white min-h-[420px] max-h-[85vh] md:max-h-[600px] overflow-y-auto">
+        {/* Right - Form (scrollable; content starts at top so user can scroll to all fields) */}
+        <div className="w-full md:w-1/2 p-6 sm:p-8 md:p-10 flex flex-col bg-white min-h-[420px] max-h-[85vh] md:max-h-[600px] overflow-y-auto overflow-x-hidden overscroll-contain">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="w-full max-w-sm mx-auto md:mx-0 flex flex-col justify-center min-h-0"
+            className="w-full max-w-sm mx-auto md:mx-0 flex flex-col min-h-0 flex-shrink-0"
           >
             {children}
           </motion.div>

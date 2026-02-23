@@ -304,12 +304,6 @@ const SignupPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] flex flex-col items-center justify-center px-3 sm:px-4 py-4 sm:py-6 relative overflow-x-hidden w-full max-w-full">
-      <div className="absolute top-[max(1rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))] z-10">
-        <Link to="/login" className="hover:opacity-80 transition-opacity duration-200">
-          <img src={logoSvg} alt="Alma Links" className="h-8 md:h-10 w-auto" />
-        </Link>
-      </div>
-
       <div className="w-full max-w-4xl flex-shrink-0 my-4">
         <AlmaAuthCard
           title="Join Alma Links"
