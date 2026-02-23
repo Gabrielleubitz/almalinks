@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, Phone, Briefcase, ArrowRight, ArrowLeft, AlertCircle, ChevronDown, Linkedin, CheckCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import logoSvg from '../assets/alma-links-logo.svg';
-import IganiWatermark from '../components/IganiWatermark';
 import RichTextBioEditor from '../components/profile/RichTextBioEditor';
 import AlmaAuthCard from '../components/ui/AlmaAuthCard';
 
@@ -304,7 +303,7 @@ const SignupPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] flex flex-col items-center justify-center px-3 sm:px-4 py-4 sm:py-6 relative overflow-x-hidden w-full max-w-full">
-      <div className="w-full max-w-4xl flex-shrink-0 my-4">
+      <div className="w-full max-w-4xl flex-shrink-0 my-4 mb-10 sm:mb-12">
         <AlmaAuthCard
           title="Join Alma Links"
           subtitle="Create your account to connect with members, discover events, and join conversations worldwide."
@@ -724,8 +723,6 @@ const SignupPage: React.FC = () => {
           </div>
         </AlmaAuthCard>
       </div>
-
-      <IganiWatermark position="bottom-center" size="sm" opacity={0.3} />
     </div>
   );
 };
