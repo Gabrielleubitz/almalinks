@@ -380,26 +380,46 @@ const PendingRegistrations: React.FC = () => {
 
   const handleRejectUser = async (userId: string) => {
     if (!user?.uid) return;
-    
+
+    const userToReject = pendingUsers.find(u => u.uid === userId);
     setProcessingUser(userId);
-    
+
     try {
       console.log('❌ Rejecting join request for user:', userId);
-      
+
       const { JoinRequestService } = await import('../../services/joinRequestService');
       await JoinRequestService.rejectRequest(userId, user.uid);
-      
+
       console.log('✅ Join request rejected successfully');
-      
+
+      // Send rejection email (instructions + re-request link + Alma Links contact)
+      if (userToReject?.email) {
+        try {
+          const res = await fetch('/api/email-service', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'rejection',
+              email: userToReject.email,
+              name: userToReject.name || userToReject.displayName || 'there',
+            }),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            console.warn('Rejection email failed (non-blocking):', err?.error || res.status);
+          }
+        } catch (e) {
+          console.warn('Rejection email error (non-blocking):', e);
+        }
+      }
+
       // Update local state - remove from pending list immediately
       setPendingUsers(prev => prev.filter(u => u.uid !== userId));
       setFilteredUsers(prev => prev.filter(u => u.uid !== userId));
-      
-      // Show success message
-      showToast('User rejected. They can log in again to submit a new request.', 'success');
+
+      showToast('User rejected. Rejection email sent with re-request instructions.', 'success');
     } catch (error: any) {
       console.error('❌ Error rejecting user:', error);
-      
       const errorMessage = error.message || 'Failed to reject user. Please try again.';
       showToast(errorMessage, 'error');
     } finally {

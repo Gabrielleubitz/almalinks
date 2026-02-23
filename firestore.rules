@@ -30,12 +30,13 @@ service cloud.firestore {
     }
 
     // --- Join requests (pending signups); doc id = applicant uid
+    // Owner can create (signup) and update (re-request after rejection); admin can update/delete for approval/rejection
     match /joinRequests/{requestId} {
       allow read: if isOwner(requestId) || isAdmin();
       allow create: if isAuthenticated() && request.auth.uid == requestId
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.status == 'pending';
-      allow update: if isAdmin();
+      allow update: if (isOwner(requestId) && request.resource.data.status == 'pending') || isAdmin();
       allow delete: if isAdmin();
     }
 
