@@ -425,7 +425,8 @@ export class EventService {
   static async registerForEvent(
     eventId: string, 
     userId: string, 
-    registrationData: EventRegistration
+    registrationData: EventRegistration,
+    options?: { byAdmin?: boolean }
   ): Promise<void> {
     try {
       // Check if user is already registered
@@ -434,9 +435,12 @@ export class EventService {
         throw new Error('You are already registered for this event');
       }
 
-      // Check if event is active
       const event = await this.getEventById(eventId);
-      if (!event || event.status !== 'active') {
+      if (!event) {
+        throw new Error('Event not found');
+      }
+      // When not admin, require event to be active
+      if (!options?.byAdmin && event.status !== 'active') {
         throw new Error('Registration is not available for this event');
       }
 

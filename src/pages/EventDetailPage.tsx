@@ -154,6 +154,30 @@ const EventDetailPage: React.FC = () => {
 
       console.log('✅ Registration successful');
 
+      // Send registration confirmation email for upcoming events
+      const isUpcoming = new Date(event.date) > new Date();
+      if (isUpcoming && user.email) {
+        try {
+          const eventDateFormatted = formatDate(event.date);
+          await fetch('/api/email-service', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'registration',
+              email: user.email,
+              name: user.displayName || user.email,
+              eventDetails: {
+                name: event.name,
+                date: eventDateFormatted.date + (eventDateFormatted.time ? `, ${eventDateFormatted.time}` : ''),
+                location: event.location || 'TBD',
+              },
+            }),
+          });
+        } catch (emailErr) {
+          console.warn('⚠️ Registration email failed:', emailErr);
+        }
+      }
+
       // Log event registration activity
       logEventRegistration(event.id, event.name);
 

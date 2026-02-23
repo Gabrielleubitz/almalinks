@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, ArrowLeft, UserCheck, CheckCircle, Clock, Search, List, LayoutGrid } from 'lucide-react';
+import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, ArrowLeft, UserCheck, CheckCircle, Clock, Search, List, LayoutGrid, UserPlus } from 'lucide-react';
 import { EventService, EventData } from '../../services/eventService';
 import AdminHeader from '../../components/admin/AdminHeader';
 import EventPositionChart from '../../components/analytics/EventPositionChart';
+import { UserService } from '../../services/userService';
+import { useAuth } from '../../hooks/useAuth';
+import type { UserCard } from '../../types/user';
 
 type EventFilter = 'all' | 'upcoming' | 'past';
 type ViewMode = 'cards' | 'list';
@@ -28,6 +31,16 @@ const EventManagement: React.FC = () => {
   const [checkingInUsers, setCheckingInUsers] = useState<Set<string>>(new Set());
   const [registrationSearch, setRegistrationSearch] = useState('');
   const [registrationsTab, setRegistrationsTab] = useState<'awaiting' | 'checked-in' | 'all'>('awaiting');
+
+  // Admin: Register user to event
+  const { user: authUser } = useAuth();
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [addUserList, setAddUserList] = useState<UserCard[]>([]);
+  const [addUserListLoading, setAddUserListLoading] = useState(false);
+  const [addUserSearch, setAddUserSearch] = useState('');
+  const [selectedUsersToAdd, setSelectedUsersToAdd] = useState<UserCard[]>([]);
+  const [addingUser, setAddingUser] = useState(false);
+  const [addUserError, setAddUserError] = useState<string | null>(null);
 
   useEffect(() => {
     loadEvents();
@@ -155,7 +168,124 @@ const EventManagement: React.FC = () => {
     setRegistrations([]);
     setRegistrationSearch('');
     setRegistrationsTab('awaiting');
+    setShowAddUserModal(false);
+    setSelectedUsersToAdd([]);
+    setAddUserError(null);
   };
+
+  // Load users for "Register user" when modal opens
+  useEffect(() => {
+    if (!showAddUserModal || !selectedEvent || !authUser?.uid) return;
+    setAddUserListLoading(true);
+    setAddUserError(null);
+    UserService.getAllMembersForDirectory(authUser.uid, authUser.role)
+      .then((list) => {
+        const registeredIds = new Set(registrations.map((r) => r.userId));
+        setAddUserList(list.filter((u) => !registeredIds.has(u.uid)));
+      })
+      .catch((err) => {
+        console.error('Failed to load users:', err);
+        setAddUserError('Failed to load members.');
+        setAddUserList([]);
+      })
+      .finally(() => setAddUserListLoading(false));
+  }, [showAddUserModal, selectedEvent?.id, authUser?.uid, authUser?.role, registrations]);
+
+  const addUserFiltered = useMemo(() => {
+    if (!addUserSearch.trim()) return addUserList;
+    const q = addUserSearch.trim().toLowerCase();
+    return addUserList.filter(
+      (u) =>
+        (u.displayName || '').toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q) ||
+        (u.company || '').toLowerCase().includes(q)
+    );
+  }, [addUserList, addUserSearch]);
+
+  const handleRegisterUserToEvent = async () => {
+    if (!selectedEvent || selectedUsersToAdd.length === 0) return;
+    setAddingUser(true);
+    setAddUserError(null);
+    const isUpcoming = new Date(selectedEvent.date) > new Date();
+    const eventDateFormatted = formatDate(selectedEvent.date);
+    let registered = 0;
+    const errors: string[] = [];
+    try {
+      for (let i = 0; i < selectedUsersToAdd.length; i++) {
+        const u = selectedUsersToAdd[i];
+        try {
+          const fullUser = await EventService.getUserById(u.uid);
+          const name = fullUser?.name || fullUser?.displayName || u.displayName || u.email || 'Member';
+          const email = fullUser?.email || u.email || '';
+          const phone = (fullUser?.phone as string) || '';
+          const work = (fullUser?.work as string) || (fullUser?.company as string) || (u.title as string) || '';
+          await EventService.registerForEvent(
+            selectedEvent.id,
+            u.uid,
+            {
+              name,
+              email,
+              phone,
+              work,
+              registeredAt: new Date(),
+              profileImage: fullUser?.profileImage ?? u.avatarUrl ?? null,
+            },
+            { byAdmin: true }
+          );
+          if (isUpcoming && email) {
+            try {
+              await fetch('/api/email-service', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  type: 'registration',
+                  email,
+                  name,
+                  eventDetails: {
+                    name: selectedEvent.name,
+                    date: eventDateFormatted,
+                    location: selectedEvent.location || 'TBD',
+                  },
+                }),
+              });
+            } catch (emailErr) {
+              console.warn('Registration email failed:', emailErr);
+            }
+          }
+          registered++;
+        } catch (err: any) {
+          errors.push(`${u.displayName || u.email || u.uid}: ${err.message || 'Failed'}`);
+        }
+      }
+      setSelectedUsersToAdd([]);
+      setShowAddUserModal(false);
+      await handleShowRegistrations(selectedEvent);
+      if (errors.length > 0) {
+        const msg = `Registered ${registered} user${registered !== 1 ? 's' : ''}; ${errors.length} failed:\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? `\n...and ${errors.length - 5} more` : ''}`;
+        alert(msg);
+      }
+    } catch (err: any) {
+      setAddUserError(err.message || 'Failed to register users.');
+    } finally {
+      setAddingUser(false);
+    }
+  };
+
+  const toggleUserToAdd = (u: UserCard) => {
+    setSelectedUsersToAdd((prev) =>
+      prev.some((x) => x.uid === u.uid) ? prev.filter((x) => x.uid !== u.uid) : [...prev, u]
+    );
+  };
+
+  const selectAllFiltered = () => {
+    setSelectedUsersToAdd((prev) => {
+      const prevIds = new Set(prev.map((x) => x.uid));
+      const toAdd = addUserFiltered.filter((u) => !prevIds.has(u.uid));
+      return prev.concat(toAdd);
+    });
+  };
+
+  const clearSelection = () => setSelectedUsersToAdd([]);
 
   const awaitingCheckIn = useMemo(() => registrations.filter(r => !r.checkedIn), [registrations]);
   const checkedIn = useMemo(() => registrations.filter(r => r.checkedIn), [registrations]);
@@ -673,6 +803,13 @@ const EventManagement: React.FC = () => {
               </div>
               <div className="flex items-center justify-end space-x-2 sm:space-x-3 flex-shrink-0">
                 <button
+                  onClick={() => setShowAddUserModal(true)}
+                  className="bg-purple-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors duration-200 font-medium flex items-center space-x-2 text-sm sm:text-base min-h-[44px] sm:min-h-0"
+                >
+                  <UserPlus className="h-4 w-4 flex-shrink-0" />
+                  <span className="whitespace-nowrap">Register user</span>
+                </button>
+                <button
                   onClick={handleExportRegistrations}
                   disabled={registrations.length === 0}
                   className="bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium flex items-center space-x-2 disabled:opacity-50 text-sm sm:text-base min-h-[44px] sm:min-h-0"
@@ -990,6 +1127,126 @@ const EventManagement: React.FC = () => {
                 className="bg-gray-100 text-gray-700 px-4 sm:px-6 py-2.5 sm:py-2 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium min-h-[44px] sm:min-h-0 w-full sm:w-auto text-sm sm:text-base"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Register user to event modal */}
+      {showAddUserModal && selectedEvent && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Register users to this event</h3>
+              <button
+                type="button"
+                onClick={() => { setShowAddUserModal(false); setSelectedUsersToAdd([]); setAddUserError(null); }}
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-4 flex-1 overflow-y-auto">
+              <p className="text-sm text-gray-600 mb-3">
+                Select one or more members to add to &quot;{selectedEvent.name}&quot;. They will see this event on their dashboard.
+                {new Date(selectedEvent.date) <= new Date() && (
+                  <span className="block mt-1 text-amber-700">This is a past event — no confirmation email will be sent.</span>
+                )}
+              </p>
+              <input
+                type="text"
+                placeholder="Search by name or email..."
+                value={addUserSearch}
+                onChange={(e) => setAddUserSearch(e.target.value)}
+                className="w-full mb-3 pl-3 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              {addUserFiltered.length > 0 && (
+                <div className="flex items-center gap-2 mb-2">
+                  <button
+                    type="button"
+                    onClick={selectAllFiltered}
+                    className="text-xs text-purple-600 hover:text-purple-700 font-medium"
+                  >
+                    Select all ({addUserFiltered.length})
+                  </button>
+                  {selectedUsersToAdd.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearSelection}
+                      className="text-xs text-gray-500 hover:text-gray-700"
+                    >
+                      Clear selection
+                    </button>
+                  )}
+                  {selectedUsersToAdd.length > 0 && (
+                    <span className="text-xs text-gray-500">
+                      {selectedUsersToAdd.length} selected
+                    </span>
+                  )}
+                </div>
+              )}
+              {addUserError && (
+                <p className="text-sm text-red-600 mb-3">{addUserError}</p>
+              )}
+              {addUserListLoading ? (
+                <div className="py-8 text-center text-gray-500">Loading members...</div>
+              ) : addUserFiltered.length === 0 ? (
+                <p className="text-sm text-gray-500 py-4">
+                  {addUserList.length === 0 ? 'No other members to add, or they are already registered.' : 'No matches for your search.'}
+                </p>
+              ) : (
+                <ul className="space-y-1 max-h-[280px] overflow-y-auto">
+                  {addUserFiltered.map((u) => {
+                    const isSelected = selectedUsersToAdd.some((x) => x.uid === u.uid);
+                    return (
+                      <li key={u.uid}>
+                        <button
+                          type="button"
+                          onClick={() => toggleUserToAdd(u)}
+                          className={`w-full text-left px-3 py-2.5 rounded-lg border text-sm flex items-center gap-3 ${
+                            isSelected
+                              ? 'border-purple-600 bg-purple-50 text-purple-900'
+                              : 'border-gray-200 hover:bg-gray-50 text-gray-900'
+                          }`}
+                        >
+                          <span className="flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center bg-white">
+                            {isSelected && <span className="w-2 h-2 rounded-full bg-purple-600" />}
+                          </span>
+                          <span className="font-medium truncate">{u.displayName || u.email || u.uid}</span>
+                          {u.email && <span className="text-gray-500 truncate text-xs">({u.email})</span>}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+            <div className="p-4 border-t border-gray-200 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setShowAddUserModal(false); setSelectedUsersToAdd([]); setAddUserError(null); }}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleRegisterUserToEvent}
+                disabled={selectedUsersToAdd.length === 0 || addingUser}
+                className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {addingUser ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Registering {selectedUsersToAdd.length} user{selectedUsersToAdd.length !== 1 ? 's' : ''}...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4" />
+                    Register {selectedUsersToAdd.length > 0 ? `${selectedUsersToAdd.length} user${selectedUsersToAdd.length !== 1 ? 's' : ''}` : 'users'}
+                  </>
+                )}
               </button>
             </div>
           </div>
