@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Calendar, MapPin, Clock, User, Mail, Phone, Briefcase, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ChevronDown, ChevronUp, Calendar, MapPin, User, Mail, Phone, Briefcase, X, ExternalLink } from 'lucide-react';
 import logoSvg from '../../assets/alma-links-logo.svg';
 
 export interface EventTicketCardProps {
@@ -13,6 +14,10 @@ export interface EventTicketCardProps {
   attendeeWork?: string;
   ticketId?: string;
   isExpired?: boolean;
+  /** Event image shown on the ticket card (before expand) */
+  eventImageUrl?: string;
+  /** Slug for linking to event page: /events/:eventSlug */
+  eventSlug?: string;
   className?: string;
 }
 
@@ -31,6 +36,8 @@ const EventTicketCard: React.FC<EventTicketCardProps> = ({
   attendeeWork = '',
   ticketId = 'TICKET',
   isExpired = false,
+  eventImageUrl,
+  eventSlug,
   className = '',
 }) => {
   const [expanded, setExpanded] = useState(false);
@@ -42,9 +49,11 @@ const EventTicketCard: React.FC<EventTicketCardProps> = ({
   // Compact date line for minimal view: "Mon, Feb 23 · 6:59 PM"
   const dateTimeLine = [displayDate, displayTime].filter(Boolean).join(' · ') || '—';
 
+  const eventPageUrl = eventSlug ? `/events/${eventSlug}` : null;
+
   return (
     <div className={`w-full max-w-[320px] ${className}`}>
-      {/* Minimal card - clickable */}
+      {/* Minimal card - clickable to expand */}
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
@@ -58,9 +67,20 @@ const EventTicketCard: React.FC<EventTicketCardProps> = ({
         `}
       >
         <div className="flex items-center gap-3 p-3 sm:p-4">
-          {/* Logo - match site header */}
-          <div className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-gray-50 border border-gray-100">
-            <img src={logoSvg} alt="" className="h-5 w-auto" aria-hidden />
+          {/* Event image (or Alma logo fallback) */}
+          <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-100">
+            {eventImageUrl ? (
+              <img
+                src={eventImageUrl}
+                alt=""
+                className="w-full h-full object-cover"
+                aria-hidden
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <img src={logoSvg} alt="" className="h-6 w-auto" aria-hidden />
+              </div>
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-gray-900 font-medium text-sm truncate" title={eventName}>
@@ -70,8 +90,21 @@ const EventTicketCard: React.FC<EventTicketCardProps> = ({
               {dateTimeLine}
             </p>
           </div>
-          <div className="flex-shrink-0 text-gray-400">
-            {expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+          <div className="flex flex-shrink-0 items-center gap-1">
+            {eventPageUrl && (
+              <Link
+                to={eventPageUrl}
+                onClick={(e) => e.stopPropagation()}
+                className="p-1.5 rounded-lg text-gray-500 hover:text-brand-blue hover:bg-gray-100 transition-colors"
+                title="View event page"
+                aria-label="View event page"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </Link>
+            )}
+            <span className="text-gray-400">
+              {expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+            </span>
           </div>
         </div>
       </button>
@@ -152,6 +185,19 @@ const EventTicketCard: React.FC<EventTicketCardProps> = ({
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* View event page */}
+            {eventPageUrl && (
+              <div className="pt-3 border-t border-gray-100">
+                <Link
+                  to={eventPageUrl}
+                  className="inline-flex items-center gap-2 text-sm font-medium text-brand-blue hover:text-brand-blue-hover"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  View event page
+                </Link>
               </div>
             )}
           </div>

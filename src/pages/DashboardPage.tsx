@@ -1804,6 +1804,8 @@ const EventsPage: React.FC = () => {
                                   attendeeWork={registration.work}
                                   ticketId={registration.eventId?.slice(-8).toUpperCase() || registration.userId?.slice(-8).toUpperCase() || 'TICKET'}
                                   isExpired={false}
+                                  eventImageUrl={registration.eventImage}
+                                  eventSlug={registration.eventSlug}
                                 />
                               </div>
                             ))}
@@ -1828,6 +1830,8 @@ const EventsPage: React.FC = () => {
                                 attendeeWork={registration.work}
                                 ticketId={registration.eventId?.slice(-8).toUpperCase() || registration.userId?.slice(-8).toUpperCase() || 'TICKET'}
                                 isExpired
+                                eventImageUrl={registration.eventImage}
+                                eventSlug={registration.eventSlug}
                               />
                             ))}
                           </div>
