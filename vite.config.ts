@@ -9,7 +9,8 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       'chart.js',
-      'react-chartjs-2'
+      'react-chartjs-2',
+      'framer-motion',
     ],
     exclude: ['lucide-react'],
   },
@@ -24,7 +25,7 @@ export default defineConfig({
           'react-vendor': ['react', 'react-dom'],
           'router': ['react-router-dom'],
           'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
-          'ui-vendor': ['lucide-react']
+          'ui-vendor': ['lucide-react', 'framer-motion'],
         }
       }
     },
