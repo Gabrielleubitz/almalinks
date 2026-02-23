@@ -150,6 +150,7 @@ export default function OnboardingTour() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Always start at 0 when tour is shown; never restore from sessionStorage on mount
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [status, setStatus] = useState<TourStatus>('idle');
   const [resolvedTargetRect, setResolvedTargetRect] = useState<DOMRect | null>(null);
@@ -157,6 +158,7 @@ export default function OnboardingTour() {
   const [visible, setVisible] = useState(false);
   const resolveCancelRef = useRef<boolean>(false);
   const mountedRef = useRef(true);
+  const hasOpenedOnceRef = useRef(false);
 
   const step = ONBOARDING_STEPS[currentStepIndex];
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -186,19 +188,33 @@ export default function OnboardingTour() {
     setStoredStepIndex(currentStepIndex);
   }, [shouldShow, currentStepIndex]);
 
-  // Show overlay when tour should be visible; always start from step 0 when opening tour
+  // Show overlay when tour should be visible; always start from step 1 (index 0), show all 6 steps
   useEffect(() => {
     if (!shouldShow) {
       setVisible(false);
+      hasOpenedOnceRef.current = false;
       return;
     }
     clearStoredStep();
     setCurrentStepIndex(0);
+    setStatus('idle');
+    setResolvedTargetRect(null);
+    setLastResolvedStepId(null);
+    hasOpenedOnceRef.current = false;
     const t = setTimeout(() => {
       if (mountedRef.current) setVisible(true);
     }, 150);
     return () => clearTimeout(t);
   }, [shouldShow]);
+
+  // Allow auto-skip only after the first step has been shown (avoids skipping step 1 on open)
+  useEffect(() => {
+    if (!visible || !shouldShow) return;
+    const t = setTimeout(() => {
+      hasOpenedOnceRef.current = true;
+    }, 400);
+    return () => clearTimeout(t);
+  }, [visible, shouldShow]);
 
   // Explicit AutoSkip: only when step has allowAutoSkip and precondition returns true
   const tryAutoSkip = useCallback(() => {
@@ -283,9 +299,9 @@ export default function OnboardingTour() {
     }
   }, [shouldShow, visible, step?.route, step?.id, location.pathname, lastResolvedStepId, currentStepIndex, resolveTarget]);
 
-  // AutoSkip only when step has allowAutoSkip and precondition returns true (explicit only)
+  // AutoSkip only when step has allowAutoSkip and precondition returns true (explicit only). Do not auto-skip when we just opened (ensure step 1 is shown).
   useEffect(() => {
-    if (!shouldShow || !visible) return;
+    if (!shouldShow || !visible || !hasOpenedOnceRef.current) return;
     if (status !== 'idle' && status !== 'resolving') return;
     if (tryAutoSkip()) {
       // currentStepIndex advanced; resolution for new step runs from dependency
@@ -441,9 +457,20 @@ export default function OnboardingTour() {
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <img src={logoSvg} alt="AlmaLinks" className="h-7 w-auto" />
-              <span className="text-xs text-gray-400" aria-hidden>
-                {currentStepIndex + 1} of {ONBOARDING_STEPS.length}
-              </span>
+              <div className="flex items-center gap-1.5" aria-label={`Step ${currentStepIndex + 1} of ${ONBOARDING_STEPS.length}`}>
+                {ONBOARDING_STEPS.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`inline-block w-2 h-2 rounded-full transition-colors ${
+                      i === currentStepIndex ? 'bg-[var(--brand-blue-dark)] scale-110' : i < currentStepIndex ? 'bg-gray-400' : 'bg-gray-200'
+                    }`}
+                    aria-hidden
+                  />
+                ))}
+                <span className="ml-1.5 text-xs text-gray-500 tabular-nums">
+                  {currentStepIndex + 1} of {ONBOARDING_STEPS.length}
+                </span>
+              </div>
             </div>
             {status === 'resolving' && step?.targetSelector ? (
               <p className="text-gray-500 text-sm">Finding section…</p>
