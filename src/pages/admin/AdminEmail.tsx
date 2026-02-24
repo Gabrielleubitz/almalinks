@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Send, ArrowLeft, AlertCircle, CheckCircle, Inbox, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import AdminHeader from '../../components/admin/AdminHeader';
 import { sendAdminEmail } from '../../services/emailService';
 import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/admin/EmailRecipientAutocomplete';
 import AudienceSelector, { RecipientMode, AudienceSelection } from '../../components/admin/AudienceSelector';
@@ -303,13 +302,8 @@ const AdminEmail: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-      <AdminHeader 
-        title="Email Panel" 
-        subtitle="Send emails to members and sync with Mailchimp audience"
-      />
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="min-h-full overflow-x-hidden w-full max-w-full">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Back Button */}
         <div className="mb-8">
           <button

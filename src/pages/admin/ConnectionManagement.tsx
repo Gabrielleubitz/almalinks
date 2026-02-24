@@ -1,7 +1,6 @@
 import React, { useState, useLayoutEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Download, Settings } from 'lucide-react';
-import AdminHeader from '../../components/admin/AdminHeader';
 import AdminConnectionManager from '../../components/admin/AdminConnectionManager';
 import AdminConnectionWidget from '../../components/admin/AdminConnectionWidget';
 import { AdminConnectionService } from '../../services/adminConnectionService';
@@ -60,10 +59,8 @@ const ConnectionManagement: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 overflow-x-hidden w-full max-w-full">
-      <AdminHeader title="Connection Management" />
-      
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8 overflow-x-hidden w-full max-w-full box-border">
+    <div className="min-h-full overflow-x-hidden w-full max-w-full">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 overflow-x-hidden w-full max-w-full box-border">
         {/* Page header */}
         <div className="mb-6 sm:mb-8">
           <Link

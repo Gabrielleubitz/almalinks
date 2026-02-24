@@ -29,7 +29,6 @@ import {
 import { collection, getDocs, doc, updateDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useAuth } from '../../hooks/useAuth';
-import AdminHeader from '../../components/admin/AdminHeader';
 import UserConnectionModal from '../../components/admin/UserConnectionModal';
 import ConnectionManagementModal from '../../components/admin/ConnectionManagementModal';
 import UserCreationForm from '../../components/admin/UserCreationForm';
@@ -338,9 +337,8 @@ const UserManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-        <AdminHeader title="User Management" />
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-12 overflow-x-hidden w-full max-w-full box-border">
+      <div className="min-h-full overflow-x-hidden w-full max-w-full">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8 py-4 overflow-x-hidden w-full max-w-full box-border">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-600">Loading users...</p>
@@ -351,13 +349,8 @@ const UserManagement: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-      <AdminHeader 
-        title="User Management" 
-        subtitle="Manage user roles and permissions"
-      />
-
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-12 overflow-x-hidden w-full max-w-full box-border">
+    <div className="min-h-full overflow-x-hidden w-full max-w-full">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8 py-4 overflow-x-hidden w-full max-w-full box-border">
         {/* Back Button */}
         <div className="mb-4 sm:mb-6 lg:mb-8">
           <button

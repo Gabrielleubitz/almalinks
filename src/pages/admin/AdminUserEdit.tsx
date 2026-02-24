@@ -21,7 +21,6 @@ import { UserService } from '../../services/userService';
 import { UserProfile, UserProfileForm } from '../../types/user';
 import { validateUserProfile } from '../../utils/validation';
 import { uploadProfilePicture, deleteProfilePicture, deleteCoverPhoto } from '../../services/profileService';
-import AdminHeader from '../../components/admin/AdminHeader';
 import ProfilePictureUploader from '../../components/profile/ProfilePictureUploader';
 import CoverPhotoUploader from '../../components/profile/CoverPhotoUploader';
 import ProfileBasicsStep from '../../components/signup/steps/ProfileBasicsStep';
@@ -353,9 +352,8 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
   // Show loading while currentUser is being loaded
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-        <AdminHeader title="Edit User" subtitle="Loading..." />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="min-h-full overflow-x-hidden w-full max-w-full">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-600">Loading...</p>
@@ -367,9 +365,8 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-        <AdminHeader title="Edit User" subtitle="Loading user profile..." />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="min-h-full overflow-x-hidden w-full max-w-full">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-600">Loading user profile...</p>
@@ -381,9 +378,8 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-        <AdminHeader title="Edit User" subtitle="User not found" />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="min-h-full overflow-x-hidden w-full max-w-full">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">User Not Found</h2>
             <p className="text-gray-600 mb-8">The user you're looking for doesn't exist or has been deleted.</p>
@@ -401,12 +397,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-      <AdminHeader 
-        title="Edit User" 
-        subtitle={`Editing profile for ${profile.displayName || profile.firstName || 'User'}`}
-      />
-
+    <div className="min-h-full overflow-x-hidden w-full max-w-full">
       {/* Toast Notification */}
       {toast.visible && (
         <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top duration-300">

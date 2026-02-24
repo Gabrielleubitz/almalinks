@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { MessageSquare, Send, Edit, Trash2, Eye, EyeOff, ArrowLeft, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { AnnouncementService, AnnouncementData } from '../../services/announcementService';
 import { useAuth } from '../../hooks/useAuth';
-import AdminHeader from '../../components/admin/AdminHeader';
 import EmojiReactions from '../../components/announcements/EmojiReactions';
 
 const AdminAnnouncements: React.FC = () => {
@@ -136,9 +135,8 @@ const AdminAnnouncements: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-        <AdminHeader title="Announcements" />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="min-h-full overflow-x-hidden w-full max-w-full">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-600">Loading announcements...</p>
@@ -149,13 +147,8 @@ const AdminAnnouncements: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-      <AdminHeader 
-        title="Announcements" 
-        subtitle="Publish announcements to all Alma Links members"
-      />
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="min-h-full overflow-x-hidden w-full max-w-full">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Back Button */}
         <div className="mb-8">
           <button

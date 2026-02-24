@@ -6,7 +6,6 @@ import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../firebase/config';
 import { EventService, generateSlug } from '../../services/eventService';
 import { uploadImageToLibrary } from '../../services/imageUploadService';
-import AdminHeader from '../../components/admin/AdminHeader';
 import CropModal from '../../components/profile/CropModal';
 import CropImage from '../../components/profile/CropImage';
 
@@ -170,13 +169,8 @@ const AddEvent: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-      <AdminHeader 
-        title="Create New Event" 
-        subtitle="Add a new Alma Links event to the system"
-      />
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="min-h-full overflow-x-hidden w-full max-w-full">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Back Button */}
         <div className="mb-8">
           <button

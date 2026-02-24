@@ -14,7 +14,6 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import AdminHeader from '../../components/admin/AdminHeader';
 import IganiWatermark from '../../components/IganiWatermark';
 import { EventService } from '../../services/eventService';
 
@@ -183,10 +182,8 @@ const AdminCheckIn: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 overflow-x-hidden w-full max-w-full">
-      <AdminHeader title="Check-in" subtitle="Check in attendees at events" />
-
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+    <div className="min-h-full overflow-x-hidden w-full max-w-full">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
         <Link
           to="/admin"
           className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 mb-6 transition-colors"

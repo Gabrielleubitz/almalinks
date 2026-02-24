@@ -22,7 +22,6 @@ import {
 import { collection, getDocs, doc, updateDoc, query, where, orderBy, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../firebase/config';
 import { useAuth } from '../../hooks/useAuth';
-import AdminHeader from '../../components/admin/AdminHeader';
 import Toast from '../../components/ui/Toast';
 
 interface UserData {
@@ -522,9 +521,8 @@ const PendingRegistrations: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] overflow-x-hidden w-full max-w-full">
-        <AdminHeader title="Pending Registrations" />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="min-h-full overflow-x-hidden w-full max-w-full">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-brand-blue-dark/20 border-t-brand-blue-dark rounded-full animate-spin mx-auto mb-4" />
             <p className="text-gray-600">Loading pending registrations...</p>
@@ -535,13 +533,8 @@ const PendingRegistrations: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] overflow-x-hidden w-full max-w-full">
-      <AdminHeader
-        title="Pending Registrations"
-        subtitle="Review and approve new user registrations"
-      />
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div className="min-h-full overflow-x-hidden w-full max-w-full">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="mb-6">
           <button
             onClick={() => navigate('/admin')}

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, ArrowLeft, UserCheck, CheckCircle, Clock, Search, List, LayoutGrid, UserPlus } from 'lucide-react';
 import { EventService, EventData } from '../../services/eventService';
-import AdminHeader from '../../components/admin/AdminHeader';
 import EventPositionChart from '../../components/analytics/EventPositionChart';
 import { UserService } from '../../services/userService';
 import { useAuth } from '../../hooks/useAuth';
@@ -468,9 +467,8 @@ const EventManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-        <AdminHeader title="Event Management" />
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-12 overflow-x-hidden w-full max-w-full box-border">
+      <div className="min-h-full overflow-x-hidden w-full max-w-full">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8 py-4 overflow-x-hidden w-full max-w-full box-border">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-600">Loading events...</p>
@@ -481,13 +479,8 @@ const EventManagement: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-      <AdminHeader 
-        title="Event Management" 
-        subtitle="Create, manage, and monitor all Alma Links events"
-      />
-
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-12 overflow-x-hidden w-full max-w-full box-border">
+    <div className="min-h-full overflow-x-hidden w-full max-w-full">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8 py-4 overflow-x-hidden w-full max-w-full box-border">
         {/* Back Button */}
         <div className="mb-4 sm:mb-6 lg:mb-8">
           <Link

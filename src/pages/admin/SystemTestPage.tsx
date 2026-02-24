@@ -14,7 +14,6 @@ import {
   Globe,
   Server
 } from 'lucide-react';
-import AdminHeader from '../../components/admin/AdminHeader';
 import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../firebase/config';
 
@@ -425,13 +424,8 @@ const SystemTestPage: React.FC = () => {
   };
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-      <AdminHeader 
-        title="System Test Panel" 
-        subtitle="Test and verify all system integrations and APIs"
-      />
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="min-h-full overflow-x-hidden w-full max-w-full">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Back Button */}
         <div className="mb-8">
           <button

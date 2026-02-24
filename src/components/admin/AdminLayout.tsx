@@ -1,0 +1,277 @@
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Calendar,
+  Users,
+  UserPlus,
+  Mail,
+  Megaphone,
+  MessageCircle,
+  ClipboardCheck,
+  Link2,
+  Download,
+  Activity,
+  Wrench,
+  LogOut,
+  Menu,
+  X,
+  Home,
+  User,
+  ChevronDown,
+} from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import logoSvg from '../../assets/alma-links-logo.svg';
+
+const navSections = [
+  {
+    label: 'Main',
+    items: [
+      { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: 'Management',
+    items: [
+      { to: '/admin/events', label: 'Events', icon: Calendar },
+      { to: '/admin/users', label: 'Users', icon: Users },
+      { to: '/admin/pending-registrations', label: 'Registrations', icon: UserPlus },
+      { to: '/admin/activity', label: 'Activity', icon: Activity },
+    ],
+  },
+  {
+    label: 'Communication',
+    items: [
+      { to: '/admin/email', label: 'Email', icon: Mail },
+      { to: '/admin/announcements', label: 'Announcements', icon: Megaphone },
+      { to: '/admin/chats', label: 'Chats', icon: MessageCircle },
+    ],
+  },
+  {
+    label: 'Tools',
+    items: [
+      { to: '/admin/check-in', label: 'Check-in', icon: ClipboardCheck },
+      { to: '/admin/connections', label: 'Connections', icon: Link2 },
+      { to: '/admin/hubspot-import', label: 'HubSpot Import', icon: Download },
+      { to: '/admin/system-test', label: 'System test', icon: Wrench },
+    ],
+  },
+];
+
+const pathToTitle: Record<string, string> = {
+  '/admin': 'Dashboard',
+  '/admin/email': 'Email',
+  '/admin/announcements': 'Announcements',
+  '/admin/chats': 'Chats',
+  '/admin/chats/create': 'Create chat group',
+  '/admin/events': 'Events',
+  '/admin/events/create': 'Create event',
+  '/admin/events/add': 'Add event',
+  '/admin/check-in': 'Check-in',
+  '/admin/users': 'Users',
+  '/admin/pending-registrations': 'Pending registrations',
+  '/admin/connections': 'Connections',
+  '/admin/activity': 'Activity',
+  '/admin/hubspot-import': 'HubSpot import',
+  '/admin/system-test': 'System test',
+};
+
+function getPageTitle(pathname: string): string {
+  if (pathToTitle[pathname]) return pathToTitle[pathname];
+  if (pathname.startsWith('/admin/events/') && pathname.endsWith('/edit')) return 'Edit event';
+  if (pathname.startsWith('/admin/users/') && pathname.endsWith('/edit')) return 'Edit user';
+  return 'Admin';
+}
+
+const AdminLayout: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, isInUserView, switchToAdminView, switchToUserView, logout } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const isActive = (path: string) => {
+    if (path === '/admin') return location.pathname === '/admin';
+    return location.pathname.startsWith(path);
+  };
+
+  const pageTitle = getPageTitle(location.pathname);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const navContent = (
+    <div className="flex flex-col h-full">
+      <Link
+        to="/admin"
+        className="flex items-center gap-2 px-4 py-5 border-b border-[rgba(0,0,0,0.06)]"
+        onClick={() => setSidebarOpen(false)}
+      >
+        <img src={logoSvg} alt="Alma Links" className="h-8 w-auto" />
+        <span className="text-sm font-semibold text-gray-900">Admin</span>
+      </Link>
+      <nav className="flex-1 overflow-y-auto py-4 px-3">
+        {navSections.map((section) => (
+          <div key={section.label} className="mb-6">
+            <p className="px-3 mb-1.5 text-[11px] font-medium text-gray-400 tracking-wide">
+              {section.label}
+            </p>
+            <div className="space-y-0.5">
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.to);
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      active
+                        ? 'bg-[rgba(0,0,0,0.05)] text-gray-900'
+                        : 'text-gray-600 hover:bg-[rgba(0,0,0,0.03)] hover:text-gray-900'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0 opacity-80" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
+      <div className="p-3 border-t border-[rgba(0,0,0,0.06)] space-y-0.5">
+        <Link
+          to="/"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-[rgba(0,0,0,0.03)] hover:text-gray-900 transition-colors"
+          onClick={() => setSidebarOpen(false)}
+        >
+          <Home className="h-4 w-4" />
+          Home
+        </Link>
+        {isInUserView ? (
+          <button
+            type="button"
+            onClick={() => { switchToAdminView(); navigate('/admin'); setSidebarOpen(false); }}
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 transition-colors"
+          >
+            Back to admin
+          </button>
+        ) : (
+          <Link
+            to="/dashboard"
+            onClick={() => { switchToUserView(); setSidebarOpen(false); }}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-[rgba(0,0,0,0.03)] hover:text-gray-900 transition-colors"
+          >
+            <User className="h-4 w-4" />
+            User dashboard
+          </Link>
+        )}
+        <button
+          type="button"
+          onClick={() => { handleLogout(); setSidebarOpen(false); }}
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+          Log out
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen flex bg-[#F8FAFC]">
+      {/* Desktop sidebar */}
+      <aside
+        className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-[240px] bg-white border-r border-[rgba(0,0,0,0.06)] z-30"
+      >
+        {navContent}
+      </aside>
+
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/20 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden
+          />
+          <aside
+            className="fixed left-0 top-0 bottom-0 w-[260px] max-w-[85vw] bg-white border-r border-[rgba(0,0,0,0.06)] z-50 lg:hidden shadow-xl"
+          >
+            {navContent}
+          </aside>
+        </>
+      )}
+
+      {/* Main area */}
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-[240px]">
+        {/* Top bar — subtle glass */}
+        <header className="sticky top-0 z-20 flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 py-3 bg-white/80 backdrop-blur-md border-b border-[rgba(0,0,0,0.06)]">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden p-2 -ml-2 rounded-lg text-gray-600 hover:bg-[rgba(0,0,0,0.04)] transition-colors"
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <h1 className="text-lg font-semibold text-gray-900 truncate">
+            {pageTitle}
+          </h1>
+          <div className="relative flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
+              className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-[rgba(0,0,0,0.04)] transition-colors"
+            >
+              <span className="hidden sm:inline truncate max-w-[120px]">
+                {user?.displayName || user?.email}
+              </span>
+              <ChevronDown className={`h-4 w-4 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {userMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} aria-hidden />
+                <div className="absolute right-0 top-full mt-1 py-1 w-48 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-[rgba(0,0,0,0.06)] z-50">
+                  <div className="px-3 py-2 border-b border-[rgba(0,0,0,0.06)]">
+                    <p className="text-sm font-medium text-gray-900 truncate">{user?.displayName || 'Admin'}</p>
+                    <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                  </div>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => { setUserMenuOpen(false); switchToUserView(); }}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-[rgba(0,0,0,0.03)]"
+                  >
+                    <User className="h-4 w-4" />
+                    User dashboard
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => { setUserMenuOpen(false); handleLogout(); }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Log out
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </header>
+
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default AdminLayout;

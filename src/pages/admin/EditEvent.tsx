@@ -4,7 +4,6 @@ import { Calendar, MapPin, Image, FileText, Save, ArrowLeft, AlertCircle, Loader
 import { useAuth } from '../../hooks/useAuth';
 import { EventService, EventData, generateSlug } from '../../services/eventService';
 import { uploadImageToLibrary } from '../../services/imageUploadService';
-import AdminHeader from '../../components/admin/AdminHeader';
 import CropImage from '../../components/profile/CropImage';
 import CoverPhotoCropModal, { type CoverCrop } from '../../components/profile/CoverPhotoCropModal';
 
@@ -210,12 +209,8 @@ const EditEvent: React.FC = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-        <AdminHeader 
-          title="Edit Event" 
-          subtitle="Loading event details..."
-        />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="min-h-full overflow-x-hidden w-full max-w-full">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
               <Loader2 className="h-8 w-8 text-brand-dark animate-spin" />
@@ -231,12 +226,8 @@ const EditEvent: React.FC = () => {
   // Error state
   if (error && !originalEvent) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-        <AdminHeader 
-          title="Edit Event" 
-          subtitle="Unable to load event"
-        />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="min-h-full overflow-x-hidden w-full max-w-full">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
               <AlertCircle className="h-8 w-8 text-red-600" />
@@ -256,13 +247,8 @@ const EditEvent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
-      <AdminHeader 
-        title="Edit Event" 
-        subtitle={`Editing "${originalEvent?.name}"`}
-      />
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="min-h-full overflow-x-hidden w-full max-w-full">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Back Button */}
         <div className="mb-8">
           <button

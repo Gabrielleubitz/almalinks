@@ -27,6 +27,7 @@ import HubSpotImportPage from './pages/admin/HubSpotImportPage';
 import ConnectionManagement from './pages/admin/ConnectionManagement';
 import AdminUserEdit from './pages/admin/AdminUserEdit';
 import ActivityManagement from './pages/admin/ActivityManagement';
+import AdminLayout from './components/admin/AdminLayout';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import ConnectPage from './pages/ConnectPage';
 import UserProfilePage from './pages/UserProfilePage';
@@ -166,151 +167,34 @@ function App() {
           } 
         />
         
-        {/* Admin Routes */}
-        <Route 
-          path="/admin/email" 
+        {/* Admin Routes — shared layout with sidebar */}
+        <Route
+          path="/admin"
           element={
             <ProtectedRoute requiredRole="admin">
-              <AdminEmail />
+              <AdminLayout />
             </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/announcements" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminAnnouncements />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/chats" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminChatManagement />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/chats/create" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <CreateChatGroup />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/events" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <EventManagement />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/check-in" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminCheckIn />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/events/create" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AddEvent />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/events/add" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AddEvent />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/events/:eventId/edit" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <EditEvent />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/users" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <UserManagement />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/pending-registrations" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <PendingRegistrations />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/pending" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <PendingRegistrations />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/connections" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <ConnectionManagement />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/activity" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <ActivityManagement />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/users/:userId/edit" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminUserEdit />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/system-test" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <SystemTestPage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/hubspot-import" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <HubSpotImportPage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminDashboard />
-            </ProtectedRoute>
-          } 
-        />
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="email" element={<AdminEmail />} />
+          <Route path="announcements" element={<AdminAnnouncements />} />
+          <Route path="chats" element={<AdminChatManagement />} />
+          <Route path="chats/create" element={<CreateChatGroup />} />
+          <Route path="events" element={<EventManagement />} />
+          <Route path="check-in" element={<AdminCheckIn />} />
+          <Route path="events/create" element={<AddEvent />} />
+          <Route path="events/add" element={<AddEvent />} />
+          <Route path="events/:eventId/edit" element={<EditEvent />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="pending-registrations" element={<PendingRegistrations />} />
+          <Route path="pending" element={<PendingRegistrations />} />
+          <Route path="connections" element={<ConnectionManagement />} />
+          <Route path="activity" element={<ActivityManagement />} />
+          <Route path="users/:userId/edit" element={<AdminUserEdit />} />
+          <Route path="system-test" element={<SystemTestPage />} />
+          <Route path="hubspot-import" element={<HubSpotImportPage />} />
+        </Route>
         {/* Legacy routes - redirect to new format */}
         
         {/* Catch-all route for 404s */}
