@@ -122,14 +122,11 @@ const AdminLayout: React.FC = () => {
     <div className="flex flex-col h-full">
       <Link
         to="/admin"
-        className="flex items-center gap-3 px-4 py-5 border-b border-[rgba(0,0,0,0.06)]"
+        className="flex flex-col gap-2 px-4 py-5 border-b border-[rgba(0,0,0,0.06)]"
         onClick={() => setSidebarOpen(false)}
       >
         <img src={logoSvg} alt="Alma Links" className="h-8 w-auto" />
-        <span
-          className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#94A3B8] border-l border-[rgba(0,0,0,0.08)] pl-3 self-center"
-          style={{ letterSpacing: '0.08em' }}
-        >
+        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#64748B]">
           Admin
         </span>
       </Link>
@@ -150,11 +147,11 @@ const AdminLayout: React.FC = () => {
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                       active
-                        ? 'bg-[rgba(59,130,246,0.08)] text-gray-900 border-l-[3px] border-l-[#3B82F6] pl-[9px] pr-3'
-                        : 'text-gray-600 hover:bg-[rgba(0,0,0,0.03)] hover:text-gray-900 px-3'
+                        ? 'bg-[rgba(59,130,246,0.06)] text-gray-900 border-l-[3px] border-l-[#3B82F6] pl-[9px] pr-3'
+                        : 'text-gray-600 hover:bg-[rgba(0,0,0,0.04)] hover:text-gray-900 px-3'
                     }`}
                   >
-                    <Icon className={`h-4 w-4 flex-shrink-0 ${active ? 'text-[#3B82F6] opacity-90' : 'opacity-80'}`} />
+                    <Icon className={`h-4 w-4 flex-shrink-0 ${active ? 'text-[#3B82F6]' : 'opacity-80'}`} />
                     {item.label}
                   </Link>
                 );
@@ -166,7 +163,7 @@ const AdminLayout: React.FC = () => {
       <div className="p-3 border-t border-[rgba(0,0,0,0.06)] space-y-0.5">
         <Link
           to="/"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-[rgba(0,0,0,0.03)] hover:text-gray-900 transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-[rgba(0,0,0,0.04)] hover:text-gray-900 transition-colors"
           onClick={() => setSidebarOpen(false)}
         >
           <Home className="h-4 w-4" />
@@ -184,7 +181,7 @@ const AdminLayout: React.FC = () => {
           <Link
             to="/dashboard"
             onClick={() => { switchToUserView(); setSidebarOpen(false); }}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-[rgba(0,0,0,0.03)] hover:text-gray-900 transition-colors"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-[rgba(0,0,0,0.04)] hover:text-gray-900 transition-colors"
           >
             <User className="h-4 w-4" />
             User dashboard

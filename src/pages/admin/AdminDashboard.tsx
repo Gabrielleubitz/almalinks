@@ -13,6 +13,9 @@ import {
   Link2,
   Wrench,
 } from 'lucide-react';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../../firebase/config';
+import { auth } from '../../firebase/config';
 import { EventService } from '../../services/eventService';
 import IganiWatermark from '../../components/IganiWatermark';
 
@@ -64,13 +67,16 @@ const DashboardCard: React.FC<CardProps> = ({
 const AdminDashboard: React.FC = () => {
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [eventsCount, setEventsCount] = useState<number>(0);
+  const [usersCount, setUsersCount] = useState<number>(0);
+  const [apiConnected, setApiConnected] = useState<boolean | null>(null);
   const [loadingPending, setLoadingPending] = useState(true);
   const [loadingEvents, setLoadingEvents] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [pending, events] = await Promise.all([
+        const [pending, events, userCount] = await Promise.all([
           (async () => {
             try {
               const { JoinRequestService } = await import('../../services/joinRequestService');
@@ -81,48 +87,89 @@ const AdminDashboard: React.FC = () => {
             }
           })(),
           EventService.getPublicEvents().then((e) => e.length),
+          (async () => {
+            try {
+              const q = query(
+                collection(db, 'users'),
+                where('status', '==', 'approved')
+              );
+              const snap = await getDocs(q);
+              return snap.size;
+            } catch {
+              return 0;
+            }
+          })(),
         ]);
         setPendingCount(pending);
         setEventsCount(events);
+        setUsersCount(userCount);
       } catch (e) {
         console.error(e);
       } finally {
         setLoadingPending(false);
         setLoadingEvents(false);
+        setLoadingUsers(false);
       }
     };
     load();
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch('/api/admin/test/email-config', {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!cancelled) setApiConnected(res.ok || res.status === 401);
+      } catch {
+        if (!cancelled) setApiConnected(false);
+      }
+    };
+    check();
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <div className="min-h-full">
       <div className="max-w-4xl mx-auto">
-        {/* Stats row — white cards, soft shadow, colored dot */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">
-          <div className="rounded-[14px] bg-white px-4 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.05)] border border-[rgba(0,0,0,0.04)]">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#3B82F6] opacity-30" aria-hidden />
-              <p className="text-xs font-medium text-gray-500">Active events</p>
-            </div>
+        {/* Analytics — 4 equal cards, primary emphasized */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
+          {/* Primary metric: slightly larger, stronger shadow, 5% blue tint */}
+          <div className="rounded-[14px] bg-white border-l-4 border-l-[#3B82F6] pl-4 pr-4 py-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)] border border-[rgba(0,0,0,0.04)] min-h-[88px] flex flex-col justify-center" style={{ backgroundColor: 'rgba(59,130,246,0.05)' }}>
+            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Active events</p>
             <p className="mt-1 text-2xl font-semibold text-gray-900 tabular-nums">
               {loadingEvents ? '—' : eventsCount}
             </p>
           </div>
-          <div className="rounded-[14px] bg-white px-4 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.05)] border border-[rgba(0,0,0,0.04)]">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-amber-500 opacity-30" aria-hidden />
-              <p className="text-xs font-medium text-gray-500">Pending approvals</p>
-            </div>
+          <div className="rounded-[14px] bg-white border-l-4 pl-4 pr-4 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.05)] border border-[rgba(0,0,0,0.04)] min-h-[88px] flex flex-col justify-center" style={{ borderLeftColor: 'rgba(139,92,246,0.15)' }}>
+            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Total users</p>
+            <p className="mt-1 text-2xl font-semibold text-gray-900 tabular-nums">
+              {loadingUsers ? '—' : usersCount}
+            </p>
+          </div>
+          <div className="rounded-[14px] bg-white border-l-4 pl-4 pr-4 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.05)] border border-[rgba(0,0,0,0.04)] min-h-[88px] flex flex-col justify-center" style={{ borderLeftColor: 'rgba(245,158,11,0.15)' }}>
+            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Pending approvals</p>
             <p className="mt-1 text-2xl font-semibold text-gray-900 tabular-nums">
               {loadingPending ? '—' : pendingCount}
+            </p>
+          </div>
+          <div className="rounded-[14px] bg-white border-l-4 pl-4 pr-4 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.05)] border border-[rgba(0,0,0,0.04)] min-h-[88px] flex flex-col justify-center" style={{ borderLeftColor: apiConnected === true ? 'rgba(34,197,94,0.15)' : 'rgba(100,116,139,0.15)' }}>
+            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">API</p>
+            <p className="mt-1 text-xl font-semibold text-gray-900 tabular-nums">
+              {apiConnected === null ? '—' : apiConnected ? 'Connected' : 'Offline'}
             </p>
           </div>
         </div>
 
         {/* Management */}
-        <section className="mt-12 mb-14">
-          <h2 className="text-xl font-semibold text-gray-900">Management</h2>
-          <div className="h-px mt-3 bg-[rgba(0,0,0,0.04)]" />
+        <section className="mb-14">
+          <h2 className="text-xl font-semibold text-[#0F172A]">Management</h2>
+          <div className="h-px mt-3 bg-[rgba(0,0,0,0.05)]" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
             <DashboardCard
               to="/admin/events"
@@ -156,9 +203,9 @@ const AdminDashboard: React.FC = () => {
         </section>
 
         {/* Communication */}
-        <section className="mt-12 mb-14">
-          <h2 className="text-xl font-semibold text-gray-900">Communication</h2>
-          <div className="h-px mt-3 bg-[rgba(0,0,0,0.04)]" />
+        <section className="mb-14">
+          <h2 className="text-xl font-semibold text-[#0F172A]">Communication</h2>
+          <div className="h-px mt-3 bg-[rgba(0,0,0,0.05)]" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
             <DashboardCard
               to="/admin/email"
@@ -182,9 +229,9 @@ const AdminDashboard: React.FC = () => {
         </section>
 
         {/* Tools — secondary weight */}
-        <section className="mt-12">
-          <h2 className="text-xl font-semibold text-gray-900">Tools</h2>
-          <div className="h-px mt-3 bg-[rgba(0,0,0,0.04)]" />
+        <section>
+          <h2 className="text-xl font-semibold text-[#0F172A]">Tools</h2>
+          <div className="h-px mt-3 bg-[rgba(0,0,0,0.05)]" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
             <DashboardCard
               to="/admin/check-in"
