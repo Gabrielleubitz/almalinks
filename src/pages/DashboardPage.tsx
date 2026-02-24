@@ -7,7 +7,6 @@ import { useAuth } from '../hooks/useAuth';
 import { useActivityTracking } from '../hooks/useActivityTracking';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import IganiWatermark from '../components/IganiWatermark';
 import AnnouncementsSidebar from '../components/announcements/AnnouncementsSidebar';
 import ConnectionsCard from '../components/dashboard/ConnectionsCard';
 import EventTicketCard from '../components/dashboard/EventTicketCard';
@@ -301,7 +300,8 @@ const EventsPage: React.FC = () => {
             eventDate: event.date,
             eventLocation: event.location,
             eventImage: event.imageUrl,
-            eventSlug: event.slug // Add slug for navigation
+            eventSlug: event.slug,
+            eventStatus: event.status
           });
         }
       }
@@ -1781,17 +1781,17 @@ const EventsPage: React.FC = () => {
             ) : userRegistrations.length > 0 ? (
               <div className="space-y-8">
                 {(() => {
-                  const upcoming = userRegistrations.filter((r: any) => isUpcoming(r.eventDate));
-                  const past = userRegistrations.filter((r: any) => !isUpcoming(r.eventDate));
+                  const activeTickets = userRegistrations.filter((r: any) => r.eventStatus === 'active');
+                  const otherTickets = userRegistrations.filter((r: any) => r.eventStatus !== 'active');
                   const fd = (d: string) => formatDate(d);
                   return (
                     <>
-                      {/* Upcoming tickets */}
-                      {upcoming.length > 0 && (
+                      {/* Active tickets = tickets to active events */}
+                      {activeTickets.length > 0 && (
                         <div>
-                          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Upcoming</h3>
+                          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Active tickets</h3>
                           <div className="flex flex-wrap gap-4 sm:gap-6 justify-center lg:justify-start">
-                            {upcoming.map((registration: any, index: number) => (
+                            {activeTickets.map((registration: any, index: number) => (
                               <div key={registration.eventId} className="slide-up" style={{ animationDelay: `${index * 0.15}s` }}>
                                 <EventTicketCard
                                   eventName={registration.eventName}
@@ -1812,12 +1812,12 @@ const EventsPage: React.FC = () => {
                           </div>
                         </div>
                       )}
-                      {/* Past events - same card style, clear section */}
-                      {past.length > 0 && (
+                      {/* Other events (sold-out, completed, etc.) */}
+                      {otherTickets.length > 0 && (
                         <div>
-                          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Past events</h3>
+                          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Other events</h3>
                           <div className="flex flex-wrap gap-4 sm:gap-6 justify-center lg:justify-start">
-                            {past.map((registration: any) => (
+                            {otherTickets.map((registration: any) => (
                               <EventTicketCard
                                 key={registration.eventId}
                                 eventName={registration.eventName}
@@ -2101,8 +2101,6 @@ const EventsPage: React.FC = () => {
 
       <Footer />
 
-      {/* Igani Watermark */}
-      <IganiWatermark position="bottom-right" size="sm" opacity={0.25} />
     </div>
   );
 };

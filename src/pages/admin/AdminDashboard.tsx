@@ -17,7 +17,6 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { auth } from '../../firebase/config';
 import { EventService } from '../../services/eventService';
-import IganiWatermark from '../../components/IganiWatermark';
 
 type CardProps = {
   to: string;
@@ -301,7 +300,6 @@ const AdminDashboard: React.FC = () => {
         </section>
       </div>
 
-      <IganiWatermark position="bottom-right" size="sm" opacity={0.3} />
     </div>
   );
 };

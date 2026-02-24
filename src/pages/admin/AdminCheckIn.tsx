@@ -14,7 +14,6 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import IganiWatermark from '../../components/IganiWatermark';
 import { EventService } from '../../services/eventService';
 
 type EventItem = { id: string; name: string; date: string; status?: string };
@@ -362,7 +361,6 @@ const AdminCheckIn: React.FC = () => {
         )}
       </div>
 
-      <IganiWatermark position="bottom-right" size="sm" opacity={0.3} />
     </div>
   );
 };

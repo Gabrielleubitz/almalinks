@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import PoweredByIgani from './components/PoweredByIgani';
+import IganiWatermark from './components/IganiWatermark';
 import DashboardPage from './pages/DashboardPage';
 import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
@@ -204,6 +205,8 @@ function App() {
         {/* First-time onboarding overlay (modal + spotlight); only when user has not completed onboarding */}
         <OnboardingTour />
         <PoweredByIgani />
+        {/* Igani watermark: always bottom-right on every page */}
+        <IganiWatermark position="bottom-right" size="sm" opacity={0.3} />
       </div>
       
       {/* Network Status Indicator */}

@@ -4,7 +4,6 @@ import { User, Phone, Briefcase, Linkedin, ChevronDown, AlertCircle, CheckCircle
 import { useAuth } from '../hooks/useAuth';
 import { JoinRequestService } from '../services/joinRequestService';
 import logoSvg from '../assets/alma-links-logo.svg';
-import IganiWatermark from '../components/IganiWatermark';
 
 // Country codes (same as signup)
 const COUNTRY_CODES = [
@@ -461,7 +460,6 @@ const ReRequestAccessPage: React.FC = () => {
         </div>
       </div>
 
-      <IganiWatermark position="bottom-center" size="sm" opacity={0.3} />
     </div>
   );
 };
