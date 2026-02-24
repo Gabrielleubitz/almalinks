@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Activity, 
   X, 
-  Search, 
-  Filter,
+  Search,
   ChevronDown,
   User,
   Shield,
@@ -11,9 +10,7 @@ import {
   UserMinus,
   Key,
   RefreshCw,
-  Download,
-  Calendar,
-  Clock
+  Download
 } from 'lucide-react';
 
 interface AuditLogViewerProps {
@@ -155,6 +152,9 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) {
+      return { date: '—', time: '—' };
+    }
     return {
       date: date.toLocaleDateString('en-US', {
         month: 'short',
@@ -303,81 +303,57 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {filteredLogs.map((log, index) => {
+            <div className="space-y-3">
+              {filteredLogs.map((log) => {
                 const timestamp = formatTimestamp(log.timestamp);
-                
+                const detailKeys = log.details ? Object.keys(log.details).filter(k => k !== 'targetUserId' && k !== 'adminId') : [];
                 return (
-                  <div 
-                    key={log.id} 
-                    className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow"
+                  <div
+                    key={log.id}
+                    className="bg-gray-50/50 border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4 flex-1">
-                        
-                        {/* Action Icon */}
-                        <div className="p-2 bg-gray-50 rounded-lg">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                      <div className="flex gap-3 flex-1 min-w-0">
+                        <div className="flex-shrink-0 p-2 bg-white rounded-lg border border-gray-100 shadow-sm">
                           {getActionIcon(log.action)}
                         </div>
-
-                        <div className="flex-1 min-w-0">
-                          {/* Action and Description */}
-                          <div className="flex items-center space-x-3 mb-2">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getActionColor(log.action)}`}>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getActionColor(log.action)}`}>
                               {log.action.replace(/_/g, ' ')}
                             </span>
-                            <span className="text-sm text-gray-500">
-                              Admin ID: {log.adminId === adminId ? 'You' : log.adminId.slice(0, 8)}...
+                            <span className="text-xs text-gray-500">
+                              {log.adminId === adminId ? 'You' : `Admin ${String(log.adminId).slice(0, 8)}…`}
+                            </span>
+                            <span className="text-xs text-gray-400 sm:ml-auto">
+                              {timestamp.date} · {timestamp.time}
                             </span>
                           </div>
-                          
-                          <p className="text-gray-900 font-medium mb-2">
+                          <p className="text-sm text-gray-900 font-medium leading-snug">
                             {formatActionDescription(log)}
                           </p>
-
-                          {/* Additional Details */}
-                          {log.details && Object.keys(log.details).length > 0 && (
-                            <div className="bg-gray-50 rounded-lg p-3 mb-2">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                {Object.entries(log.details).map(([key, value]) => {
-                                  if (key === 'targetUserId' || key === 'adminId') return null;
-                                  
-                                  return (
-                                    <div key={key}>
-                                      <span className="text-gray-500 capitalize">
-                                        {key.replace(/([A-Z])/g, ' $1').trim()}:
-                                      </span>
-                                      <span className="ml-2 text-gray-700 font-medium">
-                                        {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
+                          {detailKeys.length > 0 && (
+                            <dl className="mt-2 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-600">
+                              {detailKeys.map((key) => {
+                                const value = log.details[key];
+                                const label = key.replace(/([A-Z])/g, ' $1').trim();
+                                const display = typeof value === 'object' ? JSON.stringify(value) : String(value);
+                                return (
+                                  <span key={key} className="flex gap-1.5">
+                                    <span className="text-gray-500 capitalize">{label}:</span>
+                                    <span className="font-medium text-gray-700 truncate max-w-[12rem]" title={display}>{display}</span>
+                                  </span>
+                                );
+                              })}
+                            </dl>
                           )}
-
-                          {/* Metadata */}
-                          <div className="flex items-center space-x-4 text-xs text-gray-500">
-                            {log.userAgent && log.userAgent !== 'API' && (
-                              <span>User Agent: {log.userAgent}</span>
-                            )}
-                            {log.ipAddress && log.ipAddress !== 'unknown' && (
-                              <span>IP: {log.ipAddress}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Timestamp */}
-                      <div className="text-right text-sm text-gray-500 ml-4">
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{timestamp.date}</span>
-                        </div>
-                        <div className="flex items-center space-x-1 mt-1">
-                          <Clock className="h-4 w-4" />
-                          <span>{timestamp.time}</span>
+                          {(log.userAgent || log.ipAddress) && (log.userAgent !== 'API' || log.ipAddress !== 'unknown') && (
+                            <p className="mt-1.5 text-xs text-gray-400 truncate">
+                              {log.ipAddress && log.ipAddress !== 'unknown' && `IP: ${log.ipAddress}`}
+                              {log.ipAddress && log.userAgent && log.userAgent !== 'API' && ' · '}
+                              {log.userAgent && log.userAgent !== 'API' && log.userAgent}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>

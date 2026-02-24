@@ -300,16 +300,22 @@ const UserManagement: React.FC = () => {
   };
 
   const formatDate = (timestamp: any): string => {
-    if (timestamp === undefined || timestamp === null) return 'N/A';
+    if (timestamp === undefined || timestamp === null) return '—';
     let date: Date;
-    if (timestamp?.toDate) {
+    if (typeof timestamp?.toDate === 'function') {
       date = timestamp.toDate();
     } else if (timestamp instanceof Date) {
       date = timestamp;
-    } else {
+    } else if (typeof timestamp === 'object' && typeof timestamp.seconds === 'number') {
+      date = new Date(timestamp.seconds * 1000);
+    } else if (typeof timestamp === 'number' && !Number.isNaN(timestamp)) {
       date = new Date(timestamp);
+    } else if (typeof timestamp === 'string' && timestamp.trim() !== '') {
+      date = new Date(timestamp);
+    } else {
+      return '—';
     }
-    if (Number.isNaN(date.getTime())) return 'N/A';
+    if (Number.isNaN(date.getTime())) return '—';
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -533,10 +539,10 @@ const UserManagement: React.FC = () => {
                           <span className="truncate" title={userData.email}>{userData.email}</span>
                         </div>
                       </td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4">
-                        <span className={`inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${getRoleBadgeClass(userData.role)}`}>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium min-w-[5.5rem] justify-center ${getRoleBadgeClass(userData.role)}`}>
                           {getRoleIcon(userData.role)}
-                          <span className="ml-1 capitalize whitespace-nowrap">{userData.role}</span>
+                          <span className="capitalize">{userData.role}</span>
                         </span>
                       </td>
                       <td className="px-3 sm:px-6 py-3 sm:py-4">

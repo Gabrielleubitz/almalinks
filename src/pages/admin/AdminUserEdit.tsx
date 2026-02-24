@@ -105,11 +105,11 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
     }
   }, [userId, currentUser, navigate]);
 
-  const loadUserProfile = async () => {
+  const loadUserProfile = async (background = false) => {
     if (!userId) return;
 
     try {
-      setLoading(true);
+      if (!background) setLoading(true);
       const userProfile = await UserService.getUser(userId, currentUser?.uid, currentUser?.role);
       
       if (userProfile) {
@@ -155,9 +155,9 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       }
     } catch (error) {
       console.error('❌ Error loading profile:', error);
-      showToast('Failed to load user profile', 'error');
+      if (!background) showToast('Failed to load user profile', 'error');
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
   };
 
@@ -277,7 +277,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       setProfile(updatedProfile);
       setLastSavedAt(Date.now());
       showToast('Profile updated', 'success');
-      await loadUserProfile();
+      await loadUserProfile(true);
       
     } catch (error: any) {
       console.error('❌ Error saving profile:', error);
