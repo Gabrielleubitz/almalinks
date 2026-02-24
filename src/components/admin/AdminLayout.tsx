@@ -15,10 +15,11 @@ import {
   Wrench,
   LogOut,
   Menu,
-  X,
   Home,
   User,
   ChevronDown,
+  HelpCircle,
+  Heart,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import logoSvg from '../../assets/alma-links-logo.svg';
@@ -260,7 +261,7 @@ const AdminLayout: React.FC = () => {
             {userMenuOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} aria-hidden />
-                <div className="absolute right-0 top-full mt-1 py-1 w-48 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-[rgba(0,0,0,0.06)] z-50">
+                <div className="absolute right-0 top-full mt-1 py-1 w-52 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-[rgba(0,0,0,0.06)] z-50 max-h-[min(80vh,400px)] overflow-y-auto">
                   <div className="px-3 py-2 border-b border-[rgba(0,0,0,0.06)]">
                     <p className="text-sm font-medium text-gray-900 truncate">{user?.displayName || 'Admin'}</p>
                     <p className="text-xs text-gray-500 truncate">{user?.email}</p>
@@ -271,16 +272,70 @@ const AdminLayout: React.FC = () => {
                     className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-[rgba(0,0,0,0.03)]"
                   >
                     <User className="h-4 w-4" />
-                    User dashboard
+                    Dashboard
                   </Link>
-                  <button
-                    type="button"
-                    onClick={() => { setUserMenuOpen(false); handleLogout(); }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                  <Link
+                    to="/events"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-[rgba(0,0,0,0.03)]"
                   >
-                    <LogOut className="h-4 w-4" />
-                    Log out
-                  </button>
+                    <Calendar className="h-4 w-4" />
+                    Events
+                  </Link>
+                  <Link
+                    to="/members"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-[rgba(0,0,0,0.03)]"
+                  >
+                    <Users className="h-4 w-4" />
+                    Members
+                  </Link>
+                  <Link
+                    to="/chats"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-[rgba(0,0,0,0.03)]"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Chats
+                  </Link>
+                  <Link
+                    to="/help"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-[rgba(0,0,0,0.03)]"
+                  >
+                    <HelpCircle className="h-4 w-4" />
+                    Help
+                  </Link>
+                  {user?.uid && (
+                    <Link
+                      to={`/profile/${user.uid}`}
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-[rgba(0,0,0,0.03)]"
+                    >
+                      <User className="h-4 w-4" />
+                      My profile
+                    </Link>
+                  )}
+                  <a
+                    href="https://almalinks.org/donate.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-[rgba(0,0,0,0.03)]"
+                  >
+                    <Heart className="h-4 w-4" />
+                    Donate
+                  </a>
+                  <div className="border-t border-[rgba(0,0,0,0.06)] mt-1 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => { setUserMenuOpen(false); handleLogout(); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Log out
+                    </button>
+                  </div>
                 </div>
               </>
             )}

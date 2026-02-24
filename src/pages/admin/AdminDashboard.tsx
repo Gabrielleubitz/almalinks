@@ -68,7 +68,12 @@ const AdminDashboard: React.FC = () => {
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [eventsCount, setEventsCount] = useState<number>(0);
   const [usersCount, setUsersCount] = useState<number>(0);
-  const [apiConnected, setApiConnected] = useState<boolean | null>(null);
+  const [integrations, setIntegrations] = useState<{
+    mailjet: boolean;
+    mailchimp: boolean;
+    cloudinary: boolean;
+    hubspot: boolean;
+  } | null>(null);
   const [loadingPending, setLoadingPending] = useState(true);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(true);
@@ -86,7 +91,10 @@ const AdminDashboard: React.FC = () => {
               return 0;
             }
           })(),
-          EventService.getPublicEvents().then((e) => e.length),
+          EventService.getPublicEvents().then((events) => {
+            const now = new Date();
+            return events.filter((e) => new Date(e.date) > now).length;
+          }),
           (async () => {
             try {
               const q = query(
@@ -125,9 +133,19 @@ const AdminDashboard: React.FC = () => {
           method: 'GET',
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!cancelled) setApiConnected(res.ok || res.status === 401);
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setIntegrations({
+            mailjet: Boolean(data.mailjet),
+            mailchimp: Boolean(data.mailchimp),
+            cloudinary: Boolean(data.cloudinary),
+            hubspot: Boolean(data.hubspot),
+          });
+        } else if (!cancelled) {
+          setIntegrations({ mailjet: false, mailchimp: false, cloudinary: false, hubspot: false });
+        }
       } catch {
-        if (!cancelled) setApiConnected(false);
+        if (!cancelled) setIntegrations({ mailjet: false, mailchimp: false, cloudinary: false, hubspot: false });
       }
     };
     check();
@@ -141,7 +159,7 @@ const AdminDashboard: React.FC = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
           {/* Primary metric: slightly larger, stronger shadow, 5% blue tint */}
           <div className="rounded-[14px] bg-white border-l-4 border-l-[#3B82F6] pl-4 pr-4 py-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)] border border-[rgba(0,0,0,0.04)] min-h-[88px] flex flex-col justify-center" style={{ backgroundColor: 'rgba(59,130,246,0.05)' }}>
-            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Active events</p>
+            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Upcoming events</p>
             <p className="mt-1 text-2xl font-semibold text-gray-900 tabular-nums">
               {loadingEvents ? '—' : eventsCount}
             </p>
@@ -158,11 +176,29 @@ const AdminDashboard: React.FC = () => {
               {loadingPending ? '—' : pendingCount}
             </p>
           </div>
-          <div className="rounded-[14px] bg-white border-l-4 pl-4 pr-4 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.05)] border border-[rgba(0,0,0,0.04)] min-h-[88px] flex flex-col justify-center" style={{ borderLeftColor: apiConnected === true ? 'rgba(34,197,94,0.15)' : 'rgba(100,116,139,0.15)' }}>
-            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">API</p>
-            <p className="mt-1 text-xl font-semibold text-gray-900 tabular-nums">
-              {apiConnected === null ? '—' : apiConnected ? 'Connected' : 'Offline'}
-            </p>
+          <div className="rounded-[14px] bg-white border-l-4 pl-4 pr-4 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.05)] border border-[rgba(0,0,0,0.04)] min-h-[88px] flex flex-col justify-center" style={{ borderLeftColor: integrations && (integrations.mailjet || integrations.mailchimp || integrations.cloudinary || integrations.hubspot) ? 'rgba(34,197,94,0.15)' : 'rgba(100,116,139,0.15)' }}>
+            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Integrations</p>
+            {integrations === null ? (
+              <p className="mt-1 text-xl font-semibold text-gray-900">—</p>
+            ) : (
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-700">
+                <span className={integrations.mailjet ? 'text-emerald-600' : 'text-gray-400'}>
+                  Mailjet {integrations.mailjet ? '✓' : '—'}
+                </span>
+                <span className="text-gray-300">·</span>
+                <span className={integrations.mailchimp ? 'text-emerald-600' : 'text-gray-400'}>
+                  Mailchimp {integrations.mailchimp ? '✓' : '—'}
+                </span>
+                <span className="text-gray-300">·</span>
+                <span className={integrations.cloudinary ? 'text-emerald-600' : 'text-gray-400'}>
+                  Cloudinary {integrations.cloudinary ? '✓' : '—'}
+                </span>
+                <span className="text-gray-300">·</span>
+                <span className={integrations.hubspot ? 'text-emerald-600' : 'text-gray-400'}>
+                  HubSpot {integrations.hubspot ? '✓' : '—'}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
