@@ -37,13 +37,13 @@ const DashboardCard: React.FC<CardProps> = ({
 }) => (
   <Link
     to={to}
-    className={`group flex items-start gap-4 rounded-[14px] border px-5 py-4 transition-all duration-200 ease-out ${
+    className={`group flex items-start gap-4 rounded-[14px] border border-[rgba(0,0,0,0.05)] px-5 py-4 transition-all duration-200 ease-out ${
       secondary
-        ? 'bg-[rgba(255,255,255,0.7)] border-[rgba(0,0,0,0.06)] hover:bg-white hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]'
-        : 'bg-white border-[rgba(0,0,0,0.05)] shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:-translate-y-0.5'
+        ? 'bg-white/90 hover:bg-white shadow-[0_6px_20px_rgba(0,0,0,0.05)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] hover:-translate-y-0.5'
+        : 'bg-white shadow-[0_6px_20px_rgba(0,0,0,0.05)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] hover:-translate-y-0.5'
     }`}
   >
-    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-gray-500 group-hover:text-gray-800 transition-colors">
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-gray-500 group-hover:text-[#3B82F6]/80 transition-colors">
       <Icon className="h-5 w-5" />
     </span>
     <div className="min-w-0 flex-1 text-left">
@@ -56,7 +56,7 @@ const DashboardCard: React.FC<CardProps> = ({
           <span className="h-4 w-8 animate-pulse rounded bg-gray-200" aria-hidden />
         )}
       </div>
-      <p className="mt-0.5 text-sm text-gray-500">{description}</p>
+      <p className="mt-0.5 text-sm text-[#64748B]">{description}</p>
     </div>
   </Link>
 );
@@ -95,28 +95,35 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-full bg-[#F8FAFC]">
+    <div className="min-h-full">
       <div className="max-w-4xl mx-auto">
-        {/* Optional stats row */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-12">
-          <div className="rounded-xl bg-white/80 border border-[rgba(0,0,0,0.05)] px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
-            <p className="text-xs font-medium text-gray-500">Active events</p>
-            <p className="mt-0.5 text-xl font-semibold text-gray-900 tabular-nums">
+        {/* Stats row — white cards, soft shadow, colored dot */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">
+          <div className="rounded-[14px] bg-white px-4 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.05)] border border-[rgba(0,0,0,0.04)]">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-[#3B82F6] opacity-30" aria-hidden />
+              <p className="text-xs font-medium text-gray-500">Active events</p>
+            </div>
+            <p className="mt-1 text-2xl font-semibold text-gray-900 tabular-nums">
               {loadingEvents ? '—' : eventsCount}
             </p>
           </div>
-          <div className="rounded-xl bg-white/80 border border-[rgba(0,0,0,0.05)] px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
-            <p className="text-xs font-medium text-gray-500">Pending approvals</p>
-            <p className="mt-0.5 text-xl font-semibold text-gray-900 tabular-nums">
+          <div className="rounded-[14px] bg-white px-4 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.05)] border border-[rgba(0,0,0,0.04)]">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-amber-500 opacity-30" aria-hidden />
+              <p className="text-xs font-medium text-gray-500">Pending approvals</p>
+            </div>
+            <p className="mt-1 text-2xl font-semibold text-gray-900 tabular-nums">
               {loadingPending ? '—' : pendingCount}
             </p>
           </div>
         </div>
 
         {/* Management */}
-        <section className="mb-14">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Management</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <section className="mt-12 mb-14">
+          <h2 className="text-xl font-semibold text-gray-900">Management</h2>
+          <div className="h-px mt-3 bg-[rgba(0,0,0,0.04)]" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
             <DashboardCard
               to="/admin/events"
               icon={Calendar}
@@ -149,9 +156,10 @@ const AdminDashboard: React.FC = () => {
         </section>
 
         {/* Communication */}
-        <section className="mb-14">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Communication</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <section className="mt-12 mb-14">
+          <h2 className="text-xl font-semibold text-gray-900">Communication</h2>
+          <div className="h-px mt-3 bg-[rgba(0,0,0,0.04)]" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
             <DashboardCard
               to="/admin/email"
               icon={Mail}
@@ -174,9 +182,10 @@ const AdminDashboard: React.FC = () => {
         </section>
 
         {/* Tools — secondary weight */}
-        <section>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Tools</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <section className="mt-12">
+          <h2 className="text-xl font-semibold text-gray-900">Tools</h2>
+          <div className="h-px mt-3 bg-[rgba(0,0,0,0.04)]" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
             <DashboardCard
               to="/admin/check-in"
               icon={ClipboardCheck}

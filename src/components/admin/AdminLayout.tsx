@@ -97,6 +97,18 @@ const AdminLayout: React.FC = () => {
 
   const pageTitle = getPageTitle(location.pathname);
 
+  const displayName = user?.displayName || user?.email || 'Admin';
+  const avatarUrl = (user as { profileImage?: string | null })?.profileImage ?? null;
+  const initials = displayName
+    ? displayName
+        .split(/[\s@]+/)
+        .map((s) => s[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : 'A';
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -110,11 +122,16 @@ const AdminLayout: React.FC = () => {
     <div className="flex flex-col h-full">
       <Link
         to="/admin"
-        className="flex items-center gap-2 px-4 py-5 border-b border-[rgba(0,0,0,0.06)]"
+        className="flex items-center gap-3 px-4 py-5 border-b border-[rgba(0,0,0,0.06)]"
         onClick={() => setSidebarOpen(false)}
       >
         <img src={logoSvg} alt="Alma Links" className="h-8 w-auto" />
-        <span className="text-sm font-semibold text-gray-900">Admin</span>
+        <span
+          className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#94A3B8] border-l border-[rgba(0,0,0,0.08)] pl-3 self-center"
+          style={{ letterSpacing: '0.08em' }}
+        >
+          Admin
+        </span>
       </Link>
       <nav className="flex-1 overflow-y-auto py-4 px-3">
         {navSections.map((section) => (
@@ -131,13 +148,13 @@ const AdminLayout: React.FC = () => {
                     key={item.to}
                     to={item.to}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    className={`flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                       active
-                        ? 'bg-[rgba(0,0,0,0.05)] text-gray-900'
-                        : 'text-gray-600 hover:bg-[rgba(0,0,0,0.03)] hover:text-gray-900'
+                        ? 'bg-[rgba(59,130,246,0.08)] text-gray-900 border-l-[3px] border-l-[#3B82F6] pl-[9px] pr-3'
+                        : 'text-gray-600 hover:bg-[rgba(0,0,0,0.03)] hover:text-gray-900 px-3'
                     }`}
                   >
-                    <Icon className="h-4 w-4 flex-shrink-0 opacity-80" />
+                    <Icon className={`h-4 w-4 flex-shrink-0 ${active ? 'text-[#3B82F6] opacity-90' : 'opacity-80'}`} />
                     {item.label}
                   </Link>
                 );
@@ -186,7 +203,7 @@ const AdminLayout: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen flex bg-[#F8FAFC]">
+    <div className="min-h-screen flex" style={{ background: 'linear-gradient(to bottom, #F8FAFC, #F3F6FA)' }}>
       {/* Desktop sidebar */}
       <aside
         className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-[240px] bg-white border-r border-[rgba(0,0,0,0.06)] z-30"
@@ -222,19 +239,26 @@ const AdminLayout: React.FC = () => {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <h1 className="text-lg font-semibold text-gray-900 truncate">
+          <h1 className="text-xl font-semibold text-gray-900 truncate">
             {pageTitle}
           </h1>
           <div className="relative flex-shrink-0">
             <button
               type="button"
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-[rgba(0,0,0,0.04)] transition-colors"
+              className="flex items-center gap-2.5 px-2.5 py-2 rounded-[10px] text-sm text-gray-700 hover:bg-[rgba(0,0,0,0.04)] transition-colors duration-200"
             >
-              <span className="hidden sm:inline truncate max-w-[120px]">
-                {user?.displayName || user?.email}
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[rgba(0,0,0,0.06)] bg-gray-100 text-xs font-medium text-gray-600">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  initials
+                )}
               </span>
-              <ChevronDown className={`h-4 w-4 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+              <span className="hidden sm:inline truncate max-w-[140px] font-medium text-gray-900">
+                {displayName}
+              </span>
+              <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
             </button>
             {userMenuOpen && (
               <>
@@ -266,7 +290,7 @@ const AdminLayout: React.FC = () => {
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 min-h-[60vh]">
           <Outlet />
         </main>
       </div>
