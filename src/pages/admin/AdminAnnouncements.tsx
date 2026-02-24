@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageSquare, Send, Edit, Trash2, Eye, EyeOff, ArrowLeft, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { MessageSquare, Send, Edit, Trash2, Eye, EyeOff, ArrowLeft, AlertCircle, CheckCircle, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { AnnouncementService, AnnouncementData } from '../../services/announcementService';
 import { useAuth } from '../../hooks/useAuth';
 import EmojiReactions from '../../components/announcements/EmojiReactions';
@@ -15,6 +15,7 @@ const AdminAnnouncements: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editMessage, setEditMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [reordering, setReordering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -130,6 +131,44 @@ const AdminAnnouncements: React.FC = () => {
     } catch (err: any) {
       console.error('❌ Error deleting announcement:', err);
       setError('Failed to delete announcement. Please try again.');
+    }
+  };
+
+  const handleMoveUp = async (index: number) => {
+    if (index <= 0 || reordering) return;
+    const orderedIds = announcements.map(a => a.id);
+    [orderedIds[index - 1], orderedIds[index]] = [orderedIds[index], orderedIds[index - 1]];
+    setReordering(true);
+    setError(null);
+    try {
+      await AnnouncementService.reorderAnnouncements(orderedIds);
+      setSuccess('Order updated.');
+      await loadAnnouncements();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      console.error('❌ Error reordering:', err);
+      setError('Failed to reorder. Please try again.');
+    } finally {
+      setReordering(false);
+    }
+  };
+
+  const handleMoveDown = async (index: number) => {
+    if (index >= announcements.length - 1 || reordering) return;
+    const orderedIds = announcements.map(a => a.id);
+    [orderedIds[index], orderedIds[index + 1]] = [orderedIds[index + 1], orderedIds[index]];
+    setReordering(true);
+    setError(null);
+    try {
+      await AnnouncementService.reorderAnnouncements(orderedIds);
+      setSuccess('Order updated.');
+      await loadAnnouncements();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      console.error('❌ Error reordering:', err);
+      setError('Failed to reorder. Please try again.');
+    } finally {
+      setReordering(false);
     }
   };
 
@@ -263,7 +302,7 @@ const AdminAnnouncements: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {announcements.map((announcement) => (
+              {announcements.map((announcement, index) => (
                 <div
                   key={announcement.id}
                   className={`p-6 rounded-2xl border transition-all duration-200 ${
@@ -346,7 +385,27 @@ const AdminAnnouncements: React.FC = () => {
                           )}
                         </div>
                         
-                        <div className="flex space-x-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="flex items-center border border-gray-200 rounded-lg p-0.5 bg-gray-50">
+                            <button
+                              type="button"
+                              onClick={() => handleMoveUp(index)}
+                              disabled={reordering || index === 0}
+                              className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                              title="Move up"
+                            >
+                              <ChevronUp className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveDown(index)}
+                              disabled={reordering || index === announcements.length - 1}
+                              className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                              title="Move down"
+                            >
+                              <ChevronDown className="h-4 w-4" />
+                            </button>
+                          </div>
                           <button
                             onClick={() => handleEdit(announcement)}
                             className="text-brand-light hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors duration-200"
@@ -390,6 +449,7 @@ const AdminAnnouncements: React.FC = () => {
             <li>• <strong>Active announcements:</strong> Visible to all members in their dashboard</li>
             <li>• <strong>Hidden announcements:</strong> Not visible to members but saved for future use</li>
             <li>• <strong>Member view:</strong> Only the 3 most recent active announcements are shown</li>
+            <li>• <strong>Reorder:</strong> Use the up/down arrows to change the order (member view shows top 3 by this order)</li>
             <li>• <strong>Edit anytime:</strong> You can edit or hide announcements after publishing</li>
             <li>• <strong>Emoji reactions:</strong> Members can react with 👍, ❤️, 🔥, 👑, and 😊 emojis</li>
             <li>• <strong>Best practices:</strong> Use for important updates, events, or community news</li>

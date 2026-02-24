@@ -13,7 +13,8 @@ import {
   arrayUnion,
   arrayRemove,
   Timestamp,
-  getDoc
+  getDoc,
+  writeBatch
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { nanoid } from 'nanoid';
@@ -24,6 +25,8 @@ export interface AnnouncementData {
   timestamp: any;
   createdBy: string;
   active: boolean;
+  /** Display order in admin and member list (lower = first). Omitted for legacy docs. */
+  order?: number;
   updatedAt?: any;
   reactions?: {
     "👍": { count: number, userIds: string[] },
@@ -66,20 +69,40 @@ export class AnnouncementService {
     }
   }
 
-  // Get all announcements (for admin)
+  // Get all announcements (for admin), sorted by order then timestamp
   static async getAllAnnouncements(): Promise<AnnouncementData[]> {
     try {
       const announcementsRef = collection(db, 'announcements');
-      const q = query(announcementsRef, orderBy('timestamp', 'desc'));
-      const snapshot = await getDocs(q);
-      
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+      const snapshot = await getDocs(announcementsRef);
+      const list = snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data()
       })) as AnnouncementData[];
+      const ts = (a: AnnouncementData) => a.timestamp?.toDate ? a.timestamp.toDate().getTime() : (a.timestamp || 0);
+      list.sort((a, b) => {
+        const orderA = a.order ?? 999999;
+        const orderB = b.order ?? 999999;
+        if (orderA !== orderB) return orderA - orderB;
+        return ts(b) - ts(a);
+      });
+      return list;
     } catch (error) {
       console.error('❌ Error fetching all announcements:', error);
       return [];
+    }
+  }
+
+  // Reorder announcements; orderedIds is the new order (first id = index 0).
+  static async reorderAnnouncements(orderedIds: string[]): Promise<void> {
+    try {
+      const batch = writeBatch(db);
+      orderedIds.forEach((id, index) => {
+        batch.update(doc(db, 'announcements', id), { order: index, updatedAt: serverTimestamp() });
+      });
+      await batch.commit();
+    } catch (error) {
+      console.error('❌ Error reordering announcements:', error);
+      throw error;
     }
   }
 
@@ -95,14 +118,14 @@ export class AnnouncementService {
         ...doc.data()
       })) as AnnouncementData[];
       
-      // Filter active announcements and sort by timestamp in memory
+      const ts = (a: AnnouncementData) => a.timestamp?.toDate ? a.timestamp.toDate().getTime() : (a.timestamp || 0);
       const activeAnnouncements = allAnnouncements
         .filter(announcement => announcement.active === true)
         .sort((a, b) => {
-          // Handle timestamp comparison
-          const timestampA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp || 0);
-          const timestampB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0);
-          return timestampB.getTime() - timestampA.getTime(); // Descending order
+          const orderA = a.order ?? 999999;
+          const orderB = b.order ?? 999999;
+          if (orderA !== orderB) return orderA - orderB;
+          return ts(b) - ts(a);
         })
         .slice(0, 3); // Limit to 3 most recent
       
