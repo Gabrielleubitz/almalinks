@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import AvatarStack, { type ReactionUser } from './AvatarStack';
 
 const MAX_TOOLTIP_NAMES = 10;
@@ -26,13 +26,20 @@ const ReactionPill: React.FC<ReactionPillProps> = ({
   const count = userIds.length;
   const isActive = !!currentUserId && userIds.includes(currentUserId);
 
-  const names = userIds
-    .map((uid) => usersById[uid]?.name ?? 'Unknown')
-    .filter(Boolean);
-  const tooltipLines =
-    names.length <= MAX_TOOLTIP_NAMES
+  const orderedUserIds = useMemo(() => {
+    if (!currentUserId || !userIds.includes(currentUserId)) return userIds;
+    const rest = userIds.filter((id) => id !== currentUserId);
+    return [currentUserId, ...rest];
+  }, [userIds, currentUserId]);
+
+  const tooltipLines = useMemo(() => {
+    const names = orderedUserIds
+      .map((uid) => usersById[uid]?.name ?? 'Unknown')
+      .filter(Boolean);
+    return names.length <= MAX_TOOLTIP_NAMES
       ? names
       : [...names.slice(0, MAX_TOOLTIP_NAMES), `and ${names.length - MAX_TOOLTIP_NAMES} more…`];
+  }, [orderedUserIds, usersById]);
 
   useEffect(() => {
     if (!showTooltip) return;
@@ -69,7 +76,7 @@ const ReactionPill: React.FC<ReactionPillProps> = ({
         {count > 0 && (
           <span className="flex items-center -mr-0.5">
             <AvatarStack
-              userIds={userIds}
+              userIds={orderedUserIds}
               usersById={usersById}
               maxVisible={3}
               size={18}
