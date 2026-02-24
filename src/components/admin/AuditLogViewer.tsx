@@ -44,7 +44,8 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({
 
   const actionTypes = [
     'USER_CREATED',
-    'BULK_IMPORT', 
+    'USER_UPDATED',
+    'BULK_IMPORT',
     'FORCE_PASSWORD_RESET',
     'USER_DELETED',
     'ROLE_CHANGED'
@@ -103,6 +104,8 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({
     switch (action) {
       case 'USER_CREATED':
         return <UserPlus className="h-4 w-4 text-green-600" />;
+      case 'USER_UPDATED':
+        return <User className="h-4 w-4 text-blue-600" />;
       case 'BULK_IMPORT':
         return <User className="h-4 w-4 text-brand-light" />;
       case 'FORCE_PASSWORD_RESET':
@@ -120,6 +123,8 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({
     switch (action) {
       case 'USER_CREATED':
         return 'bg-green-100 text-green-800';
+      case 'USER_UPDATED':
+        return 'bg-blue-100 text-blue-800';
       case 'BULK_IMPORT':
         return 'bg-blue-50 text-blue-800';
       case 'FORCE_PASSWORD_RESET':
@@ -145,6 +150,14 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({
         return `Deleted user ${log.details.targetName} (${log.details.targetEmail})`;
       case 'ROLE_CHANGED':
         return `Changed role for ${log.details.targetName} from ${log.details.oldRole} to ${log.details.newRole}`;
+      case 'USER_UPDATED': {
+        const name = log.details.targetName || log.details.targetEmail || 'user';
+        const fields = log.details.changedFields;
+        const fieldList = Array.isArray(fields) && fields.length > 0
+          ? fields.join(', ')
+          : 'profile';
+        return `Updated ${name}: ${fieldList}`;
+      }
       default:
         return log.action.replace(/_/g, ' ').toLowerCase();
     }
@@ -306,7 +319,20 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({
             <div className="space-y-3">
               {filteredLogs.map((log) => {
                 const timestamp = formatTimestamp(log.timestamp);
-                const detailKeys = log.details ? Object.keys(log.details).filter(k => k !== 'targetUserId' && k !== 'adminId') : [];
+                const rawDetailKeys = log.details ? Object.keys(log.details).filter(k => k !== 'targetUserId' && k !== 'adminId') : [];
+                const detailKeys = rawDetailKeys.filter((key) => {
+                  if (key === 'oldRole' || key === 'newRole') {
+                    const oldR = log.details.oldRole;
+                    const newR = log.details.newRole;
+                    if (oldR === newR) return false;
+                  }
+                  return true;
+                });
+                const formatDetailValue = (key: string, value: unknown): string => {
+                  if (Array.isArray(value)) return value.join(', ');
+                  if (typeof value === 'object' && value !== null) return JSON.stringify(value);
+                  return String(value);
+                };
                 return (
                   <div
                     key={log.id}
@@ -337,7 +363,7 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({
                               {detailKeys.map((key) => {
                                 const value = log.details[key];
                                 const label = key.replace(/([A-Z])/g, ' $1').trim();
-                                const display = typeof value === 'object' ? JSON.stringify(value) : String(value);
+                                const display = formatDetailValue(key, value);
                                 return (
                                   <span key={key} className="flex gap-1.5">
                                     <span className="text-gray-500 capitalize">{label}:</span>
