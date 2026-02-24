@@ -991,7 +991,7 @@ export class ChatService {
    */
   static async updateChat(
     chatId: string,
-    updates: { name?: string; description?: string; allowRequests?: boolean; imageUrl?: string },
+    updates: { name?: string; description?: string; allowRequests?: boolean; imageUrl?: string; imageCrop?: { scale: number; panX: number; panY: number } | null },
     adminUserId: string
   ): Promise<void> {
     try {
@@ -1024,6 +1024,7 @@ export class ChatService {
       if (updates.description !== undefined) updateData.description = updates.description.trim();
       if (updates.allowRequests !== undefined) updateData.allowRequests = updates.allowRequests;
       if (updates.imageUrl !== undefined) updateData.imageUrl = updates.imageUrl.trim() || null;
+      if (updates.imageCrop !== undefined) updateData.imageCrop = updates.imageCrop ?? null;
 
       await updateDoc(doc(db, 'chats', chatId), updateData);
 

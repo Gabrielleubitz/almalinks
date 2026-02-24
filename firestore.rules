@@ -97,9 +97,12 @@ service cloud.firestore {
     }
 
     // --- Announcements ---
+    // Members may only update the reactions field (emoji toggles); create/delete and other updates are admin-only.
     match /announcements/{announcementId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']));
     }
 
     // --- Notifications (per-user; app creates for others) ---

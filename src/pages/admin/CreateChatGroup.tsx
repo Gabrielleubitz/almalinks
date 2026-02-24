@@ -445,7 +445,7 @@ const CreateChatGroup: React.FC = () => {
                       ) : (
                         <>
                           <ImagePlus className="h-5 w-5" />
-                          Upload photo
+                          Upload to Cloudinary
                         </>
                       )}
                     </button>

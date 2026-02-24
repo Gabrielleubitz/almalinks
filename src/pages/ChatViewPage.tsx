@@ -22,7 +22,8 @@ import {
   Mail,
   Trash2,
   BellOff,
-  Bell
+  Bell,
+  ImagePlus
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useActivityTracking } from '../hooks/useActivityTracking';
@@ -45,6 +46,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import MessageBubble from '../components/chat/MessageBubble';
 import CropImage from '../components/profile/CropImage';
 import { formatMessageTime, shouldGroupMessages } from '../utils/dateUtils';
+import { uploadImageToLibrary } from '../services/imageUploadService';
 
 const ChatViewPage: React.FC = () => {
   const { chatId } = useParams<{ chatId: string }>();
@@ -106,8 +108,11 @@ const ChatViewPage: React.FC = () => {
     name: '',
     description: '',
     allowRequests: false,
-    imageUrl: ''
+    imageUrl: '',
+    imageCrop: null as { scale: number; panX: number; panY: number } | null
   });
+  const [editImageUploading, setEditImageUploading] = useState(false);
+  const editImageInputRef = React.useRef<HTMLInputElement>(null);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserCard[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -740,7 +745,8 @@ const ChatViewPage: React.FC = () => {
         name: chat.name,
         description: chat.description || '',
         allowRequests: chat.allowRequests,
-        imageUrl: chat.imageUrl || ''
+        imageUrl: chat.imageUrl || '',
+        imageCrop: chat.imageCrop ?? null
       });
       setShowEditModal(true);
       setShowSettings(false);
@@ -1095,6 +1101,13 @@ const ChatViewPage: React.FC = () => {
               </div>
               
               <div className="flex items-center space-x-0.5 flex-shrink-0">
+                <button
+                  onClick={() => navigate('/chats')}
+                  className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors min-h-[44px] min-w-[44px] touch-manipulation flex items-center justify-center"
+                  title="Close chat"
+                >
+                  <X className="h-5 w-5" />
+                </button>
                 <button
                   onClick={() => {
                     setShowMembersList(!showMembersList);
@@ -1547,18 +1560,62 @@ const ChatViewPage: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Group image URL
+                  Group image
                 </label>
                 <input
-                  type="url"
-                  value={editingChat.imageUrl}
-                  onChange={(e) => setEditingChat({...editingChat, imageUrl: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="https://example.com/group-image.jpg"
+                  ref={editImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file || !file.type.startsWith('image/')) return;
+                    e.target.value = '';
+                    if (editImageInputRef.current) editImageInputRef.current.value = '';
+                    setEditImageUploading(true);
+                    try {
+                      const url = await uploadImageToLibrary('chat-groups', file);
+                      setEditingChat(prev => ({ ...prev, imageUrl: url, imageCrop: null }));
+                    } catch (err: any) {
+                      alert(err.message || 'Image upload failed');
+                    } finally {
+                      setEditImageUploading(false);
+                    }
+                  }}
                 />
+                <div className="flex flex-wrap gap-2 items-center">
+                  <input
+                    type="url"
+                    value={editingChat.imageUrl}
+                    onChange={(e) => setEditingChat({...editingChat, imageUrl: e.target.value})}
+                    className="flex-1 min-w-[180px] px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Paste URL or upload below (Cloudinary)"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => editImageInputRef.current?.click()}
+                    disabled={editImageUploading}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm font-medium"
+                  >
+                    {editImageUploading ? (
+                      <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <ImagePlus className="h-4 w-4" />
+                        Upload to Cloudinary
+                      </>
+                    )}
+                  </button>
+                </div>
                 {editingChat.imageUrl && (
-                  <div className="mt-2 w-16 h-16 rounded overflow-hidden border border-gray-200">
-                    <img src={editingChat.imageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  <div className="mt-2 w-16 h-16 rounded-full overflow-hidden border border-gray-200">
+                    <CropImage
+                      src={editingChat.imageUrl}
+                      crop={editingChat.imageCrop}
+                      alt="Preview"
+                      mode="block"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 )}
               </div>
