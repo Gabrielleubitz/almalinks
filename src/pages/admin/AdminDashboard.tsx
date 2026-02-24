@@ -59,7 +59,7 @@ const AdminDashboard: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
       <AdminHeader title="Admin Dashboard" />
 
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 md:py-8 lg:py-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Welcome Section */}
         <div className="text-center mb-6 sm:mb-8 lg:mb-12 px-2">
           <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
@@ -76,219 +76,114 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
           
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 mb-2 sm:mb-3 lg:mb-4">
-            Admin <span className="gradient-text">Dashboard</span>
-          </h1>
-          <p className="text-sm sm:text-base lg:text-lg text-gray-600 max-w-2xl mx-auto px-2">
-            Quick links to manage events, users, and communications
-          </p>
         </div>
 
-        {/* Core Admin Functions */}
-        <div className="space-y-6 sm:space-y-8">
-          
-          {/* Event & User Management */}
-          <div>
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">📅 Event & User Management</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              <Link
-                to="/admin/events"
-                className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift w-full"
-              >
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="flex-shrink-0">
-                    <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-brand-dark" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">Manage Events</h4>
-                    <p className="text-gray-600 text-xs sm:text-sm">View and edit existing events</p>
-                  </div>
+        {/* Quick links — compact, minimal sections */}
+        <div className="space-y-8">
+          <section>
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-400 mb-3">Events & people</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              <Link to="/admin/events" className="group flex items-center gap-4 rounded-lg border border-gray-200/80 bg-white px-4 py-3.5 transition-colors hover:border-gray-300 hover:bg-gray-50/80">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900"><Calendar className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1 text-left">
+                  <span className="font-medium text-gray-900">Manage Events</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">View and edit events</span>
                 </div>
               </Link>
-
-              <Link
-                to="/admin/events/create"
-                className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift w-full"
-              >
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="flex-shrink-0">
-                    <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">Create Event</h4>
-                    <p className="text-gray-600 text-xs sm:text-sm">Add a new Alma Links event</p>
-                  </div>
+              <Link to="/admin/events/create" className="group flex items-center gap-4 rounded-lg border border-gray-200/80 bg-white px-4 py-3.5 transition-colors hover:border-gray-300 hover:bg-gray-50/80">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900"><Calendar className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1 text-left">
+                  <span className="font-medium text-gray-900">Create Event</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">Add new event</span>
                 </div>
               </Link>
-
-              <Link
-                to="/admin/users"
-                className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift w-full"
-              >
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="flex-shrink-0">
-                    <UserCog className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">Users</h4>
-                    <p className="text-gray-600 text-xs sm:text-sm">Manage user roles</p>
-                  </div>
+              <Link to="/admin/users" className="group flex items-center gap-4 rounded-lg border border-gray-200/80 bg-white px-4 py-3.5 transition-colors hover:border-gray-300 hover:bg-gray-50/80">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900"><UserCog className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1 text-left">
+                  <span className="font-medium text-gray-900">Users</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">Manage roles</span>
                 </div>
               </Link>
-              <Link
-                to="/admin/activity"
-                className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift w-full"
-              >
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="flex-shrink-0">
-                    <Activity className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">Activity</h4>
-                    <p className="text-gray-600 text-xs sm:text-sm">Monitor user activities</p>
-                  </div>
+              <Link to="/admin/activity" className="group flex items-center gap-4 rounded-lg border border-gray-200/80 bg-white px-4 py-3.5 transition-colors hover:border-gray-300 hover:bg-gray-50/80">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900"><Activity className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1 text-left">
+                  <span className="font-medium text-gray-900">Activity</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">User activity</span>
                 </div>
               </Link>
-
-              <Link
-                to="/admin/pending-registrations"
-                className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift relative w-full"
-              >
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="flex-shrink-0">
-                    <UserPlus className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">Registrations</h4>
-                    <p className="text-gray-600 text-xs sm:text-sm">Approve new signups</p>
-                  </div>
+              <Link to="/admin/pending-registrations" className="group relative flex items-center gap-4 rounded-lg border border-gray-200/80 bg-white px-4 py-3.5 transition-colors hover:border-gray-300 hover:bg-gray-50/80">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900"><UserPlus className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1 text-left">
+                  <span className="font-medium text-gray-900">Registrations</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">Approve signups</span>
                 </div>
-                
                 {!loadingPendingCount && pendingCount > 0 && (
-                  <div className="absolute -top-2 -right-2 bg-red-600 text-white w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold">
-                    {pendingCount}
-                  </div>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-semibold text-white">{pendingCount}</span>
                 )}
               </Link>
             </div>
-          </div>
+          </section>
 
-          {/* Communication Tools */}
-          <div>
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">📢 Communication</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              <Link
-                to="/admin/email"
-                className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift w-full"
-              >
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="flex-shrink-0">
-                    <Mail className="h-6 w-6 sm:h-8 sm:w-8 text-brand-light" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">Email Messages</h4>
-                    <p className="text-gray-600 text-xs sm:text-sm">Send emails to members</p>
-                  </div>
+          <section>
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-400 mb-3">Communication</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              <Link to="/admin/email" className="group flex items-center gap-4 rounded-lg border border-gray-200/80 bg-white px-4 py-3.5 transition-colors hover:border-gray-300 hover:bg-gray-50/80">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900"><Mail className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1 text-left">
+                  <span className="font-medium text-gray-900">Email</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">Send to members</span>
                 </div>
               </Link>
-
-              <Link
-                to="/admin/announcements"
-                className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift w-full"
-              >
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="flex-shrink-0">
-                    <Megaphone className="h-8 w-8 text-orange-600" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">Announcements</h4>
-                    <p className="text-gray-600 text-xs sm:text-sm">Publish updates</p>
-                  </div>
+              <Link to="/admin/announcements" className="group flex items-center gap-4 rounded-lg border border-gray-200/80 bg-white px-4 py-3.5 transition-colors hover:border-gray-300 hover:bg-gray-50/80">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900"><Megaphone className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1 text-left">
+                  <span className="font-medium text-gray-900">Announcements</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">Publish updates</span>
                 </div>
               </Link>
-
-              <Link
-                to="/admin/chats/create"
-                className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift w-full"
-              >
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="flex-shrink-0">
-                    <MessageCircle className="h-8 w-8 text-green-600" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">Create Chat Group</h4>
-                    <p className="text-gray-600 text-xs sm:text-sm">Create new group chats</p>
-                  </div>
+              <Link to="/admin/chats/create" className="group flex items-center gap-4 rounded-lg border border-gray-200/80 bg-white px-4 py-3.5 transition-colors hover:border-gray-300 hover:bg-gray-50/80">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900"><MessageCircle className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1 text-left">
+                  <span className="font-medium text-gray-900">Create Chat Group</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">New group chat</span>
                 </div>
               </Link>
             </div>
-          </div>
+          </section>
 
-          {/* Event Tools */}
-          <div>
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">🎯 Event Tools</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-              <Link
-                to="/admin/check-in"
-                className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift w-full"
-              >
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="flex-shrink-0">
-                    <CheckCircle className="h-8 w-8 text-green-600" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">Check-in</h4>
-                    <p className="text-gray-600 text-xs sm:text-sm">Check in attendees at events</p>
-                  </div>
+          <section>
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-400 mb-3">Tools</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              <Link to="/admin/check-in" className="group flex items-center gap-4 rounded-lg border border-gray-200/80 bg-white px-4 py-3.5 transition-colors hover:border-gray-300 hover:bg-gray-50/80">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900"><CheckCircle className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1 text-left">
+                  <span className="font-medium text-gray-900">Check-in</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">Event attendees</span>
                 </div>
               </Link>
-
-              <Link
-                to="/admin/connections"
-                className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift w-full"
-              >
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="flex-shrink-0">
-                    <Users className="h-8 w-8 text-brand-light" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">Connections</h4>
-                    <p className="text-gray-600 text-xs sm:text-sm">Manage user connections</p>
-                  </div>
+              <Link to="/admin/connections" className="group flex items-center gap-4 rounded-lg border border-gray-200/80 bg-white px-4 py-3.5 transition-colors hover:border-gray-300 hover:bg-gray-50/80">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900"><Users className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1 text-left">
+                  <span className="font-medium text-gray-900">Connections</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">User connections</span>
                 </div>
               </Link>
-
-              <Link
-                to="/admin/hubspot-import"
-                className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift w-full"
-              >
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="flex-shrink-0">
-                    <Download className="h-8 w-8 text-orange-600" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">Import from HubSpot</h4>
-                    <p className="text-gray-600 text-xs sm:text-sm">Sync HubSpot CRM contacts</p>
-                  </div>
+              <Link to="/admin/hubspot-import" className="group flex items-center gap-4 rounded-lg border border-gray-200/80 bg-white px-4 py-3.5 transition-colors hover:border-gray-300 hover:bg-gray-50/80">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900"><Download className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1 text-left">
+                  <span className="font-medium text-gray-900">HubSpot Import</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">Sync contacts</span>
                 </div>
               </Link>
-
-              <Link
-                to="/admin/system-test"
-                className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover-lift w-full"
-              >
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="flex-shrink-0">
-                    <Zap className="h-8 w-8 text-amber-600" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">System Test</h4>
-                    <p className="text-gray-600 text-xs sm:text-sm">Test integrations</p>
-                  </div>
+              <Link to="/admin/system-test" className="group flex items-center gap-4 rounded-lg border border-gray-200/80 bg-white px-4 py-3.5 transition-colors hover:border-gray-300 hover:bg-gray-50/80">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900"><Zap className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1 text-left">
+                  <span className="font-medium text-gray-900">System Test</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">Integrations</span>
                 </div>
               </Link>
             </div>
-          </div>
+          </section>
         </div>
       </div>
 

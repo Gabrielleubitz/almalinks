@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   CheckCircle,
   Clock,
@@ -10,6 +11,7 @@ import {
   RefreshCw,
   Download,
   Sparkles,
+  ArrowLeft,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import AdminHeader from '../../components/admin/AdminHeader';
@@ -185,6 +187,14 @@ const AdminCheckIn: React.FC = () => {
       <AdminHeader title="Check-in" subtitle="Check in attendees at events" />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+        <Link
+          to="/admin"
+          className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Dashboard
+        </Link>
+
         {/* Hero */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/25 mb-4">
