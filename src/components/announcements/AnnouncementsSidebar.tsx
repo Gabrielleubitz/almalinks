@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MessageSquare, Clock } from 'lucide-react';
 import { AnnouncementService, AnnouncementData } from '../../services/announcementService';
 import EmojiReactions from './EmojiReactions';
-import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -21,24 +21,27 @@ const AnnouncementsSidebar: React.FC = () => {
       return;
     }
     
-    // Set up real-time listener for announcements
+    // Set up real-time listener for announcements (order matches admin panel)
     const announcementsRef = collection(db, 'announcements');
-    const q = query(
-      announcementsRef,
-      where('active', '==', true),
-      orderBy('timestamp', 'desc'),
-      limit(3)
-    );
-    
+    const q = query(announcementsRef, where('active', '==', true));
+
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const announcementsData = snapshot.docs.map(doc => ({
+        const list = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as AnnouncementData[];
-        
-        setAnnouncements(announcementsData);
+        const ts = (a: AnnouncementData) => a.timestamp?.toDate ? a.timestamp.toDate().getTime() : (a.timestamp || 0);
+        const sorted = list
+          .sort((a, b) => {
+            const orderA = a.order ?? 999999;
+            const orderB = b.order ?? 999999;
+            if (orderA !== orderB) return orderA - orderB;
+            return ts(b) - ts(a);
+          })
+          .slice(0, 3);
+        setAnnouncements(sorted);
         setLoading(false);
       },
       (error) => {
