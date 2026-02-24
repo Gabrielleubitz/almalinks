@@ -1,7 +1,6 @@
 {
   "dependencies": {
     "firebase-admin": "^11.11.0",
-    "node-mailjet": "^6.0.5",
-    "openai": "^4.0.0"
+    "node-mailjet": "^6.0.5"
   }
 }

@@ -14,6 +14,7 @@ const EMAIL_TEMPLATES: { key: string; label: string }[] = [
   { key: 'test', label: 'Test email' },
   { key: 'welcome', label: 'Welcome (signup received)' },
   { key: 'welcome-approved', label: 'Welcome approved' },
+  { key: 'rejection', label: 'Rejection (application not approved)' },
   { key: 'event-announcement', label: 'Event announcement' },
   { key: 'registration-confirmation', label: 'Registration confirmation' },
   { key: 'event-reminder', label: 'Event reminder' },

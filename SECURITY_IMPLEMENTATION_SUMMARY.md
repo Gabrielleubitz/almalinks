@@ -29,7 +29,6 @@
    - Firebase Authentication
    - Firebase Firestore
    - Firebase Storage
-   - OpenAI API (for admin-only image generation)
    - Mailjet (email)
    - Twilio (SMS)
    - Hotjar (analytics)
@@ -155,7 +154,7 @@
 ### Legal Review Required
 - **GDPR Compliance**: Security measures align with GDPR principles, but formal legal review recommended
 - **CCPA Compliance**: California Consumer Privacy Act compliance should be reviewed
-- **Data Processing Agreements**: Review agreements with Firebase, Mailjet, Twilio, OpenAI
+- **Data Processing Agreements**: Review agreements with Firebase, Mailjet, Twilio
 - **Privacy Policy**: Ensure privacy policy accurately reflects data collection and processing
 
 ### Security Testing

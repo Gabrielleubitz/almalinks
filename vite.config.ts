@@ -41,7 +41,6 @@ export default defineConfig({
     alias: {
       // These packages should only be used in Netlify functions
       'firebase-admin': 'empty-module',
-      'openai': 'empty-module',
       'node-mailjet': 'empty-module'
     }
   },

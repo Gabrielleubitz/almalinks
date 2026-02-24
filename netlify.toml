@@ -16,7 +16,7 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
   deno_import_map = ""
-  external_node_modules = ["twilio", "node-mailjet", "firebase-admin", "openai"]
+  external_node_modules = ["twilio", "node-mailjet", "firebase-admin"]
 
 [[plugins]]
   package = "@netlify/plugin-functions-install-core"

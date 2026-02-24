@@ -251,7 +251,6 @@ All responses include the following security headers:
 
 #### Optional
 - `VITE_ADMIN_EMAIL`: Admin notification email
-- `VITE_OPENAI_API_KEY`: OpenAI API key (if using AI features)
 - `MJ_APIKEY_PUBLIC`: Mailjet public API key
 - `MJ_APIKEY_PRIVATE`: Mailjet private API key
 - `TWILIO_SID`: Twilio account SID
