@@ -166,13 +166,13 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
     return userStats.find(user => user.uid === userId);
   };
 
-  const getConnectionTypeIcon = (type: 'auto' | 'manual' | 'scan') => {
+  const getConnectionTypeIcon = (type: 'auto' | 'manual' | 'admin') => {
     switch (type) {
       case 'auto':
         return <Zap className="h-4 w-4 text-green-600" />;
       case 'manual':
         return <UserPlus className="h-4 w-4 text-purple-600" />;
-      case 'scan':
+      case 'admin':
       default:
         return <Link2 className="h-4 w-4 text-amber-600" />;
     }
@@ -230,21 +230,21 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
                   <p className="text-2xl font-bold text-blue-900 tabular-nums">{userStats.length}</p>
                 </div>
                 <div className="bg-green-50 border border-green-100 p-4 rounded-xl">
-                  <p className="text-sm font-medium text-green-800">Auto</p>
+                  <p className="text-sm font-medium text-green-800">By event</p>
                   <p className="text-2xl font-bold text-green-900 tabular-nums">
                     {userStats.reduce((sum, u) => sum + u.autoConnections, 0)}
                   </p>
                 </div>
                 <div className="bg-purple-50 border border-purple-100 p-4 rounded-xl">
-                  <p className="text-sm font-medium text-purple-800">Manual</p>
+                  <p className="text-sm font-medium text-purple-800">By request</p>
                   <p className="text-2xl font-bold text-purple-900 tabular-nums">
                     {userStats.reduce((sum, u) => sum + u.manualConnections, 0)}
                   </p>
                 </div>
                 <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl">
-                  <p className="text-sm font-medium text-amber-800">Scan</p>
+                  <p className="text-sm font-medium text-amber-800">By admin</p>
                   <p className="text-2xl font-bold text-amber-900 tabular-nums">
-                    {userStats.reduce((sum, u) => sum + u.scanConnections, 0)}
+                    {userStats.reduce((sum, u) => sum + u.adminConnections, 0)}
                   </p>
                 </div>
               </div>
@@ -255,9 +255,9 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
                     <tr className="bg-gray-50 border-b border-gray-200">
                       <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">User</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Total</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Auto</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Manual</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Scan</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">By event</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">By request</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">By admin</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Events</th>
                     </tr>
                   </thead>
@@ -283,8 +283,8 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-1">
-                            {getConnectionTypeIcon('scan')}
-                            <span className="text-sm font-medium text-gray-800">{u.scanConnections}</span>
+                            {getConnectionTypeIcon('admin')}
+                            <span className="text-sm font-medium text-gray-800">{u.adminConnections}</span>
                           </div>
                         </td>
                         <td className="py-3 px-4">

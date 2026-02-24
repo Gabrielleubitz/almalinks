@@ -27,7 +27,7 @@ export interface UserConnectionStats {
   totalConnections: number;
   autoConnections: number;
   manualConnections: number;
-  scanConnections: number;
+  adminConnections: number;
   registeredEvents: string[];
 }
 
@@ -204,10 +204,10 @@ export class AdminConnectionService {
           conn.fromUid === uid || conn.toUid === uid
         );
 
-        // Count by connection type
+        // Count by connection type: by event (auto), by request (manual), by admin (admin)
         let autoConnections = 0;
         let manualConnections = 0;
-        let scanConnections = 0;
+        let adminConnections = 0;
 
         userConnections.forEach(conn => {
           switch (conn.connectionType) {
@@ -217,9 +217,10 @@ export class AdminConnectionService {
             case 'manual':
               manualConnections++;
               break;
-            case 'scan':
+            case 'admin':
+              adminConnections++;
+              break;
             default:
-              scanConnections++;
               break;
           }
         });
@@ -235,7 +236,7 @@ export class AdminConnectionService {
           totalConnections: userConnections.length,
           autoConnections,
           manualConnections,
-          scanConnections,
+          adminConnections,
           registeredEvents
         });
       }
@@ -550,7 +551,7 @@ export class AdminConnectionService {
     totalConnections: number;
     autoConnections: number;
     manualConnections: number;
-    scanConnections: number;
+    adminConnections: number;
     activeUsers: number;
     connectionsToday: number;
   }> {
@@ -564,17 +565,16 @@ export class AdminConnectionService {
         ...doc.data() 
       })) as Connection[];
 
-      // Count by type
+      // Count by type: by event (auto), by request (manual), by admin (admin)
       let autoConnections = 0;
       let manualConnections = 0;
-      let scanConnections = 0;
+      let adminConnections = 0;
       let connectionsToday = 0;
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
       connections.forEach(conn => {
-        // Count by type
         switch (conn.connectionType) {
           case 'auto':
             autoConnections++;
@@ -582,20 +582,18 @@ export class AdminConnectionService {
           case 'manual':
             manualConnections++;
             break;
-          case 'scan':
+          case 'admin':
+            adminConnections++;
+            break;
           default:
-            scanConnections++;
             break;
         }
-
-        // Count today's connections
         const connDate = conn.timestamp?.toDate?.() || new Date(0);
         if (connDate >= today) {
           connectionsToday++;
         }
       });
 
-      // Get active users (users with at least one connection)
       const activeUserIds = new Set<string>();
       connections.forEach(conn => {
         activeUserIds.add(conn.fromUid);
@@ -606,18 +604,17 @@ export class AdminConnectionService {
         totalConnections: connections.length,
         autoConnections,
         manualConnections,
-        scanConnections,
+        adminConnections,
         activeUsers: activeUserIds.size,
         connectionsToday
       };
-
     } catch (error) {
       console.error('❌ Error getting admin dashboard stats:', error);
       return {
         totalConnections: 0,
         autoConnections: 0,
         manualConnections: 0,
-        scanConnections: 0,
+        adminConnections: 0,
         activeUsers: 0,
         connectionsToday: 0
       };
@@ -665,7 +662,7 @@ export class AdminConnectionService {
       const toUid = (c as any).toUid ?? c.uid2 ?? '';
       const from = userDocs.get(fromUid) ?? { name: fromUid, email: '' };
       const to = userDocs.get(toUid) ?? { name: toUid, email: '' };
-      const connType = (c as any).connectionType ?? 'scan';
+      const connType = (c as any).connectionType ?? 'unknown';
       const ts = (c as any).timestamp;
       const date = ts?.toDate?.() ? ts.toDate().toISOString().slice(0, 10) : (ts ? new Date(ts).toISOString().slice(0, 10) : '');
       rows.push({

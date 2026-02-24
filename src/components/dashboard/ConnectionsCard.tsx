@@ -349,7 +349,7 @@ const ConnectionsCard: React.FC = () => {
           textColor: 'text-green-800',
           iconColor: 'text-green-600'
         };
-      case 'manual':
+      case 'admin':
         return {
           icon: Shield,
           label: 'Connected by Admin',
@@ -357,7 +357,7 @@ const ConnectionsCard: React.FC = () => {
           textColor: 'text-purple-800',
           iconColor: 'text-brand-dark'
         };
-      case 'scan':
+      case 'manual':
       default:
         return {
           icon: UserPlus,
@@ -421,9 +421,9 @@ const ConnectionsCard: React.FC = () => {
     switch (connection.connectionType) {
       case 'auto':
         return ['Connected by Event'];
-      case 'manual':
+      case 'admin':
         return ['Connected by Admin'];
-      case 'scan':
+      case 'manual':
       default:
         return ['Connected by Request'];
     }

@@ -21,7 +21,7 @@ const AdminConnectionWidget: React.FC<AdminConnectionWidgetProps> = ({
     totalConnections: 0,
     autoConnections: 0,
     manualConnections: 0,
-    scanConnections: 0,
+    adminConnections: 0,
     activeUsers: 0,
     connectionsToday: 0
   });
@@ -72,7 +72,7 @@ const AdminConnectionWidget: React.FC<AdminConnectionWidgetProps> = ({
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid: By event, By request, By admin only */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5">
         <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl">
           <div className="flex items-center space-x-2">
@@ -92,7 +92,7 @@ const AdminConnectionWidget: React.FC<AdminConnectionWidgetProps> = ({
               <p className="text-2xl font-bold text-green-900 tabular-nums">
                 {stats.autoConnections.toLocaleString()}
               </p>
-              <p className="text-sm font-medium text-green-800">Auto</p>
+              <p className="text-sm font-medium text-green-800">By event</p>
             </div>
           </div>
         </div>
@@ -103,7 +103,7 @@ const AdminConnectionWidget: React.FC<AdminConnectionWidgetProps> = ({
               <p className="text-2xl font-bold text-purple-900 tabular-nums">
                 {stats.manualConnections.toLocaleString()}
               </p>
-              <p className="text-sm font-medium text-purple-800">Manual</p>
+              <p className="text-sm font-medium text-purple-800">By request</p>
             </div>
           </div>
         </div>
@@ -112,22 +112,22 @@ const AdminConnectionWidget: React.FC<AdminConnectionWidgetProps> = ({
             <Link2 className="h-5 w-5 text-amber-600 flex-shrink-0" />
             <div className="min-w-0">
               <p className="text-2xl font-bold text-amber-900 tabular-nums">
-                {stats.scanConnections.toLocaleString()}
+                {stats.adminConnections.toLocaleString()}
               </p>
-              <p className="text-sm font-medium text-amber-800">In-person</p>
+              <p className="text-sm font-medium text-amber-800">By admin</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Connection Type Breakdown */}
+      {/* Connection type breakdown */}
       <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
         <h4 className="text-sm font-semibold text-gray-900 mb-3">By type</h4>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 rounded-full bg-green-500" />
-              <span className="text-sm font-medium text-gray-800">Auto-Connect</span>
+              <span className="text-sm font-medium text-gray-800">By event</span>
             </div>
             <span className="text-sm font-semibold text-gray-900">
               {stats.totalConnections > 0
@@ -138,7 +138,7 @@ const AdminConnectionWidget: React.FC<AdminConnectionWidgetProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 rounded-full bg-purple-500" />
-              <span className="text-sm font-medium text-gray-800">Manual</span>
+              <span className="text-sm font-medium text-gray-800">By request</span>
             </div>
             <span className="text-sm font-semibold text-gray-900">
               {stats.totalConnections > 0
@@ -149,11 +149,11 @@ const AdminConnectionWidget: React.FC<AdminConnectionWidgetProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 rounded-full bg-amber-500" />
-              <span className="text-sm font-medium text-gray-800">In-person</span>
+              <span className="text-sm font-medium text-gray-800">By admin</span>
             </div>
             <span className="text-sm font-semibold text-gray-900">
               {stats.totalConnections > 0
-                ? Math.round((stats.scanConnections / stats.totalConnections) * 100)
+                ? Math.round((stats.adminConnections / stats.totalConnections) * 100)
                 : 0}%
             </span>
           </div>

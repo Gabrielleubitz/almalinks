@@ -7,6 +7,7 @@ import {
   RotateCcw,
   LogOut,
   Calendar,
+  ClipboardCheck,
   ChevronDown,
   Menu,
   X,
@@ -48,6 +49,7 @@ const adminNavGroups = [
     label: 'Events',
     items: [
       { to: '/admin/events', label: 'Manage Events', icon: Calendar },
+      { to: '/admin/check-in', label: 'Check-in', icon: ClipboardCheck },
       { to: '/admin/events/add', label: 'Add Event', icon: Calendar },
     ],
   },

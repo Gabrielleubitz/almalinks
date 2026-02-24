@@ -187,7 +187,7 @@ const RegistrationConfirmation: React.FC<RegistrationConfirmationProps> = ({ dat
             <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
             <div>
               <div className="font-medium text-gray-900">Connect at the event</div>
-              <div className="text-gray-600 text-sm">Meet other attendees in person or use the Members directory to connect</div>
+              <div className="text-gray-600 text-sm">Use the Members directory to connect with other attendees</div>
             </div>
           </div>
         </div>

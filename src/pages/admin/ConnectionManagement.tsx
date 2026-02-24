@@ -142,8 +142,8 @@ const ConnectionManagement: React.FC = () => {
                   </div>
                   <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-100">
                     <div>
-                      <p className="font-semibold text-amber-900">Legacy System</p>
-                      <p className="text-sm text-amber-800">Active</p>
+                      <p className="font-semibold text-amber-900">By admin</p>
+                      <p className="text-sm text-amber-800">Admin-created connections</p>
                     </div>
                     <div className="w-3 h-3 bg-amber-500 rounded-full flex-shrink-0" />
                   </div>
@@ -157,22 +157,22 @@ const ConnectionManagement: React.FC = () => {
                   <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                     <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900">Auto-connections created</p>
-                      <p className="text-xs text-gray-600">Event-based</p>
+                      <p className="text-sm font-medium text-gray-900">By event</p>
+                      <p className="text-xs text-gray-600">Auto-connect at events</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                     <div className="w-2 h-2 bg-purple-500 rounded-full flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900">Manual connections</p>
-                      <p className="text-xs text-gray-600">Via directory</p>
+                      <p className="text-sm font-medium text-gray-900">By request</p>
+                      <p className="text-xs text-gray-600">Via directory or profile</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                     <div className="w-2 h-2 bg-amber-500 rounded-full flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900">Legacy connections</p>
-                      <p className="text-xs text-gray-600">In-person / scan</p>
+                      <p className="text-sm font-medium text-gray-900">By admin</p>
+                      <p className="text-xs text-gray-600">Admin-created connections</p>
                     </div>
                   </div>
                 </div>

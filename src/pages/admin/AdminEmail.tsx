@@ -38,6 +38,8 @@ const AdminEmail: React.FC = () => {
   const [emailLogItems, setEmailLogItems] = useState<EmailLogEntry[]>([]);
   const [emailLogTotalCount, setEmailLogTotalCount] = useState<number | null>(null);
   const [emailLogLoading, setEmailLogLoading] = useState(true);
+  const [emailLogFilter, setEmailLogFilter] = useState('');
+  const [showAllSentEmails, setShowAllSentEmails] = useState(false);
   const [quickEmailRecipient, setQuickEmailRecipient] = useState('');
   const [runningTemplate, setRunningTemplate] = useState<string | null>(null);
   const [emailConfig, setEmailConfig] = useState<{ mailjet: boolean; mailchimp: boolean } | null>(null);
@@ -319,22 +321,31 @@ const AdminEmail: React.FC = () => {
           </button>
         </div>
 
-        {/* Email log: sent count and recent list */}
+        {/* Email log: sent count and recent list (last 8, view more, filter) */}
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 mb-8">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <div className="flex items-center space-x-3">
               <Inbox className="h-6 w-6 text-brand-light" />
               <h2 className="text-xl font-bold text-gray-900">Sent emails</h2>
             </div>
-            <button
-              type="button"
-              onClick={fetchEmailLog}
-              disabled={emailLogLoading}
-              className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-              title="Refresh"
-            >
-              <RefreshCw className={`h-5 w-5 ${emailLogLoading ? 'animate-spin' : ''}`} />
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                placeholder="Search by email, subject or type..."
+                value={emailLogFilter}
+                onChange={(e) => setEmailLogFilter(e.target.value)}
+                className="flex-1 min-w-[180px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-light focus:border-transparent"
+              />
+              <button
+                type="button"
+                onClick={fetchEmailLog}
+                disabled={emailLogLoading}
+                className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                title="Refresh"
+              >
+                <RefreshCw className={`h-5 w-5 ${emailLogLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
           </div>
           {emailLogTotalCount !== null && (
             <p className="text-sm text-gray-600 mb-4">
@@ -343,36 +354,79 @@ const AdminEmail: React.FC = () => {
           )}
           {emailLogLoading ? (
             <p className="text-sm text-gray-500">Loading…</p>
-          ) : emailLogItems.length === 0 ? (
-            <p className="text-sm text-gray-500">No sent emails recorded yet.</p>
-          ) : (
-            <div className="overflow-x-auto -mx-2">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-2 px-2 font-medium text-gray-700">To</th>
-                    <th className="text-left py-2 px-2 font-medium text-gray-700">Subject</th>
-                    <th className="text-left py-2 px-2 font-medium text-gray-700">Sent</th>
-                    <th className="text-left py-2 px-2 font-medium text-gray-700">Provider</th>
-                    <th className="text-left py-2 px-2 font-medium text-gray-700">Template</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {emailLogItems.map((row) => (
-                    <tr key={row.id} className="border-b border-gray-100">
-                      <td className="py-2 px-2 text-gray-800">{row.to}</td>
-                      <td className="py-2 px-2 text-gray-800 max-w-[200px] truncate" title={row.subject}>{row.subject}</td>
-                      <td className="py-2 px-2 text-gray-600">
-                        {row.sentAt ? new Date(row.sentAt).toLocaleString() : '—'}
-                      </td>
-                      <td className="py-2 px-2 text-gray-600">{row.provider}</td>
-                      <td className="py-2 px-2 text-gray-600">{row.template || '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          ) : (() => {
+            const term = emailLogFilter.trim().toLowerCase();
+            const filtered = term
+              ? emailLogItems.filter(
+                  (row) =>
+                    (row.to && row.to.toLowerCase().includes(term)) ||
+                    (row.subject && row.subject.toLowerCase().includes(term)) ||
+                    (row.template && row.template.toLowerCase().includes(term))
+                )
+              : emailLogItems;
+            const displayItems = showAllSentEmails ? filtered : filtered.slice(0, 8);
+            const hasMore = filtered.length > 8 && !showAllSentEmails;
+            if (filtered.length === 0) {
+              return (
+                <p className="text-sm text-gray-500">
+                  {emailLogItems.length === 0 ? 'No sent emails recorded yet.' : 'No emails match your search.'}
+                </p>
+              );
+            }
+            return (
+              <>
+                <div className="overflow-x-auto -mx-2">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-2 px-2 font-medium text-gray-700">To</th>
+                        <th className="text-left py-2 px-2 font-medium text-gray-700">Subject</th>
+                        <th className="text-left py-2 px-2 font-medium text-gray-700">Sent</th>
+                        <th className="text-left py-2 px-2 font-medium text-gray-700">Provider</th>
+                        <th className="text-left py-2 px-2 font-medium text-gray-700">Template</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {displayItems.map((row) => (
+                        <tr key={row.id} className="border-b border-gray-100">
+                          <td className="py-2 px-2 text-gray-800">{row.to}</td>
+                          <td className="py-2 px-2 text-gray-800 max-w-[200px] truncate" title={row.subject}>{row.subject}</td>
+                          <td className="py-2 px-2 text-gray-600">
+                            {row.sentAt ? new Date(row.sentAt).toLocaleString() : '—'}
+                          </td>
+                          <td className="py-2 px-2 text-gray-600">{row.provider}</td>
+                          <td className="py-2 px-2 text-gray-600">{row.template || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-sm text-gray-500">
+                    Showing {displayItems.length} of {filtered.length}
+                    {term ? ' matching' : ''}
+                  </span>
+                  {hasMore ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllSentEmails(true)}
+                      className="text-sm font-medium text-brand-light hover:text-brand-dark"
+                    >
+                      View more
+                    </button>
+                  ) : filtered.length > 8 ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllSentEmails(false)}
+                      className="text-sm font-medium text-gray-600 hover:text-gray-800"
+                    >
+                      View less
+                    </button>
+                  ) : null}
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* Quick email: send by template */}

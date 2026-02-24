@@ -52,7 +52,7 @@ export interface LegacyConnection {
   fromUid: string;
   toUid: string;
   eventId: string;
-  connectionType?: 'auto' | 'manual' | 'scan';
+  connectionType?: 'auto' | 'manual' | 'admin';
   timestamp: any;
   fromName?: string;
   toName?: string;
@@ -204,28 +204,28 @@ export class ConnectionService {
 
   // Legacy method for backward compatibility
   static async createConnection(
-    fromUid: string, 
-    toUid: string, 
+    fromUid: string,
+    toUid: string,
     eventId: string,
-    connectionType: 'auto' | 'manual' | 'scan' = 'scan'
+    connectionType: 'auto' | 'manual' | 'admin' = 'manual'
   ): Promise<string> {
-    // Map legacy connection type to reason type
+    // Map connection type to reason: event = auto, request = manual, admin = admin
     let reasonType: 'event' | 'admin' | 'user';
     let context: string;
-    
+
     switch (connectionType) {
       case 'auto':
         reasonType = 'event';
         context = 'auto-connect on event';
         break;
-      case 'manual':
+      case 'admin':
         reasonType = 'admin';
-        context = 'manual admin connection';
+        context = 'admin-created connection';
         break;
-      case 'scan':
+      case 'manual':
       default:
         reasonType = 'user';
-        context = 'user-initiated connection';
+        context = 'user-initiated connection (by request)';
         break;
     }
 
@@ -375,8 +375,8 @@ export class ConnectionService {
         fromUid,
         toUid,
         eventId,
-        connectionType: eventReason.type === 'event' ? 'auto' : 
-                       eventReason.type === 'admin' ? 'manual' : 'scan',
+        connectionType: eventReason.type === 'event' ? 'auto' :
+                       eventReason.type === 'admin' ? 'admin' : 'manual',
         timestamp: eventReason.timestamp,
         fromName: isFromUid1 ? connection.uid1Name : connection.uid2Name,
         toName: isFromUid1 ? connection.uid2Name : connection.uid1Name,
@@ -521,8 +521,8 @@ export class ConnectionService {
             fromUid: userId,
             toUid: otherUid,
             eventId: reason.eventId || '',
-            connectionType: reason.type === 'event' ? 'auto' : 
-                           reason.type === 'admin' ? 'manual' : 'scan',
+            connectionType: reason.type === 'event' ? 'auto' :
+                           reason.type === 'admin' ? 'admin' : 'manual',
             timestamp: reason.timestamp,
             fromName: isUid1 ? connection.uid1Name : connection.uid2Name,
             toName: isUid1 ? connection.uid2Name : connection.uid1Name,

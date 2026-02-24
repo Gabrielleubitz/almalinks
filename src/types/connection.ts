@@ -1,6 +1,7 @@
 export type DiscoverabilityLevel = 'public' | 'event_only' | 'hidden';
 
-export type ConnectionType = 'auto' | 'manual' | 'scan';
+/** By event = auto, by request = manual, by admin = admin. No in-person/QR. */
+export type ConnectionType = 'auto' | 'manual' | 'admin';
 
 export type ConnectionRequestStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled';
 

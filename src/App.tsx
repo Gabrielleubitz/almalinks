@@ -18,6 +18,7 @@ import AdminAnnouncements from './pages/admin/AdminAnnouncements';
 import AddEvent from './pages/admin/AddEvent';
 import EditEvent from './pages/admin/EditEvent';
 import EventManagement from './pages/admin/EventManagement';
+import AdminCheckIn from './pages/admin/AdminCheckIn';
 import UserManagement from './pages/admin/UserManagement';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import PendingRegistrations from './pages/admin/PendingRegistrations';
@@ -203,6 +204,14 @@ function App() {
           element={
             <ProtectedRoute requiredRole="admin">
               <EventManagement />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/check-in" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminCheckIn />
             </ProtectedRoute>
           } 
         />
