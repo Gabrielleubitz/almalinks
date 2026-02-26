@@ -116,10 +116,12 @@ service cloud.firestore {
       );
     }
 
-    // --- Activity logs (client writes own; only admin reads) ---
+    // --- Activity logs (client writes own; admin has full access) ---
     match /activity_logs/{logId} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read, list, update, delete: if isAdmin();
+      // Members can read only their own activity logs; admins can read everything
+      allow read, list: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
     }
 
     // --- Chats ---

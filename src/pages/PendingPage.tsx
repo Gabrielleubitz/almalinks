@@ -82,7 +82,7 @@ const PendingPage: React.FC = () => {
               Account Pending Approval
             </h2>
             <p className="text-gray-600 mb-6">
-              Thanks for signing up. Your account is under review. You'll receive an SMS once approved.
+              Thanks for signing up. Your application is under review. We&apos;ll email you as soon as you&apos;re approved.
             </p>
             
             <div className="bg-yellow-50 rounded-xl p-6 mb-6 text-left">
@@ -92,8 +92,8 @@ const PendingPage: React.FC = () => {
                   <h3 className="font-semibold text-yellow-800 mb-2">What happens next?</h3>
                   <ul className="text-sm text-yellow-700 space-y-2">
                     <li>• Our team will review your LinkedIn profile</li>
-                    <li>• We'll verify your professional information</li>
-                    <li>• You'll receive an SMS notification when approved</li>
+                    <li>• We&apos;ll verify your professional information</li>
+                    <li>• You&apos;ll receive an email notification when approved</li>
                     <li>• Once approved, you can log in and access all features</li>
                   </ul>
                 </div>
@@ -122,9 +122,9 @@ const PendingPage: React.FC = () => {
           <div className="flex justify-center">
             <button
               onClick={handleLogout}
-              className="text-gray-600 hover:text-gray-800 font-medium"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white text-sm font-semibold hover:shadow-lg transition-all duration-200"
             >
-              Sign Out
+              Sign out
             </button>
           </div>
         </div>
