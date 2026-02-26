@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, CheckCircle, MessageSquare } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../hooks/useAuth';
 import { db } from '../firebase/config';
 import logoSvg from '../assets/alma-links-logo.svg';
+import AlmaAuthCard from '../components/ui/AlmaAuthCard';
 
 const PendingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -49,64 +50,63 @@ const PendingPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-3 sm:px-4 overflow-x-hidden w-full max-w-full relative">
-      {/* Logo in top left corner */}
-      <div className="absolute top-[max(1.5rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))] z-10">
-        <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
-          <img 
-            src={logoSvg}
-            alt="AlmaLinks Logo" 
-            className="h-8 md:h-10 w-auto"
-          />
-        </Link>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] flex flex-col items-center justify-center px-3 sm:px-4 pt-16 sm:pt-20 pb-16 sm:pb-20 relative overflow-x-hidden w-full max-w-full box-border">
+      <div className="w-full max-w-4xl flex-shrink-0 mb-0">
+        <AlmaAuthCard
+          title="Thank you for applying"
+          subtitle="Your application to Alma Links is under review. We’ll email you as soon as a decision is made."
+          logoUrl={logoSvg}
+        >
+          {/* Back to sign in */}
+          <div className="mb-6">
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm font-medium bg-transparent border-0 cursor-pointer p-0"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back to sign in</span>
+            </button>
+          </div>
 
-      <div className="max-w-md w-full">
-        {/* Back button */}
-        <div className="mb-6">
-          <Link 
-            to="/"
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm font-medium"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back to site</span>
-          </Link>
-        </div>
-
-        <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-full mb-4">
-              <Clock className="h-8 w-8 text-yellow-600" />
+          <div className="text-center mb-6 sm:mb-8">
+            <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-yellow-100 rounded-full mb-4">
+              <Clock className="h-7 w-7 sm:h-8 sm:w-8 text-yellow-600" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Account Pending Approval
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+              Application pending review
             </h2>
-            <p className="text-gray-600 mb-6">
-              Thanks for signing up. Your application is under review. We&apos;ll email you as soon as you&apos;re approved.
+            <p className="text-sm sm:text-base text-gray-600">
+              Thanks for signing up. Our team is reviewing your application. You&apos;ll receive an email when a decision is made.
             </p>
-            
-            <div className="bg-yellow-50 rounded-xl p-6 mb-6 text-left">
-              <div className="flex items-start space-x-3">
-                <CheckCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-1" />
+          </div>
+
+          <div className="space-y-4 sm:space-y-5 mb-6">
+            <div className="bg-yellow-50 rounded-2xl p-4 sm:p-5 border border-yellow-100 text-left">
+              <div className="flex items-start gap-3">
+                <div className="mt-1 flex-shrink-0">
+                  <CheckCircle className="h-5 w-5 text-yellow-600" />
+                </div>
                 <div>
-                  <h3 className="font-semibold text-yellow-800 mb-2">What happens next?</h3>
-                  <ul className="text-sm text-yellow-700 space-y-2">
-                    <li>• Our team will review your LinkedIn profile</li>
-                    <li>• We&apos;ll verify your professional information</li>
-                    <li>• You&apos;ll receive an email notification when approved</li>
-                    <li>• Once approved, you can log in and access all features</li>
+                  <h3 className="font-semibold text-yellow-800 mb-1.5">What happens next</h3>
+                  <ul className="text-sm text-yellow-800 space-y-1.5">
+                    <li>• We&apos;ll review your LinkedIn profile and professional details.</li>
+                    <li>• If we need anything else, we&apos;ll reach out by email.</li>
+                    <li>• Once approved, you&apos;ll be able to sign in and access all member features.</li>
                   </ul>
                 </div>
               </div>
             </div>
-            
-            <div className="bg-blue-50 rounded-xl p-6 text-left">
-              <div className="flex items-start space-x-3">
-                <MessageSquare className="h-5 w-5 text-brand-blue flex-shrink-0 mt-1" />
+
+            <div className="bg-blue-50 rounded-2xl p-4 sm:p-5 border border-blue-100 text-left">
+              <div className="flex items-start gap-3">
+                <div className="mt-1 flex-shrink-0">
+                  <MessageSquare className="h-5 w-5 text-brand-blue" />
+                </div>
                 <div>
-                  <h3 className="font-semibold text-blue-800 mb-2">Need assistance?</h3>
-                  <p className="text-sm text-blue-700 mb-3">
-                    If you have any questions or need to update your information, please contact us:
+                  <h3 className="font-semibold text-blue-900 mb-1.5">Need to update something?</h3>
+                  <p className="text-sm text-blue-800 mb-2">
+                    If you have questions or want to share updated information, you can contact the Alma Links team:
                   </p>
                   <a
                     href="mailto:info@almalinks.org"
@@ -122,12 +122,13 @@ const PendingPage: React.FC = () => {
           <div className="flex justify-center">
             <button
               onClick={handleLogout}
+              type="button"
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white text-sm font-semibold hover:shadow-lg transition-all duration-200"
             >
               Sign out
             </button>
           </div>
-        </div>
+        </AlmaAuthCard>
       </div>
     </div>
   );
