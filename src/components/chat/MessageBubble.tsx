@@ -379,7 +379,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               </div>,
               document.body
             )}
-          </div>
         </div>
       </div>
     </div>
