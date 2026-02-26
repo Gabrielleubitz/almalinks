@@ -14,6 +14,7 @@ import {
   ImagePlus
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useActivityTracking } from '../../hooks/useActivityTracking';
 import { ChatService } from '../../services/chatService';
 import { UserService } from '../../services/userService';
 import { uploadImageToLibrary } from '../../services/imageUploadService';
@@ -27,6 +28,7 @@ import CropImage from '../../components/profile/CropImage';
 const CreateChatGroup: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAdmin, loading: authLoading } = useAuth();
+  const { logActivity } = useActivityTracking();
   
   const [formData, setFormData] = useState<CreateChatGroupForm>({
     name: '',
@@ -298,6 +300,19 @@ const CreateChatGroup: React.FC = () => {
       console.log('✅ Chat group created:', result);
       
       setSuccess('✅ Chat group created successfully! Redirecting...');
+
+      // Log admin chat creation activity
+      logActivity(
+        'chat_create',
+        `Created chat group: ${formData.name}`,
+        {
+          chatId: result.chatId,
+          isPublic: formData.isPublic,
+          allowRequests: formData.allowRequests,
+          initialAdminsCount: formData.initialAdmins.length,
+          seedMembersCount: formData.seedMembers.length
+        }
+      );
       
       // Redirect after a short delay
       setTimeout(() => {

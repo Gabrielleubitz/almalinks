@@ -52,6 +52,15 @@ export interface ActivityStats {
   uniqueUsers: number;
   topActivities: { type: ActivityType; count: number }[];
   dailyStats: { date: string; count: number }[];
+  /**
+   * Approximate real-time active users based on recent activity.
+   * Typically counts distinct users with any activity within the last N minutes.
+   */
+  recentActiveUsers?: number;
+  /**
+   * Window size (in minutes) used to compute recentActiveUsers.
+   */
+  recentWindowMinutes?: number;
 }
 
 // For frontend display

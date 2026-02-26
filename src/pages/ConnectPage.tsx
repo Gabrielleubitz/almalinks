@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { CheckCircle, AlertCircle, ArrowLeft, UserPlus, Loader } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useActivityTracking } from '../hooks/useActivityTracking';
 import { ConnectionService } from '../services/connectionService';
 import { ConnectionRequestService } from '../services/connectionRequestService';
 import { getDailyRequestCount, isOverDailyLimit, DAILY_LIMIT_MESSAGE } from '../services/connectionRequestLimitService';
@@ -14,6 +15,7 @@ const ConnectPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading: authLoading, isPending } = useAuth();
+  const { logConnectionRequest } = useActivityTracking();
   
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
@@ -142,6 +144,12 @@ const ConnectPage: React.FC = () => {
         
         setRequestId(newRequestId);
         setPending(true);
+
+        // Log connection request activity
+        logConnectionRequest(
+          targetUserId,
+          targetUserData.displayName || targetUserData.name || 'Unknown User'
+        );
         
       } catch (err: any) {
         console.error('❌ Connection error:', err);

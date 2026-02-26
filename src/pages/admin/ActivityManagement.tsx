@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   MessageCircle,
   X,
-  ArrowLeft
+  ArrowLeft,
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { ActivityLogDisplay, ActivityFilters, ActivityStats, ActivityType } from '../../types/activity';
@@ -89,6 +90,7 @@ const ActivityManagement: React.FC = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
 
   // Load activities from API (filtersOverride used when clearing so request uses empty filters immediately)
   const loadActivities = useCallback(async (reset = true, filtersOverride?: ActivityFilters) => {
@@ -277,6 +279,21 @@ const ActivityManagement: React.FC = () => {
     }
   }, [user]);
 
+  // Periodically refresh stats so "active users" stays close to real time
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const intervalId = window.setInterval(() => {
+      loadStats().catch(err => {
+        console.error('❌ Error refreshing activity statistics on interval:', err);
+      });
+    }, 60_000); // every 60 seconds
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [user?.uid, loadStats]);
+
   // Load activities and stats on mount - only once when user is available
   useEffect(() => {
     if (user?.uid && !hasInitialized) {
@@ -462,6 +479,49 @@ const ActivityManagement: React.FC = () => {
     }
   };
 
+  // Delete all activity logs (keeps Firebase clean)
+  const deleteAllActivity = async () => {
+    if (!user?.uid) return;
+    const confirmed = window.confirm(
+      'Permanently delete ALL activity logs? This cannot be undone and will clear the activity_logs collection in Firebase.'
+    );
+    if (!confirmed) return;
+
+    try {
+      setDeletingAll(true);
+      setError(null);
+
+      const response = await fetch('/api/activity-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
+        },
+        body: JSON.stringify({
+          action: 'delete-all-activity',
+          adminEmail: user.email,
+          adminName: user.displayName
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setActivities([]);
+        setStats(null);
+        loadActivities(true);
+        loadStats();
+      } else {
+        throw new Error(data.error || 'Failed to delete activity');
+      }
+    } catch (err: any) {
+      console.error('❌ Error deleting all activity:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete all activity');
+    } finally {
+      setDeletingAll(false);
+    }
+  };
+
   return (
     <div className="min-h-full overflow-x-hidden w-full max-w-full">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 overflow-x-hidden w-full max-w-full box-border">
@@ -519,6 +579,14 @@ const ActivityManagement: React.FC = () => {
             <AlertTriangle className="h-4 w-4" />
             Cleanup Old Logs
           </button>
+          <button
+            onClick={deleteAllActivity}
+            disabled={deletingAll}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-red-300 bg-red-100 text-red-800 hover:bg-red-200 disabled:opacity-50 text-sm font-medium"
+          >
+            <Trash2 className={`h-4 w-4 ${deletingAll ? 'animate-pulse' : ''}`} />
+            {deletingAll ? 'Deleting…' : 'Delete all activity'}
+          </button>
         </div>
 
         {/* Stats (last 30 days) */}
@@ -542,8 +610,14 @@ const ActivityManagement: React.FC = () => {
                   <Users className="h-6 w-6 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Active users</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.uniqueUsers}</p>
+                  <p className="text-sm font-medium text-gray-500">
+                    {stats.recentWindowMinutes
+                      ? `Active users (last ${stats.recentWindowMinutes} min)`
+                      : 'Active users (last 30 days)'}
+                  </p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {typeof stats.recentActiveUsers === 'number' ? stats.recentActiveUsers : stats.uniqueUsers}
+                  </p>
                 </div>
               </div>
             </div>

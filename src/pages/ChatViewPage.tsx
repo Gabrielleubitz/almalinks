@@ -52,7 +52,7 @@ const ChatViewPage: React.FC = () => {
   const { chatId } = useParams<{ chatId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { logChatMessage } = useActivityTracking();
+  const { logChatMessage, logActivity } = useActivityTracking();
   
   // Refs for scroll detection
   const scrollContainerRef = useRef<HTMLDivElement | null>(null); // Direct ref to the ACTUAL scrollable container
@@ -68,6 +68,7 @@ const ChatViewPage: React.FC = () => {
   const lastScrollHeightRef = useRef<number>(0);
   const rafId1Ref = useRef<number | null>(null);
   const rafId2Ref = useRef<number | null>(null);
+  const hasLoggedJoinRef = useRef<boolean>(false);
 
   // Callback refs to detect when elements mount
   const setScrollContainerRef = useCallback((node: HTMLDivElement | null) => {
@@ -149,6 +150,7 @@ const ChatViewPage: React.FC = () => {
       setLoading(true);
       setError(null);
       setChat(null); // Clear previous chat data
+      hasLoggedJoinRef.current = false;
       
       loadChat();
       loadPermissions();
@@ -162,6 +164,21 @@ const ChatViewPage: React.FC = () => {
       }
     };
   }, [user?.uid, chatId]);
+
+  // Log chat join activity once per chat load
+  useEffect(() => {
+    if (!user?.uid || !chatId || !chat || hasLoggedJoinRef.current) return;
+
+    logActivity(
+      'chat_join',
+      `Joined chat: ${chat.name || chatId}`,
+      {
+        chatId: (chat as any).id || chatId,
+        chatName: chat.name
+      }
+    );
+    hasLoggedJoinRef.current = true;
+  }, [user?.uid, chatId, chat, logActivity]);
 
   // Load chat list for sidebar (desktop only)
   useEffect(() => {

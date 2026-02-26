@@ -383,6 +383,9 @@ export class ActivityService {
     try {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
+      const now = new Date();
+      const recentWindowMinutes = 15;
+      const recentCutoff = new Date(now.getTime() - recentWindowMinutes * 60 * 1000);
 
       const q = query(
         collection(db, 'activity_logs'),
@@ -395,6 +398,19 @@ export class ActivityService {
 
       // Calculate stats
       const uniqueUsers = new Set(activities.map(a => a.userId)).size;
+      const recentActiveUsers = new Set(
+        activities
+          .filter(activity => {
+            try {
+              const ts = activity.timestamp;
+              const date = typeof ts?.toDate === 'function' ? ts.toDate() : new Date(ts as any);
+              return !Number.isNaN(date.getTime()) && date >= recentCutoff;
+            } catch {
+              return false;
+            }
+          })
+          .map(a => a.userId)
+      ).size;
       
       // Count activities by type
       const activityCounts: { [key: string]: number } = {};
@@ -422,7 +438,9 @@ export class ActivityService {
         totalActivities: activities.length,
         uniqueUsers,
         topActivities,
-        dailyStats: dailyStatsArray
+        dailyStats: dailyStatsArray,
+        recentActiveUsers,
+        recentWindowMinutes
       };
 
     } catch (error) {

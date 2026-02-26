@@ -17,6 +17,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useActivityTracking } from '../../hooks/useActivityTracking';
 import { UserService } from '../../services/userService';
 import { UserProfile, UserProfileForm } from '../../types/user';
 import { validateUserProfile } from '../../utils/validation';
@@ -37,6 +38,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
   console.log('🔧 AdminUserEdit component loaded for userId:', userId);
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
+  const { logAdminAction } = useActivityTracking();
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [formData, setFormData] = useState<UserProfileForm>({
@@ -278,6 +280,12 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       setLastSavedAt(Date.now());
       showToast('Profile updated', 'success');
       await loadUserProfile(true);
+
+      // Log admin profile update activity
+      logAdminAction('Updated member profile', {
+        targetUserId: userId,
+        changedFields: Object.keys(updateData)
+      });
       
     } catch (error: any) {
       console.error('❌ Error saving profile:', error);

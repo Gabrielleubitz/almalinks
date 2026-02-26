@@ -23,6 +23,7 @@ import {
 import { collection, getDocs, doc, updateDoc, query, where, orderBy, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../firebase/config';
 import { useAuth } from '../../hooks/useAuth';
+import { useActivityTracking } from '../../hooks/useActivityTracking';
 import Toast from '../../components/ui/Toast';
 
 interface UserData {
@@ -84,6 +85,7 @@ function mapRequestToUserData(request: any): UserData {
 const PendingRegistrations: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { logAdminAction } = useActivityTracking();
   
   const [pendingUsers, setPendingUsers] = useState<UserData[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
@@ -371,6 +373,13 @@ const PendingRegistrations: React.FC = () => {
       setPendingUsers((prev) => prev.filter((u) => u.uid !== userId));
 
       showToast(`User approved successfully and notifications sent`, 'success');
+
+      // Log admin approval activity
+      logAdminAction('Approved join request', {
+        targetUserId: userId,
+        targetEmail: userToApprove?.email,
+        targetName: userToApprove?.name || userToApprove?.displayName
+      });
     } catch (error: any) {
       console.error('❌ Error approving user:', error);
       showToast('Failed to approve user. Please try again.', 'error');
@@ -419,6 +428,13 @@ const PendingRegistrations: React.FC = () => {
       setFilteredUsers(prev => prev.filter(u => u.uid !== userId));
 
       showToast('User rejected. Rejection email sent with re-request instructions.', 'success');
+
+      // Log admin rejection activity
+      logAdminAction('Rejected join request', {
+        targetUserId: userId,
+        targetEmail: userToReject?.email,
+        targetName: userToReject?.name || userToReject?.displayName
+      });
     } catch (error: any) {
       console.error('❌ Error rejecting user:', error);
       const errorMessage = error.message || 'Failed to reject user. Please try again.';
@@ -443,6 +459,11 @@ const PendingRegistrations: React.FC = () => {
       setFilteredUsers(prev => prev.filter(u => u.uid !== userId));
 
       showToast('User rejected and fully deleted. No email was sent.', 'success');
+
+      // Log admin full delete activity
+      logAdminAction('Rejected and deleted join request', {
+        targetUserId: userId
+      });
     } catch (error: any) {
       console.error('❌ Error rejecting and deleting user:', error);
       const errorMessage = error.message || 'Failed to reject and delete user. Please try again.';
