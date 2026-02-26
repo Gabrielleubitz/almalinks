@@ -560,27 +560,46 @@ const UserManagement: React.FC = () => {
                       </td>
                       <td className="px-3 sm:px-6 py-3 sm:py-4">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:space-x-2 sm:space-x-3">
-                          <div className="relative w-full sm:flex-1 min-w-[120px] sm:min-w-0">
-                            <select
-                              value={userData.role}
-                              onChange={(e) => handleRoleChange(userData.uid, e.target.value)}
-                              onClick={(e) => e.stopPropagation()}
+                          <div className="relative flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (userData.role !== 'member') handleRoleChange(userData.uid, 'member');
+                              }}
                               disabled={updatingUser === userData.uid || userData.uid === user?.uid}
-                              className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-xs sm:text-sm appearance-none disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] sm:min-h-0"
+                              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors min-h-[44px] sm:min-h-0 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                userData.role === 'member'
+                                  ? 'bg-blue-100 text-blue-800 ring-1 ring-blue-200'
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              }`}
                             >
-                              <option value="member">Member</option>
-                              <option value="admin">Admin</option>
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400 pointer-events-none" />
-                            
+                              <UserIcon className="h-3.5 w-3.5" />
+                              Member
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (userData.role !== 'admin') handleRoleChange(userData.uid, 'admin');
+                              }}
+                              disabled={updatingUser === userData.uid || userData.uid === user?.uid}
+                              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors min-h-[44px] sm:min-h-0 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                userData.role === 'admin'
+                                  ? 'bg-purple-100 text-purple-800 ring-1 ring-purple-200'
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              }`}
+                            >
+                              <Shield className="h-3.5 w-3.5" />
+                              Admin
+                            </button>
                             {updatingUser === userData.uid && (
-                              <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+                              <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-lg">
                                 <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
                               </div>
                             )}
-                            
                             {userData.uid === user?.uid && (
-                              <div className="mt-1 text-[10px] sm:text-xs text-gray-500">
+                              <div className="absolute left-0 top-full mt-1 text-[10px] sm:text-xs text-gray-500">
                                 Cannot change your own role
                               </div>
                             )}
