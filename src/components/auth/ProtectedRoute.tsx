@@ -81,8 +81,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
 
   // Check if user is rejected
   if (isRejected) {
-    console.log('❌ ProtectedRoute - User is rejected, redirecting to re-request access');
-    return <Navigate to="/re-request-access" replace />;
+    console.log('❌ ProtectedRoute - User is rejected, redirecting to rejected page');
+    return <Navigate to="/rejected" replace />;
   }
 
   // Check if user must change password - CRITICAL CHECK

@@ -13,6 +13,7 @@ import ChangePasswordPage from './pages/ChangePasswordPage';
 import CompleteProfilePage from './pages/CompleteProfilePage';
 import PendingPage from './pages/PendingPage';
 import ReRequestAccessPage from './pages/ReRequestAccessPage';
+import RejectedPage from './pages/RejectedPage';
 // Admin check-in: use EventManagement for manual check-in
 import AdminEmail from './pages/admin/AdminEmail';
 import AdminAnnouncements from './pages/admin/AdminAnnouncements';
@@ -72,6 +73,7 @@ function App() {
         <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route path="/pending" element={<PendingPage />} />
         <Route path="/re-request-access" element={<ReRequestAccessPage />} />
+        <Route path="/rejected" element={<RejectedPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
         
         {/* Connection Route */}
