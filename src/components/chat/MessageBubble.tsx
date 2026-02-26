@@ -59,8 +59,24 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const [pickerPosition, setPickerPosition] = useState<{ top: number; left: number } | null>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
+  const closePickerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const showReactionPicker = openReactionPickerId === message.id;
+
+  const cancelClosePicker = () => {
+    if (closePickerTimeoutRef.current) {
+      clearTimeout(closePickerTimeoutRef.current);
+      closePickerTimeoutRef.current = null;
+    }
+  };
+
+  const scheduleClosePicker = (delay = 200) => {
+    cancelClosePicker();
+    closePickerTimeoutRef.current = setTimeout(() => {
+      onReactionPickerOpen?.(null);
+      closePickerTimeoutRef.current = null;
+    }, delay);
+  };
 
   // Calculate picker position when it opens
   useEffect(() => {
@@ -134,6 +150,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         bubbleRef.current &&
         !bubbleRef.current.contains(event.target as Node)
       ) {
+        cancelClosePicker();
         onReactionPickerOpen?.(null);
       }
     };
@@ -146,7 +163,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   if (message.type === 'system') {
     return (
-      <div className="flex justify-center my-4">
+      <div className="w-full flex justify-center my-4">
         <div className="bg-gray-100 text-gray-600 text-xs px-3 py-1.5 rounded-full max-w-md text-center">
           {decodeHtmlEntities(message.text)}
         </div>
@@ -209,15 +226,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   return (
     <div
       className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} max-w-[70%] ${showAvatar ? 'mt-2' : 'mt-0.5'} mb-1 group`}
-      onMouseEnter={() => setHovered(true)}
+      onMouseEnter={() => {
+        setHovered(true);
+        cancelClosePicker();
+      }}
       onMouseLeave={() => {
         setHovered(false);
-        // Close reaction picker when leaving message area
-        if (showReactionPicker) {
-          setTimeout(() => {
-            onReactionPickerOpen?.(null);
-          }, 200);
-        }
+        if (showReactionPicker) scheduleClosePicker();
       }}
     >
       {/* Avatar + Name row (only for first message in group) */}
@@ -347,21 +362,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   left: `${pickerPosition.left}px`,
                   width: '280px'
                 }}
-                onMouseEnter={() => {
-                  // Keep open when hovering
-                }}
-                onMouseLeave={() => {
-                  // Close when mouse leaves
-                  setTimeout(() => {
-                    onReactionPickerOpen?.(null);
-                  }, 200);
-                }}
+                onMouseEnter={cancelClosePicker}
+                onMouseLeave={() => scheduleClosePicker()}
               >
                 {REACTION_EMOJIS.map((emoji) => (
                   <button
                     key={emoji}
                     onClick={(e) => {
                       e.stopPropagation();
+                      cancelClosePicker();
                       onReaction?.(message.id, emoji);
                       onReactionPickerOpen?.(null);
                     }}

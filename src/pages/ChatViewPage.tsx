@@ -1216,7 +1216,7 @@ const ChatViewPage: React.FC = () => {
                       <div
                         key={message.id}
                         ref={isLastMessage ? lastMessageRef : undefined}
-                        className={`flex w-full ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                        className={`flex w-full ${message.type === 'system' ? 'justify-center' : isOwnMessage ? 'justify-end' : 'justify-start'}`}
                       >
                         <MessageBubble
                           message={message}
