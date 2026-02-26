@@ -528,7 +528,20 @@ const UserManagement: React.FC = () => {
                             </div>
                             <div className="text-xs sm:text-sm text-gray-500 flex items-center">
                               <Calendar className="h-3 w-3 inline mr-1 flex-shrink-0" />
-                              <span className="truncate" title={userData.joinedAt ? 'Joined (approval date)' : 'Account created'}>{formatDate(userData.joinedAt ?? userData.createdAt)}</span>
+                              <span
+                                className="truncate"
+                                title={
+                                  userData.joinedAt
+                                    ? 'Joined (approval date)'
+                                    : userData.createdAt
+                                      ? 'Account created'
+                                      : userData.updatedAt
+                                        ? 'Last updated'
+                                        : 'Date not recorded'
+                                }
+                              >
+                                {formatDate(userData.joinedAt ?? userData.createdAt ?? (userData as any).updatedAt)}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -927,7 +940,9 @@ const UserManagement: React.FC = () => {
                     <Calendar className="h-5 w-5 text-gray-400" />
                     <div>
                       <div className="text-sm text-gray-500">Member Since (joined when approved)</div>
-                      <div className="font-medium text-gray-900">{formatDate(selectedUser.joinedAt ?? selectedUser.createdAt)}</div>
+                      <div className="font-medium text-gray-900">
+                        {formatDate(selectedUser.joinedAt ?? selectedUser.createdAt ?? (selectedUser as any).updatedAt)}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">

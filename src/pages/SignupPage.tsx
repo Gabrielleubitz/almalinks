@@ -83,9 +83,11 @@ const SignupPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [signedInWithGoogle, setSignedInWithGoogle] = useState(false);
 
-  // Redirect if already logged in
+  // Redirect after a successful registration only.
   useEffect(() => {
+    if (!registrationSuccess) return;
     if (user && !loading) {
       if (isPending) {
         navigate('/pending');
@@ -93,7 +95,17 @@ const SignupPage: React.FC = () => {
         navigate('/events');
       }
     }
-  }, [user, loading, navigate, isPending]);
+  }, [user, loading, navigate, isPending, registrationSuccess]);
+
+  // When the user has connected Google on this page, prefill name/email once.
+  useEffect(() => {
+    if (!signedInWithGoogle || !user) return;
+    setFormData(prev => ({
+      ...prev,
+      name: prev.name || user.displayName || '',
+      email: prev.email || user.email || ''
+    }));
+  }, [signedInWithGoogle, user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -196,14 +208,17 @@ const SignupPage: React.FC = () => {
       return false;
     }
     
-    if (!formData.password.trim()) {
-      setValidationError('Please create a password');
-      return false;
-    }
-    
-    if (formData.password.length < 6) {
-      setValidationError('Password must be at least 6 characters long');
-      return false;
+    // Password required only for email/password signups (not Google SSO)
+    if (!signedInWithGoogle) {
+      if (!formData.password.trim()) {
+        setValidationError('Please create a password');
+        return false;
+      }
+      
+      if (formData.password.length < 6) {
+        setValidationError('Password must be at least 6 characters long');
+        return false;
+      }
     }
     
     return true;
@@ -238,17 +253,42 @@ const SignupPage: React.FC = () => {
         });
       }
       
-      await register(formData.email, formData.password, formData.name, {
-        phone: formattedPhone,
-        company: formData.company,
-        work: formData.work,
-        linkedinUsername: formData.linkedinUsername,
-        position: formData.position,
-        chapter: formData.chapter || undefined,
-        bioTitle: formData.bioTitle || undefined,
-        bio: formData.bio || undefined,
-        status: 'pending' // Set initial status as pending
-      });
+      if (signedInWithGoogle && user) {
+        // Google signup: Auth account already exists; create join request explicitly.
+        const { JoinRequestService } = await import('../services/joinRequestService');
+        await JoinRequestService.createJoinRequest(user.uid, {
+          email: formData.email,
+          name: formData.name,
+          displayName: formData.name,
+          phone: formattedPhone,
+          company: formData.company,
+          work: formData.work,
+          linkedinUsername: formData.linkedinUsername,
+          position: formData.position,
+          chapter: formData.chapter || undefined,
+          bioTitle: formData.bioTitle || undefined,
+          bio: formData.bio || undefined,
+          city: undefined,
+          country: undefined,
+          timezone: undefined,
+          website: undefined,
+          twitter: undefined,
+          skills: undefined
+        });
+      } else {
+        // Email/password signup: create Firebase Auth account + join request via profile create.
+        await register(formData.email, formData.password, formData.name, {
+          phone: formattedPhone,
+          company: formData.company,
+          work: formData.work,
+          linkedinUsername: formData.linkedinUsername,
+          position: formData.position,
+          chapter: formData.chapter || undefined,
+          bioTitle: formData.bioTitle || undefined,
+          bio: formData.bio || undefined,
+          status: 'pending' // Set initial status as pending
+        });
+      }
       
       // Set success state to show message
       // The useEffect hook will handle navigation once user state updates
@@ -265,16 +305,16 @@ const SignupPage: React.FC = () => {
     }
   };
 
-  const isFormValid = formData.name.trim() &&
-                     formData.email.trim() &&
-                     formData.phoneNumber.trim() &&
-                     formData.company.trim() &&
-                     formData.work.trim() &&
-                     formData.linkedinUsername.trim() &&
-                     formData.position &&
-                     formData.chapter.trim() &&
-                     formData.password.trim() &&
-                     formData.password.length >= 6;
+  const isFormValid =
+    formData.name.trim() &&
+    formData.email.trim() &&
+    formData.phoneNumber.trim() &&
+    formData.company.trim() &&
+    formData.work.trim() &&
+    formData.linkedinUsername.trim() &&
+    formData.position &&
+    formData.chapter.trim() &&
+    (signedInWithGoogle || (formData.password.trim() && formData.password.length >= 6));
 
   const displayError = validationError || error;
   const selectedCountry = COUNTRY_CODES.find(country => country.code === selectedCountryCode);
@@ -675,7 +715,8 @@ const SignupPage: React.FC = () => {
             onClick={async () => {
               try {
                 setIsSubmitting(true);
-                await signInWithGoogle();
+                await signInWithGoogle('signup');
+                setSignedInWithGoogle(true);
               } catch (err) {
                 // Error is handled by useAuth hook
               } finally {

@@ -755,7 +755,10 @@ export const useAuth = () => {
   });
 
   // Sign in with Google
-  const signInWithGoogle = async () => {
+  // mode = 'login' (default) keeps existing behavior.
+  // mode = 'signup' signs the user in but defers creating a join request
+  // until the signup form is submitted.
+  const signInWithGoogle = async (mode: 'login' | 'signup' = 'login') => {
     try {
       setError(null);
       setLoading(true);
@@ -776,23 +779,19 @@ export const useAuth = () => {
       const userProfile = await getUserProfile(result.user.uid);
       
       if (!userProfile) {
-        // Create new user profile from Google account (profile picture from Google)
-        console.log('📝 Creating new user profile from Google account');
-        await createOrUpdateUserProfile(result.user, {
-          name: result.user.displayName || '',
-          profileImage: result.user.photoURL || null, // Google profile picture
-          profileImagePublicId: null // not Cloudinary
-        });
-        
-        // Mark as Google linked for new accounts (only if we have a user doc - join request path may not create one yet)
-        try {
-          const userRef = doc(db, 'users', result.user.uid);
-          await updateDoc(userRef, {
-            googleLinked: true,
-            googleEmail: result.user.email
+        if (mode === 'signup') {
+          // New user coming from the signup page:
+          // do NOT create join request yet. The signup form will validate
+          // required fields and explicitly create the join request.
+          console.log('📝 Google signup: deferring join request until form submit');
+        } else {
+          // New user via login or other flow – create join request/profile now.
+          console.log('📝 Creating new user profile from Google account');
+          await createOrUpdateUserProfile(result.user, {
+            name: result.user.displayName || '',
+            profileImage: result.user.photoURL || null, // Google profile picture
+            profileImagePublicId: null // not Cloudinary
           });
-        } catch (_) {
-          // User doc may not exist yet (join request flow)
         }
       } else {
         // Existing profile - mark Google as linked; pull profile picture from Google if none set

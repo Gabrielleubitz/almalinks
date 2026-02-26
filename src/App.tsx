@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import PoweredByIgani from './components/PoweredByIgani';
 import IganiWatermark from './components/IganiWatermark';
 import DashboardPage from './pages/DashboardPage';
@@ -51,25 +51,11 @@ import OnboardingTour from './components/onboarding/OnboardingTour';
 
 function App() {
   const { user, loading: authLoading } = useAuth();
-  const [showTermsModal, setShowTermsModal] = React.useState(false);
-
-  React.useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      setShowTermsModal(false);
-      return;
-    }
-    if (!getTermsAgreed()) {
-      setShowTermsModal(true);
-    }
-  }, [user, authLoading]);
 
   return (
     <Router>
       <ActivityTracker />
-      {showTermsModal && user && (
-        <TermsAgreementModal onAgree={() => setShowTermsModal(false)} />
-      )}
+      <TermsGate user={user} authLoading={authLoading} />
       <div className="min-h-screen flex flex-col">
         <div className="flex-1 flex flex-col">
           <Routes>
@@ -214,5 +200,39 @@ function App() {
     </Router>
   );
 }
+
+// Only show terms modal for approved users on the dashboard (not pending users)
+const TermsGate: React.FC<{ user: any; authLoading: boolean }> = ({
+  user,
+  authLoading,
+}) => {
+  const location = useLocation();
+  const [showTermsModal, setShowTermsModal] = React.useState(false);
+
+  React.useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setShowTermsModal(false);
+      return;
+    }
+
+    // Only show for approved users on the member dashboard
+    const isApproved = user.status === 'approved';
+    const path = (location && location.pathname) || '';
+    const onDashboard = path === '/dashboard';
+
+    if (!isApproved || !onDashboard) {
+      setShowTermsModal(false);
+      return;
+    }
+
+    if (!getTermsAgreed()) {
+      setShowTermsModal(true);
+    }
+  }, [user, authLoading, location]);
+
+  if (!showTermsModal || !user) return null;
+  return <TermsAgreementModal onAgree={() => setShowTermsModal(false)} />;
+};
 
 export default App;
