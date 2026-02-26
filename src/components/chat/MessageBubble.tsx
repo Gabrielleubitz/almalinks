@@ -225,7 +225,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   return (
     <div
-      className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} max-w-[70%] ${showAvatar ? 'mt-2' : 'mt-0.5'} mb-1 group`}
+      className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} max-w-[70%] ${showAvatar ? 'mt-2' : 'mt-0.5'} mb-1 group pr-28`}
       onMouseEnter={() => {
         setHovered(true);
         cancelClosePicker();
