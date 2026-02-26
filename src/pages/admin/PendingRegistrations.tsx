@@ -17,7 +17,8 @@ import {
   Check,
   FileText,
   MapPin,
-  Globe
+  Globe,
+  Trash2
 } from 'lucide-react';
 import { collection, getDocs, doc, updateDoc, query, where, orderBy, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../firebase/config';
@@ -96,6 +97,7 @@ const PendingRegistrations: React.FC = () => {
   });
   const [processingUser, setProcessingUser] = useState<string | null>(null);
   const [confirmReject, setConfirmReject] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -427,6 +429,30 @@ const PendingRegistrations: React.FC = () => {
     }
   };
 
+  const handleRejectAndDeleteUser = async (userId: string) => {
+    if (!user?.uid) return;
+    setProcessingUser(userId);
+
+    try {
+      console.log('🗑️ Rejecting and fully deleting user (no email):', userId);
+      const { JoinRequestService } = await import('../../services/joinRequestService');
+      await JoinRequestService.rejectAndDeleteUser(userId, user.uid);
+
+      // Remove from local state
+      setPendingUsers(prev => prev.filter(u => u.uid !== userId));
+      setFilteredUsers(prev => prev.filter(u => u.uid !== userId));
+
+      showToast('User rejected and fully deleted. No email was sent.', 'success');
+    } catch (error: any) {
+      console.error('❌ Error rejecting and deleting user:', error);
+      const errorMessage = error.message || 'Failed to reject and delete user. Please try again.';
+      showToast(errorMessage, 'error');
+    } finally {
+      setProcessingUser(null);
+      setConfirmDelete(null);
+    }
+  };
+
 
   const sendApprovalEmail = async (userId: string) => {
     try {
@@ -629,30 +655,63 @@ const PendingRegistrations: React.FC = () => {
                           </div>
                           <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:flex-shrink-0">
                             {confirmReject === userData.uid ? (
-                              <div className="flex items-center gap-2 w-full sm:w-auto">
-                                <span className="text-sm text-red-700">Reject?</span>
-                                <button
-                                  onClick={() => handleRejectUser(userData.uid)}
-                                  disabled={processingUser === userData.uid}
-                                  className="bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
-                                >
-                                  {processingUser === userData.uid ? (
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                  ) : (
-                                    'Yes'
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => setConfirmReject(null)}
-                                  className="bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300"
-                                >
-                                  Cancel
-                                </button>
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                                <span className="text-sm text-red-700">
+                                  Reject this request and send a polite rejection email?
+                                </span>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleRejectUser(userData.uid)}
+                                    disabled={processingUser === userData.uid}
+                                    className="bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+                                  >
+                                    {processingUser === userData.uid ? (
+                                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                      'Reject & email'
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => setConfirmReject(null)}
+                                    className="bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : confirmDelete === userData.uid ? (
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                                <span className="text-sm text-red-700">
+                                  Permanently delete this signup and account? No email will be sent.
+                                </span>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleRejectAndDeleteUser(userData.uid)}
+                                    disabled={processingUser === userData.uid}
+                                    className="bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-800 disabled:opacity-50"
+                                  >
+                                    {processingUser === userData.uid ? (
+                                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                      'Delete user'
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => setConfirmDelete(null)}
+                                    className="bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
                               </div>
                             ) : (
                               <>
                                 <button
-                                  onClick={() => handleApproveUser(userData.uid)}
+                                  onClick={() => {
+                                    setConfirmReject(null);
+                                    setConfirmDelete(null);
+                                    handleApproveUser(userData.uid);
+                                  }}
                                   disabled={processingUser === userData.uid}
                                   className="inline-flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2.5 rounded-xl font-medium hover:bg-green-700 disabled:opacity-50 text-sm"
                                 >
@@ -666,12 +725,26 @@ const PendingRegistrations: React.FC = () => {
                                   )}
                                 </button>
                                 <button
-                                  onClick={() => setConfirmReject(userData.uid)}
+                                  onClick={() => {
+                                    setConfirmDelete(null);
+                                    setConfirmReject(userData.uid);
+                                  }}
                                   disabled={processingUser === userData.uid}
                                   className="inline-flex items-center justify-center gap-2 bg-red-50 text-red-700 px-4 py-2.5 rounded-xl font-medium hover:bg-red-100 disabled:opacity-50 text-sm"
                                 >
                                   <X className="h-5 w-5" />
                                   Reject
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setConfirmReject(null);
+                                    setConfirmDelete(userData.uid);
+                                  }}
+                                  disabled={processingUser === userData.uid}
+                                  className="inline-flex items-center justify-center gap-2 bg-red-100 text-red-800 px-4 py-2.5 rounded-xl font-medium hover:bg-red-200 disabled:opacity-50 text-sm"
+                                >
+                                  <Trash2 className="h-5 w-5" />
+                                  Reject & delete
                                 </button>
                               </>
                             )}
