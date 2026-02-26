@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
@@ -90,6 +90,7 @@ const UserManagement: React.FC = () => {
   const [showUserCreation, setShowUserCreation] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [showAuditLogs, setShowAuditLogs] = useState(false);
+  const [actionsDropdownUid, setActionsDropdownUid] = useState<string | null>(null);
 
   useEffect(() => {
     loadUsers();
@@ -98,6 +99,18 @@ const UserManagement: React.FC = () => {
   useEffect(() => {
     filterUsers();
   }, [searchTerm, users]);
+
+  const actionsDropdownRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!actionsDropdownUid) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (actionsDropdownRef.current && !actionsDropdownRef.current.contains(e.target as Node)) {
+        setActionsDropdownUid(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [actionsDropdownUid]);
 
   const loadUsers = async () => {
     try {
@@ -605,79 +618,94 @@ const UserManagement: React.FC = () => {
                             )}
                           </div>
                           
-                          {/* Action Buttons Row - Stack on mobile, horizontal on desktop */}
-                          <div className="flex flex-row sm:flex-row gap-1.5 sm:gap-2 sm:space-x-0 flex-wrap sm:flex-nowrap">
-                            {/* Edit Button */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const editRoute = `/admin/users/${userData.uid}/edit`;
-                                console.log('🎯 Navigating to admin user edit:', editRoute, 'for user:', userData.name);
-                                navigate(editRoute);
-                              }}
-                              className="bg-green-100 text-green-700 p-2 rounded-lg hover:bg-green-200 transition-colors duration-200 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center flex-shrink-0"
-                              title="Edit user profile"
-                            >
-                              <Edit3 className="h-4 w-4 sm:h-5 sm:w-5" />
-                            </button>
-
-                            {/* Connect Button */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleConnectClick(userData);
-                              }}
-                              className="bg-blue-50 text-blue-700 p-2 rounded-lg hover:bg-blue-200 transition-colors duration-200 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center flex-shrink-0"
-                              title="Connect this user with another user"
-                            >
-                              <UserPlus className="h-4 w-4 sm:h-5 sm:w-5" />
-                            </button>
-
-                            {/* Manage Connections Button */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleManageConnectionsClick(userData);
-                              }}
-                              className="bg-purple-100 text-purple-700 p-2 rounded-lg hover:bg-purple-200 transition-colors duration-200 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center flex-shrink-0"
-                              title="Manage user's connections"
-                            >
-                              <UserMinus className="h-4 w-4 sm:h-5 sm:w-5" />
-                            </button>
-
-                            {/* Force Password Reset Button */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleForcePasswordReset(userData);
-                              }}
-                              disabled={userData.uid === user?.uid || updatingUser === userData.uid}
-                              className="bg-orange-100 text-orange-700 p-2 rounded-lg hover:bg-orange-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center flex-shrink-0"
-                              title={userData.uid === user?.uid ? "You cannot reset your own password" : "Force password reset"}
-                            >
-                              {updatingUser === userData.uid ? (
-                                <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
-                              ) : (
-                                <Key className="h-4 w-4 sm:h-5 sm:w-5" />
-                              )}
-                            </button>
-
-                            {/* Delete Button */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClick(userData);
-                              }}
-                              disabled={userData.uid === user?.uid || deletingUser === userData.uid}
-                              className="bg-red-100 text-red-700 p-2 rounded-lg hover:bg-red-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center flex-shrink-0"
-                            title={userData.uid === user?.uid ? "You cannot delete your own account" : "Delete user"}
+                          {/* Actions dropdown */}
+                          <div
+                            className="relative flex-shrink-0"
+                            ref={actionsDropdownUid === userData.uid ? actionsDropdownRef : null}
                           >
-                            {deletingUser === userData.uid ? (
-                              <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                            ) : (
-                              <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActionsDropdownUid(actionsDropdownUid === userData.uid ? null : userData.uid);
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors min-h-[44px] sm:min-h-0"
+                              title="Actions"
+                            >
+                              Actions
+                              <ChevronDown className="h-4 w-4" />
+                            </button>
+                            {actionsDropdownUid === userData.uid && (
+                              <div className="absolute right-0 top-full mt-1 z-50 min-w-[200px] py-1 bg-white rounded-lg border border-gray-200 shadow-lg">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActionsDropdownUid(null);
+                                    navigate(`/admin/users/${userData.uid}/edit`);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-green-50 hover:text-green-800"
+                                >
+                                  <Edit3 className="h-4 w-4 text-green-600 flex-shrink-0" />
+                                  Edit user
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActionsDropdownUid(null);
+                                    handleConnectClick(userData);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-800"
+                                >
+                                  <UserPlus className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                  Connect user
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActionsDropdownUid(null);
+                                    handleManageConnectionsClick(userData);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-800"
+                                >
+                                  <UserMinus className="h-4 w-4 text-purple-600 flex-shrink-0" />
+                                  Manage connections
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActionsDropdownUid(null);
+                                    handleForcePasswordReset(userData);
+                                  }}
+                                  disabled={userData.uid === user?.uid || updatingUser === userData.uid}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title={userData.uid === user?.uid ? "You cannot reset your own password" : undefined}
+                                >
+                                  {updatingUser === userData.uid ? (
+                                    <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                                  ) : (
+                                    <Key className="h-4 w-4 text-orange-600 flex-shrink-0" />
+                                  )}
+                                  Force password reset
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActionsDropdownUid(null);
+                                    handleDeleteClick(userData);
+                                  }}
+                                  disabled={userData.uid === user?.uid || deletingUser === userData.uid}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-red-50 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title={userData.uid === user?.uid ? "You cannot delete your own account" : undefined}
+                                >
+                                  {deletingUser === userData.uid ? (
+                                    <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4 text-red-600 flex-shrink-0" />
+                                  )}
+                                  Delete user
+                                </button>
+                              </div>
                             )}
-                          </button>
                           </div>
                         </div>
                       </td>
