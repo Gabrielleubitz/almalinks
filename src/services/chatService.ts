@@ -991,7 +991,7 @@ export class ChatService {
    */
   static async updateChat(
     chatId: string,
-    updates: { name?: string; description?: string; allowRequests?: boolean; imageUrl?: string; imageCrop?: { scale: number; panX: number; panY: number } | null },
+    updates: { name?: string; description?: string; allowRequests?: boolean; isPublic?: boolean; imageUrl?: string; imageCrop?: { scale: number; panX: number; panY: number } | null },
     adminUserId: string
   ): Promise<void> {
     try {
@@ -1015,6 +1015,11 @@ export class ChatService {
         throw new Error(`Description must be ${CHAT_LIMITS.MAX_CHAT_DESCRIPTION_LENGTH} characters or less`);
       }
 
+      // Get current chat to detect actual changes for system messages
+      const chatRef = doc(db, 'chats', chatId);
+      const chatSnap = await getDoc(chatRef);
+      const current = (chatSnap.exists() ? chatSnap.data() : {}) as ChatGroup;
+
       // Prepare update data
       const updateData: any = {
         lastActivity: Timestamp.now()
@@ -1023,36 +1028,58 @@ export class ChatService {
       if (updates.name !== undefined) updateData.name = updates.name.trim();
       if (updates.description !== undefined) updateData.description = updates.description.trim();
       if (updates.allowRequests !== undefined) updateData.allowRequests = updates.allowRequests;
-      if (updates.imageUrl !== undefined) updateData.imageUrl = updates.imageUrl.trim() || null;
+      if (updates.isPublic !== undefined) updateData.isPublic = updates.isPublic;
+      if (updates.imageUrl !== undefined) updateData.imageUrl = updates.imageUrl?.trim() || null;
       if (updates.imageCrop !== undefined) updateData.imageCrop = updates.imageCrop ?? null;
 
-      await updateDoc(doc(db, 'chats', chatId), updateData);
+      await updateDoc(chatRef, updateData);
 
-      // Add system message for name change
-      if (updates.name !== undefined) {
+      // Helper to post a system message and update chat lastMessage
+      const postSystemMessage = async (text: string) => {
         const userDoc = await getDoc(doc(db, 'users', adminUserId));
         const userData = userDoc.data();
         const adminName = userData?.displayName || userData?.name || 'Admin';
-
         const systemMessageData: Omit<ChatMessage, 'id'> = {
           chatId,
           userId: null,
           type: 'system',
-          text: `${adminName} changed the chat name to "${updates.name}".`,
-          meta: {
-            action: 'edit',
-            byAdminId: adminUserId
-          },
+          text: `${adminName} ${text}`,
+          meta: { action: 'edit', byAdminId: adminUserId },
           createdAt: Timestamp.now()
         };
-
         await addDoc(collection(db, 'chat_messages'), systemMessageData);
-        
-        // Update chat's last message
-        await updateDoc(doc(db, 'chats', chatId), {
-          lastMessage: systemMessageData,
-          lastActivity: Timestamp.now()
-        });
+        await updateDoc(chatRef, { lastMessage: systemMessageData, lastActivity: Timestamp.now() });
+      };
+
+      const currentName = (current.name || '').trim();
+      const newName = (updates.name ?? currentName).trim();
+      const nameChanged = updates.name !== undefined && newName !== currentName;
+
+      const currentDesc = (current.description || '').trim();
+      const newDesc = (updates.description ?? currentDesc).trim();
+      const descriptionChanged = updates.description !== undefined && newDesc !== currentDesc;
+
+      const currentImage = (current.imageUrl || '').trim();
+      const newImage = (updates.imageUrl ?? currentImage).trim();
+      const imageChanged = updates.imageUrl !== undefined && newImage !== currentImage;
+
+      const allowRequestsChanged = updates.allowRequests !== undefined && updates.allowRequests !== (current.allowRequests ?? false);
+      const isPublicChanged = updates.isPublic !== undefined && updates.isPublic !== (current.isPublic ?? false);
+
+      if (nameChanged) {
+        await postSystemMessage(`changed the chat name to "${newName}".`);
+      }
+      if (descriptionChanged) {
+        await postSystemMessage('updated the chat description.');
+      }
+      if (imageChanged) {
+        await postSystemMessage('changed the group icon.');
+      }
+      if (allowRequestsChanged) {
+        await postSystemMessage(updates.allowRequests ? 'opened this chat for join requests.' : 'closed this chat to new join requests.');
+      }
+      if (isPublicChanged) {
+        await postSystemMessage(updates.isPublic ? 'made this chat discoverable.' : 'made this chat no longer discoverable.');
       }
 
     } catch (error) {

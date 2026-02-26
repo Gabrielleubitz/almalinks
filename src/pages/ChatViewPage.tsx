@@ -109,6 +109,7 @@ const ChatViewPage: React.FC = () => {
     name: '',
     description: '',
     allowRequests: false,
+    isPublic: false,
     imageUrl: '',
     imageCrop: null as { scale: number; panX: number; panY: number } | null
   });
@@ -762,6 +763,7 @@ const ChatViewPage: React.FC = () => {
         name: chat.name,
         description: chat.description || '',
         allowRequests: chat.allowRequests,
+        isPublic: chat.isPublic ?? false,
         imageUrl: chat.imageUrl || '',
         imageCrop: chat.imageCrop ?? null
       });
@@ -1194,7 +1196,7 @@ const ChatViewPage: React.FC = () => {
               id="messages-container"
             >
               <div className="max-w-3xl mx-auto">
-                <div className="py-3 space-y-0.5">
+                <div className="py-3">
                   {messages.length === 0 && (
                     <div className="text-center py-12">
                       <p className="text-sm text-gray-400">No messages yet. Start the conversation!</p>
@@ -1214,6 +1216,7 @@ const ChatViewPage: React.FC = () => {
                       <div
                         key={message.id}
                         ref={isLastMessage ? lastMessageRef : undefined}
+                        className={`flex w-full ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
                       >
                         <MessageBubble
                           message={message}
@@ -1637,17 +1640,31 @@ const ChatViewPage: React.FC = () => {
                 )}
               </div>
               
-              <div className="flex items-center">
-                <input
-                  id="allowRequests"
-                  type="checkbox"
-                  checked={editingChat.allowRequests}
-                  onChange={(e) => setEditingChat({...editingChat, allowRequests: e.target.checked})}
-                  className="h-4 w-4 text-brand-blue focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="allowRequests" className="ml-2 text-sm text-gray-700">
-                  Allow join requests
-                </label>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center">
+                  <input
+                    id="isPublic"
+                    type="checkbox"
+                    checked={editingChat.isPublic}
+                    onChange={(e) => setEditingChat({...editingChat, isPublic: e.target.checked})}
+                    className="h-4 w-4 text-brand-blue focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="isPublic" className="ml-2 text-sm text-gray-700">
+                    Discoverable (show in list so new users can find this chat)
+                  </label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    id="allowRequests"
+                    type="checkbox"
+                    checked={editingChat.allowRequests}
+                    onChange={(e) => setEditingChat({...editingChat, allowRequests: e.target.checked})}
+                    className="h-4 w-4 text-brand-blue focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="allowRequests" className="ml-2 text-sm text-gray-700">
+                    Allow join requests (let new users request to join)
+                  </label>
+                </div>
               </div>
             </div>
             

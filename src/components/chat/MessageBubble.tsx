@@ -156,24 +156,27 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   if (message.deleted) {
     return (
-      <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} my-1`}>
-        <div className={`flex items-start gap-2 max-w-[70%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
-          {showAvatar && !isOwnMessage && (
-            <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
+      <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} max-w-[70%] ${showAvatar ? 'mt-2' : 'mt-0.5'} mb-1`}>
+        {showAvatar && (
+          <div className={`flex items-center gap-2 mb-1 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+            <div className="w-9 h-9 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
               {senderAvatar ? (
                 <img src={senderAvatar} alt={senderName || ''} className="w-full h-full object-cover" />
               ) : (
                 <span className="text-xs text-gray-500">{(senderName || 'U').charAt(0).toUpperCase()}</span>
               )}
             </div>
-          )}
-          <div className={`px-4 py-2 rounded-2xl ${
-            isOwnMessage 
-              ? 'bg-gray-100 text-gray-500' 
-              : 'bg-gray-50 text-gray-400'
-          }`}>
-            <p className="text-sm italic">This message was deleted</p>
+            <span className={`text-xs font-semibold text-gray-500 ${isOwnMessage ? 'text-right' : 'text-left'}`}>
+              {senderName || 'Unknown User'}
+            </span>
           </div>
+        )}
+        <div className={`px-4 py-2 rounded-2xl ${
+          isOwnMessage 
+            ? 'bg-gray-100 text-gray-500' 
+            : 'bg-gray-50 text-gray-400'
+        }`}>
+          <p className="text-sm italic">This message was deleted</p>
         </div>
       </div>
     );
@@ -205,7 +208,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   return (
     <div
-      className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} my-0.5 group`}
+      className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} max-w-[70%] ${showAvatar ? 'mt-2' : 'mt-0.5'} mb-1 group`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => {
         setHovered(false);
@@ -217,12 +220,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         }
       }}
     >
-      <div className={`flex items-end gap-2 max-w-[70%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
-        {/* Avatar */}
-        {showAvatar && !isOwnMessage && (
+      {/* Avatar + Name row (only for first message in group) */}
+      {showAvatar && (
+        <div className={`flex items-center gap-2 mb-1 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
           <button
             onClick={() => message.userId && onProfileClick?.(message.userId)}
-            className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center overflow-hidden hover:opacity-80 transition-opacity cursor-pointer"
+            className="w-9 h-9 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center overflow-hidden hover:opacity-80 transition-opacity cursor-pointer"
           >
             {senderAvatar ? (
               <img src={senderAvatar} alt={senderName || ''} className="w-full h-full object-cover" />
@@ -230,22 +233,19 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               <span className="text-xs text-gray-500 font-medium">{(senderName || 'U').charAt(0).toUpperCase()}</span>
             )}
           </button>
-        )}
+          <button
+            onClick={() => message.userId && onProfileClick?.(message.userId)}
+            className={`text-xs font-semibold text-gray-500 hover:text-[#0B2B6B] transition-colors ${isOwnMessage ? 'text-right' : 'text-left'}`}
+          >
+            {senderName || 'Unknown User'}
+          </button>
+        </div>
+      )}
 
-        {/* Message Content */}
-        <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
-          {/* Sender Name */}
-          {showName && !isOwnMessage && (
-            <button
-              onClick={() => message.userId && onProfileClick?.(message.userId)}
-              className="text-xs text-gray-500 mb-0.5 px-1 hover:text-[#0B2B6B] transition-colors font-medium"
-            >
-              {senderName || 'Unknown User'}
-            </button>
-          )}
-
-          {/* Message Bubble */}
-          <div className="relative" ref={bubbleRef}>
+      {/* Message Content */}
+      <div className={`flex flex-col w-full ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+        {/* Message Bubble */}
+        <div className="relative" ref={bubbleRef}>
             <div
               className={`px-2.5 py-1.5 rounded ${
                 isOwnMessage
@@ -381,9 +381,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             )}
           </div>
         </div>
-
-        {/* Spacer for own messages */}
-        {isOwnMessage && showAvatar && <div className="w-8" />}
       </div>
     </div>
   );
