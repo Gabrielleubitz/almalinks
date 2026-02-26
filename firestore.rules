@@ -40,6 +40,22 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // --- Registrations (top-level; dashboard/check-in; doc id often = user uid) ---
+    match /registrations/{registrationId} {
+      allow read: if isAuthenticated() && (
+        registrationId == request.auth.uid
+        || resource.data.get('email', '') == request.auth.token.email
+      );
+      allow create: if isAuthenticated()
+        && registrationId == request.auth.uid
+        && request.resource.data.get('uid', '') == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (
+        registrationId == request.auth.uid
+        || resource.data.get('email', '') == request.auth.token.email
+      );
+      allow read, write: if isAdmin();
+    }
+
     // --- Events ---
     match /events/{eventId} {
       allow read: if isAuthenticated();
@@ -166,6 +182,13 @@ service cloud.firestore {
       );
       allow delete: if isAuthenticated() && (
         resource.data.userId == request.auth.uid || isAdmin()
+      );
+    }
+
+    // --- Chat rate limits (per-user message/join throttling; doc ids: msg_<uid>, join_<uid>) ---
+    match /chat_rate_limits/{limitId} {
+      allow read, write: if isAuthenticated() && (
+        limitId == 'msg_' + request.auth.uid || limitId == 'join_' + request.auth.uid
       );
     }
 
