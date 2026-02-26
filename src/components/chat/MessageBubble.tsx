@@ -44,7 +44,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   isOwnMessage,
   showAvatar,
-  showName,
+  showName: _showName, // kept for API; header row uses showAvatar (first-in-group)
   senderName,
   senderAvatar,
   onReaction,

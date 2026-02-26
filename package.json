@@ -65,6 +65,9 @@
     "typescript": "^5.9.3",
     "vite": "^5.0.8"
   },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.44.0"
+  },
   "overrides": {
     "@daily-co/daily-js": "^0.70.0"
   }
