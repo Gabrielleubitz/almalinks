@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -22,6 +22,8 @@ import {
   Heart,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { db } from '../../firebase/config';
 import logoSvg from '../../assets/alma-links-logo.svg';
 
 const navSections = [
@@ -87,9 +89,10 @@ function getPageTitle(pathname: string): string {
 const AdminLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isInUserView, switchToAdminView, switchToUserView, logout } = useAuth();
+  const { user, isInUserView, switchToAdminView, switchToUserView, logout, isAdmin } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [pendingRegistrations, setPendingRegistrations] = useState<number | null>(null);
 
   const isActive = (path: string) => {
     if (path === '/admin') return location.pathname === '/admin';
@@ -119,6 +122,30 @@ const AdminLayout: React.FC = () => {
     }
   };
 
+  // Realtime listener for pending registrations count (joinRequests with status == 'pending')
+  useEffect(() => {
+    if (!user?.uid || !isAdmin) {
+      setPendingRegistrations(null);
+      return;
+    }
+
+    const requestsRef = collection(db, 'joinRequests');
+    const q = query(requestsRef, where('status', '==', 'pending'));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        setPendingRegistrations(snapshot.size);
+      },
+      (error) => {
+        console.error('❌ Error listening for pending registrations:', error);
+        setPendingRegistrations(null);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user?.uid, isAdmin]);
+
   const navContent = (
     <div className="flex flex-col h-full">
       <Link
@@ -141,6 +168,10 @@ const AdminLayout: React.FC = () => {
               {section.items.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.to);
+                const showPendingBadge =
+                  item.to === '/admin/pending-registrations' &&
+                  pendingRegistrations !== null &&
+                  pendingRegistrations > 0;
                 return (
                   <Link
                     key={item.to}
@@ -153,7 +184,12 @@ const AdminLayout: React.FC = () => {
                     }`}
                   >
                     <Icon className={`h-4 w-4 flex-shrink-0 ${active ? 'text-[#3B82F6]' : 'opacity-80'}`} />
-                    {item.label}
+                    <span className="flex-1 truncate">{item.label}</span>
+                    {showPendingBadge && (
+                      <span className="inline-flex items-center justify-center min-w-[18px] h-4 px-1 text-[10px] font-semibold rounded-full bg-red-500 text-white flex-shrink-0">
+                        {pendingRegistrations! > 99 ? '99+' : pendingRegistrations}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
