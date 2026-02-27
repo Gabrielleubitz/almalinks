@@ -18,6 +18,8 @@ export interface EventTicketCardProps {
   eventImageUrl?: string;
   /** Slug for linking to event page: /events/:eventSlug */
   eventSlug?: string;
+  /** Registration status for approval workflow badge */
+  registrationStatus?: 'pending' | 'approved' | 'rejected' | 'cancelled';
   className?: string;
 }
 
@@ -38,9 +40,17 @@ const EventTicketCard: React.FC<EventTicketCardProps> = ({
   isExpired = false,
   eventImageUrl,
   eventSlug,
+  registrationStatus,
   className = '',
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const statusBadge = registrationStatus === 'pending'
+    ? { label: 'Pending approval', class: 'bg-amber-100 text-amber-800' }
+    : registrationStatus === 'approved'
+      ? { label: 'Approved', class: 'bg-green-100 text-green-800' }
+      : registrationStatus === 'rejected'
+        ? { label: 'Not approved', class: 'bg-red-100 text-red-800' }
+        : null;
 
   const displayDate = eventDate?.trim() || '—';
   const displayTime = eventTime?.trim() || '—';
@@ -60,13 +70,18 @@ const EventTicketCard: React.FC<EventTicketCardProps> = ({
         aria-expanded={expanded}
         aria-label={expanded ? 'Close ticket details' : `View ticket details for ${eventName}`}
         className={`
-          w-full text-left bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden
+          relative w-full text-left bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden
           hover:border-brand-dark/20 hover:shadow-md transition-all duration-200
           focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2
           ${isExpired ? 'opacity-80' : ''}
         `}
       >
         <div className="flex items-center gap-3 p-3 sm:p-4">
+          {statusBadge && (
+            <span className={`absolute top-2 right-2 text-[10px] font-medium px-2 py-0.5 rounded ${statusBadge.class}`}>
+              {statusBadge.label}
+            </span>
+          )}
           {/* Event image (or Alma logo fallback) */}
           <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-100">
             {eventImageUrl ? (

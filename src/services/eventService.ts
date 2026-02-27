@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { nanoid } from 'nanoid';
+import type { EventPrivateDetails } from '../types/event';
 
 export interface ImageCropData {
   scale: number;
@@ -652,5 +653,24 @@ export class EventService {
       console.error('❌ Error in manual retroactive auto-connect:', error);
       throw error;
     }
+  }
+
+  /** Sensitive details (location, meeting link, resource link). Read only if admin or approved registrant. */
+  static async getEventPrivateDetails(eventId: string): Promise<EventPrivateDetails | null> {
+    try {
+      const ref = doc(db, 'events', eventId, 'privateDetails', 'details');
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return null;
+      return snap.data() as EventPrivateDetails;
+    } catch (error) {
+      console.error('❌ Error fetching event private details:', error);
+      return null;
+    }
+  }
+
+  /** Set private details (admin only; secure with Firestore rules). */
+  static async setEventPrivateDetails(eventId: string, data: EventPrivateDetails): Promise<void> {
+    const ref = doc(db, 'events', eventId, 'privateDetails', 'details');
+    await setDoc(ref, data);
   }
 }

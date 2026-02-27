@@ -37,6 +37,7 @@ const navSections = [
     label: 'Management',
     items: [
       { to: '/admin/events', label: 'Events', icon: Calendar },
+      { to: '/admin/event-registrations', label: 'Event Registrations', icon: ClipboardCheck },
       { to: '/admin/users', label: 'Users', icon: Users },
       { to: '/admin/pending-registrations', label: 'Registrations', icon: UserPlus },
       { to: '/admin/activity', label: 'Activity', icon: Activity },
@@ -72,6 +73,7 @@ const pathToTitle: Record<string, string> = {
   '/admin/events/add': 'Add event',
   '/admin/check-in': 'Check-in',
   '/admin/users': 'Users',
+  '/admin/event-registrations': 'Event registrations',
   '/admin/pending-registrations': 'Pending registrations',
   '/admin/connections': 'Connections',
   '/admin/activity': 'Activity',

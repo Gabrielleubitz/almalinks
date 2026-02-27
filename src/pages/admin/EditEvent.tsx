@@ -20,7 +20,10 @@ const EditEvent: React.FC = () => {
     description: '',
     imageUrl: '',
     imageCrop: null as CoverCrop | null,
-    status: 'active' as const
+    status: 'active' as const,
+    meetingUrl: '',
+    resourceLinkUrl: '',
+    resourceLinkLabel: '',
   });
   
   const [loading, setLoading] = useState(true);
@@ -74,6 +77,7 @@ const EditEvent: React.FC = () => {
       // Convert date to datetime-local format
       const dateForInput = new Date(event.date).toISOString().slice(0, 16);
       
+      const privateDetails = await EventService.getEventPrivateDetails(eventId);
       setFormData({
         name: event.name,
         location: event.location,
@@ -81,7 +85,10 @@ const EditEvent: React.FC = () => {
         description: event.description,
         imageUrl: event.imageUrl,
         imageCrop: event.imageCrop ?? null,
-        status: event.status
+        status: event.status,
+        meetingUrl: privateDetails?.meetingUrl ?? '',
+        resourceLinkUrl: privateDetails?.resourceLinkUrl ?? '',
+        resourceLinkLabel: privateDetails?.resourceLinkLabel ?? '',
       });
       
       setPreviewSlug(event.slug);
@@ -182,6 +189,12 @@ const EditEvent: React.FC = () => {
         imageUrl: formData.imageUrl,
         imageCrop: formData.imageCrop ?? undefined,
         status: formData.status
+      });
+      await EventService.setEventPrivateDetails(eventId, {
+        locationText: formData.location,
+        meetingUrl: formData.meetingUrl?.trim() || null,
+        resourceLinkUrl: formData.resourceLinkUrl?.trim() || null,
+        resourceLinkLabel: formData.resourceLinkLabel?.trim() || null,
       });
       
       setSuccess(`Event "${formData.name}" updated successfully!`);
@@ -347,6 +360,48 @@ const EditEvent: React.FC = () => {
                   onChange={handleInputChange}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
                   placeholder="e.g., Deli Vino, Netanya"
+                />
+              </div>
+            </div>
+
+            {/* Private details (approved registrants only) */}
+            <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-4">
+              <p className="text-sm font-medium text-gray-700">Approved-only details</p>
+              <div>
+                <label htmlFor="meetingUrl" className="block text-sm text-gray-600 mb-1">Meeting URL (optional)</label>
+                <input
+                  id="meetingUrl"
+                  name="meetingUrl"
+                  type="url"
+                  value={formData.meetingUrl}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  placeholder="https://zoom.us/j/… or Google Meet link"
+                />
+              </div>
+              <div>
+                <label htmlFor="resourceLinkUrl" className="block text-sm text-gray-600 mb-1">Additional link (optional)</label>
+                <input
+                  id="resourceLinkUrl"
+                  name="resourceLinkUrl"
+                  type="url"
+                  value={formData.resourceLinkUrl}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  placeholder="https://… (agenda, doc, meeting room)"
+                />
+                <p className="text-xs text-gray-500 mt-1">Only visible to approved registrants; included in approval email.</p>
+              </div>
+              <div>
+                <label htmlFor="resourceLinkLabel" className="block text-sm text-gray-600 mb-1">Link label (optional)</label>
+                <input
+                  id="resourceLinkLabel"
+                  name="resourceLinkLabel"
+                  type="text"
+                  value={formData.resourceLinkLabel}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  placeholder="e.g. Agenda, Slides"
                 />
               </div>
             </div>

@@ -284,28 +284,26 @@ const EventsPage: React.FC = () => {
 
   const loadUserRegistrations = async () => {
     if (!user?.uid) return;
-    
     try {
       setRegistrationsLoading(true);
-      const registrations = [];
-      
-      // Check each event for user registration
+      const { getMyRegistration } = await import('../services/registrationService');
+      const registrations: any[] = [];
       for (const event of events) {
-        const registration = await EventService.getUserRegistration(event.id, user.uid);
-        if (registration) {
+        const reg = await getMyRegistration(event.id, user.uid);
+        if (reg) {
           registrations.push({
-            ...registration,
+            ...reg,
             eventId: event.id,
             eventName: event.name,
             eventDate: event.date,
-            eventLocation: event.location,
+            eventLocation: reg.status === 'approved' ? event.location : null,
             eventImage: event.imageUrl,
             eventSlug: event.slug,
-            eventStatus: event.status
+            eventStatus: event.status,
+            registrationStatus: reg.status,
           });
         }
       }
-      
       setUserRegistrations(registrations);
     } catch (error) {
       console.error('❌ Error loading user registrations:', error);
@@ -1797,7 +1795,7 @@ const EventsPage: React.FC = () => {
                                   eventName={registration.eventName}
                                   eventDate={fd(registration.eventDate).date}
                                   eventTime={fd(registration.eventDate).time}
-                                  eventLocation={registration.eventLocation || ''}
+                                  eventLocation={registration.eventLocation ?? ''}
                                   attendeeName={registration.name}
                                   attendeeEmail={registration.email}
                                   attendeePhone={registration.phone}
@@ -1806,6 +1804,7 @@ const EventsPage: React.FC = () => {
                                   isExpired={false}
                                   eventImageUrl={registration.eventImage}
                                   eventSlug={registration.eventSlug}
+                                  registrationStatus={registration.registrationStatus}
                                 />
                               </div>
                             ))}
@@ -1823,7 +1822,7 @@ const EventsPage: React.FC = () => {
                                 eventName={registration.eventName}
                                 eventDate={fd(registration.eventDate).date}
                                 eventTime={fd(registration.eventDate).time}
-                                eventLocation={registration.eventLocation || ''}
+                                eventLocation={registration.eventLocation ?? ''}
                                 attendeeName={registration.name}
                                 attendeeEmail={registration.email}
                                 attendeePhone={registration.phone}
@@ -1832,6 +1831,7 @@ const EventsPage: React.FC = () => {
                                 isExpired
                                 eventImageUrl={registration.eventImage}
                                 eventSlug={registration.eventSlug}
+                                registrationStatus={registration.registrationStatus}
                               />
                             ))}
                           </div>

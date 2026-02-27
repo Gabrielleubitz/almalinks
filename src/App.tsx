@@ -20,6 +20,7 @@ import AdminAnnouncements from './pages/admin/AdminAnnouncements';
 import AddEvent from './pages/admin/AddEvent';
 import EditEvent from './pages/admin/EditEvent';
 import EventManagement from './pages/admin/EventManagement';
+import EventRegistrationsPage from './pages/admin/EventRegistrationsPage';
 import AdminCheckIn from './pages/admin/AdminCheckIn';
 import UserManagement from './pages/admin/UserManagement';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -175,6 +176,7 @@ function App() {
           <Route path="events/create" element={<AddEvent />} />
           <Route path="events/add" element={<AddEvent />} />
           <Route path="events/:eventId/edit" element={<EditEvent />} />
+          <Route path="event-registrations" element={<EventRegistrationsPage />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="pending-registrations" element={<PendingRegistrations />} />
           <Route path="pending" element={<PendingRegistrations />} />

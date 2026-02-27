@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Clock, ArrowLeft, Users, CheckCircle, AlertCircle, Ticket, User, Linkedin, Briefcase, CalendarPlus } from 'lucide-react';
+import { Calendar, MapPin, Clock, ArrowLeft, Users, CheckCircle, AlertCircle, Ticket, User, Linkedin, Briefcase, CalendarPlus, ExternalLink, Link as LinkIcon } from 'lucide-react';
 import { EventService, EventData } from '../services/eventService';
+import { getMyRegistration, createPending } from '../services/registrationService';
+import type { EventRegistrationWithStatus, EventPrivateDetails } from '../types/event';
 import EventTicketCard from '../components/dashboard/EventTicketCard';
 import { useAuth } from '../hooks/useAuth';
 import { useActivityTracking } from '../hooks/useActivityTracking';
@@ -10,6 +12,65 @@ import Footer from '../components/Footer';
 import EventPositionChart from '../components/analytics/EventPositionChart';
 import ReviewSection from '../components/reviews/ReviewSection';
 import CropImage from '../components/profile/CropImage';
+
+const HOSTNAME_LABELS: Record<string, string> = {
+  'zoom.us': 'Zoom',
+  'meet.google.com': 'Google Meet',
+  'docs.google.com': 'Google Docs',
+  'calendar.google.com': 'Google Calendar',
+  'notion.so': 'Notion',
+  'notion.tech': 'Notion',
+};
+
+function getResourceLabel(url: string, customLabel?: string | null): string {
+  if (customLabel?.trim()) return customLabel.trim();
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    return HOSTNAME_LABELS[host] || host;
+  } catch {
+    return 'Link';
+  }
+}
+
+function ResourceLinkCard({ url, label: customLabel }: { url: string; label?: string | null }) {
+  const label = getResourceLabel(url, customLabel);
+  let faviconHost = '';
+  try {
+    faviconHost = new URL(url).hostname;
+  } catch {
+    faviconHost = '';
+  }
+  const faviconUrl = faviconHost
+    ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(faviconHost)}&sz=64`
+    : '';
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+    >
+      {faviconUrl ? (
+        <img
+          src={faviconUrl}
+          alt=""
+          className="w-5 h-5 rounded flex-shrink-0 object-contain"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+          }}
+        />
+      ) : (
+        <LinkIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
+      )}
+      <div className="min-w-0 flex-1">
+        <span className="font-medium text-gray-900 block truncate">{label}</span>
+        <span className="text-sm text-gray-500 truncate block">{url}</span>
+      </div>
+      <ExternalLink className="h-4 w-4 text-gray-400 flex-shrink-0" />
+    </a>
+  );
+}
 
 const EventDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -20,8 +81,8 @@ const EventDetailPage: React.FC = () => {
   const [event, setEvent] = useState<EventData | null>(null);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [registration, setRegistration] = useState<any>(null);
+  const [registration, setRegistration] = useState<EventRegistrationWithStatus | null>(null);
+  const [privateDetails, setPrivateDetails] = useState<EventPrivateDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showTicket, setShowTicket] = useState(false);
@@ -91,15 +152,17 @@ const EventDetailPage: React.FC = () => {
 
   const checkRegistrationStatus = async (eventId: string) => {
     if (!user?.uid) return;
-    
     try {
-      const userRegistration = await EventService.getUserRegistration(eventId, user.uid);
-      if (userRegistration) {
-        setIsRegistered(true);
-        setRegistration(userRegistration);
+      const reg = await getMyRegistration(eventId, user.uid);
+      setRegistration(reg);
+      if (reg?.status === 'approved') {
+        const details = await EventService.getEventPrivateDetails(eventId);
+        setPrivateDetails(details);
+      } else {
+        setPrivateDetails(null);
       }
-    } catch (error) {
-      console.error('❌ Error checking registration status:', error);
+    } catch (err) {
+      console.error('❌ Error checking registration status:', err);
     }
   };
 
@@ -130,7 +193,7 @@ const EventDetailPage: React.FC = () => {
       return;
     }
 
-    if (isRegistered) {
+    if (registration && registration.status !== 'rejected' && registration.status !== 'cancelled') {
       setError('You are already registered for this event');
       return;
     }
@@ -140,58 +203,20 @@ const EventDetailPage: React.FC = () => {
     setSuccess(null);
 
     try {
-      console.log('🎯 Starting registration process...');
-      
-      await EventService.registerForEvent(event.id, user.uid, {
+      console.log('🎯 Starting registration process (pending approval)...');
+      await createPending(event.id, user.uid, {
         name: user.displayName || '',
         email: user.email || '',
         phone: user.phone || '',
         work: user.work || '',
-        registeredAt: new Date(),
         profileImage: user.profileImage || null,
-        position: user.position || 'other' // Add position for analytics
+        position: user.position || 'other',
       });
-
-      console.log('✅ Registration successful');
-
-      // Send registration confirmation email for upcoming events
-      const isUpcoming = new Date(event.date) > new Date();
-      if (isUpcoming && user.email) {
-        try {
-          const eventDateFormatted = formatDate(event.date);
-          await fetch('/api/email-service', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: 'registration',
-              email: user.email,
-              name: user.displayName || user.email,
-              eventDetails: {
-                name: event.name,
-                date: eventDateFormatted.date + (eventDateFormatted.time ? `, ${eventDateFormatted.time}` : ''),
-                location: event.location || 'TBD',
-              },
-            }),
-          });
-        } catch (emailErr) {
-          console.warn('⚠️ Registration email failed:', emailErr);
-        }
-      }
-
-      // Log event registration activity
+      console.log('✅ Registration submitted (pending approval)');
       logEventRegistration(event.id, event.name);
-
-      // Reload registration status
       await checkRegistrationStatus(event.id);
-
-      // Show success message
-      setSuccess('✅ You\'re all set! Your spot is confirmed.');
-      setShowTicket(true);
-
-      // Clear success message after 5 seconds
-      setTimeout(() => {
-        setSuccess(null);
-      }, 5000);
+      setSuccess('Registration pending approval. We\'ll email you the event details once confirmed.');
+      setTimeout(() => setSuccess(null), 8000);
 
     } catch (err: any) {
       console.error('❌ Registration failed:', err);
@@ -226,20 +251,25 @@ const EventDetailPage: React.FC = () => {
     return { startTime, endTime };
   };
 
-  // Create Google Calendar URL
+  // Create Google Calendar URL (use private details when approved)
   const createGoogleCalendarUrl = () => {
     if (!event) return '';
-    
     const { startTime, endTime } = formatGoogleCalendarDate(event.date);
-    
+    const location = registration?.status === 'approved' && privateDetails
+      ? (privateDetails.locationText || event.location)
+      : event.location;
+    let details = event.description || '';
+    if (registration?.status === 'approved' && privateDetails) {
+      if (privateDetails.meetingUrl) details += `\n\nMeeting: ${privateDetails.meetingUrl}`;
+      if (privateDetails.resourceLinkUrl) details += `\n\nLink: ${privateDetails.resourceLinkUrl}`;
+    }
     const params = new URLSearchParams({
       action: 'TEMPLATE',
       text: event.name,
       dates: `${startTime}/${endTime}`,
-      details: event.description,
-      location: event.location
+      details: details.trim(),
+      location: location || '',
     });
-    
     return `https://calendar.google.com/calendar/render?${params.toString()}`;
   };
 
@@ -405,8 +435,22 @@ const EventDetailPage: React.FC = () => {
                 </div>
                 <div className="flex items-center space-x-3 text-lg">
                   <MapPin className="h-6 w-6 text-red-700" />
-                  <span className="text-gray-700">{event.location}</span>
+                  <span className="text-gray-700">
+                    {registration?.status === 'approved' && privateDetails
+                      ? (privateDetails.locationText || event.location)
+                      : registration?.status === 'pending' || (registration && registration.status !== 'rejected')
+                        ? 'Location will be shared after your registration is approved.'
+                        : event.location}
+                  </span>
                 </div>
+                {registration?.status === 'approved' && privateDetails?.meetingUrl && (
+                  <div className="flex items-center space-x-3 text-lg">
+                    <LinkIcon className="h-6 w-6 text-brand-blue flex-shrink-0" />
+                    <a href={privateDetails.meetingUrl} target="_blank" rel="noopener noreferrer" className="text-brand-blue hover:underline break-all">
+                      Join meeting
+                    </a>
+                  </div>
+                )}
                 <div className="flex items-center space-x-3 text-lg">
                   <Users className="h-6 w-6 text-gray-500" />
                   <span className="text-gray-700">Exclusive Event</span>
@@ -455,11 +499,23 @@ const EventDetailPage: React.FC = () => {
                       </button>
                     </p>
                   </div>
-                ) : isRegistered ? (
+                ) : registration?.status === 'pending' ? (
+                  <div className="space-y-2 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                    <p className="text-amber-800 font-medium">Registration pending approval.</p>
+                    <p className="text-sm text-amber-700">We&apos;ll email you the event details once confirmed.</p>
+                  </div>
+                ) : registration?.status === 'rejected' ? (
+                  <div className="space-y-2 p-4 bg-red-50 rounded-xl border border-red-200">
+                    <p className="text-red-800 font-medium">Registration not approved.</p>
+                    {registration.rejectionReason && (
+                      <p className="text-sm text-red-700">{registration.rejectionReason}</p>
+                    )}
+                  </div>
+                ) : registration?.status === 'approved' ? (
                   <div className="space-y-4">
                     <div className="flex items-center space-x-3 p-4 bg-green-50 rounded-xl border border-green-200">
                       <CheckCircle className="h-6 w-6 text-green-600" />
-                      <span className="text-lg font-semibold text-green-600">Registered</span>
+                      <span className="text-lg font-semibold text-green-600">Approved — you&apos;re in</span>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-3">
                       <button
@@ -472,7 +528,6 @@ const EventDetailPage: React.FC = () => {
                         <Ticket className="h-5 w-5" />
                         <span>{showTicket ? 'Hide Ticket' : 'View Ticket'}</span>
                       </button>
-                      
                       <a
                         href={createGoogleCalendarUrl()}
                         target="_blank"
@@ -480,7 +535,7 @@ const EventDetailPage: React.FC = () => {
                         className="bg-white text-brand-blue border border-blue-200 px-6 py-3 rounded-full hover:bg-blue-50 transition-all duration-300 font-semibold flex items-center justify-center space-x-2"
                       >
                         <CalendarPlus className="h-5 w-5" />
-                        <span>Add to Google Calendar</span>
+                        <span>Add to calendar</span>
                       </a>
                     </div>
                   </div>
@@ -495,7 +550,7 @@ const EventDetailPage: React.FC = () => {
                     {registering ? (
                       <div className="flex items-center space-x-2">
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>Registering...</span>
+                        <span>Submitting...</span>
                       </div>
                     ) : (
                       statusInfo.buttonText
@@ -512,20 +567,20 @@ const EventDetailPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Digital Ticket - site-style card */}
-      {showTicket && isRegistered && registration && event && (
+      {/* Digital Ticket - site-style card (approved only) */}
+      {showTicket && registration?.status === 'approved' && registration && event && (
         <section className="py-16 bg-gray-50" aria-label="Your ticket">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
             <EventTicketCard
               eventName={event.name}
               eventDate={formattedDate.date}
               eventTime={formattedDate.time}
-              eventLocation={event.location}
+              eventLocation={(privateDetails?.locationText || event.location) || ''}
               attendeeName={registration.name}
               attendeeEmail={registration.email}
               attendeePhone={registration.phone}
               attendeeWork={registration.work}
-              ticketId={(registration.id || 'TEMP').slice(-8).toUpperCase()}
+              ticketId={(registration.userId || 'TEMP').slice(-8).toUpperCase()}
               isExpired={event?.status === 'completed'}
             />
             <a
@@ -588,7 +643,13 @@ const EventDetailPage: React.FC = () => {
                   <MapPin className="h-5 w-5 text-red-700" />
                   <div>
                     <div className="text-sm text-gray-500">Location</div>
-                    <div className="font-medium text-gray-900">{event.location}</div>
+                    <div className="font-medium text-gray-900">
+                      {registration?.status === 'approved' && privateDetails
+                        ? (privateDetails.locationText || event.location)
+                        : registration?.status === 'pending'
+                          ? 'Shared after approval'
+                          : event.location}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
@@ -601,7 +662,7 @@ const EventDetailPage: React.FC = () => {
               </div>
               
               {/* Add to Calendar Button */}
-              {isRegistered && (
+              {registration?.status === 'approved' && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <a
                     href={createGoogleCalendarUrl()}
@@ -615,6 +676,17 @@ const EventDetailPage: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Event link / Resources (approved only) */}
+            {registration?.status === 'approved' && privateDetails?.resourceLinkUrl && (
+              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Event link</h3>
+                <ResourceLinkCard
+                  url={privateDetails.resourceLinkUrl}
+                  label={privateDetails.resourceLinkLabel}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
