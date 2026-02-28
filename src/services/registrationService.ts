@@ -139,14 +139,15 @@ export async function reject(
  */
 export async function listEventRegistrations(
   eventId: string,
-  options?: { status?: EventRegistrationStatus }
+  options?: { status?: EventRegistrationStatus | '' }
 ): Promise<EventRegistrationWithStatus[]> {
   const ref = collection(db, 'events', eventId, REGISTRATIONS_SUBCOLLECTION);
   let snapshot;
-  if (options?.status === 'pending') {
+  const status = options?.status;
+  if (status === 'pending') {
     const q = query(ref, where('status', '==', 'pending'), orderBy('registeredAt', 'desc'));
     snapshot = await getDocs(q);
-  } else if (options?.status === 'rejected') {
+  } else if (status === 'rejected') {
     const q = query(ref, where('status', '==', 'rejected'), orderBy('registeredAt', 'desc'));
     snapshot = await getDocs(q);
   } else {
@@ -179,7 +180,7 @@ export async function listEventRegistrations(
     };
   };
   let list = snapshot.docs.map((d) => mapDoc(d));
-  if (options?.status === 'approved') {
+  if (status === 'approved') {
     list = list.filter((r) => r.status === 'approved');
   }
   return list;
@@ -190,22 +191,22 @@ export async function listEventRegistrations(
  * Returns rows with eventId; caller can join event names/dates.
  */
 export async function listPendingRegistrations(filters: {
-  status?: EventRegistrationStatus;
+  status?: EventRegistrationStatus | '';
   eventId?: string;
   limit?: number;
 }): Promise<Array<EventRegistrationWithStatus & { eventId: string }>> {
-  const { status = 'pending', eventId, limit = 500 } = filters;
+  const { status = '', eventId, limit = 500 } = filters;
   if (eventId) {
-    const list = await listEventRegistrations(eventId, { status });
+    const list = await listEventRegistrations(eventId, { status: status || undefined });
     return list.slice(0, limit).map((r) => ({ ...r, eventId }));
   }
-  // All events: get all events then for each get registrations (status = pending)
+  // All events: get all events then for each get registrations
   const eventsSnap = await getDocs(
     query(collection(db, 'events'), orderBy('createdAt', 'desc'))
   );
   const results: Array<EventRegistrationWithStatus & { eventId: string }> = [];
   for (const eventDoc of eventsSnap.docs) {
-    const list = await listEventRegistrations(eventDoc.id, { status });
+    const list = await listEventRegistrations(eventDoc.id, { status: status || undefined });
     for (const r of list) {
       results.push({ ...r, eventId: eventDoc.id });
       if (results.length >= limit) break;

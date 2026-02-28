@@ -32,6 +32,7 @@ const STATUS_OPTIONS = [
   { value: 'pending', label: 'Pending' },
   { value: 'approved', label: 'Approved' },
   { value: 'rejected', label: 'Rejected' },
+  { value: '', label: 'All' },
 ];
 
 function formatDate(d: any): string {
@@ -46,7 +47,7 @@ const EventRegistrationsPage: React.FC = () => {
   const [rows, setRows] = useState<RegistrationRow[]>([]);
   const [events, setEvents] = useState<Array<{ id: string; name: string; date: string; slug?: string }>>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string>('pending');
+  const [statusFilter, setStatusFilter] = useState<string>('');
   const [eventFilter, setEventFilter] = useState<string>('');
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -234,11 +235,7 @@ const EventRegistrationsPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Event Registrations</h1>
-        </div>
-
+      <div className="max-w-6xl mx-auto">
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <select
@@ -319,6 +316,9 @@ const EventRegistrationsPage: React.FC = () => {
             <div className="p-12 text-center text-gray-500">
               <Calendar className="h-12 w-12 mx-auto text-gray-300 mb-2" />
               <p>No registrations match your filters.</p>
+              {statusFilter === 'pending' && (
+                <p className="mt-1 text-sm">Use &quot;Approved&quot; or &quot;All&quot; to see existing registrations.</p>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
