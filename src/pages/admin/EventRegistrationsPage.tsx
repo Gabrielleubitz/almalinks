@@ -19,7 +19,6 @@ import { EventService } from '../../services/eventService';
 import { listPendingRegistrations, listEventRegistrations, approve, reject } from '../../services/registrationService';
 import type { EventRegistrationWithStatus } from '../../types/event';
 import { useAuth } from '../../hooks/useAuth';
-import AdminLayout from '../../components/admin/AdminLayout';
 
 type RegistrationRow = EventRegistrationWithStatus & {
   eventId: string;
@@ -234,9 +233,8 @@ const EventRegistrationsPage: React.FC = () => {
   };
 
   return (
-    <AdminLayout>
-      <div className="max-w-6xl mx-auto">
-        {/* Filters */}
+    <div className="max-w-6xl mx-auto">
+      {/* Filters */}
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <select
             value={statusFilter}
@@ -482,7 +480,7 @@ const EventRegistrationsPage: React.FC = () => {
           </div>
         </div>
       )}
-    </AdminLayout>
+    </div>
   );
 };
 
