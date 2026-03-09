@@ -446,7 +446,6 @@ const EventRegistrationsPage: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
 
       {/* Reject modal */}
       {rejectModal && (
