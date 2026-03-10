@@ -1,5 +1,36 @@
 # HubSpot contact sync – exact code path (debugging trace)
 
+## Two separate HubSpot flows (proof)
+
+There are **two different code paths** that touch HubSpot:
+
+| Flow | Purpose | File(s) | When it runs |
+|------|--------|--------|--------------|
+| **1. Email engagement log** | Log sent emails to HubSpot (find or create contact by email, then create email engagement) | `lib/server/hubspot-email-log.js` → `logSentEmailToHubSpot`; called from `lib/server/transactional-email.js` after every successful send | **Immediately after** any transactional email is sent (signup, approval, reset, etc.) |
+| **2. Contact create/update** | Create or update full CRM contact from website user profile | `lib/server/hubspot-contact-sync.js` → `upsertHubspotContact`; called only from `lib/server/api/update-profile.js` | **Only** when `PATCH /api/profile` is called (ProfileEditPage save or CompleteProfilePage after we added it) |
+
+They are **separate**. The email-log flow does **not** call the contact-sync module. It does its own find-by-email and a **minimal** contact create (email only) if not found. If that minimal create fails (e.g. HubSpot API error), you see `[hubspot-email-log] No contact found or created for <email>`.
+
+### Exact order for e.g. gama@test.com (approval email)
+
+1. Admin approves → `JoinRequestService.approveRequest` creates user doc in Firestore (no HubSpot call).
+2. Frontend calls `POST /api/email-service` with `{ type: 'acceptance', email: 'gama@test.com', name: '...' }`.
+3. **Before fix:** email-service sends email → `sendTransactionalEmail` → `logSentEmailToHubSpot` runs → find contact by email → null → create minimal contact → **fails** → log "No contact found or created for gama@test.com". Contact sync (`upsertHubspotContact`) has **not** been invoked yet (it runs only on profile save).
+4. **After fix:** For `type === 'acceptance'`, email-service first queries Firestore for a user with that email, calls `upsertHubspotContact` so the contact exists, then sends the email so `logSentEmailToHubSpot` finds the contact.
+
+### Why [hubspot-debug] logs may not appear for gama@test.com
+
+- `[hubspot-debug]` logs live in `lib/server/api/update-profile.js` and `lib/server/hubspot-contact-sync.js`, which run **only** when `PATCH /api/profile` is called.
+- For a newly approved user, that happens only when they (or someone) later open ProfileEditPage or CompleteProfilePage and save. So until then, contact sync is never invoked and those logs never appear for that user.
+- If the deployed backend is the same codebase (and these files are deployed), the logs will appear when `/api/profile` is actually hit in production.
+
+### Why the email-log’s “create” can fail
+
+- In `hubspot-email-log.js`, `createContactWithEmail` does `POST /crm/v3/objects/contacts` with `{ properties: { email } }`. If HubSpot returns non-2xx (e.g. 400, 401, 403), the code returns `null` and you see "No contact found or created".
+- **Evidence:** After adding logging, look for `[hubspot-email-log] createContactWithEmail failed` with `status` and `body` to see the real HubSpot error.
+
+---
+
 ## A. Frontend submit handler that can trigger HubSpot sync
 
 **Single path only:**
