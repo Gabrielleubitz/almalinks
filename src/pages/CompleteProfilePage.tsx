@@ -65,7 +65,8 @@ const CompleteProfilePage: React.FC = () => {
   const { user, updateProfile, error, loading, checkProfileComplete } = useAuth();
   
   // Local state for form inputs - prevents glitches
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedCountryCode, setSelectedCountryCode] = useState('+972'); // Default to Israel
   const [work, setWork] = useState('');
@@ -99,7 +100,10 @@ const CompleteProfilePage: React.FC = () => {
     if (user && !profileInitialized) {
       console.log('🔄 Initializing profile form with user data:', user);
 
-      setName(user.displayName || '');
+      const fn = user.firstName ?? (user.displayName || '').trim().split(/\s+/)[0] ?? '';
+      const ln = user.lastName ?? (user.displayName || '').trim().split(/\s+/).slice(1).join(' ') ?? '';
+      setFirstName(fn);
+      setLastName(ln);
       setWork(user.work || '');
       setCompany(user.company || '');
       setLinkedinUsername(user.linkedinUsername || '');
@@ -116,11 +120,10 @@ const CompleteProfilePage: React.FC = () => {
 
       // Determine which fields are missing
       const missing: string[] = [];
-      if (!user.displayName) missing.push('name');
+      if (!(fn || ln)) missing.push('name');
       if (!user.phone) missing.push('phone');
       if (!user.company) missing.push('company');
       if (!user.work) missing.push('work');
-      if (!user.linkedinUsername) missing.push('linkedinUsername');
       if (!user.position) missing.push('position');
 
       setMissingFields(missing);
@@ -177,7 +180,7 @@ const CompleteProfilePage: React.FC = () => {
     // Validate that all missing fields are now filled
     const stillMissing = missingFields.filter(field => {
       switch (field) {
-        case 'name': return !name.trim();
+        case 'name': return !firstName.trim() && !lastName.trim();
         case 'phone': return !phoneNumber.trim();
         case 'company': return !company.trim();
         case 'work': return !work.trim();
@@ -203,9 +206,12 @@ const CompleteProfilePage: React.FC = () => {
       // Format LinkedIn username (remove any linkedin.com prefix)
       const formattedLinkedin = linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '');
 
-      console.log('📝 Updating profile with:', { name, phone: formattedPhone, company, work, linkedinUsername: formattedLinkedin, position });
+      const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
+      console.log('📝 Updating profile with:', { firstName, lastName, phone: formattedPhone, company, work, linkedinUsername: formattedLinkedin, position });
       await updateProfile({
-        name,
+        name: fullName,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
         phone: formattedPhone,
         company,
         work,
@@ -214,14 +220,11 @@ const CompleteProfilePage: React.FC = () => {
       });
       // Trigger HubSpot sync for this user (new approved users never hit ProfileEditPage; sync runs only via PATCH /api/profile)
       try {
-        const nameParts = name.trim().split(/\s+/);
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
         const profilePayload = {
-          name,
-          fullName: name.trim(),
-          firstName: firstName || undefined,
-          lastName: lastName || undefined,
+          name: fullName,
+          fullName,
+          firstName: firstName.trim() || undefined,
+          lastName: lastName.trim() || undefined,
           phone: formattedPhone || undefined,
           company: company.trim() || undefined,
           work: work.trim() || undefined,
@@ -252,7 +255,7 @@ const CompleteProfilePage: React.FC = () => {
 
   const isFormValid = missingFields.every(field => {
     switch (field) {
-      case 'name': return name.trim();
+      case 'name': return firstName.trim() || lastName.trim();
       case 'phone': return phoneNumber.trim();
       case 'company': return company.trim();
       case 'work': return work.trim();
@@ -324,25 +327,53 @@ const CompleteProfilePage: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Full Name */}
+            {/* First Name */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name {missingFields.includes('name') && <span className="text-red-500">*</span>}
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                First Name {missingFields.includes('name') && <span className="text-red-500">*</span>}
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
-                  id="name"
-                  name="name"
+                  id="firstName"
+                  name="firstName"
                   type="text"
                   required={missingFields.includes('name')}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                   disabled={!missingFields.includes('name') || isSubmitting}
                   className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 ${
                     !missingFields.includes('name') ? 'bg-gray-50 text-gray-500' : ''
                   }`}
-                  placeholder="Enter your full name"
+                  placeholder="First name"
+                  autoComplete="given-name"
+                />
+                {!missingFields.includes('name') && (
+                  <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-500" />
+                )}
+              </div>
+            </div>
+
+            {/* Last Name */}
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                Last Name {missingFields.includes('name') && <span className="text-red-500">*</span>}
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  required={missingFields.includes('name')}
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  disabled={!missingFields.includes('name') || isSubmitting}
+                  className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 ${
+                    !missingFields.includes('name') ? 'bg-gray-50 text-gray-500' : ''
+                  }`}
+                  placeholder="Last name"
+                  autoComplete="family-name"
                 />
                 {!missingFields.includes('name') && (
                   <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-500" />
@@ -464,10 +495,10 @@ const CompleteProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* LinkedIn Username */}
+            {/* LinkedIn Username (optional) */}
             <div>
               <label htmlFor="linkedinUsername" className="block text-sm font-medium text-gray-700 mb-2">
-                LinkedIn Username {missingFields.includes('linkedinUsername') && <span className="text-red-500">*</span>}
+                LinkedIn Username
               </label>
               <div className="relative">
                 <Linkedin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -475,20 +506,14 @@ const CompleteProfilePage: React.FC = () => {
                   id="linkedinUsername"
                   name="linkedinUsername"
                   type="text"
-                  required={missingFields.includes('linkedinUsername')}
                   value={linkedinUsername}
                   onChange={(e) => setLinkedinUsername(e.target.value)}
-                  disabled={!missingFields.includes('linkedinUsername') || isSubmitting}
-                  className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 ${
-                    !missingFields.includes('linkedinUsername') ? 'bg-gray-50 text-gray-500' : ''
-                  }`}
-                  placeholder="e.g., johndoe (without linkedin.com/in/)"
+                  disabled={isSubmitting}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                  placeholder="e.g., johndoe (optional)"
                 />
-                {!missingFields.includes('linkedinUsername') && (
-                  <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-500" />
-                )}
               </div>
-              {linkedinUsername && missingFields.includes('linkedinUsername') && (
+              {linkedinUsername && (
                 <div className="mt-2 text-sm text-gray-600">
                   <span className="font-medium">Preview:</span> linkedin.com/in/{linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '')}
                 </div>

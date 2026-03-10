@@ -9,6 +9,8 @@ export interface AuthUser {
   uid: string;
   email: string | null;
   displayName: string | null;
+  firstName?: string;
+  lastName?: string;
   role?: string;
   status?: string;
   phone?: string;
@@ -39,6 +41,8 @@ export interface AuthUser {
 
 export interface ProfileData {
   name?: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string;
   company?: string;
   work?: string;
@@ -110,6 +114,8 @@ export const useAuth = () => {
           uid,
           email: userData.email || null,
           displayName: userData.name || userData.displayName || null,
+          firstName: userData.firstName ?? undefined,
+          lastName: userData.lastName ?? undefined,
           role: userData.role || 'member',
           status: userData.status || 'approved', // Default to approved for existing users
           phone: userData.phone || '',
@@ -150,6 +156,8 @@ export const useAuth = () => {
           uid,
           email: joinRequest.email || null,
           displayName: joinRequest.displayName || joinRequest.name || null,
+          firstName: joinRequest.firstName ?? undefined,
+          lastName: joinRequest.lastName ?? undefined,
           role: 'member',
           status: joinRequest.status, // pending, approved, or rejected
           phone: joinRequest.phone || '',
@@ -201,11 +209,13 @@ export const useAuth = () => {
         
         const { JoinRequestService } = await import('../services/joinRequestService');
         
-        // Create join request with all provided data (including Google profile picture)
+        const fullName = profileData?.name || firebaseUser.displayName || [profileData?.firstName, profileData?.lastName].filter(Boolean).join(' ') || '';
         const joinRequestData = {
           email: firebaseUser.email || '',
-          name: profileData?.name || firebaseUser.displayName || '',
-          displayName: profileData?.name || firebaseUser.displayName || '',
+          firstName: profileData?.firstName,
+          lastName: profileData?.lastName,
+          name: fullName,
+          displayName: fullName,
           phone: profileData?.phone,
           company: profileData?.company,
           work: profileData?.work,
@@ -253,6 +263,8 @@ export const useAuth = () => {
         
         // Only include fields that are defined (not undefined)
         if (profileData?.name) updatedData.name = profileData.name;
+        if (profileData?.firstName !== undefined) updatedData.firstName = profileData.firstName;
+        if (profileData?.lastName !== undefined) updatedData.lastName = profileData.lastName;
         if (profileData?.phone) updatedData.phone = profileData.phone;
         if (profileData?.company) updatedData.company = profileData.company;
         if (profileData?.work) updatedData.work = profileData.work;
@@ -304,6 +316,8 @@ export const useAuth = () => {
       
       const updateData = {
         ...(profileData.name && { name: profileData.name }),
+        ...(profileData.firstName !== undefined && { firstName: profileData.firstName }),
+        ...(profileData.lastName !== undefined && { lastName: profileData.lastName }),
         ...(profileData.phone && { phone: profileData.phone }),
         ...(profileData.company && { company: profileData.company }),
         ...(profileData.work && { work: profileData.work }),
@@ -330,6 +344,8 @@ export const useAuth = () => {
       setUser(prev => prev ? {
         ...prev,
         displayName: profileData.name || prev.displayName,
+        ...(profileData.firstName !== undefined && { firstName: profileData.firstName }),
+        ...(profileData.lastName !== undefined && { lastName: profileData.lastName }),
         phone: profileData.phone || prev.phone,
         company: profileData.company || prev.company,
         work: profileData.work || prev.work,
@@ -424,6 +440,8 @@ export const useAuth = () => {
                 uid: firebaseUser.uid,
                 email: existingJoinRequest.email || firebaseUser.email,
                 displayName: existingJoinRequest.displayName || existingJoinRequest.name || firebaseUser.displayName,
+                firstName: existingJoinRequest.firstName ?? undefined,
+                lastName: existingJoinRequest.lastName ?? undefined,
                 role: 'member',
                 status: existingJoinRequest.status, // pending, approved, or rejected
                 phone: existingJoinRequest.phone || '',

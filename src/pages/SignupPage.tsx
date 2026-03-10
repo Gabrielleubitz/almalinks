@@ -61,16 +61,30 @@ const POSITION_OPTIONS = [
   { value: 'other', label: 'Other' }
 ];
 
+// Chapter options (must match HubSpot allowed values)
+const CHAPTER_OPTIONS = [
+  'New York',
+  'Tel Aviv',
+  'Johannesburg',
+  'London',
+  'Mexico City',
+  'Philadelphia',
+  'Sydney',
+  'Toronto',
+  'Costa Rica',
+  'International',
+];
+
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, register, error, loading, isPending, signInWithGoogle } = useAuth();
   
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phoneNumber: '',
     company: '',
-    work: '',
     linkedinUsername: '',
     position: '',
     chapter: '',
@@ -100,9 +114,12 @@ const SignupPage: React.FC = () => {
   // When the user has connected Google on this page, prefill name/email once.
   useEffect(() => {
     if (!signedInWithGoogle || !user) return;
+    const full = (user.displayName || '').trim();
+    const parts = full ? full.split(/\s+/) : [];
     setFormData(prev => ({
       ...prev,
-      name: prev.name || user.displayName || '',
+      firstName: prev.firstName || (parts[0] || ''),
+      lastName: prev.lastName || (parts.slice(1).join(' ') || ''),
       email: prev.email || user.email || ''
     }));
   }, [signedInWithGoogle, user]);
@@ -153,11 +170,15 @@ const SignupPage: React.FC = () => {
   };
 
   const validateForm = (): boolean => {
-    if (!formData.name.trim()) {
-      setValidationError('Please enter your full name');
+    if (!formData.firstName.trim()) {
+      setValidationError('Please enter your first name');
       return false;
     }
-    
+    if (!formData.lastName.trim()) {
+      setValidationError('Please enter your last name');
+      return false;
+    }
+
     if (!formData.email.trim()) {
       setValidationError('Please enter your email address');
       return false;
@@ -187,24 +208,14 @@ const SignupPage: React.FC = () => {
       setValidationError('Please enter your company name');
       return false;
     }
-    
-    if (!formData.work.trim()) {
-      setValidationError('Please tell us about your work');
-      return false;
-    }
-    
-    if (!formData.linkedinUsername.trim()) {
-      setValidationError('Please enter your LinkedIn username');
-      return false;
-    }
-    
+
     if (!formData.position) {
       setValidationError('Please select your position');
       return false;
     }
 
     if (!formData.chapter.trim()) {
-      setValidationError('Please enter your chapter');
+      setValidationError('Please select your chapter');
       return false;
     }
     
@@ -242,27 +253,29 @@ const SignupPage: React.FC = () => {
       
       setIsSubmitting(true);
       // Console logs for development debugging (not shown in UI)
+      const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim();
       if (import.meta.env.DEV) {
         console.log('📝 Attempting registration for:', formData.email);
         console.log('📝 Profile data:', {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
           phone: formattedPhone,
           company: formData.company,
-          work: formData.work,
           linkedinUsername: formData.linkedinUsername,
           position: formData.position
         });
       }
-      
+
       if (signedInWithGoogle && user) {
-        // Google signup: Auth account already exists; create join request explicitly.
         const { JoinRequestService } = await import('../services/joinRequestService');
         await JoinRequestService.createJoinRequest(user.uid, {
           email: formData.email,
-          name: formData.name,
-          displayName: formData.name,
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          name: fullName,
+          displayName: fullName,
           phone: formattedPhone,
           company: formData.company,
-          work: formData.work,
           linkedinUsername: formData.linkedinUsername,
           position: formData.position,
           chapter: formData.chapter || undefined,
@@ -276,17 +289,17 @@ const SignupPage: React.FC = () => {
           skills: undefined
         });
       } else {
-        // Email/password signup: create Firebase Auth account + join request via profile create.
-        await register(formData.email, formData.password, formData.name, {
+        await register(formData.email, formData.password, fullName, {
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
           phone: formattedPhone,
           company: formData.company,
-          work: formData.work,
           linkedinUsername: formData.linkedinUsername,
           position: formData.position,
           chapter: formData.chapter || undefined,
           bioTitle: formData.bioTitle || undefined,
           bio: formData.bio || undefined,
-          status: 'pending' // Set initial status as pending
+          status: 'pending'
         });
       }
       
@@ -306,12 +319,11 @@ const SignupPage: React.FC = () => {
   };
 
   const isFormValid =
-    formData.name.trim() &&
+    formData.firstName.trim() &&
+    formData.lastName.trim() &&
     formData.email.trim() &&
     formData.phoneNumber.trim() &&
     formData.company.trim() &&
-    formData.work.trim() &&
-    formData.linkedinUsername.trim() &&
     formData.position &&
     formData.chapter.trim() &&
     (signedInWithGoogle || (formData.password.trim() && formData.password.length >= 6));
@@ -395,26 +407,50 @@ const SignupPage: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Full Name */}
+            {/* First Name */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name *
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                First Name *
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
-                  id="name"
-                  name="name"
+                  id="firstName"
+                  name="firstName"
                   type="text"
                   required
-                  value={formData.name}
+                  value={formData.firstName}
                   onChange={handleInputChange}
                   className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
-                  placeholder="Enter your full name"
+                  placeholder="First name"
                   disabled={isSubmitting}
                   autoCapitalize="words"
                   autoCorrect="off"
-                  autoComplete="name"
+                  autoComplete="given-name"
+                />
+              </div>
+            </div>
+
+            {/* Last Name */}
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                Last Name *
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  required
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
+                  placeholder="Last name"
+                  disabled={isSubmitting}
+                  autoCapitalize="words"
+                  autoCorrect="off"
+                  autoComplete="family-name"
                 />
               </div>
             </div>
@@ -521,31 +557,10 @@ const SignupPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Work */}
-            <div>
-              <label htmlFor="work" className="block text-sm font-medium text-gray-700 mb-2">
-                Job Description *
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  id="work"
-                  name="work"
-                  type="text"
-                  required
-                  value={formData.work}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
-                  placeholder="e.g., Leading product development, Managing investments"
-                  disabled={isSubmitting}
-                />
-              </div>
-            </div>
-
-            {/* LinkedIn Username */}
+            {/* LinkedIn Username (optional) */}
             <div>
               <label htmlFor="linkedinUsername" className="block text-sm font-medium text-gray-700 mb-2">
-                LinkedIn Username *
+                LinkedIn Username
               </label>
               <div className="relative">
                 <Linkedin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -553,11 +568,10 @@ const SignupPage: React.FC = () => {
                   id="linkedinUsername"
                   name="linkedinUsername"
                   type="text"
-                  required
                   value={formData.linkedinUsername}
                   onChange={handleInputChange}
                   className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
-                  placeholder="e.g., johndoe (without linkedin.com/in/)"
+                  placeholder="e.g., johndoe (optional)"
                   disabled={isSubmitting}
                 />
               </div>
@@ -595,24 +609,30 @@ const SignupPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Chapter */}
+            {/* Chapter (City) */}
             <div>
               <label htmlFor="chapter" className="block text-sm font-medium text-gray-700 mb-2">
-                Chapter *
+                Chapter (City) *
               </label>
               <div className="relative">
-                <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
+                <select
                   id="chapter"
                   name="chapter"
-                  type="text"
                   required
                   value={formData.chapter}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
-                  placeholder="e.g., North America, Europe"
+                  className="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 appearance-none min-h-[44px] touch-manipulation"
                   disabled={isSubmitting}
-                />
+                  aria-label="Chapter (City)"
+                >
+                  <option value="" disabled>Select your chapter...</option>
+                  {CHAPTER_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
               </div>
             </div>
 

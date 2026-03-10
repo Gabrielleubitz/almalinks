@@ -18,6 +18,8 @@ import { sanitizeForFirestore } from '../utils/firestoreHelpers';
 export interface JoinRequest {
   uid: string;
   email: string;
+  firstName?: string;
+  lastName?: string;
   name?: string;
   displayName?: string;
   phone?: string;
@@ -50,6 +52,8 @@ export interface JoinRequest {
 
 export interface JoinRequestFormData {
   email: string;
+  firstName?: string;
+  lastName?: string;
   name?: string;
   displayName?: string;
   phone?: string;
@@ -91,13 +95,14 @@ export class JoinRequestService {
         work: formData.work
       });
       
-      // Build the join request payload with required fields
-      // Only include optional fields if they have defined values
+      const fullName = [formData.firstName, formData.lastName].map(s => (s || '').trim()).filter(Boolean).join(' ') || formData.name || formData.displayName || '';
       const joinRequestPayload: any = {
         uid,
         email: formData.email.toLowerCase().trim(),
-        name: formData.name || formData.displayName || '',
-        displayName: formData.displayName || formData.name || '',
+        firstName: (formData.firstName || '').trim() || undefined,
+        lastName: (formData.lastName || '').trim() || undefined,
+        name: fullName,
+        displayName: fullName,
         phone: formData.phone || '',
         company: formData.company || '',
         work: formData.work || '',
@@ -558,18 +563,17 @@ export class JoinRequestService {
       }));
 
       // Create user document from join request data (all signup fields flow to profile)
-      const fullName = (request.name || request.displayName || '').trim();
-      const nameParts = fullName ? fullName.split(/\s+/) : [];
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
+      const firstName = request.firstName?.trim() || (request.name || request.displayName || '').trim().split(/\s+/)[0] || 'User';
+      const lastName = request.lastName?.trim() || (request.name || request.displayName || '').trim().split(/\s+/).slice(1).join(' ') || '';
+      const fullName = [firstName, lastName].filter(Boolean).join(' ') || (request.name || request.displayName || '').trim();
 
       const userProfilePayload: any = {
         uid,
         email: request.email,
-        name: fullName || request.displayName || '',
-        displayName: request.displayName || request.name || fullName || '',
-        firstName: firstName || 'User',
-        lastName: lastName,
+        name: fullName,
+        displayName: fullName,
+        firstName,
+        lastName,
         phone: request.phone || '',
         company: request.company || '',
         work: request.work || '',
