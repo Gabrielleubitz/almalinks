@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Phone, Briefcase, ArrowRight, ArrowLeft, CheckCircle, ChevronDown, Building2, Linkedin } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { apiRequest } from '../utils/apiClient';
 import logoSvg from '../assets/alma-links-logo.svg';
 
 // Country codes data
@@ -211,6 +212,35 @@ const CompleteProfilePage: React.FC = () => {
         linkedinUsername: formattedLinkedin,
         position
       });
+      // Trigger HubSpot sync for this user (new approved users never hit ProfileEditPage; sync runs only via PATCH /api/profile)
+      try {
+        const nameParts = name.trim().split(/\s+/);
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        const profilePayload = {
+          name,
+          fullName: name.trim(),
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
+          phone: formattedPhone || undefined,
+          company: company.trim() || undefined,
+          work: work.trim() || undefined,
+          position: position || undefined,
+          linkedinUsername: formattedLinkedin || undefined,
+          linkedinUrl: formattedLinkedin ? `https://www.linkedin.com/in/${formattedLinkedin}` : undefined,
+        };
+        const res = await apiRequest('/api/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(profilePayload),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          console.warn('HubSpot sync after complete-profile failed (non-blocking):', (data as { error?: string }).error);
+        }
+      } catch (hubErr) {
+        console.warn('HubSpot sync after complete-profile failed (non-blocking):', hubErr);
+      }
       console.log('✅ Profile updated successfully');
       navigate('/events');
     } catch (err) {
