@@ -107,6 +107,26 @@ const AddEvent: React.FC = () => {
       const { notifyAllUsersOfNewEvent } = await import('../../services/notificationService');
       notifyAllUsersOfNewEvent(eventId, formData.name);
 
+      // Sync event to HubSpot as a Deal (so it appears in HubSpot)
+      try {
+        const firebaseUser = auth.currentUser;
+        if (firebaseUser) {
+          const idToken = await getIdToken(firebaseUser);
+          const syncRes = await fetch('/api/sync-event-to-hubspot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+            body: JSON.stringify({ eventId }),
+            credentials: 'include',
+          });
+          const syncData = await syncRes.json().catch(() => ({}));
+          if (!syncRes.ok || !syncData.synced) {
+            console.warn('[AddEvent] HubSpot deal sync failed (non-blocking):', syncData.error || syncRes.status);
+          }
+        }
+      } catch (hubErr) {
+        console.warn('[AddEvent] HubSpot deal sync request failed (non-blocking):', hubErr);
+      }
+
       // Send Mailchimp Marketing campaign to entire audience (server-side, non-blocking for UX)
       let announcementSent = false;
       let announcementError: string | null = null;

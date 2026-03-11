@@ -37,6 +37,7 @@ import listHubspotContactsHandler from '../lib/server/api/list-hubspot-contacts.
 import listHubspotDealsHandler from '../lib/server/api/list-hubspot-deals.js';
 import deleteHubspotContactHandler from '../lib/server/api/delete-hubspot-contact.js';
 import deleteHubspotDealHandler from '../lib/server/api/delete-hubspot-deal.js';
+import syncEventToHubspotHandler from '../lib/server/api/sync-event-to-hubspot.js';
 import updateProfileHandler from '../lib/server/api/update-profile.js';
 import uploadProfileImageHandler from '../lib/server/api/upload-profile-image.js';
 import deleteProfileImageHandler from '../lib/server/api/delete-profile-image.js';
@@ -82,6 +83,7 @@ const routeTable = new Map([
   ['/api/create-events-from-deals', createEventsFromDealsHandler],
   ['/api/clear-hubspot-deals', clearHubspotDealsHandler],
   ['/api/remove-events-from-deals', removeEventsFromDealsHandler],
+  ['/api/sync-event-to-hubspot', syncEventToHubspotHandler],
   ['/api/profile', updateProfileHandler],
   ['/api/upload-profile-image', uploadProfileImageHandler],
   ['/api/delete-profile-image', deleteProfileImageHandler],

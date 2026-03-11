@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { getIdToken } from 'firebase/auth';
 import { Calendar, MapPin, Image, FileText, Save, ArrowLeft, AlertCircle, Loader2, ImagePlus } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { auth } from '../../firebase/config';
 import { EventService, EventData, generateSlug } from '../../services/eventService';
 import { uploadImageToLibrary } from '../../services/imageUploadService';
 import CropImage from '../../components/profile/CropImage';
@@ -196,6 +198,26 @@ const EditEvent: React.FC = () => {
         resourceLinkUrl: formData.resourceLinkUrl?.trim() || null,
         resourceLinkLabel: formData.resourceLinkLabel?.trim() || null,
       });
+
+      // Sync event to HubSpot Deal (update existing or create if missing)
+      try {
+        const firebaseUser = auth.currentUser;
+        if (firebaseUser) {
+          const idToken = await getIdToken(firebaseUser);
+          const syncRes = await fetch('/api/sync-event-to-hubspot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+            body: JSON.stringify({ eventId }),
+            credentials: 'include',
+          });
+          const syncData = await syncRes.json().catch(() => ({}));
+          if (!syncRes.ok || !syncData.synced) {
+            console.warn('[EditEvent] HubSpot deal sync failed (non-blocking):', syncData.error || syncRes.status);
+          }
+        }
+      } catch (hubErr) {
+        console.warn('[EditEvent] HubSpot deal sync request failed (non-blocking):', hubErr);
+      }
       
       setSuccess(`Event "${formData.name}" updated successfully!`);
 
