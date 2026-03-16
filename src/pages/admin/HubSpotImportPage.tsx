@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
   Zap,
+  Download,
 } from 'lucide-react';
 import { apiRequest } from '../../utils/apiClient';
 import HubspotLogo from '../../assets/hubspot-logo.svg';
@@ -140,6 +141,49 @@ const HubSpotImportPage: React.FC = () => {
     } finally {
       setDeletingContactId(null);
     }
+  };
+
+  const exportContactsToCsv = () => {
+    if (contacts.length === 0) return;
+    const headers = ['id', 'email', 'firstname', 'lastname', 'chapter'];
+    const rows = contacts.map((c) => {
+      const rawEmail = c.email ?? (c.properties?.email as { value?: string } | string) ?? '';
+      const email = typeof rawEmail === 'string' ? rawEmail : (rawEmail?.value ?? '') || c.id;
+      const first = (c.properties?.firstname as { value?: string } | string) ?? '';
+      const last = (c.properties?.lastname as { value?: string } | string) ?? '';
+      const firstStr = typeof first === 'string' ? first : first?.value ?? '';
+      const lastStr = typeof last === 'string' ? last : last?.value ?? '';
+      const chapter = c.chapter ?? (c.properties?.chapter as { value?: string } | string);
+      const chapterStr = typeof chapter === 'string' ? chapter : (chapter as { value?: string })?.value ?? '';
+      return [c.id, email, firstStr, lastStr, chapterStr].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',');
+    });
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `hubspot-contacts-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportDealsToCsv = () => {
+    if (deals.length === 0) return;
+    const headers = ['id', 'dealname', 'hubspotDealId', 'syncedAt'];
+    const rows = deals.map((d) => {
+      const raw = d.properties?.dealname as { value?: string } | string | undefined;
+      const name = (typeof raw === 'string' ? raw : raw?.value) ?? d.id;
+      const synced = d.syncedAt ? (typeof d.syncedAt === 'object' && d.syncedAt !== null && 'toDate' in d.syncedAt ? (d.syncedAt as { toDate: () => Date }).toDate().toISOString() : String(d.syncedAt)) : '';
+      return [d.id, name, d.hubspotDealId ?? '', synced].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',');
+    });
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `hubspot-deals-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const deleteDeal = async (id: string) => {
@@ -601,16 +645,28 @@ const HubSpotImportPage: React.FC = () => {
 
         {/* Imported contacts list */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-2">
             <h2 className="text-base font-semibold text-gray-900">Imported contacts</h2>
-            <button
-              type="button"
-              onClick={fetchContacts}
-              disabled={loadingContacts}
-              className="text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50"
-            >
-              {loadingContacts ? <RefreshCw className="h-4 w-4 animate-spin inline" /> : 'Refresh'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={exportContactsToCsv}
+                disabled={contacts.length === 0}
+                className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50 px-2 py-1 rounded-lg hover:bg-gray-100"
+                title="Export contacts to CSV"
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </button>
+              <button
+                type="button"
+                onClick={fetchContacts}
+                disabled={loadingContacts}
+                className="text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50"
+              >
+                {loadingContacts ? <RefreshCw className="h-4 w-4 animate-spin inline" /> : 'Refresh'}
+              </button>
+            </div>
           </div>
           <div className="max-h-64 overflow-y-auto">
             {loadingContacts && contacts.length === 0 ? (
@@ -661,16 +717,28 @@ const HubSpotImportPage: React.FC = () => {
 
         {/* Imported deals list */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-2">
             <h2 className="text-base font-semibold text-gray-900">Imported deals</h2>
-            <button
-              type="button"
-              onClick={fetchDeals}
-              disabled={loadingDeals}
-              className="text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50"
-            >
-              {loadingDeals ? <RefreshCw className="h-4 w-4 animate-spin inline" /> : 'Refresh'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={exportDealsToCsv}
+                disabled={deals.length === 0}
+                className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50 px-2 py-1 rounded-lg hover:bg-gray-100"
+                title="Export deals to CSV"
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </button>
+              <button
+                type="button"
+                onClick={fetchDeals}
+                disabled={loadingDeals}
+                className="text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50"
+              >
+                {loadingDeals ? <RefreshCw className="h-4 w-4 animate-spin inline" /> : 'Refresh'}
+              </button>
+            </div>
           </div>
           <div className="max-h-64 overflow-y-auto">
             {loadingDeals && deals.length === 0 ? (
