@@ -8,6 +8,9 @@ export interface EventPrivateDetails {
   locationType?: 'in_person' | 'virtual' | 'tbd';
   resourceLinkUrl?: string | null;
   resourceLinkLabel?: string | null;
+  zoom_recording_url?: string | null;
+  zoom_password?: string | null;
+  pictures_url?: string | null;
 }
 
 /**
