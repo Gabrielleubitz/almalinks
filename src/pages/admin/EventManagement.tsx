@@ -45,6 +45,8 @@ const EventManagement: React.FC = () => {
   const [addUserError, setAddUserError] = useState<string | null>(null);
   const [syncingToHubspot, setSyncingToHubspot] = useState(false);
   const [hubspotSyncResult, setHubspotSyncResult] = useState<string | null>(null);
+  const [syncingEventId, setSyncingEventId] = useState<string | null>(null);
+  const [eventSyncStatus, setEventSyncStatus] = useState<Record<string, { ok: boolean; message: string }>>({});
 
   useEffect(() => {
     loadEvents();
@@ -172,6 +174,31 @@ const EventManagement: React.FC = () => {
       setHubspotSyncResult(`Failed: ${err instanceof Error ? err.message : 'Network error'}`);
     } finally {
       setSyncingToHubspot(false);
+    }
+  };
+
+  const handleForceHubspotSync = async (eventId: string) => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) return;
+    setSyncingEventId(eventId);
+    setEventSyncStatus((prev) => ({ ...prev, [eventId]: { ok: false, message: '' } }));
+    try {
+      const idToken = await getIdToken(firebaseUser);
+      const res = await fetch('/api/sync-event-to-hubspot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ eventId }),
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => ({}));
+      const synced = res.ok && data.synced;
+      const message = synced ? 'Sync Complete' : (data.error || `HTTP ${res.status}`);
+      setEventSyncStatus((prev) => ({ ...prev, [eventId]: { ok: synced, message } }));
+      if (synced) loadEvents();
+    } catch (err) {
+      setEventSyncStatus((prev) => ({ ...prev, [eventId]: { ok: false, message: err instanceof Error ? err.message : 'Network error' } }));
+    } finally {
+      setSyncingEventId(null);
     }
   };
 
@@ -666,6 +693,23 @@ const EventManagement: React.FC = () => {
                     <td className="px-4 py-3">{getStatusBadge(event.status)}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex flex-wrap items-center justify-end gap-1 sm:gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleForceHubspotSync(event.id)}
+                          disabled={syncingEventId === event.id}
+                          className="text-orange-600 hover:text-orange-800 p-1.5 rounded disabled:opacity-50 flex items-center gap-1 min-w-[100px]"
+                          title={eventSyncStatus[event.id]?.message || 'Force HubSpot Sync'}
+                        >
+                          {syncingEventId === event.id ? (
+                            <span className="text-xs">Syncing...</span>
+                          ) : eventSyncStatus[event.id]?.ok ? (
+                            <span className="text-green-600 flex items-center gap-1 text-xs"><CheckCircle className="h-4 w-4 flex-shrink-0" /> Sync Complete</span>
+                          ) : eventSyncStatus[event.id]?.message ? (
+                            <span className="text-red-600 text-xs truncate max-w-[140px]" title={eventSyncStatus[event.id].message}>{eventSyncStatus[event.id].message}</span>
+                          ) : (
+                            <span className="text-xs">Force HubSpot Sync</span>
+                          )}
+                        </button>
                         <Link to={`/events/${event.slug}`} className="text-gray-500 hover:text-gray-700 p-1.5 rounded" title="View"><Eye className="h-4 w-4" /></Link>
                         <Link to={`/admin/events/${event.id}/edit`} className="text-gray-500 hover:text-gray-700 p-1.5 rounded" title="Edit"><Edit className="h-4 w-4" /></Link>
                         <button type="button" onClick={() => handleShowRegistrations(event)} className="text-blue-600 hover:text-blue-800 p-1.5 rounded font-medium flex items-center gap-1" title="Registrations & check-in">
@@ -741,6 +785,27 @@ const EventManagement: React.FC = () => {
                         <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                         <span>Updating...</span>
                       </div>
+                    )}
+                  </div>
+
+                  {/* Force HubSpot Sync */}
+                  <div className="mb-4">
+                    <button
+                      type="button"
+                      onClick={() => handleForceHubspotSync(event.id)}
+                      disabled={syncingEventId === event.id}
+                      className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100 disabled:opacity-50 text-sm font-medium"
+                    >
+                      {syncingEventId === event.id ? (
+                        <>Syncing...</>
+                      ) : eventSyncStatus[event.id]?.ok ? (
+                        <><CheckCircle className="h-4 w-4 text-green-600" /> Sync Complete</>
+                      ) : (
+                        <>Force HubSpot Sync</>
+                      )}
+                    </button>
+                    {eventSyncStatus[event.id]?.message && !eventSyncStatus[event.id]?.ok && (
+                      <p className="mt-1 text-xs text-red-600" title={eventSyncStatus[event.id].message}>{eventSyncStatus[event.id].message}</p>
                     )}
                   </div>
 
