@@ -37,6 +37,8 @@ export interface EventData {
   createdAt: any;
   updatedAt?: any;
   autoConnectEnabled?: boolean; // NEW: Auto-connect control
+  /** HubSpot Deal ID when event is synced to HubSpot */
+  hubspotDealId?: string;
 }
 
 export interface EventRegistration {

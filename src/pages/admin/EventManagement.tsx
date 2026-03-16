@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { getIdToken } from 'firebase/auth';
 import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, ArrowLeft, UserCheck, CheckCircle, Clock, Search, List, LayoutGrid, UserPlus } from 'lucide-react';
 import { EventService, EventData } from '../../services/eventService';
 import EventPositionChart from '../../components/analytics/EventPositionChart';
 import { UserService } from '../../services/userService';
 import { useAuth } from '../../hooks/useAuth';
+import { auth } from '../../firebase/config';
 import type { UserCard } from '../../types/user';
 
 type EventFilter = 'all' | 'upcoming' | 'past';
@@ -18,6 +20,7 @@ const EventManagement: React.FC = () => {
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     eventId: string;
     eventName: string;
+    hubspotDealId?: string;
   } | null>(null);
   const [eventFilter, setEventFilter] = useState<EventFilter>('upcoming');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -91,26 +94,49 @@ const EventManagement: React.FC = () => {
   const handleDeleteClick = (event: EventData) => {
     setDeleteConfirmation({
       eventId: event.id,
-      eventName: event.name
+      eventName: event.name,
+      hubspotDealId: event.hubspotDealId,
     });
   };
 
   const handleDeleteConfirm = async () => {
     if (!deleteConfirmation) return;
 
-    const { eventId } = deleteConfirmation;
+    const { eventId, hubspotDealId } = deleteConfirmation;
     setDeletingEvent(eventId);
 
     try {
+      // Delete linked HubSpot deal first (if any)
+      const firebaseUser = auth.currentUser;
+      if (firebaseUser) {
+        try {
+          const idToken = await getIdToken(firebaseUser);
+          const body = hubspotDealId ? { eventId, hubspotDealId } : { eventId };
+          const res = await fetch('/api/delete-event-from-hubspot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+            body: JSON.stringify(body),
+            credentials: 'include',
+          });
+          const data = await res.json().catch(() => ({}));
+          if (data.deleted) {
+            console.log('✅ HubSpot deal deleted');
+          } else if (data.error) {
+            console.warn('[EventManagement] HubSpot deal delete:', data.error);
+          }
+        } catch (hubErr) {
+          console.warn('[EventManagement] HubSpot deal delete request failed (non-blocking):', hubErr);
+        }
+      }
+
       await EventService.deleteEvent(eventId);
-      
+
       // Remove from local state
       setEvents(prev => prev.filter(event => event.id !== eventId));
-      
+
       console.log('✅ Event deleted successfully');
     } catch (error) {
       console.error('❌ Error deleting event:', error);
-      // You might want to show an error message to the user here
     } finally {
       setDeletingEvent(null);
       setDeleteConfirmation(null);

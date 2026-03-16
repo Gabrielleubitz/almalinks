@@ -14,6 +14,8 @@ import emailServiceHandler from './lib/server/api/email-service.js';
 import deleteUserHandler from './lib/server/api/delete-user.js';
 import sendEventAnnouncementHandler from './lib/server/api/send-event-announcement.js';
 import welcomeEmailHandler from './lib/server/api/welcome-email.js';
+import syncEventToHubspotHandler from './lib/server/api/sync-event-to-hubspot.js';
+import deleteEventFromHubspotHandler from './lib/server/api/delete-event-from-hubspot.js';
 
 // CJS handler (kept as CommonJS)
 import adminChatsHandler from './lib/server/api/admin/chats.cjs';
@@ -112,6 +114,18 @@ app.post('/api/welcome-email', (req, res) => {
   welcomeEmailHandler(req, res);
 });
 
+// HubSpot: sync event to Deal (create/update)
+app.post('/api/sync-event-to-hubspot', (req, res) => {
+  console.log('Sync Event to HubSpot API called:', req.body?.eventId);
+  syncEventToHubspotHandler(req, res);
+});
+
+// HubSpot: delete Deal when event is deleted
+app.post('/api/delete-event-from-hubspot', (req, res) => {
+  console.log('Delete Event from HubSpot API called:', req.body?.eventId, req.body?.hubspotDealId);
+  deleteEventFromHubspotHandler(req, res);
+});
+
 // Temporarily disabled APIs due to import issues
 // // System Test API
 // app.all('/api/system-test', (req, res) => {
@@ -158,6 +172,8 @@ app.listen(PORT, () => {
   console.log('  - POST http://localhost:3001/api/delete-user         Delete users');
   console.log('  - POST http://localhost:3001/api/send-event-announcement  Mailchimp event campaign');
   console.log('  - POST http://localhost:3001/api/welcome-email            Mailchimp welcome (signup)');
+  console.log('  - POST http://localhost:3001/api/sync-event-to-hubspot     HubSpot deal sync (event create/update)');
+  console.log('  - POST http://localhost:3001/api/delete-event-from-hubspot  HubSpot deal delete (event deletion)');
   console.log('  - GET  http://localhost:3001/api/health              Health check');
   console.log('');
   console.log('Note: Some APIs temporarily disabled due to import issues');
