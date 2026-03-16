@@ -82,6 +82,11 @@ const AddEvent: React.FC = () => {
       return;
     }
 
+    if (user?.role !== 'admin') {
+      setError('Admin access required. Your account does not have admin permissions. Contact an administrator to update your role in Firestore (users/{uid} must have role="admin").');
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }
@@ -90,86 +95,27 @@ const AddEvent: React.FC = () => {
     setError(null);
     setAnnouncementFailedReason(null);
 
+    let eventCreateSucceeded = false;
+    let eventId: string | null = null;
+
     try {
-      const eventId = await EventService.createEvent(
+      console.log('[AddEvent] Event creation started');
+      eventId = await EventService.createEvent(
         { name: formData.name, location: formData.location, date: formData.date, description: formData.description, imageUrl: formData.imageUrl, imageCrop: formData.imageCrop, status: formData.status },
         user.uid
       );
+      eventCreateSucceeded = true;
+      console.log('[AddEvent] Firestore event write succeeded', eventId);
 
-      await EventService.setEventPrivateDetails(eventId, {
-        locationText: formData.location,
-        meetingUrl: formData.meetingUrl?.trim() || null,
-        resourceLinkUrl: formData.resourceLinkUrl?.trim() || null,
-        resourceLinkLabel: formData.resourceLinkLabel?.trim() || null,
-      });
+      // Capture values before resetting form (post-create runs async and will see reset state)
+      const capturedLocation = formData.location;
+      const capturedMeetingUrl = formData.meetingUrl?.trim() || null;
+      const capturedResourceLinkUrl = formData.resourceLinkUrl?.trim() || null;
+      const capturedResourceLinkLabel = formData.resourceLinkLabel?.trim() || null;
+      const eventName = formData.name;
 
-      // In-app notifications for approved users (new event created - click to view)
-      const { notifyAllUsersOfNewEvent } = await import('../../services/notificationService');
-      notifyAllUsersOfNewEvent(eventId, formData.name);
-
-      // Sync event to HubSpot as a Deal (so it appears in HubSpot)
-      try {
-        const firebaseUser = auth.currentUser;
-        if (firebaseUser) {
-          const idToken = await getIdToken(firebaseUser);
-          const syncRes = await fetch('/api/sync-event-to-hubspot', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-            body: JSON.stringify({ eventId }),
-            credentials: 'include',
-          });
-          const syncData = await syncRes.json().catch(() => ({}));
-          if (!syncRes.ok || !syncData.synced) {
-            console.warn('[AddEvent] HubSpot deal sync failed (non-blocking):', syncData.error || syncRes.status);
-          }
-        }
-      } catch (hubErr) {
-        console.warn('[AddEvent] HubSpot deal sync request failed (non-blocking):', hubErr);
-      }
-
-      // Send Mailchimp Marketing campaign to entire audience (server-side, non-blocking for UX)
-      let announcementSent = false;
-      let announcementError: string | null = null;
-      try {
-        const firebaseUser = auth.currentUser;
-        if (!firebaseUser) {
-          announcementError = 'Not authenticated (Firebase user not available)';
-        } else {
-          const idToken = await getIdToken(firebaseUser);
-          const res = await fetch('/api/send-event-announcement', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${idToken}`,
-            },
-            body: JSON.stringify({ eventId }),
-            credentials: 'include',
-          });
-          const data = await res.json().catch(() => ({}));
-          announcementSent = res.ok && data.ok;
-          if (!announcementSent) {
-            announcementError = data.error || `HTTP ${res.status}`;
-            console.warn('[AddEvent] Announcement not sent:', announcementError);
-          }
-        }
-      } catch (announceErr: unknown) {
-        announcementError = announceErr instanceof Error ? announceErr.message : String(announceErr);
-        if (announcementError.includes('fetch') || announcementError.includes('Failed to fetch') || announcementError.includes('NetworkError')) {
-          announcementError = 'Could not reach API. Locally: run the API in another terminal (npm run dev:express). On production: check Vercel env vars.';
-        }
-        console.warn('[AddEvent] Announcement request failed:', announceErr);
-      }
-
-      if (announcementError) setAnnouncementFailedReason(announcementError);
-      setSuccess(
-        announcementSent
-          ? `Event "${formData.name}" created. Announcement sent to Mailchimp audience. (Only contacts in that audience receive the email—add yourself or run Import users to Mailchimp.)`
-          : announcementError
-            ? `Event "${formData.name}" created. Mailchimp announcement failed: ${announcementError}`
-            : `Event "${formData.name}" created successfully with slug: ${previewSlug}`
-      );
-
-      // Clear form
+      // Show success and clear form immediately so post-create steps cannot affect UI
+      setSuccess(`Event "${eventName}" created successfully with slug: ${previewSlug}`);
       setFormData({
         name: '',
         location: '',
@@ -184,14 +130,101 @@ const AddEvent: React.FC = () => {
       });
       setPreviewSlug('');
 
+      // Run post-create steps in background (fire-and-forget); never await so they cannot throw into our catch
+      queueMicrotask(() => {
+        (async () => {
+          try {
+            EventService.setEventPrivateDetails(eventId!, {
+              locationText: capturedLocation,
+              meetingUrl: capturedMeetingUrl,
+              resourceLinkUrl: capturedResourceLinkUrl,
+              resourceLinkLabel: capturedResourceLinkLabel,
+            }).catch((e) => console.warn('[AddEvent] setEventPrivateDetails failed:', e));
+
+            const { notifyAllUsersOfNewEvent } = await import('../../services/notificationService');
+            notifyAllUsersOfNewEvent(eventId!, eventName);
+
+            const firebaseUser = auth.currentUser;
+            if (firebaseUser) {
+              try {
+                const idToken = await getIdToken(firebaseUser);
+                const syncRes = await fetch('/api/sync-event-to-hubspot', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+                  body: JSON.stringify({ eventId }),
+                  credentials: 'include',
+                });
+                const syncData = await syncRes.json().catch(() => ({}));
+                if (!syncRes.ok || !syncData.synced) {
+                  console.warn('[AddEvent] HubSpot deal sync failed:', syncData.error || syncRes.status);
+                }
+              } catch (hubErr) {
+                console.warn('[AddEvent] HubSpot deal sync request failed:', hubErr);
+              }
+
+              let announcementSent = false;
+              let announcementError: string | null = null;
+              try {
+                const idToken = await getIdToken(firebaseUser);
+                const res = await fetch('/api/send-event-announcement', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${idToken}`,
+                  },
+                  body: JSON.stringify({ eventId }),
+                  credentials: 'include',
+                });
+                const data = await res.json().catch(() => ({}));
+                announcementSent = res.ok && data.ok;
+                if (!announcementSent) {
+                  announcementError = data.error || `HTTP ${res.status}`;
+                  console.warn('[AddEvent] Announcement not sent:', announcementError);
+                }
+              } catch (announceErr: unknown) {
+                announcementError = announceErr instanceof Error ? announceErr.message : String(announceErr);
+                if (announcementError?.includes('fetch') || announcementError?.includes('Failed to fetch') || announcementError?.includes('NetworkError')) {
+                  announcementError = 'Could not reach API. Locally: run the API in another terminal (npm run dev:express). On production: check Vercel env vars.';
+                }
+                console.warn('[AddEvent] Announcement request failed:', announceErr);
+              }
+              if (announcementError) setAnnouncementFailedReason(announcementError);
+              if (announcementSent) {
+                setSuccess(`Event "${eventName}" created. Announcement sent to Mailchimp audience.`);
+              } else if (announcementError) {
+                setSuccess(`Event "${eventName}" created. Mailchimp announcement failed: ${announcementError}`);
+              }
+            }
+          } catch (postErr: unknown) {
+            console.warn('[AddEvent] Post-create step failed (event was created):', postErr);
+          }
+        })();
+      });
+
       // Redirect after 2 seconds
       setTimeout(() => {
         navigate('/admin');
       }, 2000);
 
     } catch (err: any) {
-      console.error('❌ Error creating event:', err);
-      setError(err.message || 'Failed to create event. Please try again.');
+      if (!eventCreateSucceeded) {
+        console.error('❌ Error creating event:', err);
+        const msg = err?.message || '';
+        const isPermissionError = msg.includes('permission') || msg.includes('insufficient');
+        setError(
+          isPermissionError
+            ? 'Event creation failed: Missing or insufficient permissions. Ensure your Firestore user document (users/' +
+              (user?.uid || 'your-uid') +
+              ') has role="admin". If you recently became an admin, try signing out and back in.'
+            : msg || 'Failed to create event. Please try again.'
+        );
+      } else {
+        console.warn('[AddEvent] Follow-up step failed (event was created successfully):', err);
+        setSuccess(`Event "${formData.name}" created successfully.`);
+        setFormData({ name: '', location: '', date: '', description: '', imageUrl: '', imageCrop: null, status: 'active', meetingUrl: '', resourceLinkUrl: '', resourceLinkLabel: '' });
+        setPreviewSlug('');
+        setTimeout(() => navigate('/admin'), 2000);
+      }
     } finally {
       setLoading(false);
     }

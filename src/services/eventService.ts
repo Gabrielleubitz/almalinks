@@ -86,7 +86,6 @@ export class EventService {
       console.log('✅ Event created successfully:', eventId, 'with slug:', uniqueSlug);
       return eventId;
     } catch (error) {
-      console.error('❌ Error creating event:', error);
       throw error;
     }
   }
