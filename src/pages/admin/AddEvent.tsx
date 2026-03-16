@@ -114,8 +114,75 @@ const AddEvent: React.FC = () => {
       const capturedResourceLinkLabel = formData.resourceLinkLabel?.trim() || null;
       const eventName = formData.name;
 
-      // Show success and clear form immediately so post-create steps cannot affect UI
-      setSuccess(`Event "${eventName}" created successfully with slug: ${previewSlug}`);
+      // Fire-and-forget: private details + notifications (non-blocking)
+      EventService.setEventPrivateDetails(eventId, {
+        locationText: capturedLocation,
+        meetingUrl: capturedMeetingUrl,
+        resourceLinkUrl: capturedResourceLinkUrl,
+        resourceLinkLabel: capturedResourceLinkLabel,
+      }).catch((e) => console.warn('[AddEvent] setEventPrivateDetails failed:', e));
+      import('../../services/notificationService').then(({ notifyAllUsersOfNewEvent }) =>
+        notifyAllUsersOfNewEvent(eventId, eventName)
+      );
+
+      // Await HubSpot sync and announcement so we can show their status in the success message
+      let hubspotStatus = '';
+      let announcementSent = false;
+      let announcementError: string | null = null;
+      const firebaseUser = auth.currentUser;
+      if (firebaseUser) {
+        try {
+          const idToken = await getIdToken(firebaseUser);
+          const syncRes = await fetch('/api/sync-event-to-hubspot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+            body: JSON.stringify({ eventId }),
+            credentials: 'include',
+          });
+          const syncData = await syncRes.json().catch(() => ({}));
+          if (syncRes.ok && syncData.synced) {
+            hubspotStatus = ' Synced to HubSpot Deals.';
+          } else {
+            const err = syncData.error || (syncRes.status === 503 ? 'HUBSPOT_ACCESS_TOKEN not set' : `HTTP ${syncRes.status}`);
+            hubspotStatus = ` HubSpot sync failed: ${err}`;
+            console.warn('[AddEvent] HubSpot deal sync failed:', err);
+          }
+        } catch (hubErr) {
+          hubspotStatus = ` HubSpot sync failed: ${hubErr instanceof Error ? hubErr.message : 'Network error'}`;
+          console.warn('[AddEvent] HubSpot deal sync request failed:', hubErr);
+        }
+
+        try {
+          const idToken = await getIdToken(firebaseUser);
+          const res = await fetch('/api/send-event-announcement', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+            body: JSON.stringify({ eventId }),
+            credentials: 'include',
+          });
+          const data = await res.json().catch(() => ({}));
+          announcementSent = res.ok && data.ok;
+          if (!announcementSent) {
+            announcementError = data.error || `HTTP ${res.status}`;
+            console.warn('[AddEvent] Announcement not sent:', announcementError);
+          }
+        } catch (announceErr: unknown) {
+          announcementError = announceErr instanceof Error ? announceErr.message : String(announceErr);
+          if (announcementError?.includes('fetch') || announcementError?.includes('Failed to fetch') || announcementError?.includes('NetworkError')) {
+            announcementError = 'Could not reach API. Locally: run the API in another terminal (npm run dev:express). On production: check Vercel env vars.';
+          }
+          console.warn('[AddEvent] Announcement request failed:', announceErr);
+        }
+      }
+
+      if (announcementError) setAnnouncementFailedReason(announcementError);
+      setSuccess(
+        announcementSent
+          ? `Event "${eventName}" created with slug: ${previewSlug}.${hubspotStatus} Announcement sent to Mailchimp.`
+          : announcementError
+            ? `Event "${eventName}" created with slug: ${previewSlug}.${hubspotStatus} Mailchimp failed: ${announcementError}`
+            : `Event "${eventName}" created successfully with slug: ${previewSlug}.${hubspotStatus}`
+      );
       setFormData({
         name: '',
         location: '',
@@ -129,77 +196,6 @@ const AddEvent: React.FC = () => {
         resourceLinkLabel: '',
       });
       setPreviewSlug('');
-
-      // Run post-create steps in background (fire-and-forget); never await so they cannot throw into our catch
-      queueMicrotask(() => {
-        (async () => {
-          try {
-            EventService.setEventPrivateDetails(eventId!, {
-              locationText: capturedLocation,
-              meetingUrl: capturedMeetingUrl,
-              resourceLinkUrl: capturedResourceLinkUrl,
-              resourceLinkLabel: capturedResourceLinkLabel,
-            }).catch((e) => console.warn('[AddEvent] setEventPrivateDetails failed:', e));
-
-            const { notifyAllUsersOfNewEvent } = await import('../../services/notificationService');
-            notifyAllUsersOfNewEvent(eventId!, eventName);
-
-            const firebaseUser = auth.currentUser;
-            if (firebaseUser) {
-              try {
-                const idToken = await getIdToken(firebaseUser);
-                const syncRes = await fetch('/api/sync-event-to-hubspot', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-                  body: JSON.stringify({ eventId }),
-                  credentials: 'include',
-                });
-                const syncData = await syncRes.json().catch(() => ({}));
-                if (!syncRes.ok || !syncData.synced) {
-                  console.warn('[AddEvent] HubSpot deal sync failed:', syncData.error || syncRes.status);
-                }
-              } catch (hubErr) {
-                console.warn('[AddEvent] HubSpot deal sync request failed:', hubErr);
-              }
-
-              let announcementSent = false;
-              let announcementError: string | null = null;
-              try {
-                const idToken = await getIdToken(firebaseUser);
-                const res = await fetch('/api/send-event-announcement', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${idToken}`,
-                  },
-                  body: JSON.stringify({ eventId }),
-                  credentials: 'include',
-                });
-                const data = await res.json().catch(() => ({}));
-                announcementSent = res.ok && data.ok;
-                if (!announcementSent) {
-                  announcementError = data.error || `HTTP ${res.status}`;
-                  console.warn('[AddEvent] Announcement not sent:', announcementError);
-                }
-              } catch (announceErr: unknown) {
-                announcementError = announceErr instanceof Error ? announceErr.message : String(announceErr);
-                if (announcementError?.includes('fetch') || announcementError?.includes('Failed to fetch') || announcementError?.includes('NetworkError')) {
-                  announcementError = 'Could not reach API. Locally: run the API in another terminal (npm run dev:express). On production: check Vercel env vars.';
-                }
-                console.warn('[AddEvent] Announcement request failed:', announceErr);
-              }
-              if (announcementError) setAnnouncementFailedReason(announcementError);
-              if (announcementSent) {
-                setSuccess(`Event "${eventName}" created. Announcement sent to Mailchimp audience.`);
-              } else if (announcementError) {
-                setSuccess(`Event "${eventName}" created. Mailchimp announcement failed: ${announcementError}`);
-              }
-            }
-          } catch (postErr: unknown) {
-            console.warn('[AddEvent] Post-create step failed (event was created):', postErr);
-          }
-        })();
-      });
 
       // Redirect after 2 seconds
       setTimeout(() => {

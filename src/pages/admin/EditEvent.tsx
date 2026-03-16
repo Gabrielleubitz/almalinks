@@ -200,9 +200,10 @@ const EditEvent: React.FC = () => {
       });
 
       // Sync event to HubSpot Deal (update existing or create if missing)
-      try {
-        const firebaseUser = auth.currentUser;
-        if (firebaseUser) {
+      let hubspotStatus = '';
+      const firebaseUser = auth.currentUser;
+      if (firebaseUser) {
+        try {
           const idToken = await getIdToken(firebaseUser);
           const syncRes = await fetch('/api/sync-event-to-hubspot', {
             method: 'POST',
@@ -211,15 +212,19 @@ const EditEvent: React.FC = () => {
             credentials: 'include',
           });
           const syncData = await syncRes.json().catch(() => ({}));
-          if (!syncRes.ok || !syncData.synced) {
-            console.warn('[EditEvent] HubSpot deal sync failed (non-blocking):', syncData.error || syncRes.status);
+          if (syncRes.ok && syncData.synced) {
+            hubspotStatus = ' Synced to HubSpot.';
+          } else {
+            hubspotStatus = ` HubSpot sync failed: ${syncData.error || syncRes.status}`;
+            console.warn('[EditEvent] HubSpot deal sync failed:', syncData.error || syncRes.status);
           }
+        } catch (hubErr) {
+          hubspotStatus = ` HubSpot sync failed: ${hubErr instanceof Error ? hubErr.message : 'Network error'}`;
+          console.warn('[EditEvent] HubSpot deal sync request failed:', hubErr);
         }
-      } catch (hubErr) {
-        console.warn('[EditEvent] HubSpot deal sync request failed (non-blocking):', hubErr);
       }
-      
-      setSuccess(`Event "${formData.name}" updated successfully!`);
+
+      setSuccess(`Event "${formData.name}" updated successfully!${hubspotStatus}`);
 
       // Redirect after 2 seconds
       setTimeout(() => {

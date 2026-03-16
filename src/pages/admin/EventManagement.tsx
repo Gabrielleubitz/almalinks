@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { getIdToken } from 'firebase/auth';
-import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, ArrowLeft, UserCheck, CheckCircle, Clock, Search, List, LayoutGrid, UserPlus } from 'lucide-react';
+import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, ArrowLeft, UserCheck, CheckCircle, Clock, Search, List, LayoutGrid, UserPlus, RefreshCw } from 'lucide-react';
 import { EventService, EventData } from '../../services/eventService';
 import EventPositionChart from '../../components/analytics/EventPositionChart';
 import { UserService } from '../../services/userService';
@@ -43,6 +43,8 @@ const EventManagement: React.FC = () => {
   const [selectedUsersToAdd, setSelectedUsersToAdd] = useState<UserCard[]>([]);
   const [addingUser, setAddingUser] = useState(false);
   const [addUserError, setAddUserError] = useState<string | null>(null);
+  const [syncingToHubspot, setSyncingToHubspot] = useState(false);
+  const [hubspotSyncResult, setHubspotSyncResult] = useState<string | null>(null);
 
   useEffect(() => {
     loadEvents();
@@ -145,6 +147,32 @@ const EventManagement: React.FC = () => {
 
   const handleDeleteCancel = () => {
     setDeleteConfirmation(null);
+  };
+
+  const handleSyncAllToHubspot = async () => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) return;
+    setSyncingToHubspot(true);
+    setHubspotSyncResult(null);
+    try {
+      const idToken = await getIdToken(firebaseUser);
+      const res = await fetch('/api/sync-all-events-to-hubspot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        setHubspotSyncResult(`Synced ${data.synced} event(s) to HubSpot. ${data.failed > 0 ? `${data.failed} failed.` : ''}`);
+        if (data.synced > 0) loadEvents();
+      } else {
+        setHubspotSyncResult(`Failed: ${data.error || res.status}`);
+      }
+    } catch (err) {
+      setHubspotSyncResult(`Failed: ${err instanceof Error ? err.message : 'Network error'}`);
+    } finally {
+      setSyncingToHubspot(false);
+    }
   };
 
   // Function to handle showing registrations
@@ -518,19 +546,39 @@ const EventManagement: React.FC = () => {
           </Link>
         </div>
 
-        {/* Header with Create Button */}
+        {/* Header with Create Button and HubSpot Sync */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0 mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
             Event Management
           </h1>
-          <Link
-            to="/admin/events/create"
-            className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2 text-sm sm:text-base min-h-[44px] sm:min-h-0 w-full sm:w-auto"
-          >
-            <Plus className="h-5 w-5" />
-            <span>Create Event</span>
-          </Link>
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={handleSyncAllToHubspot}
+              disabled={syncingToHubspot || events.length === 0}
+              className="border border-gray-300 text-gray-700 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-all font-medium flex items-center justify-center space-x-2 text-sm min-h-[44px] sm:min-h-0 disabled:opacity-50"
+            >
+              {syncingToHubspot ? (
+                <span className="animate-pulse">Syncing…</span>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  <span>Sync to HubSpot</span>
+                </>
+              )}
+            </button>
+            <Link
+              to="/admin/events/create"
+              className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2 text-sm sm:text-base min-h-[44px] sm:min-h-0 flex-1 sm:flex-initial"
+            >
+              <Plus className="h-5 w-5" />
+              <span>Create Event</span>
+            </Link>
+          </div>
         </div>
+        {hubspotSyncResult && (
+          <p className="mb-4 text-sm text-gray-600">{hubspotSyncResult}</p>
+        )}
 
         {/* Filter, sort, view mode */}
         <div className="flex flex-wrap items-center gap-3 mb-6">

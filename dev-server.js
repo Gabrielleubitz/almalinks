@@ -15,6 +15,7 @@ import deleteUserHandler from './lib/server/api/delete-user.js';
 import sendEventAnnouncementHandler from './lib/server/api/send-event-announcement.js';
 import welcomeEmailHandler from './lib/server/api/welcome-email.js';
 import syncEventToHubspotHandler from './lib/server/api/sync-event-to-hubspot.js';
+import syncAllEventsToHubspotHandler from './lib/server/api/sync-all-events-to-hubspot.js';
 import deleteEventFromHubspotHandler from './lib/server/api/delete-event-from-hubspot.js';
 
 // CJS handler (kept as CommonJS)
@@ -118,6 +119,12 @@ app.post('/api/welcome-email', (req, res) => {
 app.post('/api/sync-event-to-hubspot', (req, res) => {
   console.log('Sync Event to HubSpot API called:', req.body?.eventId);
   syncEventToHubspotHandler(req, res);
+});
+
+// HubSpot: sync all events without hubspotDealId to Deals (backfill)
+app.post('/api/sync-all-events-to-hubspot', (req, res) => {
+  console.log('Sync All Events to HubSpot API called');
+  syncAllEventsToHubspotHandler(req, res);
 });
 
 // HubSpot: delete Deal when event is deleted
