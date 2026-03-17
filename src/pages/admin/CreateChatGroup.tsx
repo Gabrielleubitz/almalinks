@@ -9,7 +9,6 @@ import {
   X,
   Search,
   Shield,
-  Save,
   AlertCircle,
   ImagePlus
 } from 'lucide-react';
@@ -21,6 +20,7 @@ import { uploadImageToLibrary } from '../../services/imageUploadService';
 import { CreateChatGroupForm } from '../../types/chat';
 import { UserCard } from '../../types/user';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import SaveButtonWithFeedback from '../../components/ui/SaveButtonWithFeedback';
 import { auth } from '../../firebase/config';
 import CoverPhotoCropModal, { type CoverCrop } from '../../components/profile/CoverPhotoCropModal';
 import CropImage from '../../components/profile/CropImage';
@@ -44,6 +44,7 @@ const CreateChatGroup: React.FC = () => {
   const [users, setUsers] = useState<UserCard[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   const [usersLoading, setUsersLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -298,7 +299,7 @@ const CreateChatGroup: React.FC = () => {
 
       const result = await response.json();
       console.log('✅ Chat group created:', result);
-      
+      setSavedAt(Date.now());
       setSuccess('✅ Chat group created successfully! Redirecting...');
 
       // Log admin chat creation activity
@@ -593,23 +594,17 @@ const CreateChatGroup: React.FC = () => {
                 )}
 
                 {/* Submit Button */}
-                <button
+                <SaveButtonWithFeedback
                   type="submit"
-                  disabled={loading || !formData.name.trim() || formData.initialAdmins.length === 0}
+                  saving={loading}
+                  savedAt={savedAt}
+                  disabled={!formData.name.trim() || formData.initialAdmins.length === 0}
+                  label="Create Chat Group"
+                  savingLabel="Creating..."
+                  successLabel="Group created"
                   className="w-full flex items-center justify-center px-4 sm:px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] sm:min-h-0 text-sm sm:text-base font-medium"
-                >
-                  {loading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Create Chat Group
-                    </>
-                  )}
-                </button>
+                  successClassName="w-full flex items-center justify-center px-4 sm:px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 min-h-[44px] sm:min-h-0 text-sm sm:text-base font-medium"
+                />
               </form>
             </div>
 

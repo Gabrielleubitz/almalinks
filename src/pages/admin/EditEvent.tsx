@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getIdToken } from 'firebase/auth';
-import { Calendar, MapPin, Image, FileText, Save, ArrowLeft, AlertCircle, Loader2, ImagePlus } from 'lucide-react';
+import { Calendar, MapPin, Image, FileText, ArrowLeft, AlertCircle, Loader2, ImagePlus } from 'lucide-react';
+import SaveButtonWithFeedback from '../../components/ui/SaveButtonWithFeedback';
 import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../firebase/config';
 import { EventService, EventData, generateSlug } from '../../services/eventService';
@@ -34,6 +35,7 @@ const EditEvent: React.FC = () => {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [previewSlug, setPreviewSlug] = useState('');
@@ -264,6 +266,7 @@ const EditEvent: React.FC = () => {
       }
 
       setSuccess(`Event "${formData.name}" updated successfully!${hubspotStatus}`);
+      setSavedAt(Date.now());
 
       // Redirect after 2 seconds
       setTimeout(() => {
@@ -686,23 +689,16 @@ const EditEvent: React.FC = () => {
               >
                 Cancel
               </button>
-              <button
+              <SaveButtonWithFeedback
                 type="submit"
-                disabled={saving || !hasChanges()}
-                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-              >
-                {saving ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Saving Changes...</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-5 w-5" />
-                    <span>Save Changes</span>
-                  </>
-                )}
-              </button>
+                saving={saving}
+                savedAt={savedAt}
+                disabled={!hasChanges()}
+                label="Save Changes"
+                successLabel="Changes saved"
+                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                successClassName="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-xl font-semibold text-lg flex items-center justify-center space-x-2"
+              />
             </div>
           </form>
         </div>

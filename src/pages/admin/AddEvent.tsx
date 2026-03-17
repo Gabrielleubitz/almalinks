@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getIdToken } from 'firebase/auth';
-import { Calendar, MapPin, Image, FileText, Save, ArrowLeft, AlertCircle, ImagePlus } from 'lucide-react';
+import { Calendar, MapPin, Image, FileText, ArrowLeft, AlertCircle, ImagePlus } from 'lucide-react';
+import SaveButtonWithFeedback from '../../components/ui/SaveButtonWithFeedback';
 import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../firebase/config';
 import { EventService, generateSlug } from '../../services/eventService';
@@ -27,6 +28,7 @@ const AddEvent: React.FC = () => {
   });
   
   const [loading, setLoading] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [announcementFailedReason, setAnnouncementFailedReason] = useState<string | null>(null);
@@ -176,6 +178,7 @@ const AddEvent: React.FC = () => {
       }
 
       if (announcementError) setAnnouncementFailedReason(announcementError);
+      setSavedAt(Date.now());
       setSuccess(
         announcementSent
           ? `Event "${eventName}" created with slug: ${previewSlug}.${hubspotStatus} Announcement sent to Mailchimp.`
@@ -216,6 +219,7 @@ const AddEvent: React.FC = () => {
         );
       } else {
         console.warn('[AddEvent] Follow-up step failed (event was created successfully):', err);
+        setSavedAt(Date.now());
         setSuccess(`Event "${formData.name}" created successfully.`);
         setFormData({ name: '', location: '', date: '', description: '', imageUrl: '', imageCrop: null, status: 'active', meetingUrl: '', resourceLinkUrl: '', resourceLinkLabel: '' });
         setPreviewSlug('');
@@ -539,23 +543,16 @@ const AddEvent: React.FC = () => {
 
             {/* Submit Button */}
             <div className="flex justify-center pt-6">
-              <button
+              <SaveButtonWithFeedback
                 type="submit"
-                disabled={loading}
-                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Creating Event...</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-5 w-5" />
-                    <span>Create Event</span>
-                  </>
-                )}
-              </button>
+                saving={loading}
+                savedAt={savedAt}
+                label="Create Event"
+                savingLabel="Creating Event..."
+                successLabel="Event created"
+                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                successClassName="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-xl font-semibold text-lg flex items-center justify-center space-x-2"
+              />
             </div>
           </form>
         </div>

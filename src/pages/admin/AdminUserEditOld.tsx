@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
-  Save, 
+  Save,
   User, 
   Mail, 
   Phone, 
@@ -16,6 +16,7 @@ import {
   Camera,
   Trash2
 } from 'lucide-react';
+import SaveButtonWithFeedback from '../../components/ui/SaveButtonWithFeedback';
 import { useAuth } from '../../hooks/useAuth';
 import { UserService } from '../../services/userService';
 import { UserProfile, UserProfileForm } from '../../types/user';
@@ -62,6 +63,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
   const [userRole, setUserRole] = useState<'member' | 'admin'>('member');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [profilePictureUploadError, setProfilePictureUploadError] = useState<string | null>(null);
@@ -278,7 +280,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
         role: userRole 
       };
       setProfile(updatedProfile);
-      
+      setSavedAt(Date.now());
       showToast('User profile updated successfully', 'success');
       
       // Reload the profile to ensure we have the latest data
@@ -443,21 +445,16 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
               <h2 className="text-2xl font-bold text-gray-900">Edit User Profile</h2>
               <p className="text-gray-600 mt-1">Modify user information and settings</p>
             </div>
-            <button
-              onClick={(e) => {
-                console.log('🖱️ Button clicked event:', e);
-                saveProfile();
-              }}
-              disabled={saving}
+            <SaveButtonWithFeedback
+              type="button"
+              onClick={() => saveProfile()}
+              saving={saving}
+              savedAt={savedAt}
+              label="Save Changes"
+              successLabel="Changes saved"
               className="inline-flex items-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-            >
-              {saving ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Save className="h-5 w-5" />
-              )}
-              <span>{saving ? 'Saving...' : 'Save Changes'}</span>
-            </button>
+              successClassName="inline-flex items-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors duration-200"
+            />
           </div>
 
           {/* Profile Picture Section */}
@@ -697,21 +694,16 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
 
           {/* Save Button (Mobile) */}
           <div className="mt-8 md:hidden">
-            <button
-              onClick={(e) => {
-                console.log('🖱️ Mobile button clicked event:', e);
-                saveProfile();
-              }}
-              disabled={saving}
+            <SaveButtonWithFeedback
+              type="button"
+              onClick={() => saveProfile()}
+              saving={saving}
+              savedAt={savedAt}
+              label="Save Changes"
+              successLabel="Changes saved"
               className="w-full inline-flex items-center justify-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-            >
-              {saving ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Save className="h-5 w-5" />
-              )}
-              <span>{saving ? 'Saving...' : 'Save Changes'}</span>
-            </button>
+              successClassName="w-full inline-flex items-center justify-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors duration-200"
+            />
           </div>
         </div>
       </div>

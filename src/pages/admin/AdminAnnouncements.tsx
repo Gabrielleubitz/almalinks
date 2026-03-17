@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageSquare, Send, Edit, Trash2, Eye, EyeOff, ArrowLeft, AlertCircle, CheckCircle, X, ChevronUp, ChevronDown } from 'lucide-react';
+import SaveButtonWithFeedback from '../../components/ui/SaveButtonWithFeedback';
 import { AnnouncementService, AnnouncementData } from '../../services/announcementService';
 import { useAuth } from '../../hooks/useAuth';
 import EmojiReactions from '../../components/announcements/EmojiReactions';
@@ -15,6 +16,7 @@ const AdminAnnouncements: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editMessage, setEditMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   const [reordering, setReordering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -83,6 +85,7 @@ const AdminAnnouncements: React.FC = () => {
       await AnnouncementService.updateAnnouncement(editingId, editMessage);
       setEditingId(null);
       setEditMessage('');
+      setSavedAt(Date.now());
       setSuccess('Announcement updated successfully!');
       await loadAnnouncements();
       
@@ -326,13 +329,17 @@ const AdminAnnouncements: React.FC = () => {
                         {editMessage.length}/300 characters
                       </div>
                       <div className="flex space-x-3">
-                        <button
+                        <SaveButtonWithFeedback
+                          type="button"
                           onClick={handleSaveEdit}
-                          disabled={submitting || !editMessage.trim() || editMessage.length > 300}
-                          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium disabled:opacity-50"
-                        >
-                          {submitting ? 'Saving...' : 'Save'}
-                        </button>
+                          saving={submitting}
+                          savedAt={savedAt}
+                          disabled={!editMessage.trim() || editMessage.length > 300}
+                          label="Save"
+                          successLabel="Changes saved"
+                          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium disabled:opacity-50 inline-flex items-center justify-center space-x-2"
+                          successClassName="bg-green-600 text-white px-4 py-2 rounded-lg font-medium inline-flex items-center justify-center space-x-2"
+                        />
                         <button
                           onClick={handleCancelEdit}
                           disabled={submitting}
