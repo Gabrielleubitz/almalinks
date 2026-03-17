@@ -64,7 +64,24 @@ export const generateSlug = (name: string): string => {
     .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
 };
 
+/** Recursively removes undefined values. Firestore rejects undefined. */
+function sanitizeForFirestore<T extends Record<string, unknown>>(obj: T): Partial<T> {
+  const result: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === undefined) continue;
+    if (v !== null && typeof v === 'object' && !Array.isArray(v) && !(v instanceof Date) && typeof (v as { toDate?: unknown }).toDate !== 'function') {
+      result[k] = sanitizeForFirestore(v as Record<string, unknown>);
+    } else {
+      result[k] = v;
+    }
+  }
+  return result as Partial<T>;
+}
+
 export class EventService {
+  /** Remove undefined from data before Firestore write. */
+  static sanitizeForFirestore = sanitizeForFirestore;
+
   // Create a new event
   static async createEvent(eventData: Omit<EventData, 'id' | 'slug' | 'createdAt' | 'updatedAt'>, adminUid: string): Promise<string> {
     try {
@@ -393,14 +410,14 @@ export class EventService {
   static async updateEvent(eventId: string, eventData: Partial<Omit<EventData, 'id' | 'createdAt' | 'createdBy'>>): Promise<void> {
     try {
       console.log('🔄 Updating event:', eventId, eventData);
-      
+
       const docRef = doc(db, 'events', eventId);
-      
+
       // If name is being updated, regenerate slug
       let updateData = { ...eventData };
       if (eventData.name) {
         const newSlug = generateSlug(eventData.name);
-        
+
         // Get current event to check if slug should be updated
         const currentEvent = await this.getEventById(eventId);
         if (currentEvent && currentEvent.slug !== newSlug) {
@@ -410,14 +427,11 @@ export class EventService {
           console.log('📝 Updated slug for event:', newSlug, '->', uniqueSlug);
         }
       }
-      
+
       // Add update timestamp
       updateData.updatedAt = serverTimestamp();
 
-      // Firestore rejects undefined; strip undefined values
-      const cleanData = Object.fromEntries(
-        Object.entries(updateData).filter(([, v]) => v !== undefined)
-      );
+      const cleanData = this.sanitizeForFirestore(updateData);
 
       await updateDoc(docRef, cleanData);
       console.log('✅ Event updated successfully:', eventId);
