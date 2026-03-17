@@ -164,6 +164,9 @@ const EditEvent: React.FC = () => {
     const originalDateForInput = new Date(originalEvent.date).toISOString().slice(0, 16);
     const orig = originalPrivateDetails || {};
 
+    // Normalize strings for comparison (trim, treat null/undefined as '')
+    const s = (v: string | undefined) => (v ?? '').toString().trim();
+
     return (
       formData.name !== originalEvent.name ||
       formData.location !== originalEvent.location ||
@@ -172,13 +175,13 @@ const EditEvent: React.FC = () => {
       formData.imageUrl !== originalEvent.imageUrl ||
       JSON.stringify(formData.imageCrop) !== JSON.stringify(originalEvent.imageCrop) ||
       formData.status !== originalEvent.status ||
-      formData.chapter !== ((originalEvent as { chapter?: string }).chapter ?? '') ||
-      formData.meetingUrl !== (orig.meetingUrl ?? '') ||
-      formData.resourceLinkUrl !== (orig.resourceLinkUrl ?? '') ||
-      formData.resourceLinkLabel !== (orig.resourceLinkLabel ?? '') ||
-      formData.zoomRecordingUrl !== (orig.zoomRecordingUrl ?? '') ||
-      formData.zoomPassword !== (orig.zoomPassword ?? '') ||
-      formData.picturesUrl !== (orig.picturesUrl ?? '')
+      s(formData.chapter) !== s((originalEvent as { chapter?: string }).chapter) ||
+      s(formData.meetingUrl) !== s(orig.meetingUrl) ||
+      s(formData.resourceLinkUrl) !== s(orig.resourceLinkUrl) ||
+      s(formData.resourceLinkLabel) !== s(orig.resourceLinkLabel) ||
+      s(formData.zoomRecordingUrl) !== s(orig.zoomRecordingUrl) ||
+      s(formData.zoomPassword) !== s(orig.zoomPassword) ||
+      s(formData.picturesUrl) !== s(orig.picturesUrl)
     );
   };
 
