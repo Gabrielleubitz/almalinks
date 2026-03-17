@@ -17,6 +17,7 @@ import welcomeEmailHandler from './lib/server/api/welcome-email.js';
 import syncEventToHubspotHandler from './lib/server/api/sync-event-to-hubspot.js';
 import syncAllEventsToHubspotHandler from './lib/server/api/sync-all-events-to-hubspot.js';
 import deleteEventFromHubspotHandler from './lib/server/api/delete-event-from-hubspot.js';
+import updateEventPrivateDetailsHandler from './lib/server/api/update-event-private-details.js';
 
 // CJS handler (kept as CommonJS)
 import adminChatsHandler from './lib/server/api/admin/chats.cjs';
@@ -131,6 +132,12 @@ app.post('/api/sync-all-events-to-hubspot', (req, res) => {
 app.post('/api/delete-event-from-hubspot', (req, res) => {
   console.log('Delete Event from HubSpot API called:', req.body?.eventId, req.body?.hubspotDealId);
   deleteEventFromHubspotHandler(req, res);
+});
+
+// Event private details: server-side write (bypasses client Firestore rules)
+app.post('/api/update-event-private-details', (req, res) => {
+  console.log('Update Event Private Details API called:', req.body?.eventId);
+  updateEventPrivateDetailsHandler(req, res);
 });
 
 // Temporarily disabled APIs due to import issues

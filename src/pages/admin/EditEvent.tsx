@@ -192,24 +192,31 @@ const EditEvent: React.FC = () => {
         imageCrop: formData.imageCrop ?? null,
         status: formData.status
       });
-      // Private details: run but don't fail the flow if permissions error (main event already saved)
-      try {
-        await EventService.setEventPrivateDetails(eventId, {
-          locationText: formData.location,
-          meetingUrl: formData.meetingUrl?.trim() || null,
-          resourceLinkUrl: formData.resourceLinkUrl?.trim() || null,
-          resourceLinkLabel: formData.resourceLinkLabel?.trim() || null,
-        });
-      } catch (privErr) {
-        console.warn('[EditEvent] setEventPrivateDetails failed (non-blocking):', (privErr as Error)?.message || privErr);
-      }
-
-      // Sync event to HubSpot Deal (update existing or create if missing)
+      // Private details + HubSpot sync: use server APIs (bypasses client Firestore rules)
       let hubspotStatus = '';
       const firebaseUser = auth.currentUser;
       if (firebaseUser) {
+        const idToken = await getIdToken(firebaseUser);
         try {
-          const idToken = await getIdToken(firebaseUser);
+          const privRes = await fetch('/api/update-event-private-details', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+            body: JSON.stringify({
+              eventId,
+              locationText: formData.location,
+              meetingUrl: formData.meetingUrl?.trim() || null,
+              resourceLinkUrl: formData.resourceLinkUrl?.trim() || null,
+              resourceLinkLabel: formData.resourceLinkLabel?.trim() || null,
+            }),
+            credentials: 'include',
+          });
+          if (!privRes.ok) {
+            console.warn('[EditEvent] update-event-private-details failed:', privRes.status);
+          }
+        } catch (privErr) {
+          console.warn('[EditEvent] update-event-private-details request failed:', (privErr as Error)?.message || privErr);
+        }
+        try {
           const syncRes = await fetch('/api/sync-event-to-hubspot', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
