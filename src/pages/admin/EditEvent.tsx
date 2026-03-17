@@ -15,6 +15,7 @@ const EditEvent: React.FC = () => {
   const { user } = useAuth();
   
   const [originalEvent, setOriginalEvent] = useState<EventData | null>(null);
+  const [originalPrivateDetails, setOriginalPrivateDetails] = useState<{ meetingUrl?: string; resourceLinkUrl?: string; resourceLinkLabel?: string; zoomRecordingUrl?: string; zoomPassword?: string; picturesUrl?: string } | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     location: '',
@@ -26,6 +27,10 @@ const EditEvent: React.FC = () => {
     meetingUrl: '',
     resourceLinkUrl: '',
     resourceLinkLabel: '',
+    chapter: '',
+    zoomRecordingUrl: '',
+    zoomPassword: '',
+    picturesUrl: '',
   });
   
   const [loading, setLoading] = useState(true);
@@ -80,6 +85,14 @@ const EditEvent: React.FC = () => {
       const dateForInput = new Date(event.date).toISOString().slice(0, 16);
       
       const privateDetails = await EventService.getEventPrivateDetails(eventId);
+      setOriginalPrivateDetails({
+        meetingUrl: privateDetails?.meetingUrl ?? '',
+        resourceLinkUrl: privateDetails?.resourceLinkUrl ?? '',
+        resourceLinkLabel: privateDetails?.resourceLinkLabel ?? '',
+        zoomRecordingUrl: privateDetails?.zoomRecordingUrl ?? privateDetails?.zoom_recording_url ?? '',
+        zoomPassword: privateDetails?.zoomPassword ?? privateDetails?.zoom_password ?? '',
+        picturesUrl: privateDetails?.picturesUrl ?? privateDetails?.pictures_url ?? '',
+      });
       setFormData({
         name: event.name,
         location: event.location,
@@ -91,6 +104,10 @@ const EditEvent: React.FC = () => {
         meetingUrl: privateDetails?.meetingUrl ?? '',
         resourceLinkUrl: privateDetails?.resourceLinkUrl ?? '',
         resourceLinkLabel: privateDetails?.resourceLinkLabel ?? '',
+        chapter: (event as { chapter?: string }).chapter ?? '',
+        zoomRecordingUrl: privateDetails?.zoomRecordingUrl ?? privateDetails?.zoom_recording_url ?? '',
+        zoomPassword: privateDetails?.zoomPassword ?? privateDetails?.zoom_password ?? '',
+        picturesUrl: privateDetails?.picturesUrl ?? privateDetails?.pictures_url ?? '',
       });
       
       setPreviewSlug(event.slug);
@@ -143,9 +160,10 @@ const EditEvent: React.FC = () => {
 
   const hasChanges = (): boolean => {
     if (!originalEvent) return true;
-    
+
     const originalDateForInput = new Date(originalEvent.date).toISOString().slice(0, 16);
-    
+    const orig = originalPrivateDetails || {};
+
     return (
       formData.name !== originalEvent.name ||
       formData.location !== originalEvent.location ||
@@ -153,7 +171,14 @@ const EditEvent: React.FC = () => {
       formData.description !== originalEvent.description ||
       formData.imageUrl !== originalEvent.imageUrl ||
       JSON.stringify(formData.imageCrop) !== JSON.stringify(originalEvent.imageCrop) ||
-      formData.status !== originalEvent.status
+      formData.status !== originalEvent.status ||
+      formData.chapter !== ((originalEvent as { chapter?: string }).chapter ?? '') ||
+      formData.meetingUrl !== (orig.meetingUrl ?? '') ||
+      formData.resourceLinkUrl !== (orig.resourceLinkUrl ?? '') ||
+      formData.resourceLinkLabel !== (orig.resourceLinkLabel ?? '') ||
+      formData.zoomRecordingUrl !== (orig.zoomRecordingUrl ?? '') ||
+      formData.zoomPassword !== (orig.zoomPassword ?? '') ||
+      formData.picturesUrl !== (orig.picturesUrl ?? '')
     );
   };
 
@@ -190,7 +215,8 @@ const EditEvent: React.FC = () => {
         description: formData.description,
         imageUrl: formData.imageUrl,
         imageCrop: formData.imageCrop ?? null,
-        status: formData.status
+        status: formData.status,
+        chapter: formData.chapter?.trim() || null,
       });
       // Private details + HubSpot sync: use server APIs (bypasses client Firestore rules)
       let hubspotStatus = '';
@@ -207,6 +233,9 @@ const EditEvent: React.FC = () => {
               meetingUrl: formData.meetingUrl?.trim() || null,
               resourceLinkUrl: formData.resourceLinkUrl?.trim() || null,
               resourceLinkLabel: formData.resourceLinkLabel?.trim() || null,
+              zoomRecordingUrl: formData.zoomRecordingUrl?.trim() || null,
+              zoomPassword: formData.zoomPassword?.trim() || null,
+              picturesUrl: formData.picturesUrl?.trim() || null,
             }),
             credentials: 'include',
           });
@@ -403,6 +432,30 @@ const EditEvent: React.FC = () => {
               </div>
             </div>
 
+            {/* Chapter (for HubSpot sync) */}
+            <div>
+              <label htmlFor="chapter" className="block text-sm font-medium text-gray-700 mb-2">Chapter (optional)</label>
+              <select
+                id="chapter"
+                name="chapter"
+                value={formData.chapter}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="">Select chapter...</option>
+                <option value="Tel Aviv">Tel Aviv</option>
+                <option value="New York">New York</option>
+                <option value="London">London</option>
+                <option value="Johannesburg">Johannesburg</option>
+                <option value="Mexico City">Mexico City</option>
+                <option value="Philadelphia">Philadelphia</option>
+                <option value="Sydney">Sydney</option>
+                <option value="Toronto">Toronto</option>
+                <option value="Costa Rica">Costa Rica</option>
+                <option value="International">International</option>
+              </select>
+            </div>
+
             {/* Private details (approved registrants only) */}
             <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-4">
               <p className="text-sm font-medium text-gray-700">Approved-only details</p>
@@ -441,6 +494,42 @@ const EditEvent: React.FC = () => {
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   placeholder="e.g. Agenda, Slides"
+                />
+              </div>
+              <div>
+                <label htmlFor="zoomRecordingUrl" className="block text-sm text-gray-600 mb-1">Zoom Recording Link (optional)</label>
+                <input
+                  id="zoomRecordingUrl"
+                  name="zoomRecordingUrl"
+                  type="url"
+                  value={formData.zoomRecordingUrl}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  placeholder="https://zoom.us/rec/…"
+                />
+              </div>
+              <div>
+                <label htmlFor="zoomPassword" className="block text-sm text-gray-600 mb-1">Zoom Password (optional)</label>
+                <input
+                  id="zoomPassword"
+                  name="zoomPassword"
+                  type="text"
+                  value={formData.zoomPassword}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  placeholder="Meeting password"
+                />
+              </div>
+              <div>
+                <label htmlFor="picturesUrl" className="block text-sm text-gray-600 mb-1">Pictures Link (optional)</label>
+                <input
+                  id="picturesUrl"
+                  name="picturesUrl"
+                  type="url"
+                  value={formData.picturesUrl}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  placeholder="https://… (event photos)"
                 />
               </div>
             </div>

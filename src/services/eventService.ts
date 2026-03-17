@@ -39,6 +39,8 @@ export interface EventData {
   autoConnectEnabled?: boolean; // NEW: Auto-connect control
   /** HubSpot Deal ID when event is synced to HubSpot */
   hubspotDealId?: string;
+  /** Chapter (e.g. Tel Aviv) for HubSpot sync */
+  chapter?: string | null;
 }
 
 export interface EventRegistration {

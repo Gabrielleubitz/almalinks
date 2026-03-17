@@ -11,6 +11,9 @@ export interface EventPrivateDetails {
   zoom_recording_url?: string | null;
   zoom_password?: string | null;
   pictures_url?: string | null;
+  zoomRecordingUrl?: string | null;
+  zoomPassword?: string | null;
+  picturesUrl?: string | null;
 }
 
 /**
