@@ -192,12 +192,17 @@ const EditEvent: React.FC = () => {
         imageCrop: formData.imageCrop ?? null,
         status: formData.status
       });
-      await EventService.setEventPrivateDetails(eventId, {
-        locationText: formData.location,
-        meetingUrl: formData.meetingUrl?.trim() || null,
-        resourceLinkUrl: formData.resourceLinkUrl?.trim() || null,
-        resourceLinkLabel: formData.resourceLinkLabel?.trim() || null,
-      });
+      // Private details: run but don't fail the flow if permissions error (main event already saved)
+      try {
+        await EventService.setEventPrivateDetails(eventId, {
+          locationText: formData.location,
+          meetingUrl: formData.meetingUrl?.trim() || null,
+          resourceLinkUrl: formData.resourceLinkUrl?.trim() || null,
+          resourceLinkLabel: formData.resourceLinkLabel?.trim() || null,
+        });
+      } catch (privErr) {
+        console.warn('[EditEvent] setEventPrivateDetails failed (non-blocking):', (privErr as Error)?.message || privErr);
+      }
 
       // Sync event to HubSpot Deal (update existing or create if missing)
       let hubspotStatus = '';
