@@ -15,7 +15,7 @@ const EditEvent: React.FC = () => {
   const { user } = useAuth();
   
   const [originalEvent, setOriginalEvent] = useState<EventData | null>(null);
-  const [originalPrivateDetails, setOriginalPrivateDetails] = useState<{ meetingUrl?: string; resourceLinkUrl?: string; resourceLinkLabel?: string; zoomRecordingUrl?: string; zoomPassword?: string; picturesUrl?: string } | null>(null);
+  const [originalPrivateDetails, setOriginalPrivateDetails] = useState<{ meetingUrl?: string; resourceLinkUrl?: string; resourceLinkLabel?: string; zoomRecordingUrl?: string; zoomPassword?: string } | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     location: '',
@@ -30,7 +30,6 @@ const EditEvent: React.FC = () => {
     chapter: '',
     zoomRecordingUrl: '',
     zoomPassword: '',
-    picturesUrl: '',
   });
   
   const [loading, setLoading] = useState(true);
@@ -91,7 +90,6 @@ const EditEvent: React.FC = () => {
         resourceLinkLabel: privateDetails?.resourceLinkLabel ?? '',
         zoomRecordingUrl: privateDetails?.zoomRecordingUrl ?? privateDetails?.zoom_recording_url ?? '',
         zoomPassword: privateDetails?.zoomPassword ?? privateDetails?.zoom_password ?? '',
-        picturesUrl: privateDetails?.picturesUrl ?? privateDetails?.pictures_url ?? '',
       });
       setFormData({
         name: event.name,
@@ -107,7 +105,6 @@ const EditEvent: React.FC = () => {
         chapter: (event as { chapter?: string }).chapter ?? '',
         zoomRecordingUrl: privateDetails?.zoomRecordingUrl ?? privateDetails?.zoom_recording_url ?? '',
         zoomPassword: privateDetails?.zoomPassword ?? privateDetails?.zoom_password ?? '',
-        picturesUrl: privateDetails?.picturesUrl ?? privateDetails?.pictures_url ?? '',
       });
       
       setPreviewSlug(event.slug);
@@ -180,8 +177,7 @@ const EditEvent: React.FC = () => {
       s(formData.resourceLinkUrl) !== s(orig.resourceLinkUrl) ||
       s(formData.resourceLinkLabel) !== s(orig.resourceLinkLabel) ||
       s(formData.zoomRecordingUrl) !== s(orig.zoomRecordingUrl) ||
-      s(formData.zoomPassword) !== s(orig.zoomPassword) ||
-      s(formData.picturesUrl) !== s(orig.picturesUrl)
+      s(formData.zoomPassword) !== s(orig.zoomPassword)
     );
   };
 
@@ -238,7 +234,6 @@ const EditEvent: React.FC = () => {
               resourceLinkLabel: formData.resourceLinkLabel?.trim() || null,
               zoomRecordingUrl: formData.zoomRecordingUrl?.trim() || null,
               zoomPassword: formData.zoomPassword?.trim() || null,
-              picturesUrl: formData.picturesUrl?.trim() || null,
             }),
             credentials: 'include',
           });
@@ -523,18 +518,7 @@ const EditEvent: React.FC = () => {
                   placeholder="Meeting password"
                 />
               </div>
-              <div>
-                <label htmlFor="picturesUrl" className="block text-sm text-gray-600 mb-1">Pictures Link (optional)</label>
-                <input
-                  id="picturesUrl"
-                  name="picturesUrl"
-                  type="url"
-                  value={formData.picturesUrl}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  placeholder="https://… (event photos)"
-                />
-              </div>
+              <p className="text-xs text-gray-500">Pictures link in HubSpot uses the event image above.</p>
             </div>
 
             {/* Date & Time */}

@@ -65,10 +65,13 @@ service cloud.firestore {
         allow create, update: if isOwner(regId);
         allow read, write: if isAdmin();
       }
-      // Sensitive details (location, meeting link, resource link). Only admin or approved registrant.
+      // Sensitive details (location, meeting link, zoom, pictures). Admin or approved registrant.
       match /privateDetails/{docId} {
-        allow read: if isAdmin() || (isAuthenticated() && exists(/databases/$(database)/documents/events/$(eventId)/registrations/$(request.auth.uid)) && get(/databases/$(database)/documents/events/$(eventId)/registrations/$(request.auth.uid)).data.get('status', 'approved') == 'approved');
-        allow write: if isAdmin();
+        allow read: if isAdmin()
+          || (isAuthenticated()
+              && exists(/databases/$(database)/documents/events/$(eventId)/registrations/$(request.auth.uid))
+              && get(/databases/$(database)/documents/events/$(eventId)/registrations/$(request.auth.uid)).data.get('status', 'approved') == 'approved');
+        allow create, update, delete: if isAdmin();
       }
     }
 

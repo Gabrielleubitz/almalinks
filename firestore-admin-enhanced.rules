@@ -150,6 +150,15 @@ service cloud.firestore {
           isAdmin()
         );
       }
+
+      // Private details (location, meeting link, zoom, pictures). Admin or approved registrant.
+      match /privateDetails/{docId} {
+        allow read: if isAdmin()
+          || (isAuthenticated()
+              && exists(/databases/$(database)/documents/events/$(eventId)/registrations/$(request.auth.uid))
+              && get(/databases/$(database)/documents/events/$(eventId)/registrations/$(request.auth.uid)).data.get('status', 'approved') == 'approved');
+        allow create, update, delete: if isAdmin();
+      }
     }
 
     // Speakers collection

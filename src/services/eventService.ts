@@ -13,6 +13,7 @@ import {
   Timestamp 
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { apiRequest } from '../utils/apiClient';
 import { nanoid } from 'nanoid';
 import type { EventPrivateDetails } from '../types/event';
 
@@ -583,6 +584,20 @@ export class EventService {
       
       await updateDoc(regRef, updateData);
       console.log('✅ Check-in status updated:', eventId, userId, checkedIn);
+
+      // Sync attended count and checked-in contacts to HubSpot (on both check-in and uncheck)
+      try {
+        const res = await apiRequest('/api/sync-event-to-hubspot', {
+          method: 'POST',
+          body: JSON.stringify({ eventId }),
+        });
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (data.synced) console.log('✅ HubSpot sync after check-in status change:', eventId);
+        }
+      } catch (syncErr) {
+        console.warn('⚠️ HubSpot sync after check-in failed (check-in still successful):', syncErr);
+      }
       
       // ENHANCED: Trigger auto-connect when user checks in
       if (checkedIn) {
