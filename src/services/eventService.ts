@@ -413,8 +413,13 @@ export class EventService {
       
       // Add update timestamp
       updateData.updatedAt = serverTimestamp();
-      
-      await updateDoc(docRef, updateData);
+
+      // Firestore rejects undefined; strip undefined values
+      const cleanData = Object.fromEntries(
+        Object.entries(updateData).filter(([, v]) => v !== undefined)
+      );
+
+      await updateDoc(docRef, cleanData);
       console.log('✅ Event updated successfully:', eventId);
     } catch (error) {
       console.error('❌ Error updating event:', error);

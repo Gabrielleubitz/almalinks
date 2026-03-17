@@ -189,7 +189,7 @@ const EditEvent: React.FC = () => {
         date: formData.date,
         description: formData.description,
         imageUrl: formData.imageUrl,
-        imageCrop: formData.imageCrop ?? undefined,
+        imageCrop: formData.imageCrop ?? null,
         status: formData.status
       });
       await EventService.setEventPrivateDetails(eventId, {
