@@ -19,6 +19,7 @@ const ChangePasswordPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [passwordRequirement, setPasswordRequirement] = useState<{ required: boolean; reason?: string } | null>(null);
+  const TEMP_PASSWORD = '123456789';
 
   // Check if password change is required
   useEffect(() => {
@@ -52,7 +53,7 @@ const ChangePasswordPage: React.FC = () => {
 
     switch (passwordRequirement.reason) {
       case 'temporary_password':
-        return 'You are using a temporary password and must set a new password to continue.';
+        return `You are using a temporary password. Your temporary password is ${TEMP_PASSWORD}. For security, set a new password to continue.`;
       case 'admin_forced_reset':
         return 'An administrator has required you to change your password for security reasons.';
       default:
@@ -224,7 +225,7 @@ const ChangePasswordPage: React.FC = () => {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
-                  placeholder="Enter your current password"
+                  placeholder={passwordRequirement?.reason === 'temporary_password' ? `Enter your temporary password (${TEMP_PASSWORD})` : 'Enter your current password'}
                   disabled={isSubmitting}
                 />
                 <button

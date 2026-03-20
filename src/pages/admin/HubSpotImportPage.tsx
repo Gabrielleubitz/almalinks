@@ -546,7 +546,9 @@ const HubSpotImportPage: React.FC = () => {
               <span className="flex-shrink-0 w-8 h-8 rounded-full bg-brand-light text-brand-dark flex items-center justify-center text-sm font-semibold">1</span>
               <div>
                 <span className="font-medium text-gray-900">Sync contacts</span>
-                <p className="text-sm text-gray-600 mt-0.5">Everyone in HubSpot gets a login. They sign in with HubSpot email and a default password.</p>
+                <p className="text-sm text-gray-600 mt-0.5">
+                  Everyone in HubSpot gets a login. They sign in with HubSpot email and the default password <span className="font-medium text-gray-900">123456789</span>.
+                </p>
               </div>
             </li>
             <li className="flex gap-3">
