@@ -11,8 +11,8 @@
 Each contact is upserted; Auth users are created (or looked up by email if already existing).
 
 - Pages through HubSpot API (limit=100, `after` cursor) until all contacts are fetched.
-- Requests properties: `email`, `firstname`, `lastname`, `phone`, and **Chapter** (internal name configurable; see below).
-- For each contact with email: creates Firebase Auth user (or gets existing by email), then writes hubspotContacts + users.
+- Requests a **wide default set** of contact properties (email, name, phone, job title, company, city, country, website, LinkedIn, chapter, bios, interests, industry, year joined, picture URL, Mailchimp/Portal/WhatsApp/Spotlight custom fields, etc.). Override with env: `HUBSPOT_SYNC_CONTACT_PROPERTIES` (full list) or `HUBSPOT_SYNC_CONTACT_PROPERTIES_EXTRA` (append). **Chapter** internal name: `HUBSPOT_CHAPTER_PROPERTY_NAME` (default `chapter`). **Picture** property name(s): `HUBSPOT_CONTACT_PROPERTY_PICTURE` (comma-separated, tried first).
+- For each contact with email: creates Firebase Auth user (or gets existing by email), then writes hubspotContacts (full `properties` blob) + **users** with mapped profile fields (`title`, `company`, `linkedin`, `bioTitle`, `bio`, `skills` from interests, `avatarUrl`/`profileImage` from picture URL, `hubspotImportExtras` for Mailchimp/Portal/WhatsApp groups/Spotlight, etc.).
 - Returns `{ ok: true, totalUpserted: number }`.
 
 **POST /api/sync-hubspot-deals** imports all HubSpot deals into Firestore `hubspotDeals` (doc ID = deal id). Schema: `hubspotDealId`, `properties`, `syncedAt`. Paginates with `paging.next.after`.
@@ -30,6 +30,10 @@ Each contact is upserted; Auth users are created (or looked up by email if alrea
 | **HUBSPOT_ACCESS_TOKEN** | Yes | HubSpot Private App or OAuth access token with **READ + WRITE** scopes for Contacts and Deals. Single source of truth: read from server env only. Validation error (503) if missing. **Never expose in frontend.** |
 | **SYNC_SECRET** | No | If set, sync/list/delete requests must include header `x-sync-secret: <value>`. If unset, endpoints require Firebase Auth ID token with admin role. |
 | **HUBSPOT_IMPORT_DEFAULT_PASSWORD** | No | Default password for imported contacts. Default: `123456789`. |
+| **HUBSPOT_CHAPTER_PROPERTY_NAME** | No | HubSpot Contact property internal name for Chapter. Default: `chapter`. |
+| **HUBSPOT_CONTACT_PROPERTY_PICTURE** | No | Comma-separated internal names for profile image URL (tried first, then `picture`, `profile_picture`, …). |
+| **HUBSPOT_SYNC_CONTACT_PROPERTIES_EXTRA** | No | Comma-separated property internal names to **add** to the default fetch list. |
+| **HUBSPOT_SYNC_CONTACT_PROPERTIES** | No | If set, **only** these comma-separated internal names are requested (full override). |
 
 Add in Vercel: Project → Settings → Environment Variables. Locally: add to `.env` (do not commit).
 
@@ -59,7 +63,7 @@ Only one is used: if `SYNC_SECRET` is set, the secret header is required; otherw
 ### users (HubSpot-synced, sign-in ready)
 
 - **Document ID:** Firebase Auth UID (same as the Auth user created for that contact).
-- **Data (merged):** `email`, `name` / `displayName` (firstname + lastname), `phone`, `status: 'approved'`, `role: 'member'`, `source: 'hubspot'`, `hubspotId`, `registrationComplete: false`, `avatarUrl`, `profileImage`, `createdAt`, `updatedAt` (server timestamps).
+- **Data (merged):** `email`, `name` / `displayName`, `firstName`, `lastName`, `phone`, `title` / `position`, `company` / `organization`, `chapter`, `city`, `country`, `website`, `linkedin` / `linkedinUrl`, `bioTitle`, `bio`, `skills` (from comma-separated **interests**), `industry`, `yearJoined`, `avatarUrl` / `profileImage` (from **Picture** URL properties), `hubspotImportExtras` (Mailchimp, Portal, PHL/NY/WhatsApp groups, Spotlight, duplicate bio old), `status: 'approved'`, `role: 'member'`, `source: 'hubspot'`, `hubspotContactId` / `hubspotId`, `registrationComplete`, `profileVisibility`, timestamps. Full raw HubSpot values remain on `hubspotContacts/{id}.properties`.
 - **When created:** Only contacts with a non-empty **email** get an Auth account and user doc; contacts without email are still written to `hubspotContacts` only.
 
 Contacts can sign in with **email + default password** (e.g. `123456789` or `HUBSPOT_IMPORT_DEFAULT_PASSWORD`), then complete onboarding. They do not appear on the Members page until `registrationComplete` is true (set when they complete profile). If an email already exists in Firebase Auth, the sync reuses that UID and updates the user doc (merge).

@@ -34,7 +34,13 @@ export interface UserProfile {
   city?: string;
   country?: string;
   timezone?: string; // IANA timezone
-  
+  /** From HubSpot import (custom property) */
+  industry?: string | null;
+  /** From HubSpot import e.g. year_joined */
+  yearJoined?: string | null;
+  /** HubSpot-only fields after contact import (mailchimp, portal, WhatsApp groups, etc.) */
+  hubspotImportExtras?: Record<string, string>;
+
   // Avatar
   avatarUrl?: string | null;
   profileImage?: string | null; // legacy field for backward compatibility
