@@ -1,4 +1,5 @@
 {
+  "installCommand": "npm install && npm install @rollup/rollup-linux-x64-gnu@4.44.0",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",

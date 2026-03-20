@@ -217,7 +217,10 @@ const HubSpotImportPage: React.FC = () => {
     setDeleteResult(null);
     setLastResult(null);
     try {
-      const res = await apiRequest('/api/sync-hubspot-contacts', { method: 'POST' });
+      const res = await apiRequest('/api/sync-hubspot-contacts', {
+        method: 'POST',
+        body: JSON.stringify({ dedupeByEmail: true, fullResync: false }),
+      });
       const data = await res.json().catch(() => ({})) as Record<string, unknown>;
       setSyncResult(data);
       setResult('sync', res.ok && !(data as { error?: string }).error, data, (data as { error?: string }).error);
@@ -316,7 +319,10 @@ const HubSpotImportPage: React.FC = () => {
     setDeleteResult(null);
     setLastResult(null);
     try {
-      const syncRes = await apiRequest('/api/sync-hubspot-contacts', { method: 'POST' });
+      const syncRes = await apiRequest('/api/sync-hubspot-contacts', {
+        method: 'POST',
+        body: JSON.stringify({ dedupeByEmail: true, fullResync: false }),
+      });
       const syncData = await syncRes.json().catch(() => ({})) as Record<string, unknown>;
       setSyncResult(syncData);
       const dealsRes = await apiRequest('/api/sync-hubspot-deals', { method: 'POST' });
