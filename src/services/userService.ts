@@ -345,8 +345,18 @@ export class UserService {
         
         const snapshot = await retryOnNetworkFailure(() => getDocs(q));
         const raw = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
-        approvedUsers = raw.filter((u) => (u as any).registrationComplete !== false);
-        console.log(`👥 Found ${approvedUsers.length} approved users with completed registration (with index)`);
+        approvedUsers = raw.filter((u) => {
+          const regComplete = (u as any).registrationComplete;
+          const isHubspotUser =
+            (u as any).importedFrom === 'hubspot' ||
+            (u as any).source === 'hubspot' ||
+            // Some older imports may have used a hubspotId field without the hubspot "source" marker
+            Boolean((u as any).hubspotContactId) ||
+            Boolean((u as any).hubspotId);
+          // HubSpot users should appear even if they haven't signed in / completed first-time registration.
+          return regComplete !== false || isHubspotUser;
+        });
+        console.log(`👥 Found ${approvedUsers.length} approved users for directory (with index)`);
       } catch (indexError: any) {
         // If index is missing, try fallback query without orderBy
         if (indexError.code === 'failed-precondition' || indexError.message?.includes('index')) {
@@ -361,7 +371,15 @@ export class UserService {
             
             const snapshot = await retryOnNetworkFailure(() => getDocs(fallbackQ));
             const raw = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
-            approvedUsers = raw.filter((u) => (u as any).registrationComplete !== false);
+            approvedUsers = raw.filter((u) => {
+              const regComplete = (u as any).registrationComplete;
+              const isHubspotUser =
+                (u as any).importedFrom === 'hubspot' ||
+                (u as any).source === 'hubspot' ||
+                Boolean((u as any).hubspotContactId) ||
+                Boolean((u as any).hubspotId);
+              return regComplete !== false || isHubspotUser;
+            });
             // Sort client-side by updatedAt
             approvedUsers.sort((a, b) => {
               const aTime = a.updatedAt?.toDate?.()?.getTime() || a.updatedAt?.seconds || 0;
