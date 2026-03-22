@@ -18,6 +18,9 @@ export interface UserProfile {
   linkedin?: string;
   website?: string;
   twitter?: string;
+
+  /** Flattened HubSpot contact properties snapshot (import); complements mapped profile fields. */
+  hubspotContactProperties?: Record<string, string | number | boolean | null>;
   
   // Role & Organization
   title?: string;
