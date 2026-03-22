@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Send, ArrowLeft, AlertCircle, CheckCircle, Inbox, RefreshCw } from 'lucide-react';
+import { Mail, Send, ArrowLeft, AlertCircle, CheckCircle, Inbox, RefreshCw, Trash2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { sendAdminEmail } from '../../services/emailService';
 import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/admin/EmailRecipientAutocomplete';
@@ -39,6 +39,7 @@ const AdminEmail: React.FC = () => {
   const [emailLogLoading, setEmailLogLoading] = useState(true);
   const [emailLogFilter, setEmailLogFilter] = useState('');
   const [showAllSentEmails, setShowAllSentEmails] = useState(false);
+  const [deletingEmailLogId, setDeletingEmailLogId] = useState<string | null>(null);
   const [quickEmailRecipient, setQuickEmailRecipient] = useState('');
   const [runningTemplate, setRunningTemplate] = useState<string | null>(null);
   const [emailConfig, setEmailConfig] = useState<{ mailjet: boolean; mailchimp: boolean } | null>(null);
@@ -96,6 +97,41 @@ const AdminEmail: React.FC = () => {
       setEmailLogLoading(false);
     }
   }, []);
+
+  const deleteEmailLogEntry = async (logId: string) => {
+    if (
+      !window.confirm(
+        'Remove this row from the sent-email log?\n\nThis does not unsend the email — it only deletes the record from your admin history.'
+      )
+    ) {
+      return;
+    }
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+    setDeletingEmailLogId(logId);
+    setError(null);
+    try {
+      const token = await currentUser.getIdToken();
+      const q = new URLSearchParams({ id: logId });
+      const res = await fetch(`/api/admin/email-log?${q.toString()}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setError((data as { error?: string }).error || 'Failed to delete log entry');
+        return;
+      }
+      setEmailLogItems((prev) => prev.filter((row) => row.id !== logId));
+      setEmailLogTotalCount((c) => (typeof c === 'number' ? Math.max(0, c - 1) : c));
+      setSuccess('Log entry removed.');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Delete failed');
+    } finally {
+      setDeletingEmailLogId(null);
+    }
+  };
 
   useEffect(() => {
     fetchEmailLog();
@@ -378,6 +414,7 @@ const AdminEmail: React.FC = () => {
                         <th className="text-left py-2 px-2 font-medium text-gray-700">Sent</th>
                         <th className="text-left py-2 px-2 font-medium text-gray-700">Provider</th>
                         <th className="text-left py-2 px-2 font-medium text-gray-700">Template</th>
+                        <th className="text-right py-2 px-2 font-medium text-gray-700 w-[100px]">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -390,6 +427,22 @@ const AdminEmail: React.FC = () => {
                           </td>
                           <td className="py-2 px-2 text-gray-600">{row.provider}</td>
                           <td className="py-2 px-2 text-gray-600">{row.template || '—'}</td>
+                          <td className="py-2 px-2 text-right">
+                            <button
+                              type="button"
+                              onClick={() => deleteEmailLogEntry(row.id)}
+                              disabled={deletingEmailLogId === row.id}
+                              className="inline-flex items-center justify-center p-2 rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-50"
+                              title="Delete log entry"
+                              aria-label="Delete log entry"
+                            >
+                              {deletingEmailLogId === row.id ? (
+                                <RefreshCw className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
