@@ -1,0 +1,6 @@
+---
+description: Commit and push after code changes
+alwaysApply: true
+---
+
+After making code changes in this repository, **commit and push** to `origin` (e.g. `git add`, `git commit` with a concise message, `git push`) unless the user asks not to. Do not leave fixes only in the working tree.
