@@ -18,6 +18,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import Favicon from '../components/ui/Favicon';
 import ImageWithCrop from '../components/profile/ImageWithCrop';
 import BioHtml from '../components/profile/BioHtml';
+import { isSafeImageUrl } from '../utils/imageUrl';
 
 interface Connection {
   id: string;
@@ -225,13 +226,19 @@ const UserProfilePage: React.FC = () => {
   const avatarColor = getAvatarColor(displayName);
 
   const profileImageUrl = profile.profileImage || profile.avatarUrl;
+  const avatarFallback = (
+    <div className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-3xl`}>
+      {displayName.charAt(0)}
+    </div>
+  );
+  const canOpenAvatarLightbox = isSafeImageUrl(profileImageUrl || null);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
       <Header />
 
       {/* Avatar lightbox */}
-      {showAvatarModal && profileImageUrl && (
+      {showAvatarModal && profileImageUrl && canOpenAvatarLightbox && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
           onClick={closeAvatarModal}
@@ -272,15 +279,13 @@ const UserProfilePage: React.FC = () => {
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
             {/* Cover / banner: custom photo or blue gradient */}
             <div className="relative z-0 aspect-[3/1] w-full min-h-[140px] sm:min-h-[160px] bg-gradient-to-r from-brand-blue-dark to-brand-blue-light overflow-hidden">
-              {(profile as any).coverPhotoUrl ? (
-                <ImageWithCrop
-                  src={(profile as any).coverPhotoUrl}
-                  crop={(profile as any).coverCrop ?? null}
-                  shape="rect"
-                  alt=""
-                  urlIsCropped={true}
-                />
-              ) : null}
+              <ImageWithCrop
+                src={String((profile as any).coverPhotoUrl || '')}
+                crop={(profile as any).coverCrop ?? null}
+                shape="rect"
+                alt=""
+                urlIsCropped={true}
+              />
               <div className="absolute inset-0 bg-black bg-opacity-20 pointer-events-none" />
             </div>
             
@@ -288,26 +293,21 @@ const UserProfilePage: React.FC = () => {
               {/* Avatar - click to enlarge when image present */}
               <div className="flex items-start justify-between -mt-16 mb-6">
                 <div
-                  role={(profile.profileImage || profile.avatarUrl) ? 'button' : undefined}
-                  tabIndex={(profile.profileImage || profile.avatarUrl) ? 0 : undefined}
-                  onClick={() => (profile.profileImage || profile.avatarUrl) && setShowAvatarModal(true)}
-                  onKeyDown={(e) => (profile.profileImage || profile.avatarUrl) && (e.key === 'Enter' || e.key === ' ') && setShowAvatarModal(true)}
-                  className={`relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white flex-shrink-0 ${(profile.profileImage || profile.avatarUrl) ? 'cursor-pointer hover:ring-4 hover:ring-brand-blue/30 transition-all' : ''}`}
+                  role={canOpenAvatarLightbox ? 'button' : undefined}
+                  tabIndex={canOpenAvatarLightbox ? 0 : undefined}
+                  onClick={() => canOpenAvatarLightbox && setShowAvatarModal(true)}
+                  onKeyDown={(e) => canOpenAvatarLightbox && (e.key === 'Enter' || e.key === ' ') && setShowAvatarModal(true)}
+                  className={`relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white flex-shrink-0 ${canOpenAvatarLightbox ? 'cursor-pointer hover:ring-4 hover:ring-brand-blue/30 transition-all' : ''}`}
                 >
-                  {profile.profileImage || profile.avatarUrl ? (
-                    <ImageWithCrop
-                      src={profile.profileImage || profile.avatarUrl || ''}
-                      crop={(profile as any).profileImageCrop ?? null}
-                      shape="circle"
-                      alt={displayName}
-                      className="rounded-full"
-                      urlIsCropped={true}
-                    />
-                  ) : (
-                    <div className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-3xl`}>
-                      {displayName.charAt(0)}
-                    </div>
-                  )}
+                  <ImageWithCrop
+                    src={String(profileImageUrl || '')}
+                    crop={(profile as any).profileImageCrop ?? null}
+                    shape="circle"
+                    alt={displayName}
+                    className="rounded-full"
+                    urlIsCropped={true}
+                    fallback={avatarFallback}
+                  />
                 </div>
                 
                 <div className="mt-4 flex flex-col items-end space-y-2">

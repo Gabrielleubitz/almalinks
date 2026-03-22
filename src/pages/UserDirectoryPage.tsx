@@ -11,6 +11,7 @@ import { UserCard, UserDirectoryFilters } from '../types/user';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import ImageWithCrop from '../components/profile/ImageWithCrop';
 
 interface FilterOption {
   label: string;
@@ -515,7 +516,11 @@ const UserDirectoryPage: React.FC = () => {
             }>
               {filteredUsers.map((userCard) => {
                 const avatarColor = getAvatarColor(userCard.displayName);
-                const hasProfileImage = userCard.avatarUrl;
+                const avatarFallback = (
+                  <div className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-xl`}>
+                    {userCard.displayName.charAt(0)}
+                  </div>
+                );
 
                 return viewMode === 'grid' ? (
                   // Grid Card
@@ -527,19 +532,17 @@ const UserDirectoryPage: React.FC = () => {
                       <div className="flex items-center space-x-4 mb-4">
                         <Link
                           to={`/profile/${userCard.uid}`}
-                          className="block w-16 h-16 rounded-full overflow-hidden flex-shrink-0"
+                          className="block w-16 h-16 rounded-full overflow-hidden flex-shrink-0 relative"
                         >
-                          {hasProfileImage ? (
-                            <img 
-                              src={userCard.avatarUrl} 
-                              alt={userCard.displayName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-xl`}>
-                              {userCard.displayName.charAt(0)}
-                            </div>
-                          )}
+                          <ImageWithCrop
+                            src={String(userCard.avatarUrl || '')}
+                            crop={null}
+                            shape="circle"
+                            alt={userCard.displayName}
+                            className="rounded-full"
+                            urlIsCropped={true}
+                            fallback={avatarFallback}
+                          />
                         </Link>
                         
                         <div className="flex-1 min-w-0">
@@ -621,19 +624,17 @@ const UserDirectoryPage: React.FC = () => {
                       <div className="flex items-center space-x-6 flex-1">
                         <Link
                           to={`/profile/${userCard.uid}`}
-                          className="block w-16 h-16 rounded-full overflow-hidden flex-shrink-0"
+                          className="block w-16 h-16 rounded-full overflow-hidden flex-shrink-0 relative"
                         >
-                          {hasProfileImage ? (
-                            <img 
-                              src={userCard.avatarUrl} 
-                              alt={userCard.displayName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-xl`}>
-                              {userCard.displayName.charAt(0)}
-                            </div>
-                          )}
+                          <ImageWithCrop
+                            src={String(userCard.avatarUrl || '')}
+                            crop={null}
+                            shape="circle"
+                            alt={userCard.displayName}
+                            className="rounded-full"
+                            urlIsCropped={true}
+                            fallback={avatarFallback}
+                          />
                         </Link>
                         
                         <div className="flex-1 min-w-0">

@@ -2,9 +2,11 @@
  * Single renderer for images with optional crop. Works at any size; same crop looks identical everywhere.
  * - No crop or normalized crop (stored URL is already cropped): render plain img.
  * - Legacy crop (scale/pan): render with CSS transform for backward compatibility.
+ * - Invalid URLs or failed loads: render optional `fallback` (e.g. initials avatar).
  */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { isLegacyCrop, type CropValue, type NormalizedCrop } from '../../types/crop';
+import { isSafeImageUrl } from '../../utils/imageUrl';
 
 interface ImageWithCropProps {
   src: string;
@@ -16,6 +18,8 @@ interface ImageWithCropProps {
   /** When true, image is the final cropped asset so crop is only for metadata (display as plain img). */
   urlIsCropped?: boolean;
   onError?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
+  /** Shown when URL is invalid or the image fails to load (404, blocked, etc.) */
+  fallback?: React.ReactNode;
 }
 
 export default function ImageWithCrop({
@@ -26,7 +30,27 @@ export default function ImageWithCrop({
   className = '',
   urlIsCropped = true,
   onError,
+  fallback,
 }: ImageWithCropProps) {
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  useEffect(() => {
+    setLoadFailed(false);
+  }, [src]);
+
+  const safe = isSafeImageUrl(src);
+  if (!safe || loadFailed) {
+    if (fallback !== undefined && fallback !== null) {
+      return <>{fallback}</>;
+    }
+    return null;
+  }
+
+  const handleError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    setLoadFailed(true);
+    onError?.(e);
+  };
+
   const baseClass = shape === 'circle'
     ? 'absolute inset-0 w-full h-full object-cover'
     : 'w-full h-full object-cover';
@@ -41,7 +65,10 @@ export default function ImageWithCrop({
         src={src}
         alt={alt}
         className={`${baseClass} ${className}`.trim()}
-        onError={onError}
+        onError={handleError}
+        referrerPolicy="no-referrer"
+        loading="lazy"
+        decoding="async"
       />
     );
   }
@@ -55,7 +82,10 @@ export default function ImageWithCrop({
           src={src}
           alt={alt}
           className={`${baseClass} ${className}`.trim()}
-          onError={onError}
+          onError={handleError}
+          referrerPolicy="no-referrer"
+          loading="lazy"
+          decoding="async"
         />
       );
     }
@@ -71,7 +101,10 @@ export default function ImageWithCrop({
             src={src}
             alt={alt}
             className={shape === 'circle' ? 'absolute inset-0 w-full h-full object-cover' : 'w-full h-full object-cover'}
-            onError={onError}
+            onError={handleError}
+            referrerPolicy="no-referrer"
+            loading="lazy"
+            decoding="async"
           />
         </div>
       </div>
@@ -86,7 +119,10 @@ export default function ImageWithCrop({
         src={src}
         alt={alt}
         className={`${baseClass} ${className}`.trim()}
-        onError={onError}
+        onError={handleError}
+        referrerPolicy="no-referrer"
+        loading="lazy"
+        decoding="async"
       />
     );
   }
@@ -100,7 +136,10 @@ export default function ImageWithCrop({
         alt={alt}
         className={`${baseClass} ${className}`.trim()}
         style={{ objectPosition, objectFit }}
-        onError={onError}
+        onError={handleError}
+        referrerPolicy="no-referrer"
+        loading="lazy"
+        decoding="async"
       />
     );
   }
@@ -110,7 +149,10 @@ export default function ImageWithCrop({
       src={src}
       alt={alt}
       className={`${baseClass} ${className}`.trim()}
-      onError={onError}
+      onError={handleError}
+      referrerPolicy="no-referrer"
+      loading="lazy"
+      decoding="async"
     />
   );
 }

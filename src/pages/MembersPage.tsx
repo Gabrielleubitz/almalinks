@@ -391,20 +391,19 @@ const MembersPage: React.FC = () => {
           <div className="flex items-center space-x-4">
             {/* Avatar - links to profile */}
             <Link to={`/profile/${member.uid}`} className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-100 flex-shrink-0 block shrink-0 relative">
-              {member.avatarUrl ? (
-                <ImageWithCrop
-                  src={member.avatarUrl}
-                  crop={member.profileImageCrop ?? null}
-                  shape="circle"
-                  alt={displayName}
-                  className="rounded-full"
-                  urlIsCropped={true}
-                />
-              ) : (
-                <div className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-lg`}>
-                  {displayName.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <ImageWithCrop
+                src={String(member.avatarUrl || '')}
+                crop={member.profileImageCrop ?? null}
+                shape="circle"
+                alt={displayName}
+                className="rounded-full"
+                urlIsCropped={true}
+                fallback={
+                  <div className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-lg`}>
+                    {displayName.charAt(0).toUpperCase()}
+                  </div>
+                }
+              />
             </Link>
 
             {/* Info */}
@@ -530,20 +529,19 @@ const MembersPage: React.FC = () => {
         {/* Avatar - links to profile */}
         <div className="flex justify-center mb-4">
           <Link to={`/profile/${member.uid}`} className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-100 flex-shrink-0 block relative">
-            {member.avatarUrl ? (
-              <ImageWithCrop
-                src={member.avatarUrl}
-                crop={member.profileImageCrop ?? null}
-                shape="circle"
-                alt={displayName}
-                className="rounded-full"
-                urlIsCropped={true}
-              />
-            ) : (
-              <div className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-xl`}>
-                {displayName.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <ImageWithCrop
+              src={String(member.avatarUrl || '')}
+              crop={member.profileImageCrop ?? null}
+              shape="circle"
+              alt={displayName}
+              className="rounded-full"
+              urlIsCropped={true}
+              fallback={
+                <div className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-xl`}>
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+              }
+            />
           </Link>
         </div>
 
