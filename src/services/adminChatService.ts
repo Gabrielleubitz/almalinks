@@ -27,6 +27,7 @@ export interface AdminChatSummary {
   description?: string;
   imageUrl?: string;
   isPublic: boolean;
+  allowRequests?: boolean;
   memberCount: number;
   messageCount: number;
   lastActivity?: Timestamp;
@@ -87,6 +88,7 @@ export class AdminChatService {
             description: chat.description,
             imageUrl: chat.imageUrl,
             isPublic: chat.isPublic || false,
+            allowRequests: chat.allowRequests ?? false,
             memberCount,
             messageCount,
             lastActivity: chat.lastActivity,
@@ -161,6 +163,7 @@ export class AdminChatService {
         description: chatData.description,
         imageUrl: chatData.imageUrl,
         isPublic: chatData.isPublic || false,
+        allowRequests: chatData.allowRequests ?? false,
         memberCount: members.length,
         messageCount,
         lastActivity: chatData.lastActivity,

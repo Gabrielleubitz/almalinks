@@ -554,10 +554,9 @@ export class ChatService {
    */
   static async getPendingRequests(chatId: string, adminUserId: string): Promise<ChatJoinRequestWithUser[]> {
     try {
-      // Verify user is admin
-      const isAdmin = await this.isUserAdmin(chatId, adminUserId);
-      if (!isAdmin) {
-        throw new Error('User is not an admin of this chat');
+      const canManage = await this.canManageChat(chatId, adminUserId);
+      if (!canManage) {
+        throw new Error('You do not have permission to manage this chat');
       }
 
       const requestsQuery = query(
@@ -607,10 +606,9 @@ export class ChatService {
 
       const requestData = requestDoc.data() as ChatRequest;
 
-      // Verify admin permissions
-      const isAdmin = await this.isUserAdmin(requestData.chatId, adminUserId);
-      if (!isAdmin) {
-        throw new Error('User is not an admin of this chat');
+      const canManage = await this.canManageChat(requestData.chatId, adminUserId);
+      if (!canManage) {
+        throw new Error('You do not have permission to manage this chat');
       }
 
       if (requestData.status !== 'pending') {
@@ -686,10 +684,9 @@ export class ChatService {
 
       const requestData = requestDoc.data() as ChatRequest;
 
-      // Verify admin permissions
-      const isAdmin = await this.isUserAdmin(requestData.chatId, adminUserId);
-      if (!isAdmin) {
-        throw new Error('User is not an admin of this chat');
+      const canManage = await this.canManageChat(requestData.chatId, adminUserId);
+      if (!canManage) {
+        throw new Error('You do not have permission to manage this chat');
       }
 
       if (requestData.status !== 'pending') {
@@ -713,10 +710,9 @@ export class ChatService {
    */
   static async addMember(chatId: string, targetUserId: string, adminUserId: string): Promise<void> {
     try {
-      // Verify admin permissions
-      const isAdmin = await this.isUserAdmin(chatId, adminUserId);
-      if (!isAdmin) {
-        throw new Error('User is not an admin of this chat');
+      const canManage = await this.canManageChat(chatId, adminUserId);
+      if (!canManage) {
+        throw new Error('You do not have permission to manage this chat');
       }
 
       // Check if user is already a member
@@ -786,10 +782,9 @@ export class ChatService {
    */
   static async promoteMemberToAdmin(chatId: string, userId: string, adminUserId: string): Promise<void> {
     try {
-      // Verify admin permissions
-      const isAdmin = await this.isUserAdmin(chatId, adminUserId);
-      if (!isAdmin) {
-        throw new Error('User is not an admin of this chat');
+      const canManage = await this.canManageChat(chatId, adminUserId);
+      if (!canManage) {
+        throw new Error('You do not have permission to manage this chat');
       }
 
       // Update the member's role
@@ -814,6 +809,67 @@ export class ChatService {
 
     } catch (error) {
       console.error('❌ Error promoting member to admin:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Demote a chat admin to member (requires another admin to remain).
+   */
+  static async demoteAdminToMember(chatId: string, userId: string, adminUserId: string): Promise<void> {
+    try {
+      const canManage = await this.canManageChat(chatId, adminUserId);
+      if (!canManage) {
+        throw new Error('You do not have permission to manage this chat');
+      }
+      if (userId === adminUserId) {
+        throw new Error('Ask another admin to demote you, or leave the chat.');
+      }
+
+      const adminCount = await this.getAdminCount(chatId);
+      if (adminCount <= 1) {
+        throw new Error('Cannot demote the last admin');
+      }
+
+      const memberQuery = query(
+        collection(db, 'chat_members'),
+        where('chatId', '==', chatId),
+        where('userId', '==', userId)
+      );
+      const memberSnap = await getDocs(memberQuery);
+      if (memberSnap.empty) {
+        throw new Error('User is not a member of this chat');
+      }
+
+      const memberDoc = memberSnap.docs[0];
+      const role = (memberDoc.data() as ChatMember).role;
+      if (role !== 'admin') {
+        throw new Error('User is not a chat admin');
+      }
+
+      const now = Timestamp.now();
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      const displayName = userDoc.data()?.displayName || userDoc.data()?.name || 'User';
+
+      await retryOnNetworkFailure(() =>
+        updateDoc(memberDoc.ref, { role: 'member', updatedAt: now })
+      );
+
+      const systemMessageData: Omit<ChatMessage, 'id'> = {
+        chatId,
+        userId: null,
+        type: 'system',
+        text: `${displayName} is no longer an admin.`,
+        meta: { action: 'demote', actorId: userId, byAdminId: adminUserId, previousRole: 'admin', newRole: 'member' },
+        createdAt: now,
+      };
+      await addDoc(collection(db, 'chat_messages'), systemMessageData);
+      await updateDoc(doc(db, 'chats', chatId), {
+        lastMessage: systemMessageData,
+        lastActivity: now,
+      });
+    } catch (error) {
+      console.error('❌ Error demoting admin:', error);
       throw error;
     }
   }
@@ -869,9 +925,9 @@ export class ChatService {
       // Verify admin permissions or self-removal
       const isSelfRemoval = targetUserId === adminUserId;
       if (!isSelfRemoval) {
-        const isAdmin = await this.isUserAdmin(chatId, adminUserId);
-        if (!isAdmin) {
-          throw new Error('User is not an admin of this chat');
+        const canManage = await this.canManageChat(chatId, adminUserId);
+        if (!canManage) {
+          throw new Error('You do not have permission to remove members from this chat');
         }
       }
 
@@ -937,10 +993,9 @@ export class ChatService {
    */
   static async deleteChat(chatId: string, adminUserId: string): Promise<void> {
     try {
-      // Verify admin permissions
-      const isAdmin = await this.isUserAdmin(chatId, adminUserId);
-      if (!isAdmin) {
-        throw new Error('User is not an admin of this chat');
+      const canManage = await this.canManageChat(chatId, adminUserId);
+      if (!canManage) {
+        throw new Error('You do not have permission to delete this chat');
       }
 
       const batch = writeBatch(db);
@@ -995,10 +1050,9 @@ export class ChatService {
     adminUserId: string
   ): Promise<void> {
     try {
-      // Verify admin permissions
-      const isAdmin = await this.isUserAdmin(chatId, adminUserId);
-      if (!isAdmin) {
-        throw new Error('User is not an admin of this chat');
+      const canManage = await this.canManageChat(chatId, adminUserId);
+      if (!canManage) {
+        throw new Error('You do not have permission to manage this chat');
       }
 
       // Validate updates
@@ -1247,6 +1301,23 @@ export class ChatService {
 
     const memberSnap = await getDocs(memberQuery);
     return !memberSnap.empty;
+  }
+
+  /** Alma app admins (users.role === 'admin') can manage any chat without being a chat member. */
+  private static async isAppAdmin(userId: string): Promise<boolean> {
+    try {
+      const userDoc = await retryOnNetworkFailure(() => getDoc(doc(db, 'users', userId)));
+      if (!userDoc.exists()) return false;
+      return userDoc.data()?.role === 'admin';
+    } catch {
+      return false;
+    }
+  }
+
+  /** Chat admin OR app admin (Admin panel). */
+  private static async canManageChat(chatId: string, userId: string): Promise<boolean> {
+    if (await this.isUserAdmin(chatId, userId)) return true;
+    return this.isAppAdmin(userId);
   }
 
   private static async checkJoinRequestRateLimit(userId: string): Promise<void> {

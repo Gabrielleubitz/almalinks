@@ -10,16 +10,31 @@ import {
   X,
   AlertCircle,
   Loader2,
+  Settings2,
+  Trash2,
+  Shield,
+  ShieldOff,
+  UserMinus,
+  Save,
 } from 'lucide-react';
-import { collection, getDocs, query, where, limit } from 'firebase/firestore';
+import { collection, getDocs, query, where, limit, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useAuth } from '../../hooks/useAuth';
-import { AdminChatService, type AdminChatSummary } from '../../services/adminChatService';
+import { AdminChatService, type AdminChatDetails } from '../../services/adminChatService';
+import { ChatService } from '../../services/chatService';
+
+type EnrichedMember = {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  role: string;
+  joinedAt: unknown;
+};
 
 export default function AdminChatManagement() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [chats, setChats] = useState<AdminChatSummary[]>([]);
+  const [chats, setChats] = useState<Awaited<ReturnType<typeof AdminChatService.getAllChats>>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [adminInChatIds, setAdminInChatIds] = useState<Set<string>>(new Set());
@@ -31,6 +46,22 @@ export default function AdminChatManagement() {
   const [addingUserId, setAddingUserId] = useState<string | null>(null);
   const [joiningChatId, setJoiningChatId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  /** Full-screen manage panel (edit group + members) */
+  const [manageChatId, setManageChatId] = useState<string | null>(null);
+  const [manageLoading, setManageLoading] = useState(false);
+  const [manageMembers, setManageMembers] = useState<EnrichedMember[]>([]);
+  const [manageMeta, setManageMeta] = useState<Partial<AdminChatDetails> | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    description: '',
+    imageUrl: '',
+    allowRequests: false,
+    isPublic: false,
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingChat, setDeletingChat] = useState(false);
+  const [memberActionKey, setMemberActionKey] = useState<string | null>(null);
 
   const loadChats = useCallback(async () => {
     if (!user?.uid) return;
@@ -58,6 +89,51 @@ export default function AdminChatManagement() {
   useEffect(() => {
     loadChats();
   }, [loadChats]);
+
+  const loadManagePanel = useCallback(async (chatId: string) => {
+    setManageLoading(true);
+    setActionError(null);
+    try {
+      const d = await AdminChatService.getChatDetails(chatId);
+      const members: EnrichedMember[] = await Promise.all(
+        d.members.map(async (m) => {
+          const u = await getDoc(doc(db, 'users', m.userId));
+          const ud = u.data();
+          return {
+            userId: m.userId,
+            role: m.role,
+            joinedAt: m.joinedAt,
+            userName: (ud?.displayName || ud?.name || m.userName || m.userId) as string,
+            userEmail: (ud?.email || m.userEmail || '') as string,
+          };
+        })
+      );
+      setManageMembers(members);
+      setManageMeta(d);
+      setEditForm({
+        name: d.name,
+        description: d.description || '',
+        imageUrl: d.imageUrl || '',
+        allowRequests: d.allowRequests ?? false,
+        isPublic: d.isPublic ?? false,
+      });
+    } catch (e) {
+      console.error(e);
+      setActionError(e instanceof Error ? e.message : 'Failed to load chat');
+      setManageChatId(null);
+    } finally {
+      setManageLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (manageChatId && user?.uid) {
+      loadManagePanel(manageChatId);
+    } else {
+      setManageMembers([]);
+      setManageMeta(null);
+    }
+  }, [manageChatId, user?.uid, loadManagePanel]);
 
   const loadUsers = useCallback(async () => {
     setLoadingUsers(true);
@@ -139,6 +215,68 @@ export default function AdminChatManagement() {
     }
   };
 
+  const handleSaveEdit = async () => {
+    if (!user?.uid || !manageChatId) return;
+    setSavingEdit(true);
+    setActionError(null);
+    try {
+      await ChatService.updateChat(
+        manageChatId,
+        {
+          name: editForm.name.trim(),
+          description: editForm.description.trim(),
+          imageUrl: editForm.imageUrl.trim(),
+          allowRequests: editForm.allowRequests,
+          isPublic: editForm.isPublic,
+        },
+        user.uid
+      );
+      await loadChats();
+      await loadManagePanel(manageChatId);
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Failed to save');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteChat = async () => {
+    if (!user?.uid || !manageChatId || !manageMeta) return;
+    const name = manageMeta.name || 'this chat';
+    if (
+      !window.confirm(
+        `Delete group “${name}” permanently?\n\nAll messages and memberships will be removed. This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+    setDeletingChat(true);
+    setActionError(null);
+    try {
+      await ChatService.deleteChat(manageChatId, user.uid);
+      setManageChatId(null);
+      await loadChats();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Failed to delete chat');
+    } finally {
+      setDeletingChat(false);
+    }
+  };
+
+  const runMemberAction = async (key: string, fn: () => Promise<void>) => {
+    setMemberActionKey(key);
+    setActionError(null);
+    try {
+      await fn();
+      if (manageChatId) await loadManagePanel(manageChatId);
+      await loadChats();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Action failed');
+    } finally {
+      setMemberActionKey(null);
+    }
+  };
+
   const formatDate = (ts: any) => {
     if (!ts) return '—';
     const d = ts?.toDate ? ts.toDate() : new Date(ts);
@@ -146,6 +284,7 @@ export default function AdminChatManagement() {
   };
 
   const selectedChat = addUserChatId ? chats.find((c) => c.id === addUserChatId) : null;
+  const adminCount = manageMembers.filter((m) => m.role === 'admin').length;
 
   return (
     <div className="min-h-full overflow-x-hidden w-full max-w-full">
@@ -161,7 +300,7 @@ export default function AdminChatManagement() {
           </button>
         </div>
 
-        {actionError && (
+        {actionError && !manageChatId && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700 text-sm">
             <AlertCircle className="h-4 w-4 flex-shrink-0" />
             {actionError}
@@ -210,7 +349,18 @@ export default function AdminChatManagement() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setManageChatId(chat.id);
+                        setActionError(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand-dark text-white text-sm font-medium hover:bg-brand-mid"
+                    >
+                      <Settings2 className="h-4 w-4" />
+                      Manage group
+                    </button>
                     <button
                       type="button"
                       onClick={() => navigate(`/chats/${chat.id}`)}
@@ -221,8 +371,11 @@ export default function AdminChatManagement() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setAddUserChatId(chat.id); setActionError(null); }}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand-dark text-white text-sm font-medium hover:bg-brand-mid"
+                      onClick={() => {
+                        setAddUserChatId(chat.id);
+                        setActionError(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50"
                     >
                       <UserPlus className="h-4 w-4" />
                       Add user
@@ -249,6 +402,241 @@ export default function AdminChatManagement() {
           </div>
         )}
 
+        {/* Manage group panel */}
+        {manageChatId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
+            <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col my-8">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between gap-2">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 text-brand-dark" />
+                  Manage group
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setManageChatId(null);
+                    setActionError(null);
+                  }}
+                  className="p-2 text-gray-500 hover:text-gray-700 rounded-lg"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {actionError && (
+                <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700 text-sm">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                  {actionError}
+                </div>
+              )}
+
+              <div className="flex-1 overflow-y-auto p-4 space-y-8">
+                {manageLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                  </div>
+                ) : (
+                  <>
+                    <section>
+                      <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <Settings2 className="h-4 w-4" />
+                        Group info (like WhatsApp)
+                      </h3>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="block sm:col-span-2">
+                          <span className="text-xs text-gray-500">Name</span>
+                          <input
+                            value={editForm.name}
+                            onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                            className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          />
+                        </label>
+                        <label className="block sm:col-span-2">
+                          <span className="text-xs text-gray-500">Description</span>
+                          <textarea
+                            value={editForm.description}
+                            onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+                            rows={3}
+                            className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          />
+                        </label>
+                        <label className="block sm:col-span-2">
+                          <span className="text-xs text-gray-500">Group image URL (optional)</span>
+                          <input
+                            value={editForm.imageUrl}
+                            onChange={(e) => setEditForm((f) => ({ ...f, imageUrl: e.target.value }))}
+                            className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                            placeholder="https://..."
+                          />
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editForm.allowRequests}
+                            onChange={(e) => setEditForm((f) => ({ ...f, allowRequests: e.target.checked }))}
+                          />
+                          <span className="text-sm text-gray-700">Allow join requests</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editForm.isPublic}
+                            onChange={(e) => setEditForm((f) => ({ ...f, isPublic: e.target.checked }))}
+                          />
+                          <span className="text-sm text-gray-700">Discoverable (public)</span>
+                        </label>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleSaveEdit()}
+                        disabled={savingEdit || !editForm.name.trim()}
+                        className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-dark text-white text-sm font-medium hover:bg-brand-mid disabled:opacity-50"
+                      >
+                        {savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        Save changes
+                      </button>
+                    </section>
+
+                    <section>
+                      <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Members ({manageMembers.length})
+                      </h3>
+                      <div className="border border-gray-200 rounded-xl overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50 text-gray-600">
+                            <tr>
+                              <th className="text-left px-3 py-2 font-medium">Member</th>
+                              <th className="text-left px-3 py-2 font-medium">Role</th>
+                              <th className="text-right px-3 py-2 font-medium">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {manageMembers.map((m) => {
+                              const key = `${m.userId}-${m.role}`;
+                              const busy = memberActionKey === key;
+                              return (
+                                <tr key={m.userId} className="border-t border-gray-100">
+                                  <td className="px-3 py-2">
+                                    <div className="font-medium text-gray-900 truncate">{m.userName}</div>
+                                    <div className="text-xs text-gray-500 truncate">{m.userEmail || m.userId}</div>
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <span
+                                      className={
+                                        m.role === 'admin'
+                                          ? 'text-amber-700 font-medium'
+                                          : 'text-gray-600'
+                                      }
+                                    >
+                                      {m.role === 'admin' ? 'Admin' : 'Member'}
+                                    </span>
+                                  </td>
+                                  <td className="px-3 py-2 text-right">
+                                    <div className="flex flex-wrap justify-end gap-1">
+                                      {user?.uid && m.userId !== user.uid && (
+                                        <>
+                                          {m.role === 'member' && (
+                                            <button
+                                              type="button"
+                                              disabled={busy}
+                                              onClick={() =>
+                                                runMemberAction(key, () =>
+                                                  ChatService.promoteMemberToAdmin(
+                                                    manageChatId!,
+                                                    m.userId,
+                                                    user.uid
+                                                  )
+                                                )
+                                              }
+                                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-amber-200 text-amber-800 text-xs hover:bg-amber-50 disabled:opacity-50"
+                                              title="Make admin"
+                                            >
+                                              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Shield className="h-3 w-3" />}
+                                              Promote
+                                            </button>
+                                          )}
+                                          {m.role === 'admin' && adminCount > 1 && (
+                                            <button
+                                              type="button"
+                                              disabled={busy}
+                                              onClick={() =>
+                                                runMemberAction(key, () =>
+                                                  ChatService.demoteAdminToMember(
+                                                    manageChatId!,
+                                                    m.userId,
+                                                    user.uid
+                                                  )
+                                                )
+                                              }
+                                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-200 text-gray-700 text-xs hover:bg-gray-50 disabled:opacity-50"
+                                              title="Remove admin"
+                                            >
+                                              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldOff className="h-3 w-3" />}
+                                              Demote
+                                            </button>
+                                          )}
+                                          <button
+                                            type="button"
+                                            disabled={busy}
+                                            onClick={() => {
+                                              if (
+                                                !window.confirm(
+                                                  `Remove ${m.userName} from this group?`
+                                                )
+                                              )
+                                                return;
+                                              void runMemberAction(key, () =>
+                                                ChatService.removeMember(
+                                                  manageChatId!,
+                                                  m.userId,
+                                                  user.uid
+                                                )
+                                              );
+                                            }}
+                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-red-200 text-red-700 text-xs hover:bg-red-50 disabled:opacity-50"
+                                          >
+                                            {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserMinus className="h-3 w-3" />}
+                                            Remove
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        As an app admin you can manage any group without joining. Chat admins can also manage their own groups in the chat screen.
+                      </p>
+                    </section>
+
+                    <section className="border-t border-red-100 pt-6">
+                      <h3 className="text-sm font-semibold text-red-800 mb-2">Danger zone</h3>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Delete this group for everyone. All messages are removed.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteChat()}
+                        disabled={deletingChat}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-red-300 text-red-700 bg-red-50 hover:bg-red-100 text-sm font-medium disabled:opacity-50"
+                      >
+                        {deletingChat ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        Delete group
+                      </button>
+                    </section>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Add user modal */}
         {addUserChatId && selectedChat && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
@@ -259,7 +647,11 @@ export default function AdminChatManagement() {
                 </h2>
                 <button
                   type="button"
-                  onClick={() => { setAddUserChatId(null); setUserSearch(''); setActionError(null); }}
+                  onClick={() => {
+                    setAddUserChatId(null);
+                    setUserSearch('');
+                    setActionError(null);
+                  }}
                   className="p-2 text-gray-500 hover:text-gray-700 rounded-lg"
                 >
                   <X className="h-5 w-5" />
