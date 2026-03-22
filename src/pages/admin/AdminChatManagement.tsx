@@ -16,12 +16,14 @@ import {
   ShieldOff,
   UserMinus,
   Save,
+  Plus,
 } from 'lucide-react';
 import { collection, getDocs, query, where, limit, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useAuth } from '../../hooks/useAuth';
 import { AdminChatService, type AdminChatDetails } from '../../services/adminChatService';
 import { ChatService } from '../../services/chatService';
+import CreateChatGroupFormPanel from '../../components/admin/CreateChatGroupFormPanel';
 
 type EnrichedMember = {
   userId: string;
@@ -62,6 +64,10 @@ export default function AdminChatManagement() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingChat, setDeletingChat] = useState(false);
   const [memberActionKey, setMemberActionKey] = useState<string | null>(null);
+
+  /** Create new group (WhatsApp-style) — same flow as /admin/chats/create */
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [createGroupKey, setCreateGroupKey] = useState(0);
 
   const loadChats = useCallback(async () => {
     if (!user?.uid) return;
@@ -289,18 +295,44 @@ export default function AdminChatManagement() {
   return (
     <div className="min-h-full overflow-x-hidden w-full max-w-full">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">All Chats</h1>
-          <button
-            type="button"
-            onClick={() => loadChats()}
-            className="text-sm text-gray-600 hover:text-gray-900"
-          >
-            Refresh
-          </button>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">Chats</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Create new groups or manage existing ones (like WhatsApp: name, photo, members, discoverability).
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setCreateGroupKey((k) => k + 1);
+                setShowCreateGroup(true);
+                setActionError(null);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-dark text-white text-sm font-medium hover:bg-brand-mid shadow-sm"
+            >
+              <Plus className="h-4 w-4" />
+              New group
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/admin/chats/create')}
+              className="text-sm text-gray-600 hover:text-gray-900 px-2 py-2"
+            >
+              Full page
+            </button>
+            <button
+              type="button"
+              onClick={() => loadChats()}
+              className="text-sm text-gray-600 hover:text-gray-900 px-2 py-2"
+            >
+              Refresh
+            </button>
+          </div>
         </div>
 
-        {actionError && !manageChatId && (
+        {actionError && !manageChatId && !showCreateGroup && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700 text-sm">
             <AlertCircle className="h-4 w-4 flex-shrink-0" />
             {actionError}
@@ -319,8 +351,22 @@ export default function AdminChatManagement() {
             {error}
           </div>
         ) : chats.length === 0 ? (
-          <div className="p-6 bg-white rounded-xl border border-gray-200 text-center text-gray-600">
-            No chats yet.
+          <div className="p-8 bg-white rounded-xl border border-gray-200 text-center">
+            <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-700 font-medium mb-1">No groups yet</p>
+            <p className="text-sm text-gray-500 mb-4">Create a group to get started — add admins, members, and a photo.</p>
+            <button
+              type="button"
+              onClick={() => {
+                setCreateGroupKey((k) => k + 1);
+                setShowCreateGroup(true);
+                setActionError(null);
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-dark text-white text-sm font-medium hover:bg-brand-mid"
+            >
+              <Plus className="h-4 w-4" />
+              Create new group
+            </button>
           </div>
         ) : (
           <div className="space-y-3">
@@ -399,6 +445,37 @@ export default function AdminChatManagement() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Create new group (same flow as full-page create) */}
+        {showCreateGroup && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
+            <div className="bg-white rounded-2xl shadow-xl max-w-5xl w-full max-h-[95vh] overflow-y-auto my-4">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10 rounded-t-2xl">
+                <h2 className="text-lg font-semibold text-gray-900">Create new group</h2>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateGroup(false)}
+                  className="p-2 text-gray-500 hover:text-gray-700 rounded-lg"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="p-4 sm:p-6">
+                <CreateChatGroupFormPanel
+                  key={createGroupKey}
+                  variant="modal"
+                  onCancel={() => setShowCreateGroup(false)}
+                  onSuccess={(chatId) => {
+                    setShowCreateGroup(false);
+                    loadChats();
+                    navigate(`/chats/${chatId}`);
+                  }}
+                />
+              </div>
+            </div>
           </div>
         )}
 
