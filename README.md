@@ -95,3 +95,19 @@ Hotjar is automatically disabled on localhost and in non-production environments
 ## Repository
 
 This project is hosted at: https://github.com/Gabrielleubitz/almalinks
+
+## Handoff & documentation
+
+- **[docs/HANDOFF.md](docs/HANDOFF.md)** — Stack overview, setup, important paths, deploy, known follow-ups.
+- Additional topics: `docs/security-overview.md`, `docs/email-flows.md`, HubSpot docs under `docs/`.
+
+## Scripts (reference)
+
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Vite dev server |
+| `npm run dev:api` | Vercel dev (API on port 3000) |
+| `npm run dev:all` | Frontend + API together |
+| `npm run build` | Typecheck + production build to `dist/` |
+
+See `package.json` for the full list (Mailchimp test, email logos, etc.).

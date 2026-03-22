@@ -1,50 +1,71 @@
-import React, { useState, useLayoutEffect } from 'react';
+import React, { useState, useLayoutEffect, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Download, Settings } from 'lucide-react';
+import { ArrowLeft, Download } from 'lucide-react';
 import AdminConnectionManager from '../../components/admin/AdminConnectionManager';
 import AdminConnectionWidget from '../../components/admin/AdminConnectionWidget';
+import AdminAllConnectionsTable from '../../components/admin/AdminAllConnectionsTable';
 import { AdminConnectionService } from '../../services/adminConnectionService';
 
 const ConnectionManagement: React.FC = () => {
   const [activeView, setActiveView] = useState<'overview' | 'management'>('overview');
+  /** Load aggregate stats after first paint so the connections table can fetch first (less contention). */
+  const [showStatsWidget, setShowStatsWidget] = useState(false);
 
-  // Scroll to top synchronously before paint to prevent visible scroll jump
+  useEffect(() => {
+    const run = () => setShowStatsWidget(true);
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(run, { timeout: 500 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const t = window.setTimeout(run, 200);
+    return () => window.clearTimeout(t);
+  }, []);
+
   useLayoutEffect(() => {
-    // Capture scroll position before reset
-    const scrollBefore = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
-    
-    // Reset all possible scroll positions (order matters for compatibility)
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
     window.scrollTo(0, 0);
-    
-    // Verify scroll was reset
-    const scrollAfter = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
-    
-    // Dev-only console log for verification
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[ConnectionManagement] Scroll reset:', {
-        target: 'window',
-        scrollBefore,
-        scrollAfter,
-        success: scrollAfter === 0,
-        windowScrollY: window.scrollY,
-        docElementScrollTop: document.documentElement.scrollTop,
-        bodyScrollTop: document.body.scrollTop
-      });
-    }
   }, []);
 
   const handleExportStats = async () => {
     try {
       const rows = await AdminConnectionService.getConnectionsForExport();
-      const headers = ['Connection ID', 'From UID', 'To UID', 'From Name', 'To Name', 'From Email', 'To Email', 'Type', 'Date'];
+      const headers = [
+        'Connection ID',
+        'UID (smaller)',
+        'UID (larger)',
+        'Member A name',
+        'Member B name',
+        'Member A email',
+        'Member B email',
+        'Primary type',
+        'Source summary',
+        'Date (updated)'
+      ];
       const escape = (v: string) => {
         const s = String(v ?? '');
         if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
         return s;
       };
-      const csv = [headers.map(escape).join(','), ...rows.map(r => [r.id, r.fromUid, r.toUid, r.fromName, r.toName, r.fromEmail, r.toEmail, r.connectionType, r.date].map(escape).join(','))].join('\n');
+      const csv = [
+        headers.map(escape).join(','),
+        ...rows.map(r =>
+          [
+            r.id,
+            r.fromUid,
+            r.toUid,
+            r.fromName,
+            r.toName,
+            r.fromEmail,
+            r.toEmail,
+            r.connectionType,
+            r.sourceSummary,
+            r.date
+          ]
+            .map(escape)
+            .join(',')
+        )
+      ].join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -74,7 +95,7 @@ const ConnectionManagement: React.FC = () => {
             Connection Management
           </h1>
           <p className="mt-1 text-gray-600 text-sm sm:text-base max-w-2xl">
-            View connection stats, health status, and create or bulk-manage connections between members.
+            See every connection, how it was created, and use tools to connect members or bulk-link an event.
           </p>
         </div>
 
@@ -107,139 +128,56 @@ const ConnectionManagement: React.FC = () => {
             className="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium text-gray-800 whitespace-nowrap w-full sm:w-auto"
           >
             <Download className="h-4 w-4 flex-shrink-0" />
-            <span>Export Stats</span>
+            <span>Export CSV</span>
           </button>
         </div>
 
         {/* Content */}
         {activeView === 'overview' ? (
           <div className="space-y-4 sm:space-y-6">
-            {/* Stats Widget */}
-            <AdminConnectionWidget className="w-full" />
-
-            {/* Additional Overview Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              {/* Connection Health */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Connection Health</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
-                    <div>
-                      <p className="font-semibold text-green-900">Auto-Connect System</p>
-                      <p className="text-sm text-green-800">Functioning normally</p>
-                    </div>
-                    <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0" />
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
-                    <div>
-                      <p className="font-semibold text-blue-900">Global Directory</p>
-                      <p className="text-sm text-blue-800">Active and searchable</p>
-                    </div>
-                    <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0" />
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-100">
-                    <div>
-                      <p className="font-semibold text-amber-900">By admin</p>
-                      <p className="text-sm text-amber-800">Admin-created connections</p>
-                    </div>
-                    <div className="w-3 h-3 bg-amber-500 rounded-full flex-shrink-0" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Recent Activity */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900">By event</p>
-                      <p className="text-xs text-gray-600">Auto-connect at events</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900">By request</p>
-                      <p className="text-xs text-gray-600">Via directory or profile</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-2 h-2 bg-amber-500 rounded-full flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900">By admin</p>
-                      <p className="text-xs text-gray-600">Admin-created connections</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <Link
-                    to="/admin/connections?tab=stats"
-                    className="text-sm font-medium text-blue-700 hover:text-blue-800"
-                  >
-                    View detailed analytics →
-                  </Link>
-                </div>
-              </div>
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 sm:p-5">
+              <h3 className="text-sm font-bold text-blue-950 mb-2">How to read “source”</h3>
+              <ul className="text-sm text-blue-900 space-y-1 list-disc list-inside">
+                <li>
+                  <strong>By event</strong> — created from event flows (e.g. check-in auto-connect); details may include the event name.
+                </li>
+                <li>
+                  <strong>By request</strong> — one member connected to another (directory, profile, or request flow).
+                </li>
+                <li>
+                  <strong>By admin</strong> — created from this admin area (manual connect or bulk for an event).
+                </li>
+              </ul>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveView('management');
+                  window.scrollTo(0, 0);
+                }}
+                className="mt-3 text-sm font-semibold text-blue-800 hover:text-blue-950 underline-offset-2 hover:underline"
+              >
+                Go to management tools (connect / bulk) →
+              </button>
             </div>
 
-            {/* System Settings */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6">
-              <div className="flex items-center space-x-2 mb-4">
-                <Settings className="h-5 w-5 text-gray-700" />
-                <h3 className="text-lg font-bold text-gray-900">System Settings</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 border border-gray-200 rounded-xl bg-gray-50/50">
-                  <h4 className="font-semibold text-gray-900 mb-2">Auto-Connect Default</h4>
-                  <p className="text-sm text-gray-700 mb-3">
-                    New events enable auto-connect by default.
-                  </p>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      defaultChecked={true}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm font-medium text-gray-900">Enabled</span>
-                  </label>
+            <AdminAllConnectionsTable className="w-full" maxRows={300} />
+
+            {showStatsWidget ? (
+              <AdminConnectionWidget className="w-full" />
+            ) : (
+              <div
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 animate-pulse"
+                aria-hidden
+              >
+                <div className="h-6 bg-gray-200 rounded w-1/3 mb-5" />
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="h-20 bg-gray-100 rounded-xl" />
+                  ))}
                 </div>
-                <div className="p-4 border border-gray-200 rounded-xl bg-gray-50/50">
-                  <h4 className="font-semibold text-gray-900 mb-2">Rate Limiting</h4>
-                  <p className="text-sm text-gray-700 mb-3">
-                    Daily manual connection requests per user.
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      defaultValue={5}
-                      className="w-14 px-2 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">per day</span>
-                  </div>
-                </div>
-                <div className="p-4 border border-gray-200 rounded-xl bg-gray-50/50">
-                  <h4 className="font-semibold text-gray-900 mb-2">Directory Search</h4>
-                  <p className="text-sm text-gray-700 mb-3">
-                    Global directory search.
-                  </p>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      defaultChecked={true}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm font-medium text-gray-900">Enabled</span>
-                  </label>
-                </div>
+                <p className="mt-4 text-xs text-gray-500">Loading overview stats…</p>
               </div>
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <button className="px-4 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 font-medium text-sm">
-                  Save Settings
-                </button>
-              </div>
-            </div>
+            )}
           </div>
         ) : (
           /* Management View */

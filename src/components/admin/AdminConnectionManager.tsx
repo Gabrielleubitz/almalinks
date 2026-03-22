@@ -226,8 +226,9 @@ const AdminConnectionManager: React.FC<AdminConnectionManagerProps> = ({ classNa
             <div className="space-y-5">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl">
-                  <p className="text-sm font-medium text-blue-800">Total Users</p>
+                  <p className="text-sm font-medium text-blue-800">Members in table</p>
                   <p className="text-2xl font-bold text-blue-900 tabular-nums">{userStats.length}</p>
+                  <p className="text-xs text-blue-700/80 mt-1">Most connected members (cap 50)</p>
                 </div>
                 <div className="bg-green-50 border border-green-100 p-4 rounded-xl">
                   <p className="text-sm font-medium text-green-800">By event</p>

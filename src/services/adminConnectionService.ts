@@ -4,12 +4,13 @@ import {
   getDoc, 
   getDocs, 
   query, 
-  where, 
   orderBy, 
-  limit as firestoreLimit
+  limit as firestoreLimit,
+  where,
+  documentId
 } from 'firebase/firestore';
 import { db, retryOnNetworkFailure, auth } from '../firebase/config';
-import { ConnectionService, Connection, ConnectionReason } from './connectionService';
+import { ConnectionService, Connection } from './connectionService';
 import { EventService } from './eventService';
 
 export interface AdminConnectionOptions {
@@ -29,6 +30,165 @@ export interface UserConnectionStats {
   manualConnections: number;
   adminConnections: number;
   registeredEvents: string[];
+}
+
+/** How a connection row is classified for stats (matches Firestore `reasons[].type`). */
+export type PrimaryConnectionKind = 'auto' | 'manual' | 'admin';
+
+/**
+ * Firestore stores `uid1`/`uid2` and `reasons[]` — not top-level `connectionType`.
+ * Priority: admin > event > user request.
+ */
+export function getPrimaryConnectionKind(conn: Connection): PrimaryConnectionKind {
+  const reasons = Array.isArray(conn.reasons) ? conn.reasons : [];
+  if (reasons.length === 0) {
+    const legacy = (conn as { connectionType?: string }).connectionType;
+    if (legacy === 'admin') return 'admin';
+    if (legacy === 'auto') return 'auto';
+    return 'manual';
+  }
+  if (reasons.some(r => r.type === 'admin')) return 'admin';
+  if (reasons.some(r => r.type === 'event')) return 'auto';
+  if (reasons.some(r => r.type === 'user')) return 'manual';
+  return 'manual';
+}
+
+function humanPrimaryLabel(kind: PrimaryConnectionKind): string {
+  switch (kind) {
+    case 'auto':
+      return 'By event';
+    case 'admin':
+      return 'By admin';
+    default:
+      return 'By request';
+  }
+}
+
+/** Build human-readable source lines from reasons (optional event title map). */
+export function describeConnectionSources(
+  conn: Connection,
+  eventTitles: Map<string, string>
+): { primaryKind: PrimaryConnectionKind; primaryLabel: string; sourceLines: string[] } {
+  const reasons = Array.isArray(conn.reasons) ? conn.reasons : [];
+  const primaryKind = getPrimaryConnectionKind(conn);
+  const primaryLabel = humanPrimaryLabel(primaryKind);
+  const lines: string[] = [];
+
+  if (reasons.length === 0) {
+    const legacy = (conn as { connectionType?: string }).connectionType;
+    if (legacy) lines.push(`Legacy: ${legacy}`);
+    else lines.push('No reasons recorded (legacy or import)');
+    return { primaryKind, primaryLabel, sourceLines: lines };
+  }
+
+  for (const r of reasons) {
+    if (r.type === 'event') {
+      const id = r.eventId;
+      const title = id ? eventTitles.get(id) || id : '';
+      lines.push(title ? `Event: ${title}` : 'Event');
+    } else if (r.type === 'admin') {
+      lines.push(
+        r.adminId
+          ? `Admin (${r.adminId.slice(0, 8)}…)`
+          : 'Admin'
+      );
+      if (r.context) lines.push(`Note: ${r.context}`);
+    } else if (r.type === 'user') {
+      lines.push(r.requestId ? 'Connection request' : 'Member request');
+    }
+  }
+
+  // Dedupe while preserving order
+  const seen = new Set<string>();
+  const sourceLines = lines.filter(l => {
+    if (seen.has(l)) return false;
+    seen.add(l);
+    return true;
+  });
+  return { primaryKind, primaryLabel, sourceLines };
+}
+
+export interface AdminConnectionListRow {
+  id: string;
+  uid1: string;
+  uid2: string;
+  personAName: string;
+  personBName: string;
+  personAEmail: string;
+  personBEmail: string;
+  primaryKind: PrimaryConnectionKind;
+  primaryLabel: string;
+  sourceSummary: string;
+  updatedAtLabel: string;
+}
+
+function timestampToDate(value: unknown): Date | null {
+  if (!value) return null;
+  if (typeof (value as { toDate?: () => Date }).toDate === 'function') {
+    return (value as { toDate: () => Date }).toDate();
+  }
+  const d = new Date(value as string | number);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** Firestore `in` / `not-in` queries allow up to 30 values. */
+const FIRESTORE_IN_LIMIT = 30;
+
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    out.push(arr.slice(i, i + size));
+  }
+  return out;
+}
+
+/** Batched user profile reads (replaces N sequential getDoc calls). */
+async function fetchUserSummariesByIds(
+  uids: Iterable<string>
+): Promise<Map<string, { name: string; email: string; work: string }>> {
+  const unique = [...new Set([...uids].filter(Boolean))];
+  const map = new Map<string, { name: string; email: string; work: string }>();
+  if (unique.length === 0) return map;
+
+  const chunks = chunkArray(unique, FIRESTORE_IN_LIMIT);
+  await Promise.all(
+    chunks.map(async chunk => {
+      const q = query(collection(db, 'users'), where(documentId(), 'in', chunk));
+      const snap = await retryOnNetworkFailure(() => getDocs(q));
+      snap.forEach(d => {
+        const data = d.data();
+        map.set(d.id, {
+          name: (data.displayName || data.name || d.id) as string,
+          email: (data.email || '') as string,
+          work: (data.work || '') as string
+        });
+      });
+    })
+  );
+  return map;
+}
+
+/** Batched event title reads for connection reasons / export. */
+async function fetchEventTitlesByIds(
+  eventIds: Iterable<string>
+): Promise<Map<string, string>> {
+  const unique = [...new Set([...eventIds].filter(Boolean))];
+  const map = new Map<string, string>();
+  if (unique.length === 0) return map;
+
+  const chunks = chunkArray(unique, FIRESTORE_IN_LIMIT);
+  await Promise.all(
+    chunks.map(async chunk => {
+      const q = query(collection(db, 'events'), where(documentId(), 'in', chunk));
+      const snap = await retryOnNetworkFailure(() => getDocs(q));
+      snap.forEach(d => {
+        const data = d.data();
+        const name = (data.name as string) || d.id;
+        map.set(d.id, name);
+      });
+    })
+  );
+  return map;
 }
 
 export class AdminConnectionService {
@@ -110,9 +270,8 @@ export class AdminConnectionService {
         throw new Error(`Admin connect failed: API returned invalid connectionId (${data.connectionId === null ? 'null' : data.connectionId === undefined ? 'undefined' : `type: ${typeof data.connectionId}`}). Check [ADMIN_CONNECT_RETURN] log.`);
       }
 
-      // Log successful return (DEV only)
       if (import.meta.env.DEV) {
-        console.log('[ADMIN_CONNECT_USED] SUCCESS', {
+        console.log('[ADMIN_CONNECT] success', {
           userA: fromUid,
           userB: toUid,
           adminUid,
@@ -120,36 +279,9 @@ export class AdminConnectionService {
           connectionPath: data.connectionPath,
           created: data.created,
           existed: data.existed,
-          eventId: options.eventId,
-          reason: options.reason,
-          source: 'AdminConnectionService.createAdminConnection',
-          endpoint: '/api/connections/admin-create',
-          note: 'connectionId is non-null and will be returned'
+          eventId: options.eventId
         });
       }
-
-      // Log return value RIGHT BEFORE returning
-      console.log('[ADMIN_CONNECT_RETURN] CLIENT', {
-        connectionId: data.connectionId,
-        connectionPath: data.connectionPath,
-        connectionIdType: typeof data.connectionId,
-        connectionIdIsNull: data.connectionId === null,
-        connectionIdIsUndefined: data.connectionId === undefined,
-        connectionIdLength: data.connectionId.length,
-        note: 'AdminConnectionService.createAdminConnection returning connectionId RIGHT NOW'
-      });
-
-      console.log('✅ Admin connection created via API:', {
-        connectionId: data.connectionId,
-        connectionPath: data.connectionPath,
-        fromUid,
-        toUid,
-        adminUid,
-        created: data.created,
-        existed: data.existed,
-        eventId: options.eventId,
-        reason: options.reason
-      });
 
       // Return connectionId - guaranteed non-null at this point
       return data.connectionId;
@@ -174,82 +306,146 @@ export class AdminConnectionService {
   }
 
   /**
-   * Get connection statistics for all users (admin overview)
+   * Get connection statistics for users who have at least one connection (top N by total).
+   * Uses real schema: uid1/uid2 + reasons[] (not legacy fromUid/toUid/connectionType).
    */
   static async getUserConnectionStats(limit: number = 100): Promise<UserConnectionStats[]> {
     try {
-      // Get all users
-      const usersSnapshot = await retryOnNetworkFailure(() => 
-        getDocs(collection(db, 'users'))
-      );
-      
-      const userStats: UserConnectionStats[] = [];
-
-      // Get all connections to analyze
-      const connectionsSnapshot = await retryOnNetworkFailure(() => 
+      const connectionsSnapshot = await retryOnNetworkFailure(() =>
         getDocs(collection(db, 'connections'))
       );
-      const allConnections = connectionsSnapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data() 
+      const allConnections = connectionsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
       })) as Connection[];
 
-      // Process each user
-      for (const userDoc of usersSnapshot.docs.slice(0, limit)) {
-        const userData = userDoc.data();
-        const uid = userDoc.id;
+      const statsMap = new Map<
+        string,
+        { auto: number; manual: number; admin: number; total: number }
+      >();
 
-        // Count connections for this user
-        const userConnections = allConnections.filter(conn => 
-          conn.fromUid === uid || conn.toUid === uid
-        );
+      for (const conn of allConnections) {
+        const u1 = conn.uid1;
+        const u2 = conn.uid2;
+        if (!u1 || !u2) continue;
 
-        // Count by connection type: by event (auto), by request (manual), by admin (admin)
-        let autoConnections = 0;
-        let manualConnections = 0;
-        let adminConnections = 0;
-
-        userConnections.forEach(conn => {
-          switch (conn.connectionType) {
-            case 'auto':
-              autoConnections++;
-              break;
-            case 'manual':
-              manualConnections++;
-              break;
-            case 'admin':
-              adminConnections++;
-              break;
-            default:
-              break;
+        const kind = getPrimaryConnectionKind(conn);
+        for (const uid of [u1, u2]) {
+          if (!statsMap.has(uid)) {
+            statsMap.set(uid, { auto: 0, manual: 0, admin: 0, total: 0 });
           }
-        });
+          const s = statsMap.get(uid)!;
+          s.total++;
+          if (kind === 'admin') s.admin++;
+          else if (kind === 'auto') s.auto++;
+          else s.manual++;
+        }
+      }
 
-        // Get registered events
-        const registeredEvents = await this.getUserRegisteredEventIds(uid);
+      const sorted = [...statsMap.entries()].sort((a, b) => b[1].total - a[1].total).slice(0, limit);
+
+      const uids = sorted.map(([uid]) => uid);
+      const [userSummaries, regByUser] = await Promise.all([
+        fetchUserSummariesByIds(uids),
+        this.buildRegisteredEventIdsForUsers(uids)
+      ]);
+
+      const userStats: UserConnectionStats[] = [];
+      for (const [uid, counts] of sorted) {
+        const summary = userSummaries.get(uid);
+        if (!summary) continue;
 
         userStats.push({
           uid,
-          name: userData.displayName || userData.name || 'Unknown User',
-          email: userData.email || '',
-          work: userData.work || 'Not specified',
-          totalConnections: userConnections.length,
-          autoConnections,
-          manualConnections,
-          adminConnections,
-          registeredEvents
+          name: summary.name,
+          email: summary.email,
+          work: summary.work || 'Not specified',
+          totalConnections: counts.total,
+          autoConnections: counts.auto,
+          manualConnections: counts.manual,
+          adminConnections: counts.admin,
+          registeredEvents: regByUser.get(uid) ?? []
         });
       }
 
-      // Sort by total connections desc
-      userStats.sort((a, b) => b.totalConnections - a.totalConnections);
-
       return userStats;
-
     } catch (error) {
       console.error('❌ Error getting user connection stats:', error);
       return [];
     }
+  }
+
+  /**
+   * All connections with member names and human-readable sources (newest first).
+   */
+  static async getAllConnectionsEnriched(maxRows: number = 500): Promise<AdminConnectionListRow[]> {
+    let connections: Connection[];
+    try {
+      const q = query(
+        collection(db, 'connections'),
+        orderBy('updatedAt', 'desc'),
+        firestoreLimit(maxRows)
+      );
+      const snap = await retryOnNetworkFailure(() => getDocs(q));
+      connections = snap.docs.map(d => ({ id: d.id, ...d.data() } as Connection));
+    } catch (e) {
+      console.warn('[getAllConnectionsEnriched] ordered query failed, falling back to full scan', e);
+      const all = await retryOnNetworkFailure(() => getDocs(collection(db, 'connections')));
+      const list = all.docs.map(d => ({ id: d.id, ...d.data() } as Connection));
+      list.sort((a, b) => {
+        const ta = timestampToDate(a.updatedAt)?.getTime() ?? 0;
+        const tb = timestampToDate(b.updatedAt)?.getTime() ?? 0;
+        return tb - ta;
+      });
+      connections = list.slice(0, maxRows);
+    }
+
+    const eventIds = new Set<string>();
+    const userIds = new Set<string>();
+    for (const c of connections) {
+      if (c.uid1) userIds.add(c.uid1);
+      if (c.uid2) userIds.add(c.uid2);
+      for (const r of Array.isArray(c.reasons) ? c.reasons : []) {
+        if (r.type === 'event' && r.eventId) eventIds.add(r.eventId);
+      }
+    }
+
+    const [eventTitles, userDocs] = await Promise.all([
+      fetchEventTitlesByIds(eventIds),
+      fetchUserSummariesByIds(userIds)
+    ]);
+
+    const rows: AdminConnectionListRow[] = [];
+    for (const c of connections) {
+      const u1 = c.uid1 || '';
+      const u2 = c.uid2 || '';
+      const a = userDocs.get(u1) || { name: u1, email: '' };
+      const b = userDocs.get(u2) || { name: u2, email: '' };
+      const { primaryKind, primaryLabel, sourceLines } = describeConnectionSources(c, eventTitles);
+      const updated = timestampToDate(c.updatedAt) || timestampToDate(c.createdAt);
+      const updatedAtLabel = updated
+        ? updated.toLocaleString(undefined, {
+            dateStyle: 'medium',
+            timeStyle: 'short'
+          })
+        : '—';
+
+      rows.push({
+        id: c.id,
+        uid1: u1,
+        uid2: u2,
+        personAName: a.name,
+        personBName: b.name,
+        personAEmail: a.email,
+        personBEmail: b.email,
+        primaryKind,
+        primaryLabel,
+        sourceSummary: sourceLines.join(' · ') || primaryLabel,
+        updatedAtLabel
+      });
+    }
+
+    return rows;
   }
 
   /**
@@ -275,7 +471,8 @@ export class AdminConnectionService {
       // Enrich connections with partner info
       const enrichedConnections = [];
       for (const connection of userConnections) {
-        const partnerUid = connection.fromUid === userId ? connection.toUid : connection.fromUid;
+        const partnerUid =
+          userId === connection.uid1 ? connection.uid2 : connection.uid1;
         const partnerDoc = await retryOnNetworkFailure(() => getDoc(doc(db, 'users', partnerUid)));
         
         const partnerInfo = partnerDoc.exists() ? {
@@ -466,7 +663,9 @@ export class AdminConnectionService {
         }
       }
 
-      console.log('✅ Bulk admin connections completed:', { created, skipped, errors: errors.length });
+      if (import.meta.env.DEV) {
+        console.log('[bulkConnectEventUsers]', { created, skipped, errorCount: errors.length });
+      }
 
       return { created, skipped, errors };
 
@@ -496,14 +695,13 @@ export class AdminConnectionService {
 
       const connectionData = connectionDoc.data();
 
-      // Log admin action before deletion
-      console.log('⚠️ Admin removing connection:', {
-        connectionId,
-        fromUid: connectionData.fromUid,
-        toUid: connectionData.toUid,
-        adminUid,
-        reason
-      });
+      if (import.meta.env.DEV) {
+        console.warn('[removeConnection] not implemented; attempted:', {
+          connectionId,
+          adminUid,
+          reason
+        });
+      }
 
       // Use existing ConnectionService method if available, or implement deletion
       // For now, we'll reference the doc but not delete it directly
@@ -518,30 +716,48 @@ export class AdminConnectionService {
   }
 
   /**
+   * For each user id, list public events they are registered for.
+   * One `getPublicEvents` + parallel `getEventRegistrations` per event (not users × events sequential reads).
+   */
+  private static async buildRegisteredEventIdsForUsers(
+    userIds: string[]
+  ): Promise<Map<string, string[]>> {
+    const uidSet = new Set(userIds.filter(Boolean));
+    const result = new Map<string, string[]>();
+    userIds.forEach(uid => result.set(uid, []));
+
+    if (uidSet.size === 0) return result;
+
+    try {
+      const events = await EventService.getPublicEvents();
+      await Promise.all(
+        events.map(async event => {
+          try {
+            const regs = await EventService.getEventRegistrations(event.id);
+            for (const reg of regs) {
+              const uid = reg.userId;
+              if (uidSet.has(uid)) {
+                result.get(uid)!.push(event.id);
+              }
+            }
+          } catch (error) {
+            console.warn('⚠️ Error loading registrations for event:', event.id, error);
+          }
+        })
+      );
+    } catch (error) {
+      console.error('❌ Error building registered events for users:', error);
+    }
+
+    return result;
+  }
+
+  /**
    * Get user's registered event IDs (helper method)
    */
   private static async getUserRegisteredEventIds(userId: string): Promise<string[]> {
-    try {
-      const events = await EventService.getPublicEvents();
-      const registeredEventIds: string[] = [];
-      
-      for (const event of events) {
-        try {
-          const registration = await EventService.getUserRegistration(event.id, userId);
-          if (registration) {
-            registeredEventIds.push(event.id);
-          }
-        } catch (error) {
-          // Skip individual event errors
-          console.warn('⚠️ Error checking registration for event:', event.id, error);
-        }
-      }
-      
-      return registeredEventIds;
-    } catch (error) {
-      console.error('❌ Error getting user registered events:', error);
-      return [];
-    }
+    const map = await this.buildRegisteredEventIdsForUsers([userId]);
+    return map.get(userId) ?? [];
   }
 
   /**
@@ -565,7 +781,6 @@ export class AdminConnectionService {
         ...doc.data() 
       })) as Connection[];
 
-      // Count by type: by event (auto), by request (manual), by admin (admin)
       let autoConnections = 0;
       let manualConnections = 0;
       let adminConnections = 0;
@@ -575,20 +790,16 @@ export class AdminConnectionService {
       today.setHours(0, 0, 0, 0);
 
       connections.forEach(conn => {
-        switch (conn.connectionType) {
-          case 'auto':
-            autoConnections++;
-            break;
-          case 'manual':
-            manualConnections++;
-            break;
-          case 'admin':
-            adminConnections++;
-            break;
-          default:
-            break;
-        }
-        const connDate = conn.timestamp?.toDate?.() || new Date(0);
+        const kind = getPrimaryConnectionKind(conn);
+        if (kind === 'admin') adminConnections++;
+        else if (kind === 'auto') autoConnections++;
+        else manualConnections++;
+
+        const connDate =
+          timestampToDate(conn.updatedAt) ||
+          timestampToDate(conn.createdAt) ||
+          timestampToDate((conn as { timestamp?: unknown }).timestamp) ||
+          new Date(0);
         if (connDate >= today) {
           connectionsToday++;
         }
@@ -596,8 +807,8 @@ export class AdminConnectionService {
 
       const activeUserIds = new Set<string>();
       connections.forEach(conn => {
-        activeUserIds.add(conn.fromUid);
-        activeUserIds.add(conn.toUid);
+        if (conn.uid1) activeUserIds.add(conn.uid1);
+        if (conn.uid2) activeUserIds.add(conn.uid2);
       });
 
       return {
@@ -634,37 +845,62 @@ export class AdminConnectionService {
     fromEmail: string;
     toEmail: string;
     connectionType: string;
+    sourceSummary: string;
     date: string;
   }[]> {
     const connectionsSnapshot = await retryOnNetworkFailure(() =>
       getDocs(collection(db, 'connections'))
     );
-    const connections = connectionsSnapshot.docs.map(d => ({ id: d.id, ...d.data() })) as (Connection & { fromUid?: string; toUid?: string; connectionType?: string; timestamp?: any })[];
+    const connections = connectionsSnapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data()
+    })) as Connection[];
+
+    const eventIds = new Set<string>();
+    for (const c of connections) {
+      for (const r of Array.isArray(c.reasons) ? c.reasons : []) {
+        if (r.type === 'event' && r.eventId) eventIds.add(r.eventId);
+      }
+    }
     const userIds = new Set<string>();
     connections.forEach(c => {
-      const from = (c as any).fromUid ?? c.uid1;
-      const to = (c as any).toUid ?? c.uid2;
-      if (from) userIds.add(from);
-      if (to) userIds.add(to);
+      if (c.uid1) userIds.add(c.uid1);
+      if (c.uid2) userIds.add(c.uid2);
     });
-    const userDocs = new Map<string, { name: string; email: string }>();
-    for (const uid of userIds) {
-      const snap = await getDoc(doc(db, 'users', uid));
-      const d = snap.data();
-      userDocs.set(uid, {
-        name: d?.name ?? d?.displayName ?? uid,
-        email: d?.email ?? ''
-      });
-    }
-    const rows: { id: string; fromUid: string; toUid: string; fromName: string; toName: string; fromEmail: string; toEmail: string; connectionType: string; date: string }[] = [];
+
+    const [eventTitles, userDocs] = await Promise.all([
+      fetchEventTitlesByIds(eventIds),
+      fetchUserSummariesByIds(userIds)
+    ]);
+
+    const rows: {
+      id: string;
+      fromUid: string;
+      toUid: string;
+      fromName: string;
+      toName: string;
+      fromEmail: string;
+      toEmail: string;
+      connectionType: string;
+      sourceSummary: string;
+      date: string;
+    }[] = [];
+
     for (const c of connections) {
-      const fromUid = (c as any).fromUid ?? c.uid1 ?? '';
-      const toUid = (c as any).toUid ?? c.uid2 ?? '';
+      const fromUid = c.uid1 ?? '';
+      const toUid = c.uid2 ?? '';
       const from = userDocs.get(fromUid) ?? { name: fromUid, email: '' };
       const to = userDocs.get(toUid) ?? { name: toUid, email: '' };
-      const connType = (c as any).connectionType ?? 'unknown';
-      const ts = (c as any).timestamp;
-      const date = ts?.toDate?.() ? ts.toDate().toISOString().slice(0, 10) : (ts ? new Date(ts).toISOString().slice(0, 10) : '');
+      const kind = getPrimaryConnectionKind(c);
+      const connType =
+        kind === 'admin' ? 'by_admin' : kind === 'auto' ? 'by_event' : 'by_request';
+      const { sourceLines } = describeConnectionSources(c, eventTitles);
+      const sourceSummary = sourceLines.join(' | ');
+      const updated =
+        timestampToDate(c.updatedAt) ||
+        timestampToDate(c.createdAt) ||
+        new Date(0);
+      const date = updated.toISOString().slice(0, 10);
       rows.push({
         id: c.id,
         fromUid,
@@ -674,6 +910,7 @@ export class AdminConnectionService {
         fromEmail: from.email,
         toEmail: to.email,
         connectionType: connType,
+        sourceSummary,
         date
       });
     }
