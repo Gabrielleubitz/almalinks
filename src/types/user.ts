@@ -35,6 +35,8 @@ export interface UserProfile {
   
   // Location
   city?: string;
+  /** Region / state (e.g. from HubSpot import) */
+  state?: string;
   country?: string;
   timezone?: string; // IANA timezone
   /** From HubSpot import (custom property) */

@@ -33,11 +33,7 @@ async function main() {
     callerUid: null,
   });
 
-  console.log('HubSpot user reimport finished:', {
-    ok: result.ok,
-    deletedUsers: result.deletedUsers,
-    totalUpserted: result.totalUpserted,
-  });
+  console.log('HubSpot user reimport finished:', result);
 }
 
 main().catch((err) => {

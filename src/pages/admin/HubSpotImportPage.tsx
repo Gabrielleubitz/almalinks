@@ -14,6 +14,7 @@ import {
   ChevronUp,
   Zap,
   Download,
+  X,
 } from 'lucide-react';
 import { apiRequest } from '../../utils/apiClient';
 import HubspotLogo from '../../assets/hubspot-logo.svg';
@@ -24,6 +25,61 @@ interface LastResult {
   ok: boolean;
   data: Record<string, unknown>;
   error?: string;
+}
+
+/** Response from POST /api/sync-hubspot-contacts (extended summary) */
+interface HubspotContactsSyncSummary {
+  ok?: boolean;
+  totalUpserted?: number;
+  totalHubspotContacts?: number;
+  deletedUsers?: number;
+  contactsWithoutEmail?: number;
+  newAuthUsers?: number;
+  reusedAuthUsers?: number;
+  authErrors?: number;
+  firestoreProfilesCreated?: number;
+  firestoreProfilesUpdated?: number;
+  propertiesRequested?: number;
+  error?: string;
+}
+
+function buildContactsSyncModalLines(s: HubspotContactsSyncSummary): { label: string; value: string }[] {
+  const lines: { label: string; value: string }[] = [];
+  const total =
+    typeof s.totalHubspotContacts === 'number'
+      ? s.totalHubspotContacts
+      : typeof s.totalUpserted === 'number'
+        ? s.totalUpserted
+        : '—';
+  lines.push({ label: 'HubSpot contacts processed', value: String(total) });
+  if (typeof s.contactsWithoutEmail === 'number') {
+    lines.push({ label: 'Contacts without email (Firestore only, no login)', value: String(s.contactsWithoutEmail) });
+  }
+  if (typeof s.newAuthUsers === 'number') {
+    lines.push({ label: 'New Firebase accounts created', value: String(s.newAuthUsers) });
+  }
+  if (typeof s.reusedAuthUsers === 'number') {
+    lines.push({ label: 'Existing logins matched by email', value: String(s.reusedAuthUsers) });
+  }
+  if (typeof s.authErrors === 'number' && s.authErrors > 0) {
+    lines.push({ label: 'Auth errors (check server logs)', value: String(s.authErrors) });
+  }
+  if (typeof s.firestoreProfilesCreated === 'number') {
+    lines.push({ label: 'New member profiles in Firestore', value: String(s.firestoreProfilesCreated) });
+  }
+  if (typeof s.firestoreProfilesUpdated === 'number') {
+    lines.push({ label: 'Existing profiles updated / merged', value: String(s.firestoreProfilesUpdated) });
+  }
+  if (typeof s.deletedUsers === 'number' && s.deletedUsers > 0) {
+    lines.push({ label: 'Duplicate HubSpot users removed (dedupe)', value: String(s.deletedUsers) });
+  }
+  if (typeof s.propertiesRequested === 'number') {
+    lines.push({
+      label: 'HubSpot fields requested per contact',
+      value: String(s.propertiesRequested),
+    });
+  }
+  return lines;
 }
 
 interface HubSpotContact {
@@ -75,6 +131,12 @@ const HubSpotImportPage: React.FC = () => {
   const [deleteResult, setDeleteResult] = useState<Record<string, unknown> | null>(null);
   const [lastResult, setLastResult] = useState<LastResult | null>(null);
   const [showResultJson, setShowResultJson] = useState(false);
+  /** Success modal after contact sync or full pull */
+  const [syncSuccessModal, setSyncSuccessModal] = useState<{
+    title: string;
+    sections: { heading?: string; lines: { label: string; value: string }[] }[];
+    footnote?: string;
+  } | null>(null);
 
   const [contacts, setContacts] = useState<HubSpotContact[]>([]);
   const [deals, setDeals] = useState<HubSpotDeal[]>([]);
@@ -221,10 +283,19 @@ const HubSpotImportPage: React.FC = () => {
         method: 'POST',
         body: JSON.stringify({ dedupeByEmail: true, fullResync: false }),
       });
-      const data = await res.json().catch(() => ({})) as Record<string, unknown>;
+      const data = await res.json().catch(() => ({})) as HubspotContactsSyncSummary & Record<string, unknown>;
       setSyncResult(data);
-      setResult('sync', res.ok && !(data as { error?: string }).error, data, (data as { error?: string }).error);
-      if (res.ok) fetchContacts();
+      const dataOk = data.ok !== false && !data.error;
+      setResult('sync', res.ok && dataOk, data as Record<string, unknown>, data.error);
+      if (res.ok && dataOk) {
+        fetchContacts();
+        setSyncSuccessModal({
+          title: 'Contacts sync complete',
+          sections: [{ lines: buildContactsSyncModalLines(data) }],
+          footnote:
+            'Profile fields synced from HubSpot include photo URL, short bio (bio title), long bio, chapter, city, state, country, timezone, LinkedIn, and other properties stored on each user (see hubspotContactProperties).',
+        });
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Request failed';
       setSyncResult({ ok: false, error: msg });
@@ -323,7 +394,7 @@ const HubSpotImportPage: React.FC = () => {
         method: 'POST',
         body: JSON.stringify({ dedupeByEmail: true, fullResync: false }),
       });
-      const syncData = await syncRes.json().catch(() => ({})) as Record<string, unknown>;
+      const syncData = await syncRes.json().catch(() => ({})) as HubspotContactsSyncSummary & Record<string, unknown>;
       setSyncResult(syncData);
       const dealsRes = await apiRequest('/api/sync-hubspot-deals', { method: 'POST' });
       const dealsData = await dealsRes.json().catch(() => ({})) as Record<string, unknown>;
@@ -331,11 +402,44 @@ const HubSpotImportPage: React.FC = () => {
       const eventsRes = await apiRequest('/api/create-events-from-deals', { method: 'POST' });
       const eventsData = await eventsRes.json().catch(() => ({})) as Record<string, unknown>;
       setCreateFromDealsResult(eventsData);
+      const syncOk = syncRes.ok && syncData.ok !== false && !syncData.error;
+      const dealsOk = dealsRes.ok && (dealsData as { ok?: boolean }).ok !== false;
+      const eventsOk = eventsRes.ok && (eventsData as { ok?: boolean }).ok !== false;
       setLastResult({
         type: 'events',
-        ok: eventsRes.ok && !(eventsData as { error?: string }).error,
+        ok: syncOk && dealsOk && eventsOk,
         data: { sync: syncData, deals: dealsData, events: eventsData },
       });
+      if (syncOk && dealsOk && eventsOk) {
+        fetchContacts();
+        fetchDeals();
+        const dealCount =
+          typeof dealsData.totalUpserted === 'number' ? String(dealsData.totalUpserted) : '—';
+        const ev = eventsData as { created?: number; skipped?: number; totalDeals?: number };
+        setSyncSuccessModal({
+          title: 'Pull all complete',
+          sections: [
+            { heading: 'Contacts', lines: buildContactsSyncModalLines(syncData) },
+            {
+              heading: 'Deals',
+              lines: [{ label: 'Deals imported to Firestore', value: dealCount }],
+            },
+            {
+              heading: 'Past events from deals',
+              lines: [
+                { label: 'Events created', value: typeof ev.created === 'number' ? String(ev.created) : '—' },
+                { label: 'Skipped (already had event)', value: typeof ev.skipped === 'number' ? String(ev.skipped) : '—' },
+                {
+                  label: 'Deals considered',
+                  value: typeof ev.totalDeals === 'number' ? String(ev.totalDeals) : '—',
+                },
+              ],
+            },
+          ],
+          footnote:
+            'Contacts: photo, bios, chapter, location, and other HubSpot fields are merged into member profiles. Check warnings in the expanded result if event counts look off.',
+        });
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Request failed';
       setSyncResult({ ok: false, error: msg });
@@ -591,7 +695,76 @@ const HubSpotImportPage: React.FC = () => {
           Destructive buttons remove only HubSpot-imported data from Firebase. HubSpot CRM is never modified.
         </p>
 
+        {syncSuccessModal && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="hubspot-sync-success-title"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setSyncSuccessModal(null);
+            }}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-gray-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 min-w-0">
+                  <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" aria-hidden />
+                  <h2 id="hubspot-sync-success-title" className="text-lg font-semibold text-gray-900">
+                    {syncSuccessModal.title}
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSyncSuccessModal(null)}
+                  className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="px-6 py-4 space-y-6">
+                {syncSuccessModal.sections.map((section, idx) => (
+                  <div key={idx}>
+                    {section.heading && (
+                      <h3 className="text-sm font-semibold text-gray-800 mb-2">{section.heading}</h3>
+                    )}
+                    <ul className="space-y-2">
+                      {section.lines.map((line, j) => (
+                        <li key={j} className="flex justify-between gap-4 text-sm">
+                          <span className="text-gray-600">{line.label}</span>
+                          <span className="font-medium text-gray-900 text-right tabular-nums">{line.value}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+                {syncSuccessModal.footnote && (
+                  <p className="text-xs text-gray-500 leading-relaxed border-t border-gray-100 pt-4">
+                    {syncSuccessModal.footnote}
+                  </p>
+                )}
+              </div>
+              <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+                <button
+                  type="button"
+                  onClick={() => setSyncSuccessModal(null)}
+                  className="w-full py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Action cards grid */}
+        <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 mb-4">
+          <strong className="font-semibold">Large directories:</strong> syncing 500+ contacts can take several minutes. Keep this tab open until the{' '}
+          <strong>success summary</strong> appears — that confirms the run finished.
+        </p>
         <h2 className="text-base font-semibold text-gray-900 mb-4">Step-by-step</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
           {actionCards.map((card) => {
