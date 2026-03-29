@@ -50,6 +50,8 @@ import { useAuth } from './hooks/useAuth';
 import NetworkStatusIndicator from './components/ui/NetworkStatusIndicator';
 import ActivityTracker from './components/ActivityTracker';
 import OnboardingTour from './components/onboarding/OnboardingTour';
+import CommunityProtectedRoute from './community/components/CommunityProtectedRoute';
+import CommunityHomePage from './community/pages/CommunityHomePage';
 
 function App() {
   const { user, loading: authLoading } = useAuth();
@@ -91,6 +93,14 @@ function App() {
               <DashboardPage />
             </ProtectedRoute>
           } 
+        />
+        <Route
+          path="/community/*"
+          element={
+            <CommunityProtectedRoute>
+              <CommunityHomePage />
+            </CommunityProtectedRoute>
+          }
         />
         <Route 
           path="/events" 
