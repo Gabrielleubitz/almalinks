@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getIdToken } from 'firebase/auth';
-import { Calendar, MapPin, Image, FileText, ArrowLeft, AlertCircle, ImagePlus } from 'lucide-react';
+import { Calendar, MapPin, Image, FileText, ArrowLeft, AlertCircle, ImagePlus, Save } from 'lucide-react';
 import SaveButtonWithFeedback from '../../components/ui/SaveButtonWithFeedback';
 import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../firebase/config';
