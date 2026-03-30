@@ -154,26 +154,29 @@ const AddEvent: React.FC = () => {
           console.warn('[AddEvent] HubSpot deal sync request failed:', hubErr);
         }
 
-        try {
-          const idToken = await getIdToken(firebaseUser);
-          const res = await fetch('/api/send-event-announcement', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-            body: JSON.stringify({ eventId }),
-            credentials: 'include',
-          });
-          const data = await res.json().catch(() => ({}));
-          announcementSent = res.ok && data.ok;
-          if (!announcementSent) {
-            announcementError = data.error || `HTTP ${res.status}`;
-            console.warn('[AddEvent] Announcement not sent:', announcementError);
+        // Only active events should trigger a new-event announcement.
+        if (formData.status === 'active') {
+          try {
+            const idToken = await getIdToken(firebaseUser);
+            const res = await fetch('/api/send-event-announcement', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+              body: JSON.stringify({ eventId }),
+              credentials: 'include',
+            });
+            const data = await res.json().catch(() => ({}));
+            announcementSent = res.ok && data.ok && !data.skipped;
+            if (!res.ok || data.error) {
+              announcementError = data.error || `HTTP ${res.status}`;
+              console.warn('[AddEvent] Announcement not sent:', announcementError);
+            }
+          } catch (announceErr: unknown) {
+            announcementError = announceErr instanceof Error ? announceErr.message : String(announceErr);
+            if (announcementError?.includes('fetch') || announcementError?.includes('Failed to fetch') || announcementError?.includes('NetworkError')) {
+              announcementError = 'Could not reach API. Locally: run the API in another terminal (npm run dev:express). On production: check Vercel env vars.';
+            }
+            console.warn('[AddEvent] Announcement request failed:', announceErr);
           }
-        } catch (announceErr: unknown) {
-          announcementError = announceErr instanceof Error ? announceErr.message : String(announceErr);
-          if (announcementError?.includes('fetch') || announcementError?.includes('Failed to fetch') || announcementError?.includes('NetworkError')) {
-            announcementError = 'Could not reach API. Locally: run the API in another terminal (npm run dev:express). On production: check Vercel env vars.';
-          }
-          console.warn('[AddEvent] Announcement request failed:', announceErr);
         }
       }
 

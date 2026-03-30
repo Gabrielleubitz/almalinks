@@ -221,6 +221,7 @@ const EditEvent: React.FC = () => {
       });
       // Private details + HubSpot sync: use server APIs (bypasses client Firestore rules)
       let hubspotStatus = '';
+      let announcementStatus = '';
       const firebaseUser = auth.currentUser;
       if (firebaseUser) {
         const idToken = await getIdToken(firebaseUser);
@@ -263,9 +264,32 @@ const EditEvent: React.FC = () => {
           hubspotStatus = ` HubSpot sync failed: ${hubErr instanceof Error ? hubErr.message : 'Network error'}`;
           console.warn('[EditEvent] HubSpot deal sync request failed:', hubErr);
         }
+
+        // Send announcement only when event transitions into active.
+        const becameActive = originalEvent?.status !== 'active' && formData.status === 'active';
+        if (becameActive) {
+          try {
+            const res = await fetch('/api/send-event-announcement', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+              body: JSON.stringify({ eventId }),
+              credentials: 'include',
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok && !data.skipped) {
+              announcementStatus = ' Announcement sent.';
+            } else if (!res.ok || data.error) {
+              announcementStatus = ` Announcement failed: ${data.error || res.status}`;
+              console.warn('[EditEvent] Announcement failed:', data.error || res.status);
+            }
+          } catch (announceErr) {
+            announcementStatus = ` Announcement failed: ${announceErr instanceof Error ? announceErr.message : 'Network error'}`;
+            console.warn('[EditEvent] Announcement request failed:', announceErr);
+          }
+        }
       }
 
-      setSuccess(`Event "${formData.name}" updated successfully!${hubspotStatus}`);
+      setSuccess(`Event "${formData.name}" updated successfully!${hubspotStatus}${announcementStatus}`);
       setSavedAt(Date.now());
 
       // Redirect after 2 seconds
