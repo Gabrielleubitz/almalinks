@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Mail, User, ChevronDown } from 'lucide-react';
+import { X, Mail, User, ChevronDown, Calendar } from 'lucide-react';
 import { UserService } from '../../services/userService';
 import { UserCard } from '../../types/user';
 import { useAuth } from '../../hooks/useAuth';
@@ -18,6 +18,7 @@ interface EmailRecipientAutocompleteProps {
   disabled?: boolean;
   className?: string;
   id?: string;
+  recipientIcon?: 'mail' | 'event';
 }
 
 const EmailRecipientAutocomplete: React.FC<EmailRecipientAutocompleteProps> = ({
@@ -27,7 +28,8 @@ const EmailRecipientAutocomplete: React.FC<EmailRecipientAutocompleteProps> = ({
   placeholder = 'email@example.com or email1@example.com, email2@example.com',
   disabled = false,
   className = '',
-  id
+  id,
+  recipientIcon = 'mail',
 }) => {
   const { user } = useAuth();
   const [inputValue, setInputValue] = useState('');
@@ -566,7 +568,11 @@ const EmailRecipientAutocomplete: React.FC<EmailRecipientAutocompleteProps> = ({
               key={recipient.email}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-sm"
             >
-              <Mail className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
+              {recipientIcon === 'event' ? (
+                <Calendar className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
+              ) : (
+                <Mail className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
+              )}
               <span className="text-blue-900 font-medium">
                 {recipient.name || recipient.email}
               </span>
@@ -683,7 +689,11 @@ const EmailRecipientAutocomplete: React.FC<EmailRecipientAutocompleteProps> = ({
                       </div>
                       <div className="text-sm text-gray-600 truncate">{email}</div>
                     </div>
-                    <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    {recipientIcon === 'event' ? (
+                      <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    ) : (
+                      <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    )}
                   </button>
                 );
               })

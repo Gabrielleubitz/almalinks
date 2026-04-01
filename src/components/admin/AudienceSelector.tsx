@@ -21,6 +21,7 @@ interface AudienceSelectorProps {
   onSelectionChange: (selection: AudienceSelection) => void;
   disabled?: boolean;
   excludedModes?: RecipientMode[]; // Modes to exclude from dropdown
+  modeLabel?: string;
 }
 
 interface EventOption {
@@ -42,7 +43,8 @@ const AudienceSelector: React.FC<AudienceSelectorProps> = ({
   onModeChange,
   onSelectionChange,
   disabled = false,
-  excludedModes = []
+  excludedModes = [],
+  modeLabel = 'Send To',
 }) => {
   const [events, setEvents] = useState<EventOption[]>([]);
   const [chats, setChats] = useState<ChatOption[]>([]);
@@ -150,7 +152,7 @@ const AudienceSelector: React.FC<AudienceSelectorProps> = ({
       {/* Mode Selector */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Send To
+          {modeLabel}
         </label>
         <select
           value={mode}

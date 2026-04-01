@@ -12,10 +12,20 @@ import {
   serverTimestamp,
   Timestamp 
 } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { db, auth } from '../firebase/config';
 import { apiRequest } from '../utils/apiClient';
 import { nanoid } from 'nanoid';
 import type { EventPrivateDetails } from '../types/event';
+
+type EventAudienceMode = 'individuals' | 'group' | 'event' | 'chat' | 'location' | 'all_users';
+interface AudienceSelection {
+  mode: EventAudienceMode;
+  ids?: string[];
+  groupId?: string;
+  eventId?: string;
+  chatId?: string;
+  location?: string;
+}
 
 export interface ImageCropData {
   scale: number;
@@ -42,6 +52,8 @@ export interface EventData {
   hubspotDealId?: string;
   /** Chapter (e.g. Tel Aviv) for HubSpot sync */
   chapter?: string | null;
+  /** Optional audience targeting for who can see the event when public statuses are used. */
+  eventAudience?: AudienceSelection | null;
 }
 
 export interface EventRegistration {
@@ -84,6 +96,86 @@ function sanitizeForFirestore<T extends Record<string, unknown>>(obj: T): Partia
 export class EventService {
   /** Remove undefined from data before Firestore write. */
   static sanitizeForFirestore = sanitizeForFirestore;
+
+  private static async getCurrentViewerContext(): Promise<{ uid: string | null; userData: Record<string, unknown> | null; isAdmin: boolean }> {
+    const uid = auth.currentUser?.uid || null;
+    if (!uid) return { uid: null, userData: null, isAdmin: false };
+    try {
+      const snap = await getDoc(doc(db, 'users', uid));
+      const userData = snap.exists() ? (snap.data() as Record<string, unknown>) : null;
+      const role = typeof userData?.role === 'string' ? userData.role : '';
+      const isAdmin = role === 'admin' || userData?.admin === true;
+      return { uid, userData, isAdmin };
+    } catch {
+      return { uid, userData: null, isAdmin: false };
+    }
+  }
+
+  private static audienceKey(audience: AudienceSelection): string {
+    return JSON.stringify({
+      mode: audience.mode,
+      ids: (audience.ids || []).slice().sort(),
+      eventId: audience.eventId || null,
+      chatId: audience.chatId || null,
+      location: audience.location || null,
+    });
+  }
+
+  private static async resolveAudienceUserIds(
+    audience: AudienceSelection,
+    cache: Map<string, Set<string> | null>
+  ): Promise<Set<string> | null> {
+    if (!audience || !audience.mode || audience.mode === 'all_users') return null;
+    const key = this.audienceKey(audience);
+    if (cache.has(key)) return cache.get(key) || null;
+
+    let ids = new Set<string>();
+    if (audience.mode === 'individuals') {
+      ids = new Set((audience.ids || []).filter(Boolean));
+    } else if (audience.mode === 'event' && audience.eventId) {
+      const regsSnap = await getDocs(collection(db, 'events', audience.eventId, 'registrations'));
+      ids = new Set(regsSnap.docs.map((d) => d.id));
+    } else if (audience.mode === 'chat' && audience.chatId) {
+      const membersSnap = await getDocs(query(collection(db, 'chat_members'), where('chatId', '==', audience.chatId)));
+      ids = new Set(membersSnap.docs.map((d) => String(d.data()?.userId || '')).filter(Boolean));
+    } else if (audience.mode === 'location' && audience.location) {
+      const [citySnap, countrySnap] = await Promise.all([
+        getDocs(query(collection(db, 'users'), where('city', '==', audience.location), where('status', '==', 'approved'))),
+        getDocs(query(collection(db, 'users'), where('country', '==', audience.location), where('status', '==', 'approved'))),
+      ]);
+      ids = new Set([...citySnap.docs.map((d) => d.id), ...countrySnap.docs.map((d) => d.id)]);
+    } else {
+      ids = new Set();
+    }
+
+    cache.set(key, ids);
+    return ids;
+  }
+
+  private static async canViewerSeeEvent(
+    event: EventData,
+    viewer: { uid: string | null; userData: Record<string, unknown> | null; isAdmin: boolean },
+    cache: Map<string, Set<string> | null>
+  ): Promise<boolean> {
+    if (viewer.isAdmin) return true;
+    const audience = event.eventAudience as AudienceSelection | undefined;
+    if (!audience || !audience.mode || audience.mode === 'all_users') return true;
+
+    // Targeted visibility requires a signed-in user.
+    if (!viewer.uid) return false;
+
+    if (audience.mode === 'location') {
+      const loc = String(audience.location || '').trim().toLowerCase();
+      if (!loc) return false;
+      const city = String(viewer.userData?.city || '').trim().toLowerCase();
+      const country = String(viewer.userData?.country || '').trim().toLowerCase();
+      return city === loc || country === loc;
+    }
+
+    const allowedUserIds = await this.resolveAudienceUserIds(audience, cache);
+    if (!allowedUserIds) return true;
+    return allowedUserIds.has(viewer.uid);
+  }
 
   // Create a new event
   static async createEvent(eventData: Omit<EventData, 'id' | 'slug' | 'createdAt' | 'updatedAt'>, adminUid: string): Promise<string> {
@@ -275,11 +367,20 @@ export class EventService {
           ...data
         };
       }) as EventData[];
+
+      // Apply audience targeting visibility for active/public listings.
+      const viewer = await this.getCurrentViewerContext();
+      const audienceCache = new Map<string, Set<string> | null>();
+      const visibleEvents: EventData[] = [];
+      for (const event of events) {
+        const visible = await this.canViewerSeeEvent(event, viewer, audienceCache);
+        if (visible) visibleEvents.push(event);
+      }
       
-      console.log(`✅ Processed ${events.length} public events with statuses:`, events.map(e => `${e.name}: ${e.status}`));
+      console.log(`✅ Processed ${visibleEvents.length} visible public events with statuses:`, visibleEvents.map(e => `${e.name}: ${e.status}`));
 
       // Add slugs to events that don't have them
-      const eventsNeedingSlugs = events.filter(event => !event.slug);
+      const eventsNeedingSlugs = visibleEvents.filter(event => !event.slug);
       if (eventsNeedingSlugs.length > 0) {
         console.log(`🔄 Found ${eventsNeedingSlugs.length} public events without slugs, adding them...`);
         await this.addSlugsToExistingEvents();
@@ -290,19 +391,24 @@ export class EventService {
           id: doc.id,
           ...doc.data()
         })) as EventData[];
+        const updatedVisibleEvents: EventData[] = [];
+        for (const event of updatedEvents) {
+          const visible = await this.canViewerSeeEvent(event, viewer, audienceCache);
+          if (visible) updatedVisibleEvents.push(event);
+        }
         
         // Sort manually by date
-        updatedEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        updatedVisibleEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
-        console.log(`✅ Successfully fetched ${updatedEvents.length} public events with slugs`);
-        return updatedEvents;
+        console.log(`✅ Successfully fetched ${updatedVisibleEvents.length} public events with slugs`);
+        return updatedVisibleEvents;
       }
       
       // Sort manually by date
-      events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      visibleEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       
-      console.log(`✅ Successfully fetched ${events.length} public events`);
-      return events;
+      console.log(`✅ Successfully fetched ${visibleEvents.length} public events`);
+      return visibleEvents;
       
     } catch (error: any) {
       console.error('❌ Error fetching public events:', error);
@@ -379,7 +485,10 @@ export class EventService {
         event = await this.getEventById(slugOrId);
       }
       
-      return event;
+      if (!event) return null;
+      const viewer = await this.getCurrentViewerContext();
+      const visible = await this.canViewerSeeEvent(event, viewer, new Map());
+      return visible ? event : null;
     } catch (error) {
       console.error('❌ Error fetching event by slug or ID:', error);
       return null;

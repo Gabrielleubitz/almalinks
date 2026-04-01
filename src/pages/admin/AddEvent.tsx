@@ -9,6 +9,9 @@ import { EventService, generateSlug } from '../../services/eventService';
 import { uploadImageToLibrary } from '../../services/imageUploadService';
 import CropModal from '../../components/profile/CropModal';
 import CropImage from '../../components/profile/CropImage';
+import AudienceSelector, { RecipientMode, AudienceSelection } from '../../components/admin/AudienceSelector';
+import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/admin/EmailRecipientAutocomplete';
+import RecipientPreview from '../../components/admin/RecipientPreview';
 
 const AddEvent: React.FC = () => {
   const navigate = useNavigate();
@@ -37,6 +40,11 @@ const AddEvent: React.FC = () => {
   const [showImageCropModal, setShowImageCropModal] = useState(false);
   const [cropPreviewUrl, setCropPreviewUrl] = useState<string | null>(null);
   const imageInputRef = React.useRef<HTMLInputElement>(null);
+  const [audienceMode, setAudienceMode] = useState<RecipientMode>('all_users');
+  const [audienceSelection, setAudienceSelection] = useState<AudienceSelection>({ mode: 'all_users' });
+  const [audienceRecipientCount, setAudienceRecipientCount] = useState<number | null>(null);
+  const [individualRecipients, setIndividualRecipients] = useState('');
+  const [individualRecipientObjects, setIndividualRecipientObjects] = useState<EmailRecipient[]>([]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -73,6 +81,18 @@ const AddEvent: React.FC = () => {
       setError('Event image is required (paste a URL or upload a photo)');
       return false;
     }
+    if (formData.status === 'active') {
+      const hasAudienceSelection =
+        audienceMode === 'all_users' ||
+        (audienceMode === 'individuals' && individualRecipientObjects.some((r) => !!r.uid)) ||
+        (audienceMode === 'event' && !!audienceSelection.eventId) ||
+        (audienceMode === 'chat' && !!audienceSelection.chatId) ||
+        (audienceMode === 'location' && !!audienceSelection.location);
+      if (!hasAudienceSelection) {
+        setError('For active events, choose who can see this event.');
+        return false;
+      }
+    }
     return true;
   };
 
@@ -103,7 +123,24 @@ const AddEvent: React.FC = () => {
     try {
       console.log('[AddEvent] Event creation started');
       eventId = await EventService.createEvent(
-        { name: formData.name, location: formData.location, date: formData.date, description: formData.description, imageUrl: formData.imageUrl, imageCrop: formData.imageCrop, status: formData.status },
+        {
+          name: formData.name,
+          location: formData.location,
+          date: formData.date,
+          description: formData.description,
+          imageUrl: formData.imageUrl,
+          imageCrop: formData.imageCrop,
+          status: formData.status,
+          eventAudience:
+            formData.status === 'active'
+              ? {
+                  mode: audienceMode,
+                  ...(audienceMode === 'individuals'
+                    ? { ids: [...new Set(individualRecipientObjects.map((r) => r.uid).filter(Boolean) as string[])] }
+                    : audienceSelection),
+                }
+              : null,
+        },
         user.uid
       );
       eventCreateSucceeded = true;
@@ -201,6 +238,11 @@ const AddEvent: React.FC = () => {
         resourceLinkUrl: '',
         resourceLinkLabel: '',
       });
+      setAudienceMode('all_users');
+      setAudienceSelection({ mode: 'all_users' });
+      setAudienceRecipientCount(null);
+      setIndividualRecipients('');
+      setIndividualRecipientObjects([]);
       setPreviewSlug('');
 
       // Redirect after 2 seconds
@@ -543,6 +585,55 @@ const AddEvent: React.FC = () => {
                 ))}
               </select>
             </div>
+
+            {formData.status === 'active' && (
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-4">
+                <p className="text-sm font-medium text-blue-900">Who should see this active event?</p>
+                <AudienceSelector
+                  mode={audienceMode}
+                  selection={audienceSelection}
+                  modeLabel="Show to"
+                  onModeChange={(newMode) => {
+                    setAudienceMode(newMode);
+                    setAudienceSelection({ mode: newMode });
+                    setAudienceRecipientCount(null);
+                    if (newMode !== 'individuals') {
+                      setIndividualRecipients('');
+                      setIndividualRecipientObjects([]);
+                    }
+                  }}
+                  onSelectionChange={setAudienceSelection}
+                  disabled={loading}
+                  excludedModes={['group']}
+                />
+                {audienceMode === 'individuals' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Individuals
+                    </label>
+                    <EmailRecipientAutocomplete
+                      value={individualRecipients}
+                      onChange={setIndividualRecipients}
+                      recipientIcon="event"
+                      onRecipientsChange={(items) => {
+                        setIndividualRecipientObjects(items);
+                        setAudienceRecipientCount(items.filter((r) => !!r.uid).length);
+                      }}
+                      placeholder="Search approved members..."
+                      disabled={loading}
+                    />
+                    <p className="mt-2 text-xs text-gray-500">Only selected members can see this event.</p>
+                  </div>
+                )}
+                {audienceMode !== 'individuals' && (
+                  <RecipientPreview
+                    mode={audienceMode}
+                    selection={audienceSelection}
+                    onRecipientsResolved={(count) => setAudienceRecipientCount(count)}
+                  />
+                )}
+              </div>
+            )}
 
             {/* Submit Button */}
             <div className="flex justify-center pt-6">

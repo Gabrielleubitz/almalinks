@@ -9,6 +9,9 @@ import { EventService, EventData, generateSlug } from '../../services/eventServi
 import { uploadImageToLibrary } from '../../services/imageUploadService';
 import CropImage from '../../components/profile/CropImage';
 import CoverPhotoCropModal, { type CoverCrop } from '../../components/profile/CoverPhotoCropModal';
+import AudienceSelector, { RecipientMode, AudienceSelection } from '../../components/admin/AudienceSelector';
+import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/admin/EmailRecipientAutocomplete';
+import RecipientPreview from '../../components/admin/RecipientPreview';
 
 const EditEvent: React.FC = () => {
   const navigate = useNavigate();
@@ -44,6 +47,11 @@ const EditEvent: React.FC = () => {
   const [cropPreviewUrl, setCropPreviewUrl] = useState<string | null>(null);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const imageInputRef = React.useRef<HTMLInputElement>(null);
+  const [audienceMode, setAudienceMode] = useState<RecipientMode>('all_users');
+  const [audienceSelection, setAudienceSelection] = useState<AudienceSelection>({ mode: 'all_users' });
+  const [audienceRecipientCount, setAudienceRecipientCount] = useState<number | null>(null);
+  const [individualRecipients, setIndividualRecipients] = useState('');
+  const [individualRecipientObjects, setIndividualRecipientObjects] = useState<EmailRecipient[]>([]);
 
   // Load event data on component mount
   useEffect(() => {
@@ -108,6 +116,12 @@ const EditEvent: React.FC = () => {
         zoomRecordingUrl: privateDetails?.zoomRecordingUrl ?? privateDetails?.zoom_recording_url ?? '',
         zoomPassword: privateDetails?.zoomPassword ?? privateDetails?.zoom_password ?? '',
       });
+      const savedAudience = (event as EventData & { eventAudience?: AudienceSelection | null }).eventAudience || { mode: 'all_users' as RecipientMode };
+      setAudienceMode(savedAudience.mode || 'all_users');
+      setAudienceSelection(savedAudience);
+      if (savedAudience.mode === 'individuals' && Array.isArray(savedAudience.ids) && savedAudience.ids.length) {
+        setIndividualRecipientObjects(savedAudience.ids.map((uid) => ({ uid, email: '' })));
+      }
       
       setPreviewSlug(event.slug);
       
@@ -153,6 +167,18 @@ const EditEvent: React.FC = () => {
     if (!formData.imageUrl.trim()) {
       setError('Event image is required (paste a URL or upload a photo)');
       return false;
+    }
+    if (formData.status === 'active') {
+      const hasAudienceSelection =
+        audienceMode === 'all_users' ||
+        (audienceMode === 'individuals' && individualRecipientObjects.some((r) => !!r.uid)) ||
+        (audienceMode === 'event' && !!audienceSelection.eventId) ||
+        (audienceMode === 'chat' && !!audienceSelection.chatId) ||
+        (audienceMode === 'location' && !!audienceSelection.location);
+      if (!hasAudienceSelection) {
+        setError('For active events, choose who can see this event.');
+        return false;
+      }
     }
     return true;
   };
@@ -218,6 +244,15 @@ const EditEvent: React.FC = () => {
         imageCrop: formData.imageCrop ?? null,
         status: formData.status,
         chapter: formData.chapter?.trim() || null,
+        eventAudience:
+          formData.status === 'active'
+            ? {
+                mode: audienceMode,
+                ...(audienceMode === 'individuals'
+                  ? { ids: [...new Set(individualRecipientObjects.map((r) => r.uid).filter(Boolean) as string[])] }
+                  : audienceSelection),
+              }
+            : null,
       });
       // Private details + HubSpot sync: use server APIs (bypasses client Firestore rules)
       let hubspotStatus = '';
@@ -703,6 +738,57 @@ const EditEvent: React.FC = () => {
                 ))}
               </select>
             </div>
+
+            {formData.status === 'active' && (
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-4">
+                <p className="text-sm font-medium text-blue-900">Who should see this active event?</p>
+                <AudienceSelector
+                  mode={audienceMode}
+                  selection={audienceSelection}
+                  modeLabel="Show to"
+                  onModeChange={(newMode) => {
+                    setAudienceMode(newMode);
+                    setAudienceSelection({ mode: newMode });
+                    setAudienceRecipientCount(null);
+                    if (newMode !== 'individuals') {
+                      setIndividualRecipients('');
+                      setIndividualRecipientObjects([]);
+                    }
+                  }}
+                  onSelectionChange={setAudienceSelection}
+                  disabled={saving}
+                  excludedModes={['group']}
+                />
+                {audienceMode === 'individuals' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Individuals
+                    </label>
+                    <EmailRecipientAutocomplete
+                      value={individualRecipients}
+                      onChange={setIndividualRecipients}
+                      recipientIcon="event"
+                      onRecipientsChange={(items) => {
+                        setIndividualRecipientObjects(items);
+                        setAudienceRecipientCount(items.filter((r) => !!r.uid).length);
+                      }}
+                      placeholder="Search approved members..."
+                      disabled={saving}
+                    />
+                  </div>
+                )}
+                {audienceMode !== 'individuals' && (
+                  <RecipientPreview
+                    mode={audienceMode}
+                    selection={audienceSelection}
+                    onRecipientsResolved={(count) => setAudienceRecipientCount(count)}
+                  />
+                )}
+                {audienceRecipientCount !== null && (
+                  <p className="text-xs text-blue-800">Estimated audience: {audienceRecipientCount}</p>
+                )}
+              </div>
+            )}
 
             {/* Submit Buttons */}
             <div className="flex justify-center space-x-4 pt-6">
