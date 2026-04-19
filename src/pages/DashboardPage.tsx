@@ -619,44 +619,41 @@ const EventsPage: React.FC = () => {
     <div className="min-h-screen bg-white overflow-x-hidden w-full max-w-full box-border">
       <Header />
       
-      {/* Hero Section */}
-      <section className="pt-[var(--content-offset-top)] sm:pt-24 md:pt-32 pb-8 sm:pb-12 md:pb-16 bg-gradient-to-br from-gray-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-3 sm:mb-4 md:mb-6 fade-in px-2">
-              {user ? (
-                <>Welcome back, <span className="gradient-text">{user.displayName?.split(' ')[0] || 'Member'}</span></>
-              ) : (
-                <>Alma Links <span className="gradient-text">Events</span></>
-              )}
-            </h1>
-            <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-gray-600 mb-6 sm:mb-8 md:mb-12 max-w-4xl mx-auto leading-relaxed fade-in-delay px-2 sm:px-4">
-              {user ? (
-                "Your dashboard for exclusive Alma Links events and tickets."
-              ) : (
-                "Join our exclusive gatherings where founders, investors, and innovators come together to shape the future of business and technology."
-              )}
-            </p>
-
-            {/* Admin Back to Admin Button - Prominent placement for user view */}
-            {isAdmin && isInUserView && (
-              <div className="mb-6 sm:mb-8">
-                <button
-                  onClick={switchToAdminView}
-                  className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 sm:px-8 py-3 sm:py-3.5 md:py-4 rounded-full hover:shadow-lg active:shadow-md transition-all duration-300 font-semibold text-base sm:text-lg flex items-center justify-center space-x-2 sm:space-x-3 mx-auto min-h-[44px] md:min-h-0 touch-manipulation"
-                >
-                  <RotateCcw className="h-5 w-5 sm:h-6 sm:w-6" />
-                  <span>Back to Admin Panel</span>
-                </button>
-              </div>
-            )}
+      {/* Hero: guests only; admins in user view get a slim action bar */}
+      {!user ? (
+        <section className="pt-[var(--content-offset-top)] sm:pt-24 md:pt-32 pb-8 sm:pb-12 md:pb-16 bg-gradient-to-br from-gray-50 to-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-3 sm:mb-4 md:mb-6 fade-in px-2">
+                Alma Links <span className="gradient-text">Events</span>
+              </h1>
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-gray-600 mb-6 sm:mb-8 md:mb-12 max-w-4xl mx-auto leading-relaxed fade-in-delay px-2 sm:px-4">
+                Join our exclusive gatherings where founders, investors, and innovators come together to shape the future of business and technology.
+              </p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : isAdmin && isInUserView ? (
+        <section className="pt-[var(--content-offset-top)] pb-6 sm:pb-8 bg-gradient-to-br from-gray-50 to-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <button
+                onClick={switchToAdminView}
+                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 sm:px-8 py-3 sm:py-3.5 md:py-4 rounded-full hover:shadow-lg active:shadow-md transition-all duration-300 font-semibold text-base sm:text-lg inline-flex items-center justify-center space-x-2 sm:space-x-3 min-h-[44px] md:min-h-0 touch-manipulation"
+              >
+                <RotateCcw className="h-5 w-5 sm:h-6 sm:w-6" />
+                <span>Back to Admin Panel</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* Main Dashboard Content - Only show if logged in */}
       {user && (
-        <section className="py-6 sm:py-8 md:py-12 bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full">
+        <section
+          className={`py-6 sm:py-8 md:py-12 bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full box-border ${!(isAdmin && isInUserView) ? 'pt-[var(--content-offset-top)]' : ''}`}
+        >
           <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 w-full max-w-full box-border">
             
             {/* Dashboard Header */}
