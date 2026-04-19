@@ -149,12 +149,12 @@ export const useRegistration = () => {
       try {
         // Prepare event details for email
         const eventDetails = {
-          name: "Alma Links 4.0",
+          name: "AlmaLinks 4.0",
           date: "June 28th, 2025", 
           time: "18:30 - 22:00",
           location: "Deli Vino, Netanya",
           address: "Natan Yonatan St 10, Netanya, Israel",
-          description: "Join us for Alma Links 4.0 - where bold ideas meet real conversations. This exclusive event brings together founders, investors, and operators for meaningful networking and discussions about AI agents in business."
+          description: "Join us for AlmaLinks 4.0 - where bold ideas meet real conversations. This exclusive event brings together founders, investors, and operators for meaningful networking and discussions about AI agents in business."
         };
 
         // Send confirmation email to user

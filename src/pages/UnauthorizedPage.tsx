@@ -13,7 +13,7 @@ const UnauthorizedPage: React.FC = () => {
         <Link to="/" className="hover:opacity-80 transition-opacity duration-200 min-h-[44px] min-w-[44px] flex items-center touch-manipulation">
           <img 
             src={logoSvg}
-            alt="Alma Links Logo" 
+            alt="AlmaLinks Logo" 
             className="h-8 md:h-10 w-auto"
           />
         </Link>

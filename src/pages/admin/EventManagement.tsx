@@ -655,7 +655,7 @@ const EventManagement: React.FC = () => {
             </h3>
             <p className="text-sm sm:text-base text-gray-600 mb-6">
               {events.length === 0
-                ? 'Get started by creating your first Alma Links event.'
+                ? 'Get started by creating your first AlmaLinks event.'
                 : `Try switching to "${eventFilter === 'upcoming' ? 'Past' : eventFilter === 'past' ? 'Upcoming' : 'All'}" or create a new event.`}
             </p>
             {events.length === 0 && (

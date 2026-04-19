@@ -410,7 +410,7 @@ const EditEvent: React.FC = () => {
               Edit Event
             </h1>
             <p className="text-gray-600">
-              Update the details of your Alma Links event
+              Update the details of your AlmaLinks event
             </p>
             {!hasChanges() && (
               <p className="text-sm text-gray-500 mt-2">
@@ -451,7 +451,7 @@ const EditEvent: React.FC = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-                  placeholder="e.g., Alma Links 5.0"
+                  placeholder="e.g., AlmaLinks 5.0"
                 />
               </div>
               {/* URL Preview */}

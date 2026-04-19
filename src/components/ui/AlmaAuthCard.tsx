@@ -1,5 +1,5 @@
 /**
- * Alma Links themed auth card: split layout with animated dot map (left)
+ * AlmaLinks themed auth card: split layout with animated dot map (left)
  * and form panel (right). Used for sign-in and sign-up pages.
  * Uses Alma brand colors (--brand-blue-dark, --brand-blue-light) and Tailwind brand.*
  */
@@ -132,21 +132,21 @@ const DotMap: React.FC = () => {
 };
 
 export interface AlmaAuthCardProps {
-  /** Title on the left panel (e.g. "Alma Links") */
+  /** Title on the left panel (e.g. "AlmaLinks") */
   title?: string;
   /** Subtitle on the left panel */
   subtitle?: string;
   /** Right panel content (form) */
   children: React.ReactNode;
-  /** Optional logo URL - defaults to Alma Links logo path */
+  /** Optional logo URL - defaults to AlmaLinks logo path */
   logoUrl?: string;
 }
 
 /**
- * Alma Links themed auth card layout: left = DotMap + branding, right = form.
+ * AlmaLinks themed auth card layout: left = DotMap + branding, right = form.
  */
 const AlmaAuthCard: React.FC<AlmaAuthCardProps> = ({
-  title = 'Alma Links',
+  title = 'AlmaLinks',
   subtitle = 'Sign in to connect with members, discover events, and join conversations worldwide.',
   children,
   logoUrl,

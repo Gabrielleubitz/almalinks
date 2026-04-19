@@ -106,16 +106,16 @@ const EventDetailPage: React.FC = () => {
   // Update document title when event loads
   useEffect(() => {
     if (event) {
-      document.title = `${event.name} - Alma Links`;
+      document.title = `${event.name} - AlmaLinks`;
     } else if (error) {
-      document.title = 'Event Not Found - Alma Links';
+      document.title = 'Event Not Found - AlmaLinks';
     } else {
-      document.title = 'Loading Event - Alma Links';
+      document.title = 'Loading Event - AlmaLinks';
     }
 
     // Cleanup: Reset title when component unmounts
     return () => {
-      document.title = 'Alma Links - Where Bold Ideas Meet Real Conversations';
+      document.title = 'AlmaLinks - Where Bold Ideas Meet Real Conversations';
     };
   }, [event, error]);
 
@@ -484,7 +484,7 @@ const EventDetailPage: React.FC = () => {
                       }}
                       className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold text-lg"
                     >
-                      Join Alma Links to Register
+                      Join AlmaLinks to Register
                     </button>
                     <p className="text-center text-gray-600 text-sm">
                       Already have an account?{' '}

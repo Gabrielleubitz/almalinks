@@ -357,7 +357,7 @@ const SignupPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] flex flex-col items-center justify-center px-3 sm:px-4 pt-4 sm:pt-6 pb-4 sm:pb-6 relative overflow-x-hidden w-full max-w-full">
       <div className="w-full max-w-4xl flex-shrink-0 my-4 mb-0">
         <AlmaAuthCard
-          title="Join Alma Links"
+          title="Join AlmaLinks"
           subtitle="Create your account to connect with members, discover events, and join conversations worldwide."
           logoUrl={logoSvg}
         >
@@ -377,7 +377,7 @@ const SignupPage: React.FC = () => {
               <User className="h-7 w-7 text-white" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-1">Create your account</h2>
-            <p className="text-sm text-gray-600">Fill in your details to join Alma Links</p>
+            <p className="text-sm text-gray-600">Fill in your details to join AlmaLinks</p>
           </div>
 
           {displayError && (

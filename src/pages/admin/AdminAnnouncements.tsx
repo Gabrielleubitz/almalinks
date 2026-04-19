@@ -212,7 +212,7 @@ const AdminAnnouncements: React.FC = () => {
               Create Announcement
             </h1>
             <p className="text-gray-600">
-              Share important updates with all Alma Links members
+              Share important updates with all AlmaLinks members
             </p>
           </div>
 

@@ -15,7 +15,7 @@ const RejectedPage: React.FC = () => {
           onClick={() => navigate('/login')}
           className="hover:opacity-80 transition-opacity duration-200"
         >
-          <img src={logoSvg} alt="Alma Links Logo" className="h-8 md:h-10 w-auto" />
+          <img src={logoSvg} alt="AlmaLinks Logo" className="h-8 md:h-10 w-auto" />
         </button>
       </div>
 
@@ -29,7 +29,7 @@ const RejectedPage: React.FC = () => {
               Application Not Approved
             </h2>
             <p className="text-sm sm:text-base text-gray-600">
-              Thank you for your interest. At this time, your application to Alma Links was not
+              Thank you for your interest. At this time, your application to AlmaLinks was not
               approved. You are welcome to apply again in the future.
             </p>
           </div>

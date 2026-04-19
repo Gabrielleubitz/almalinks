@@ -31,7 +31,7 @@ const ThemePreview: React.FC = () => {
             Theme Preview
           </h1>
           <p className="text-xl text-muted">
-            Testing the new Alma Links color palette
+            Testing the new AlmaLinks color palette
           </p>
         </div>
 
@@ -420,7 +420,7 @@ const ThemePreview: React.FC = () => {
         {/* Footer */}
         <footer className="text-center py-8 border-t border-border">
           <p className="text-muted">
-            Theme Preview - Alma Links Color Palette
+            Theme Preview - AlmaLinks Color Palette
           </p>
           <p className="text-sm text-muted mt-2">
             All components styled with the new brand colors

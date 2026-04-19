@@ -625,7 +625,7 @@ const EventsPage: React.FC = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-3 sm:mb-4 md:mb-6 fade-in px-2">
-                Alma Links <span className="gradient-text">Events</span>
+                AlmaLinks <span className="gradient-text">Events</span>
               </h1>
               <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-gray-600 mb-6 sm:mb-8 md:mb-12 max-w-4xl mx-auto leading-relaxed fade-in-delay px-2 sm:px-4">
                 Join our exclusive gatherings where founders, investors, and innovators come together to shape the future of business and technology.

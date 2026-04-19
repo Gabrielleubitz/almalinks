@@ -64,7 +64,7 @@ const AnnouncementsSidebar: React.FC = () => {
       <div className="bg-white rounded-3xl shadow-xl p-6 border border-gray-100">
         <div className="flex items-center space-x-3 mb-4">
           <MessageSquare className="h-5 w-5 text-brand-dark" />
-          <h3 className="text-lg font-semibold text-gray-900">From the Makers of Alma Links</h3>
+          <h3 className="text-lg font-semibold text-gray-900">From the Makers of AlmaLinks</h3>
         </div>
         <div className="text-center py-4">
           <div className="w-6 h-6 border-2 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-2"></div>
@@ -78,7 +78,7 @@ const AnnouncementsSidebar: React.FC = () => {
     <div className="bg-white rounded-3xl shadow-xl p-6 border border-gray-100">
       <div className="flex items-center space-x-3 mb-6">
         <MessageSquare className="h-5 w-5 text-brand-dark" />
-        <h3 className="text-lg font-semibold text-gray-900">From the Makers of Alma Links</h3>
+        <h3 className="text-lg font-semibold text-gray-900">From the Makers of AlmaLinks</h3>
       </div>
 
       {announcements.length === 0 ? (
@@ -86,7 +86,7 @@ const AnnouncementsSidebar: React.FC = () => {
           <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
             <MessageSquare className="h-6 w-6 text-gray-400" />
           </div>
-          <p className="text-gray-500 text-sm">No new updates from the Alma Links team.</p>
+          <p className="text-gray-500 text-sm">No new updates from the AlmaLinks team.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -117,7 +117,7 @@ const AnnouncementsSidebar: React.FC = () => {
       {announcements.length > 0 && (
         <div className="mt-4 pt-4 border-t border-gray-200">
           <p className="text-xs text-gray-500 text-center">
-            Stay tuned for more updates from the Alma Links team!
+            Stay tuned for more updates from the AlmaLinks team!
           </p>
         </div>
       )}

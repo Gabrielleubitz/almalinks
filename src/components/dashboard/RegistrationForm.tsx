@@ -78,7 +78,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, eventId 
           <Calendar className="h-8 w-8 text-white" />
         </div>
         <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          Register for Alma Links 4.0
+          Register for AlmaLinks 4.0
         </h2>
         <p className="text-gray-600">
           Secure your spot at our most exclusive event yet
@@ -206,7 +206,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSuccess, eventId 
 
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-500">
-          By registering, you agree to receive event updates and communications from Alma Links.
+          By registering, you agree to receive event updates and communications from AlmaLinks.
         </p>
       </div>
     </div>

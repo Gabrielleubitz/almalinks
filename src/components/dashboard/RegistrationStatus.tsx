@@ -166,9 +166,9 @@ const RegistrationStatus: React.FC = () => {
     
     const params = new URLSearchParams({
       action: 'TEMPLATE',
-      text: event.eventName || event.name || 'Alma Links Event',
+      text: event.eventName || event.name || 'AlmaLinks Event',
       dates: `${startTime}/${endTime}`,
-      details: event.description || 'Join us for this exclusive Alma Links event!',
+      details: event.description || 'Join us for this exclusive AlmaLinks event!',
       location: event.location || 'Deli Vino, Netanya'
     });
     
@@ -208,10 +208,10 @@ const RegistrationStatus: React.FC = () => {
             <Check className="h-8 w-8 text-white" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            ✅ You're registered for Alma Links 4.0
+            ✅ You're registered for AlmaLinks 4.0
           </h2>
           <p className="text-gray-600">
-            Your spot at Alma Links 4.0 is confirmed
+            Your spot at AlmaLinks 4.0 is confirmed
           </p>
         </div>
 
@@ -334,7 +334,7 @@ const RegistrationStatus: React.FC = () => {
       {/* Digital Ticket - site-style card */}
       <div className="flex flex-col items-center" aria-label="Your ticket">
         <EventTicketCard
-          eventName={registration.eventName || 'Alma Links 4.0'}
+          eventName={registration.eventName || 'AlmaLinks 4.0'}
           eventDate={ticketDate.date}
           eventTime={ticketDate.time}
           eventLocation={registration.eventLocation || 'Deli Vino, Netanya'}

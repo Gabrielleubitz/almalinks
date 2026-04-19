@@ -36,7 +36,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   };
 
   const eventDetails = {
-    name: "Alma Links 4.0",
+    name: "AlmaLinks 4.0",
     date: "June 28th, 2025",
     time: "18:30",
     location: "Deli Vino, Netanya",
@@ -79,7 +79,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
                 <img 
                   src={logoSvg}
-                  alt="Alma Links Logo" 
+                  alt="AlmaLinks Logo" 
                   className="h-10 w-auto"
                 />
               </Link>
@@ -111,7 +111,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         {/* Welcome Section */}
         <div className="mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Welcome back, <span className="gradient-text">{user?.displayName || 'Alma Links Member'}</span>!
+            Welcome back, <span className="gradient-text">{user?.displayName || 'AlmaLinks Member'}</span>!
           </h1>
           <p className="text-xl text-gray-600">
             {user?.status === 'pending' ? 

@@ -575,7 +575,7 @@ const ConnectionsCard: React.FC = () => {
               const avatarColor = getAvatarColor(partner.name);
               
               // Handle event name display - show multiple events in "All Events" view
-              let eventName = 'Alma Links Event';
+              let eventName = 'AlmaLinks Event';
               let eventCount = 1;
               
               if (selectedEventId === 'all' && connection.allEventIds && connection.allEventIds.length > 0) {

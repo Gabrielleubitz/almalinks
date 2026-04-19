@@ -54,7 +54,7 @@ const PendingPage: React.FC = () => {
       <div className="w-full max-w-4xl flex-shrink-0 mb-0">
         <AlmaAuthCard
           title="Thank you for applying"
-          subtitle="Your application to Alma Links is under review. We’ll email you as soon as a decision is made."
+          subtitle="Your application to AlmaLinks is under review. We’ll email you as soon as a decision is made."
           logoUrl={logoSvg}
         >
           {/* Back to sign in */}
@@ -106,7 +106,7 @@ const PendingPage: React.FC = () => {
                 <div>
                   <h3 className="font-semibold text-blue-900 mb-1.5">Need to update something?</h3>
                   <p className="text-sm text-blue-800 mb-2">
-                    If you have questions or want to share updated information, you can contact the Alma Links team:
+                    If you have questions or want to share updated information, you can contact the AlmaLinks team:
                   </p>
                   <a
                     href="mailto:info@almalinks.org"

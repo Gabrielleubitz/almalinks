@@ -1179,7 +1179,7 @@ const ChatViewPage: React.FC = () => {
           
           {/* Messages Area - only this scrolls; input stays fixed at bottom */}
           <div key={chatId} className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white relative">
-            {/* Subtle background pattern with Alma Links logo */}
+            {/* Subtle background pattern with AlmaLinks logo */}
             <div 
               className="absolute inset-0 opacity-[0.018] pointer-events-none"
               style={{

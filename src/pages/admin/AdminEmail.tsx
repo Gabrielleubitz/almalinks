@@ -63,7 +63,7 @@ const AdminEmail: React.FC = () => {
 
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [fromName, setFromName] = useState('Alma Links Admin'); // Optional, can be placeholder
+  const [fromName, setFromName] = useState('AlmaLinks Admin'); // Optional, can be placeholder
   const [replyTo, setReplyTo] = useState(''); // Optional
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -708,7 +708,7 @@ const AdminEmail: React.FC = () => {
                   type="text"
                   value={fromName}
                   onChange={(e) => setFromName(e.target.value)}
-                  placeholder="Alma Links Admin"
+                  placeholder="AlmaLinks Admin"
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 />
               </div>
@@ -796,7 +796,7 @@ const AdminEmail: React.FC = () => {
               <li>• <strong>Recipients:</strong> Supports single email or comma-separated list</li>
               <li>• <strong>Validation:</strong> Email format is validated before sending</li>
               <li>• <strong>Future Integration:</strong> Will connect to Mailchimp API when ready</li>
-              <li>• <strong>From Name:</strong> Optional sender name (defaults to "Alma Links Admin")</li>
+              <li>• <strong>From Name:</strong> Optional sender name (defaults to "AlmaLinks Admin")</li>
               <li>• <strong>Reply-To:</strong> Optional reply-to address for responses</li>
             </ul>
           </div>

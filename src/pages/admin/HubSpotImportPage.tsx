@@ -560,8 +560,8 @@ const HubSpotImportPage: React.FC = () => {
       id: 'sync',
       icon: Users,
       title: 'Sync contacts',
-      description: 'Import all HubSpot CRM contacts as Alma Links users with logins.',
-      primaryLabel: 'Sync HubSpot → Alma Links',
+      description: 'Import all HubSpot CRM contacts as AlmaLinks users with logins.',
+      primaryLabel: 'Sync HubSpot → AlmaLinks',
       loading: syncing,
       onPrimary: syncHubspotContacts,
       onDelete: removeUsersOnly,
@@ -574,7 +574,7 @@ const HubSpotImportPage: React.FC = () => {
       id: 'deals',
       icon: Briefcase,
       title: 'Import deals',
-      description: 'Copy pipeline deals from HubSpot into Alma Links.',
+      description: 'Copy pipeline deals from HubSpot into AlmaLinks.',
       primaryLabel: 'Import HubSpot Deals',
       loading: syncingDeals,
       onPrimary: syncHubspotDeals,
@@ -636,7 +636,7 @@ const HubSpotImportPage: React.FC = () => {
                 Import from <span className="text-brand-dark">HubSpot</span>
               </h1>
               <p className="text-gray-600 text-sm sm:text-base mt-1 max-w-xl">
-                Bring contacts and deals from HubSpot into Alma Links. Sync people as users, then turn deals into past events.
+                Bring contacts and deals from HubSpot into AlmaLinks. Sync people as users, then turn deals into past events.
               </p>
             </div>
           </div>
@@ -659,7 +659,7 @@ const HubSpotImportPage: React.FC = () => {
               <span className="flex-shrink-0 w-8 h-8 rounded-full bg-brand-light text-brand-dark flex items-center justify-center text-sm font-semibold">2</span>
               <div>
                 <span className="font-medium text-gray-900">Import deals</span>
-                <p className="text-sm text-gray-600 mt-0.5">Deals are copied into Alma Links. Use &quot;Create past events&quot; to show them on the Events page.</p>
+                <p className="text-sm text-gray-600 mt-0.5">Deals are copied into AlmaLinks. Use &quot;Create past events&quot; to show them on the Events page.</p>
               </div>
             </li>
             <li className="flex gap-3">
@@ -853,7 +853,7 @@ const HubSpotImportPage: React.FC = () => {
             {loadingContacts && contacts.length === 0 ? (
               <div className="px-5 py-8 text-center text-gray-500 text-sm">Loading…</div>
             ) : contacts.length === 0 ? (
-              <div className="px-5 py-8 text-center text-gray-500 text-sm">No contacts imported yet. Use &quot;Sync HubSpot → Alma Links&quot; above.</div>
+              <div className="px-5 py-8 text-center text-gray-500 text-sm">No contacts imported yet. Use &quot;Sync HubSpot → AlmaLinks&quot; above.</div>
             ) : (
               <ul className="divide-y divide-gray-100">
                 {contacts.map((c) => {

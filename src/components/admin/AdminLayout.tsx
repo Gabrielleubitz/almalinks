@@ -155,7 +155,7 @@ const AdminLayout: React.FC = () => {
         className="flex flex-col gap-2 px-4 py-5 border-b border-[rgba(0,0,0,0.06)]"
         onClick={() => setSidebarOpen(false)}
       >
-        <img src={logoSvg} alt="Alma Links" className="h-8 w-auto" />
+        <img src={logoSvg} alt="AlmaLinks" className="h-8 w-auto" />
         <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#64748B]">
           Admin
         </span>

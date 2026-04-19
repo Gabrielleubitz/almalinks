@@ -171,7 +171,7 @@ const LoginPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] flex flex-col items-center justify-center px-3 sm:px-4 pt-16 sm:pt-20 pb-16 sm:pb-20 relative overflow-x-hidden w-full max-w-full box-border">
       <div className="w-full max-w-4xl flex-shrink-0 mb-0">
         <AlmaAuthCard
-          title="Alma Links"
+          title="AlmaLinks"
           subtitle="Sign in to connect with members, discover events, and join conversations worldwide."
           logoUrl={logoSvg}
         >
@@ -265,7 +265,7 @@ const LoginPage: React.FC = () => {
                   Welcome back
                 </h2>
                 <p className="text-sm text-gray-600">
-                  Sign in to your Alma Links account
+                  Sign in to your AlmaLinks account
                 </p>
               </div>
 

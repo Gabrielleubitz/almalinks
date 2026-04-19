@@ -134,7 +134,7 @@ const EventTicketCard: React.FC<EventTicketCardProps> = ({
         >
           {/* Header strip with logo + event name */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50/50">
-            <img src={logoSvg} alt="Alma Links" className="h-6 w-auto flex-shrink-0" />
+            <img src={logoSvg} alt="AlmaLinks" className="h-6 w-auto flex-shrink-0" />
             <div className="min-w-0 flex-1">
               <h3 className="text-gray-900 font-semibold text-sm truncate">{eventName || 'Event'}</h3>
               {ticketId && (

@@ -402,7 +402,7 @@ const PendingRegistrations: React.FC = () => {
 
       console.log('✅ Join request rejected successfully');
 
-      // Send rejection email (instructions + re-request link + Alma Links contact)
+      // Send rejection email (instructions + re-request link + AlmaLinks contact)
       if (userToReject?.email) {
         try {
           const res = await fetch('/api/email-service', {

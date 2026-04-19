@@ -130,8 +130,8 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title, subtitle }) => {
         <div className="flex items-center justify-between gap-2 py-3 sm:py-4">
           {/* Left: Logo + optional title */}
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-            <Link to="/" className="flex-shrink-0 hover:opacity-80 transition-opacity" aria-label="Alma Links Home">
-              <img src={logoSvg} alt="Alma Links" className="h-8 sm:h-9 w-auto" />
+            <Link to="/" className="flex-shrink-0 hover:opacity-80 transition-opacity" aria-label="AlmaLinks Home">
+              <img src={logoSvg} alt="AlmaLinks" className="h-8 sm:h-9 w-auto" />
             </Link>
             {(title || subtitle) && (
               <div className="min-w-0 hidden sm:block">
