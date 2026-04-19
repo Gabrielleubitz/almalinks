@@ -2,7 +2,7 @@
  * Send a test Mailchimp campaign email to a specific address (local only).
  * Usage: node scripts/test-mailchimp-campaign.js   OR   npm run test:mailchimp
  * Requires .env (or .env.local) with MAILCHIMP_AUDIENCE_ID, MAILCHIMP_MARKETING_API_KEY,
- * MAILCHIMP_SERVER, MAILCHIMP_REPLY_TO (and optionally MAILCHIMP_FROM_NAME).
+ * MAILCHIMP_SERVER, MAILCHIMP_REPLY_TO (and optionally TRANSACTIONAL_FROM_NAME / MAILCHIMP_FROM_NAME).
  */
 import { config } from 'dotenv';
 import { join, dirname } from 'path';
@@ -12,6 +12,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = join(__dirname, '..');
 config({ path: join(projectRoot, '.env.local') });
 config({ path: join(projectRoot, '.env') });
+import { getFromName } from '../lib/server/email-config.js';
 import { createCampaign, setCampaignContent, sendCampaignTest } from '../lib/server/mailchimp-campaign.js';
 
 const TEST_EMAIL = 'gabrielleubitz@gmail.com';
@@ -23,7 +24,7 @@ async function main() {
   try {
     const listId = process.env.MAILCHIMP_AUDIENCE_ID;
     const replyTo = process.env.MAILCHIMP_REPLY_TO;
-    const fromName = process.env.MAILCHIMP_FROM_NAME || 'AlmaLinks';
+    const fromName = getFromName();
 
     if (!listId || !replyTo) {
       console.error('❌ Missing env. Set MAILCHIMP_AUDIENCE_ID, MAILCHIMP_MARKETING_API_KEY, MAILCHIMP_SERVER, MAILCHIMP_REPLY_TO in .env');
