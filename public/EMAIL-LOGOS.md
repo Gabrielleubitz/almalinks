@@ -1,6 +1,6 @@
 # Email logos (Gmail / Outlook)
 
-Gmail and many other clients **block SVG** images. **All Alma Links emails use `logo.png`** in the theme (`lib/server/alma-email-theme.js`). If `public/logo.png` is missing, the logo will not appear in signup, welcome, admin, or other transactional emails.
+Gmail and many other clients **block SVG** images. **All AlmaLinks emails use `logo.png`** in the theme (`lib/server/alma-email-theme.js`). If `public/logo.png` is missing, the logo will not appear in signup, welcome, admin, or other transactional emails.
 
 ## Quick setup (required)
 
@@ -10,7 +10,7 @@ From the project root run:
 npm run build:email-logos
 ```
 
-This generates **`logo.png`** (Alma Links logo) and `igani-logo-placeholder.png` in `public/` from the existing SVGs. **Commit and deploy** so the site serves them at `/logo.png` and `/igani-logo-placeholder.png`. Without `logo.png`, email logos will be broken.
+This generates **`logo.png`** (AlmaLinks logo) and `igani-logo-placeholder.png` in `public/` from the existing SVGs. **Commit and deploy** so the site serves them at `/logo.png` and `/igani-logo-placeholder.png`. Without `logo.png`, email logos will be broken.
 
 ## Environment
 

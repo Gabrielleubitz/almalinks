@@ -4,7 +4,7 @@ Last reviewed for repository structure, env, and key flows. Update this file whe
 
 ## What this repo is
 
-- **Product:** Event management, member directory, networking, and connections for Alma Links.
+- **Product:** Event management, member directory, networking, and connections for AlmaLinks.
 - **Frontend:** React 18 + TypeScript + Vite + Tailwind (`src/`).
 - **Backend:** Vercel serverless API (`api/` → `lib/server/api/`); handlers routed via `api/index.js`.
 - **Data:** Firebase (Auth + Firestore + Storage). Client config in `src/firebase/config.ts`.

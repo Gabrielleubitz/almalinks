@@ -1,6 +1,6 @@
 # Color Tokens and Usage
 
-This document describes the new color system implemented for Alma Links, including the token values, usage guidelines, and accessibility information.
+This document describes the new color system implemented for AlmaLinks, including the token values, usage guidelines, and accessibility information.
 
 ## Color Palette
 

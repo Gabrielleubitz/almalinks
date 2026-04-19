@@ -1,6 +1,6 @@
 # AlmaLinks
 
-A comprehensive event management and networking platform for Alma Links events.
+A comprehensive event management and networking platform for AlmaLinks events.
 
 ## Features
 

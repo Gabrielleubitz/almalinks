@@ -99,7 +99,7 @@ exports.handler = async (event, context) => {
         {
           From: {
             Email: "info@almalinks.com",
-            Name: "Alma Links"
+            Name: "AlmaLinks"
           },
           To: [{ Email: recipient }],
           Subject: subject,
@@ -107,13 +107,13 @@ exports.handler = async (event, context) => {
           HTMLPart: `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
   <div style="text-align: center; margin-bottom: 20px;">
-    <h1 style="color: #C8102E;">Alma Links</h1>
+    <h1 style="color: #C8102E;">AlmaLinks</h1>
   </div>
   
   <p>${message.replace(/\n/g, '<br>')}</p>
   
   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; text-align: center;">
-    <p>This is a test email from the Alma Links admin panel.</p>
+    <p>This is a test email from the AlmaLinks admin panel.</p>
     <p>Timestamp: ${new Date().toISOString()}</p>
   </div>
 </div>

@@ -1,8 +1,8 @@
-# Security Overview for Alma Links
+# Security Overview for AlmaLinks
 
 ## What This Document Is For
 
-This document explains the security measures we've put in place to protect Alma Links and your data. It's written in simple language so that founders, managers, and non-technical team members can understand how we keep the application secure.
+This document explains the security measures we've put in place to protect AlmaLinks and your data. It's written in simple language so that founders, managers, and non-technical team members can understand how we keep the application secure.
 
 We've implemented industry-standard security practices to protect against common threats like unauthorized access, data breaches, and malicious attacks. This document outlines what protections are in place and what you need to know to keep the system secure.
 

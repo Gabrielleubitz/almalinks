@@ -1,6 +1,6 @@
 # Security Implementation Checklist
 
-This checklist documents all security measures that have been implemented in the Alma Links application.
+This checklist documents all security measures that have been implemented in the AlmaLinks application.
 
 ## ✅ Completed Security Measures
 

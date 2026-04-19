@@ -1,6 +1,6 @@
 # Email Workflow (Production)
 
-This document describes the email flow and environment variables used for transactional and admin emails. All emails use the shared **Alma Links theme** (header, footer, brand colors) for consistency between Mailchimp campaigns and transactional (Mailjet or Mandrill) emails.
+This document describes the email flow and environment variables used for transactional and admin emails. All emails use the shared **AlmaLinks theme** (header, footer, brand colors) for consistency between Mailchimp campaigns and transactional (Mailjet or Mandrill) emails.
 
 ## Environment Variables
 
@@ -46,9 +46,9 @@ This document describes the email flow and environment variables used for transa
 2. **Admin / bulk email**  
    Admin uses Email UI → `POST /api/send-email` or `POST /api/send-bulk-email` (auth required for bulk).
 
-## Alma Links theme
+## AlmaLinks theme
 
-- **Transactional** (Mailjet or Mandrill): All emails from `lib/server/transactional-email.js` are wrapped in the shared Alma theme (header with “Alma Links” in brand colors, footer, max-width layout). Implemented in `lib/server/alma-email-theme.js`.
+- **Transactional** (Mailjet or Mandrill): All emails from `lib/server/transactional-email.js` are wrapped in the shared Alma theme (header with “AlmaLinks” in brand colors, footer, max-width layout). Implemented in `lib/server/alma-email-theme.js`.
 - **Mailchimp campaigns**: Event announcements and welcome campaigns built in `lib/server/mailchimp-campaign.js` use the same theme wrapper so Mailchimp and Mailjet emails look consistent.
 
 ## Production Readiness

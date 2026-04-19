@@ -103,14 +103,14 @@ exports.handler = async (event, context) => {
         {
           From: {
             Email: "info@almalinks.com",
-            Name: "Alma Links"
+            Name: "AlmaLinks"
           },
           To: [{ Email: email }],
-          Subject: "Welcome to Alma Links! Your Registration is Approved 🍷",
+          Subject: "Welcome to AlmaLinks! Your Registration is Approved 🍷",
           TextPart: `
 Hi ${name},
 
-Great news! Your registration for Alma Links has been approved. 
+Great news! Your registration for AlmaLinks has been approved. 
 
 Welcome to our community where bold ideas meet real conversations!
 
@@ -131,17 +131,17 @@ If you have any questions, just reply to this email.
 Looking forward to meeting you!
 
 Cheers,
-The Alma Links Team
+The AlmaLinks Team
           `,
           HTMLPart: `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
   <div style="text-align: center; margin-bottom: 20px;">
-    <h1 style="color: #C8102E;">🍷 Welcome to Alma Links!</h1>
+    <h1 style="color: #C8102E;">🍷 Welcome to AlmaLinks!</h1>
   </div>
   
   <p>Hi ${name},</p>
   
-  <p><strong>Great news! Your registration for Alma Links has been approved.</strong></p>
+  <p><strong>Great news! Your registration for AlmaLinks has been approved.</strong></p>
   
   <p>Welcome to our community where bold ideas meet real conversations!</p>
   
@@ -177,10 +177,10 @@ The Alma Links Team
   
   <p><strong>Looking forward to meeting you!</strong></p>
   
-  <p>Cheers,<br>The Alma Links Team</p>
+  <p>Cheers,<br>The AlmaLinks Team</p>
   
   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; text-align: center;">
-    <p>Alma Links - Where Bold Ideas Meet Real Conversations</p>
+    <p>AlmaLinks - Where Bold Ideas Meet Real Conversations</p>
     <p>Follow us: <a href="https://almalinks.com">almalinks.com</a></p>
   </div>
 </div>

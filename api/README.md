@@ -1,6 +1,6 @@
 # API Directory
 
-This directory contains the **single Vercel serverless function entrypoint** for the Alma Links backend.
+This directory contains the **single Vercel serverless function entrypoint** for the AlmaLinks backend.
 
 ## Structure
 

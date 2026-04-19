@@ -106,14 +106,14 @@ exports.handler = async (event, context) => {
         {
           From: {
             Email: "info@almalinks.com",
-            Name: "Alma Links System"
+            Name: "AlmaLinks System"
           },
           To: adminEmails.map(adminEmail => ({ Email: adminEmail })),
-          Subject: "New Registration Pending Approval - Alma Links",
+          Subject: "New Registration Pending Approval - AlmaLinks",
           TextPart: `
 🔔 New Registration Pending Approval
 
-A new user has registered for Alma Links and needs approval:
+A new user has registered for AlmaLinks and needs approval:
 
 Name: ${name}
 Email: ${email}
@@ -125,7 +125,7 @@ https://almalinks.com/admin
 
 Time: ${new Date().toLocaleString()}
 
-– Alma Links System
+– AlmaLinks System
           `,
           HTMLPart: `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
@@ -133,7 +133,7 @@ Time: ${new Date().toLocaleString()}
     <h1 style="color: #C8102E;">🔔 New Registration Pending</h1>
   </div>
   
-  <p><strong>A new user has registered for Alma Links and needs approval:</strong></p>
+  <p><strong>A new user has registered for AlmaLinks and needs approval:</strong></p>
   
   <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 20px 0;">
     <table style="width: 100%;">
@@ -162,7 +162,7 @@ Time: ${new Date().toLocaleString()}
   
   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; text-align: center;">
     <p>Registration Time: ${new Date().toLocaleString()}</p>
-    <p>Alma Links Admin Notification System</p>
+    <p>AlmaLinks Admin Notification System</p>
   </div>
 </div>
           `

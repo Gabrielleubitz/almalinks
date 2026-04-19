@@ -1,4 +1,4 @@
-# Alma Links — Buyer Presentation Walkthrough
+# AlmaLinks — Buyer Presentation Walkthrough
 
 Use this as a step-by-step script to show the buyer the full platform. Go in order so she sees the member experience first, then the admin tools that run it.
 
@@ -20,7 +20,7 @@ Use this as a step-by-step script to show the buyer the full platform. Go in ord
   - **Profile card** — Photo, cover, name, title, company, bio. Edits **auto-save** (mention this).
   - **Upcoming events** — Next events they’re registered for; link to full Events.
   - **My connections** — Count and quick link to Members.
-  - **Announcements sidebar** — “From the Makers of Alma Links”: top 3 announcements, with **emoji reactions** (👍 ❤️ 🔥 👑 😊). Order is controlled by admin.
+  - **Announcements sidebar** — “From the Makers of AlmaLinks”: top 3 announcements, with **emoji reactions** (👍 ❤️ 🔥 👑 😊). Order is controlled by admin.
 - **Show:** Editing profile (name, phone, work, company, LinkedIn, position, bio, city/country, timezone, website, Twitter, skills). Point out **profile and cover photo upload** (Cloudinary) and **saved** indicator.
 
 ---

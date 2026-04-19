@@ -23,7 +23,7 @@ async function main() {
   try {
     const listId = process.env.MAILCHIMP_AUDIENCE_ID;
     const replyTo = process.env.MAILCHIMP_REPLY_TO;
-    const fromName = process.env.MAILCHIMP_FROM_NAME || 'Alma Links';
+    const fromName = process.env.MAILCHIMP_FROM_NAME || 'AlmaLinks';
 
     if (!listId || !replyTo) {
       console.error('❌ Missing env. Set MAILCHIMP_AUDIENCE_ID, MAILCHIMP_MARKETING_API_KEY, MAILCHIMP_SERVER, MAILCHIMP_REPLY_TO in .env');
@@ -33,7 +33,7 @@ async function main() {
     const subjectLine = 'Test – Mailchimp connection';
     const html = `
       <h1>Mailchimp test</h1>
-      <p>This is a test email from your Alma Links Mailchimp integration.</p>
+      <p>This is a test email from your AlmaLinks Mailchimp integration.</p>
       <p>If you received this, the connection works.</p>
       <p><em>Sent at ${new Date().toISOString()}</em></p>
     `;

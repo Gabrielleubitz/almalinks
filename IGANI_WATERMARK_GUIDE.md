@@ -1,7 +1,7 @@
 # Igani Watermark Implementation Guide
 
 ## Overview
-Subtle Igani branding has been added across the Alma Links website to credit your company for building and maintaining the platform.
+Subtle Igani branding has been added across the AlmaLinks website to credit your company for building and maintaining the platform.
 
 ## Quick Setup
 

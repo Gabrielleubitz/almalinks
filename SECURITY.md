@@ -1,6 +1,6 @@
 # Security Documentation
 
-This document outlines all security measures implemented in the Alma Links application to protect against threats and attacks.
+This document outlines all security measures implemented in the AlmaLinks application to protect against threats and attacks.
 
 ## Quick Reference: Security Changes Made
 
