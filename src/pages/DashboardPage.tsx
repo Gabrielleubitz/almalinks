@@ -652,7 +652,11 @@ const EventsPage: React.FC = () => {
       {/* Main Dashboard Content - Only show if logged in */}
       {user && (
         <section
-          className={`py-6 sm:py-8 md:py-12 bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full box-border ${!(isAdmin && isInUserView) ? 'pt-[var(--content-offset-top)]' : ''}`}
+          className={
+            isAdmin && isInUserView
+              ? 'pt-6 sm:pt-8 pb-6 sm:pb-8 md:pb-12 bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full box-border'
+              : 'pt-[var(--content-offset-top)] sm:pt-24 md:pt-28 pb-6 sm:pb-8 md:pb-12 bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full box-border'
+          }
         >
           <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 w-full max-w-full box-border">
             
