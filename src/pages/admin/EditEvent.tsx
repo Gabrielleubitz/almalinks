@@ -22,7 +22,14 @@ const EditEvent: React.FC = () => {
   const { user } = useAuth();
   
   const [originalEvent, setOriginalEvent] = useState<EventData | null>(null);
-  const [originalPrivateDetails, setOriginalPrivateDetails] = useState<{ meetingUrl?: string; resourceLinkUrl?: string; resourceLinkLabel?: string; zoomRecordingUrl?: string; zoomPassword?: string } | null>(null);
+  const [originalPrivateDetails, setOriginalPrivateDetails] = useState<{
+    meetingUrl?: string;
+    venueAddress?: string;
+    resourceLinkUrl?: string;
+    resourceLinkLabel?: string;
+    zoomRecordingUrl?: string;
+    zoomPassword?: string;
+  } | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     location: '',
@@ -32,6 +39,7 @@ const EditEvent: React.FC = () => {
     imageCrop: null as CoverCrop | null,
     status: 'active' as const,
     meetingUrl: '',
+    venueAddress: '',
     resourceLinkUrl: '',
     resourceLinkLabel: '',
     chapter: '',
@@ -99,6 +107,7 @@ const EditEvent: React.FC = () => {
       const privateDetails = await EventService.getEventPrivateDetails(eventId);
       setOriginalPrivateDetails({
         meetingUrl: privateDetails?.meetingUrl ?? '',
+        venueAddress: privateDetails?.venueAddress ?? '',
         resourceLinkUrl: privateDetails?.resourceLinkUrl ?? '',
         resourceLinkLabel: privateDetails?.resourceLinkLabel ?? '',
         zoomRecordingUrl: privateDetails?.zoomRecordingUrl ?? privateDetails?.zoom_recording_url ?? '',
@@ -113,6 +122,7 @@ const EditEvent: React.FC = () => {
         imageCrop: event.imageCrop ?? null,
         status: event.status,
         meetingUrl: privateDetails?.meetingUrl ?? '',
+        venueAddress: privateDetails?.venueAddress ?? '',
         resourceLinkUrl: privateDetails?.resourceLinkUrl ?? '',
         resourceLinkLabel: privateDetails?.resourceLinkLabel ?? '',
         chapter: (event as { chapter?: string }).chapter ?? '',
@@ -237,6 +247,7 @@ const EditEvent: React.FC = () => {
       formData.status !== originalEvent.status ||
       s(formData.chapter) !== s((originalEvent as { chapter?: string }).chapter) ||
       s(formData.meetingUrl) !== s(orig.meetingUrl) ||
+      s(formData.venueAddress) !== s(orig.venueAddress) ||
       s(formData.resourceLinkUrl) !== s(orig.resourceLinkUrl) ||
       s(formData.resourceLinkLabel) !== s(orig.resourceLinkLabel) ||
       s(formData.zoomRecordingUrl) !== s(orig.zoomRecordingUrl) ||
@@ -312,6 +323,7 @@ const EditEvent: React.FC = () => {
             body: JSON.stringify({
               eventId,
               locationText: formData.location,
+              venueAddress: formData.venueAddress?.trim() || null,
               meetingUrl: formData.meetingUrl?.trim() || null,
               resourceLinkUrl: formData.resourceLinkUrl?.trim() || null,
               resourceLinkLabel: formData.resourceLinkLabel?.trim() || null,
@@ -394,6 +406,15 @@ const EditEvent: React.FC = () => {
             }
           : null
       );
+
+      setOriginalPrivateDetails({
+        meetingUrl: formData.meetingUrl,
+        venueAddress: formData.venueAddress,
+        resourceLinkUrl: formData.resourceLinkUrl,
+        resourceLinkLabel: formData.resourceLinkLabel,
+        zoomRecordingUrl: formData.zoomRecordingUrl,
+        zoomPassword: formData.zoomPassword,
+      });
 
       setSuccess(`Event "${formData.name}" updated successfully!${hubspotStatus}${announcementStatus}`);
       setSavedAt(Date.now());
@@ -590,6 +611,19 @@ const EditEvent: React.FC = () => {
             {/* Private details (approved registrants only) */}
             <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-4">
               <p className="text-sm font-medium text-gray-700">Approved-only details</p>
+              <div>
+                <label htmlFor="venueAddress" className="block text-sm text-gray-600 mb-1">Full venue address (optional)</label>
+                <textarea
+                  id="venueAddress"
+                  name="venueAddress"
+                  rows={3}
+                  value={formData.venueAddress}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-y"
+                  placeholder="Street, building, floor — only approved registrants see this; included in Google Calendar and the approval email."
+                />
+                <p className="text-xs text-gray-500 mt-1">Keep the public Location field short; put the full address here.</p>
+              </div>
               <div>
                 <label htmlFor="meetingUrl" className="block text-sm text-gray-600 mb-1">Meeting URL (optional)</label>
                 <input

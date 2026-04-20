@@ -29,6 +29,7 @@ const AddEvent: React.FC = () => {
     status: 'active' as const,
     chapter: '',
     meetingUrl: '',
+    venueAddress: '',
     resourceLinkUrl: '',
     resourceLinkLabel: '',
   });
@@ -147,6 +148,7 @@ const AddEvent: React.FC = () => {
 
       // Capture values before resetting form (post-create runs async and will see reset state)
       const capturedLocation = formData.location;
+      const capturedVenueAddress = formData.venueAddress?.trim() || null;
       const capturedMeetingUrl = formData.meetingUrl?.trim() || null;
       const capturedResourceLinkUrl = formData.resourceLinkUrl?.trim() || null;
       const capturedResourceLinkLabel = formData.resourceLinkLabel?.trim() || null;
@@ -155,6 +157,7 @@ const AddEvent: React.FC = () => {
       // Fire-and-forget: private details + notifications (non-blocking)
       EventService.setEventPrivateDetails(eventId, {
         locationText: capturedLocation,
+        venueAddress: capturedVenueAddress,
         meetingUrl: capturedMeetingUrl,
         resourceLinkUrl: capturedResourceLinkUrl,
         resourceLinkLabel: capturedResourceLinkLabel,
@@ -246,6 +249,7 @@ const AddEvent: React.FC = () => {
         status: 'active',
         chapter: '',
         meetingUrl: '',
+        venueAddress: '',
         resourceLinkUrl: '',
         resourceLinkLabel: '',
       });
@@ -287,6 +291,7 @@ const AddEvent: React.FC = () => {
           status: 'active',
           chapter: '',
           meetingUrl: '',
+          venueAddress: '',
           resourceLinkUrl: '',
           resourceLinkLabel: '',
         });
@@ -441,6 +446,19 @@ const AddEvent: React.FC = () => {
             {/* Private details (only visible to approved registrants) */}
             <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-4">
               <p className="text-sm font-medium text-gray-700">Approved-only details (location & link shared after approval)</p>
+              <div>
+                <label htmlFor="venueAddress" className="block text-sm text-gray-600 mb-1">Full venue address (optional)</label>
+                <textarea
+                  id="venueAddress"
+                  name="venueAddress"
+                  rows={3}
+                  value={formData.venueAddress}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-y"
+                  placeholder="Street, building, floor, access notes — only approved registrants see this, and it is added to Google Calendar and the approval email."
+                />
+                <p className="text-xs text-gray-500 mt-1">Public &quot;Location&quot; above can stay short (e.g. venue name + city); put the full address here.</p>
+              </div>
               <div>
                 <label htmlFor="meetingUrl" className="block text-sm text-gray-600 mb-1">Meeting URL (optional)</label>
                 <input

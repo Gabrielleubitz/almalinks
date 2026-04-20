@@ -13,6 +13,11 @@ import EventPositionChart from '../components/analytics/EventPositionChart';
 import ReviewSection from '../components/reviews/ReviewSection';
 import CropImage from '../components/profile/CropImage';
 import { EventDualTimezoneDisplay } from '../components/EventDualTimezoneDisplay';
+import {
+  approvedEventCalendarLocation,
+  approvedEventPrimaryLocation,
+  approvedEventVenueAddress,
+} from '../utils/eventPrivateLocation';
 
 const HOSTNAME_LABELS: Record<string, string> = {
   'zoom.us': 'Zoom',
@@ -268,9 +273,10 @@ const EventDetailPage: React.FC = () => {
   const createGoogleCalendarUrl = () => {
     if (!event) return '';
     const { startTime, endTime } = formatGoogleCalendarDate(event.date);
-    const location = registration?.status === 'approved' && privateDetails
-      ? (privateDetails.locationText || event.location)
-      : event.location;
+    const location =
+      registration?.status === 'approved' && privateDetails
+        ? approvedEventCalendarLocation(event.location, privateDetails)
+        : event.location || '';
     let details = event.description || '';
     if (registration?.status === 'approved' && privateDetails) {
       if (privateDetails.meetingUrl) details += `\n\nMeeting: ${privateDetails.meetingUrl}`;
@@ -424,15 +430,26 @@ const EventDetailPage: React.FC = () => {
                   iconClassName="h-6 w-6 text-red-700 flex-shrink-0 mt-0.5"
                   textClassName="text-gray-700 text-lg"
                 />
-                <div className="flex items-center space-x-3 text-lg">
-                  <MapPin className="h-6 w-6 text-red-700" />
-                  <span className="text-gray-700">
-                    {registration?.status === 'approved' && privateDetails
-                      ? (privateDetails.locationText || event.location)
-                      : registration?.status === 'pending' || (registration && registration.status !== 'rejected')
-                        ? 'Location will be shared after your registration is approved.'
-                        : event.location}
-                  </span>
+                <div className="flex items-start space-x-3 text-lg">
+                  <MapPin className="h-6 w-6 text-red-700 flex-shrink-0 mt-0.5" />
+                  <div className="text-gray-700 min-w-0">
+                    {registration?.status === 'approved' && privateDetails ? (
+                      <>
+                        <span className="block">
+                          {approvedEventPrimaryLocation(event.location, privateDetails)}
+                        </span>
+                        {approvedEventVenueAddress(privateDetails) ? (
+                          <span className="block text-base text-gray-600 mt-1 whitespace-pre-wrap">
+                            {approvedEventVenueAddress(privateDetails)}
+                          </span>
+                        ) : null}
+                      </>
+                    ) : registration?.status === 'pending' || (registration && registration.status !== 'rejected') ? (
+                      'Location will be shared after your registration is approved.'
+                    ) : (
+                      event.location
+                    )}
+                  </div>
                 </div>
                 {registration?.status === 'approved' && privateDetails?.meetingUrl && (
                   <div className="flex items-center space-x-3 text-lg">
@@ -567,7 +584,8 @@ const EventDetailPage: React.FC = () => {
               eventStartIso={event.date}
               eventDate=""
               eventTime=""
-              eventLocation={(privateDetails?.locationText || event.location) || ''}
+              eventLocation={approvedEventPrimaryLocation(event.location, privateDetails)}
+              venueAddress={approvedEventVenueAddress(privateDetails)}
               attendeeName={registration.name}
               attendeeEmail={registration.email}
               attendeePhone={registration.phone}
@@ -628,17 +646,22 @@ const EventDetailPage: React.FC = () => {
                     />
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <MapPin className="h-5 w-5 text-red-700" />
-                  <div>
+                <div className="flex items-start space-x-3">
+                  <MapPin className="h-5 w-5 text-red-700 flex-shrink-0 mt-0.5" />
+                  <div className="min-w-0">
                     <div className="text-sm text-gray-500">Location</div>
                     <div className="font-medium text-gray-900">
                       {registration?.status === 'approved' && privateDetails
-                        ? (privateDetails.locationText || event.location)
+                        ? approvedEventPrimaryLocation(event.location, privateDetails)
                         : registration?.status === 'pending'
                           ? 'Shared after approval'
                           : event.location}
                     </div>
+                    {registration?.status === 'approved' && privateDetails && approvedEventVenueAddress(privateDetails) ? (
+                      <div className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">
+                        {approvedEventVenueAddress(privateDetails)}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">

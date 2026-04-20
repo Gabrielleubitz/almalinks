@@ -289,24 +289,33 @@ const EventsPage: React.FC = () => {
     try {
       setRegistrationsLoading(true);
       const { getMyRegistration } = await import('../services/registrationService');
-      const registrations: any[] = [];
-      for (const event of events) {
-        const reg = await getMyRegistration(event.id, user.uid);
-        if (reg) {
-          registrations.push({
+      const registrations = await Promise.all(
+        events.map(async (event) => {
+          const reg = await getMyRegistration(event.id, user.uid);
+          if (!reg) return null;
+          let eventLocation: string | null = null;
+          let eventVenueAddress: string | null = null;
+          if (reg.status === 'approved') {
+            const priv = await EventService.getEventPrivateDetails(event.id);
+            const primary = (priv?.locationText || event.location || '').trim();
+            eventLocation = primary || null;
+            eventVenueAddress = (priv?.venueAddress || '').trim() || null;
+          }
+          return {
             ...reg,
             eventId: event.id,
             eventName: event.name,
             eventDate: event.date,
-            eventLocation: reg.status === 'approved' ? event.location : null,
+            eventLocation,
+            eventVenueAddress,
             eventImage: event.imageUrl,
             eventSlug: event.slug,
             eventStatus: event.status,
             registrationStatus: reg.status,
-          });
-        }
-      }
-      setUserRegistrations(registrations);
+          };
+        })
+      );
+      setUserRegistrations(registrations.filter(Boolean) as any[]);
     } catch (error) {
       console.error('❌ Error loading user registrations:', error);
     } finally {
@@ -1772,6 +1781,7 @@ const EventsPage: React.FC = () => {
                                   eventDate=""
                                   eventTime=""
                                   eventLocation={registration.eventLocation ?? ''}
+                                  venueAddress={registration.eventVenueAddress ?? undefined}
                                   attendeeName={registration.name}
                                   attendeeEmail={registration.email}
                                   attendeePhone={registration.phone}
@@ -1800,6 +1810,7 @@ const EventsPage: React.FC = () => {
                                 eventDate=""
                                 eventTime=""
                                 eventLocation={registration.eventLocation ?? ''}
+                                venueAddress={registration.eventVenueAddress ?? undefined}
                                 attendeeName={registration.name}
                                 attendeeEmail={registration.email}
                                 attendeePhone={registration.phone}

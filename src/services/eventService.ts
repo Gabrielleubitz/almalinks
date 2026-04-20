@@ -874,9 +874,9 @@ export class EventService {
     }
   }
 
-  /** Set private details (admin only; secure with Firestore rules). */
-  static async setEventPrivateDetails(eventId: string, data: EventPrivateDetails): Promise<void> {
+  /** Set private details (admin only; merge so partial updates do not wipe other fields). */
+  static async setEventPrivateDetails(eventId: string, data: Partial<EventPrivateDetails>): Promise<void> {
     const ref = doc(db, 'events', eventId, 'privateDetails', 'details');
-    await setDoc(ref, data);
+    await setDoc(ref, data, { merge: true });
   }
 }

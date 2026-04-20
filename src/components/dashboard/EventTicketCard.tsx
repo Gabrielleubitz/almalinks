@@ -11,6 +11,8 @@ export interface EventTicketCardProps {
   eventDate: string;
   eventTime: string;
   eventLocation: string;
+  /** Full street address — only for approved registrants (from private event details). */
+  venueAddress?: string | null;
   attendeeName: string;
   attendeeEmail: string;
   attendeePhone?: string;
@@ -36,6 +38,7 @@ const EventTicketCard: React.FC<EventTicketCardProps> = ({
   eventDate,
   eventTime,
   eventLocation,
+  venueAddress,
   attendeeName,
   attendeeEmail,
   attendeePhone = '',
@@ -187,12 +190,17 @@ const EventTicketCard: React.FC<EventTicketCardProps> = ({
                   )}
                 </div>
               </div>
-              {displayLocation !== '—' && (
+              {(displayLocation !== '—' || (venueAddress && venueAddress.trim())) && (
                 <div className="flex items-start gap-2">
                   <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-gray-500 text-xs">Location</p>
-                    <p className="text-gray-900">{displayLocation}</p>
+                    {displayLocation !== '—' && (
+                      <p className="text-gray-900">{displayLocation}</p>
+                    )}
+                    {venueAddress?.trim() && (
+                      <p className="text-gray-800 text-sm mt-1 whitespace-pre-wrap">{venueAddress.trim()}</p>
+                    )}
                   </div>
                 </div>
               )}

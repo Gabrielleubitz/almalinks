@@ -14,11 +14,13 @@ import {
   ExternalLink,
   Loader2,
   AlertCircle,
+  MapPin,
 } from 'lucide-react';
 import { EventService } from '../../services/eventService';
 import { listPendingRegistrations, listEventRegistrations, approve, reject } from '../../services/registrationService';
-import type { EventRegistrationWithStatus } from '../../types/event';
+import type { EventRegistrationWithStatus, EventPrivateDetails } from '../../types/event';
 import { useAuth } from '../../hooks/useAuth';
+import { approvedEventPrimaryLocation, approvedEventVenueAddress } from '../../utils/eventPrivateLocation';
 
 type RegistrationRow = EventRegistrationWithStatus & {
   eventId: string;
@@ -54,6 +56,11 @@ const EventRegistrationsPage: React.FC = () => {
   const [bulkActing, setBulkActing] = useState(false);
   const [rejectModal, setRejectModal] = useState<{ reg: RegistrationRow; reason: string } | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  /** When filtering by one event, show public + approved-only venue info for admins. */
+  const [eventVenueBanner, setEventVenueBanner] = useState<{
+    publicLocation: string;
+    privateDetails: EventPrivateDetails | null;
+  } | null>(null);
 
   useEffect(() => {
     loadEvents();
@@ -82,6 +89,11 @@ const EventRegistrationsPage: React.FC = () => {
           }),
           EventService.getEventById(eventFilter, { skipAudienceVisibility: true }),
         ]);
+        const priv = await EventService.getEventPrivateDetails(eventFilter);
+        setEventVenueBanner({
+          publicLocation: ev?.location ?? '',
+          privateDetails: priv,
+        });
         setRows(
           list.map((r) => ({
             ...r,
@@ -92,6 +104,7 @@ const EventRegistrationsPage: React.FC = () => {
           }))
         );
       } else {
+        setEventVenueBanner(null);
         const list = await listPendingRegistrations({
           status: statusFilter as 'pending' | 'approved' | 'rejected',
           limit: 300,
@@ -270,6 +283,33 @@ const EventRegistrationsPage: React.FC = () => {
             />
           </div>
         </div>
+
+        {eventVenueBanner && (
+          <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50/90 p-4 text-sm text-gray-800">
+            <div className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-brand-blue-dark flex-shrink-0" />
+              Location for this event (approved registrants receive full address in email and calendar)
+            </div>
+            <p>
+              <span className="text-gray-500">Public listing: </span>
+              {eventVenueBanner.publicLocation?.trim() || '—'}
+            </p>
+            {eventVenueBanner.privateDetails && (
+              <>
+                <p className="mt-2">
+                  <span className="text-gray-500">Approved-only address: </span>
+                  <span className="whitespace-pre-wrap font-medium">
+                    {approvedEventVenueAddress(eventVenueBanner.privateDetails) || '—'}
+                  </span>
+                </p>
+                <p className="mt-1">
+                  <span className="text-gray-500">Private location line: </span>
+                  {approvedEventPrimaryLocation(eventVenueBanner.publicLocation, eventVenueBanner.privateDetails) || '—'}
+                </p>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Bulk actions */}
         {statusFilter === 'pending' && selectedIds.size > 0 && (

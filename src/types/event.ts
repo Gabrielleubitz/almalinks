@@ -4,6 +4,8 @@
  */
 export interface EventPrivateDetails {
   locationText: string;
+  /** Full street / venue address — shown only to approved registrants, calendar, and approval email. */
+  venueAddress?: string | null;
   meetingUrl: string | null;
   locationType?: 'in_person' | 'virtual' | 'tbd';
   resourceLinkUrl?: string | null;
