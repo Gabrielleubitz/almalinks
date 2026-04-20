@@ -17,8 +17,8 @@ import { apiRequest } from '../utils/apiClient';
 import { nanoid } from 'nanoid';
 import type { EventPrivateDetails } from '../types/event';
 
-type EventAudienceMode = 'individuals' | 'group' | 'event' | 'chat' | 'location' | 'all_users';
-interface AudienceSelection {
+export type EventAudienceMode = 'individuals' | 'group' | 'event' | 'chat' | 'location' | 'all_users';
+export interface AudienceSelection {
   mode: EventAudienceMode;
   ids?: string[];
   groupId?: string;
@@ -144,6 +144,19 @@ export class EventService {
         getDocs(query(collection(db, 'users'), where('country', '==', audience.location), where('status', '==', 'approved'))),
       ]);
       ids = new Set([...citySnap.docs.map((d) => d.id), ...countrySnap.docs.map((d) => d.id)]);
+    } else if (audience.mode === 'group' && audience.groupId) {
+      try {
+        const memSnap = await getDocs(
+          query(
+            collection(db, 'communityMemberships'),
+            where('groupId', '==', audience.groupId),
+            where('archivedAt', '==', null)
+          )
+        );
+        ids = new Set(memSnap.docs.map((d) => String(d.data()?.userId || '')).filter(Boolean));
+      } catch {
+        ids = new Set();
+      }
     } else {
       ids = new Set();
     }
@@ -175,6 +188,22 @@ export class EventService {
     const allowedUserIds = await this.resolveAudienceUserIds(audience, cache);
     if (!allowedUserIds) return true;
     return allowedUserIds.has(viewer.uid);
+  }
+
+  /**
+   * User IDs who should receive in-app "new event" notifications when an event is created.
+   * Mirrors event visibility audience; all_users → all approved members.
+   */
+  static async getNewEventNotificationRecipientUids(
+    audience: AudienceSelection | null | undefined
+  ): Promise<string[]> {
+    if (!audience || !audience.mode || audience.mode === 'all_users') {
+      const snap = await getDocs(query(collection(db, 'users'), where('status', '==', 'approved')));
+      return snap.docs.map((d) => d.id).filter(Boolean);
+    }
+    const cache = new Map<string, Set<string> | null>();
+    const set = await this.resolveAudienceUserIds(audience, cache);
+    return set ? Array.from(set) : [];
   }
 
   // Create a new event
@@ -424,7 +453,11 @@ export class EventService {
       
       if (docSnap.exists()) {
         const event = { id: docSnap.id, ...docSnap.data() } as EventData;
-        
+
+        const viewer = await this.getCurrentViewerContext();
+        const canSee = await this.canViewerSeeEvent(event, viewer, new Map());
+        if (!canSee) return null;
+
         // Add slug if missing
         if (!event.slug) {
           const slug = generateSlug(event.name);
@@ -459,6 +492,12 @@ export class EventService {
       if (!snapshot.empty) {
         const doc = snapshot.docs[0];
         const event = { id: doc.id, ...doc.data() } as EventData;
+        const viewer = await this.getCurrentViewerContext();
+        const canSee = await this.canViewerSeeEvent(event, viewer, new Map());
+        if (!canSee) {
+          console.log('🔒 Event hidden for viewer (audience):', event.name);
+          return null;
+        }
         console.log('✅ Found event by slug:', event.name);
         return event;
       }

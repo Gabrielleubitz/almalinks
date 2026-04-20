@@ -91,15 +91,17 @@ export async function createChatMessageNotification(
 export async function createEventCreatedNotification(
   userId: string,
   eventId: string,
-  eventName: string
+  eventName: string,
+  linkSlugOrId?: string | null
 ): Promise<string> {
+  const pathSegment = (linkSlugOrId || eventId || '').trim() || eventId;
   return createNotification(
     userId,
     'event_created',
     'New event created',
     {
       body: eventName,
-      link: `/events/${eventId}`,
+      link: `/events/${pathSegment}`,
       metadata: { eventId, eventName }
     }
   );
@@ -207,17 +209,24 @@ export async function deleteAllNotifications(userId: string): Promise<void> {
 }
 
 /**
- * Notify approved users of a new event (called after admin creates event). Runs in background; does not block.
+ * Notify members of a new event (called after admin creates an active event). Runs in background; does not block.
+ * Recipients match the event audience (same targeting as visibility and announcement emails).
  */
-export function notifyAllUsersOfNewEvent(eventId: string, eventName: string): void {
+export function notifyUsersOfNewEvent(
+  eventId: string,
+  eventName: string,
+  options?: {
+    eventAudience?: import('./eventService').AudienceSelection | null;
+    eventSlug?: string | null;
+  }
+): void {
   (async () => {
     try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('status', '==', 'approved'), limit(300));
-      const snapshot = await retryOnNetworkFailure(() => getDocs(q));
-      const userIds = snapshot.docs.map((d) => d.id).filter(Boolean);
+      const { EventService } = await import('./eventService');
+      const userIds = await EventService.getNewEventNotificationRecipientUids(options?.eventAudience);
+      const slug = options?.eventSlug?.trim() || null;
       for (const uid of userIds) {
-        createEventCreatedNotification(uid, eventId, eventName).catch((e) =>
+        createEventCreatedNotification(uid, eventId, eventName, slug).catch((e) =>
           console.warn('Failed to create event notification for', uid, e)
         );
       }
@@ -225,4 +234,9 @@ export function notifyAllUsersOfNewEvent(eventId: string, eventName: string): vo
       console.warn('Failed to notify users of new event', e);
     }
   })();
+}
+
+/** @deprecated Use notifyUsersOfNewEvent (audience-aware). */
+export function notifyAllUsersOfNewEvent(eventId: string, eventName: string): void {
+  notifyUsersOfNewEvent(eventId, eventName, { eventAudience: { mode: 'all_users' } });
 }

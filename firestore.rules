@@ -200,6 +200,12 @@ service cloud.firestore {
       );
     }
 
+    // --- Community memberships (event audience "group" resolution; member reads own group roster) ---
+    match /communityMemberships/{membershipId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
     // --- HubSpot contacts (server-only writes via Admin SDK) ---
     match /hubspotContacts/{contactId} {
       allow read: if isAdmin();

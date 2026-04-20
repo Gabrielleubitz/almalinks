@@ -160,9 +160,20 @@ const AddEvent: React.FC = () => {
         resourceLinkUrl: capturedResourceLinkUrl,
         resourceLinkLabel: capturedResourceLinkLabel,
       }).catch((e) => console.warn('[AddEvent] setEventPrivateDetails failed:', e));
-      import('../../services/notificationService').then(({ notifyAllUsersOfNewEvent }) =>
-        notifyAllUsersOfNewEvent(eventId, eventName)
-      );
+      if (formData.status === 'active') {
+        const eventAudienceForNotify: AudienceSelection = {
+          mode: audienceMode,
+          ...(audienceMode === 'individuals'
+            ? { ids: [...new Set(individualRecipientObjects.map((r) => r.uid).filter(Boolean) as string[])] }
+            : audienceSelection),
+        };
+        import('../../services/notificationService').then(({ notifyUsersOfNewEvent }) =>
+          notifyUsersOfNewEvent(eventId!, eventName, {
+            eventAudience: eventAudienceForNotify,
+            eventSlug: previewSlug || undefined,
+          })
+        );
+      }
 
       // Await HubSpot sync and announcement so we can show their status in the success message
       let hubspotStatus = '';
