@@ -20,7 +20,7 @@ import deleteEventFromHubspotHandler from './lib/server/api/delete-event-from-hu
 import updateEventPrivateDetailsHandler from './lib/server/api/update-event-private-details.js';
 
 // CJS handler (kept as CommonJS)
-import adminChatsHandler from './lib/server/api/admin/chats.cjs';
+import adminChatsHandler from './lib/server/api/admin/chats.js';
 // Temporarily disabled problematic imports
 // import systemTestHandler from './api/system-test.js';
 // import adminToolsHandler from './api/admin-tools.js';

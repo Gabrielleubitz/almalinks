@@ -259,6 +259,18 @@ const CreateChatGroupFormPanel: React.FC<CreateChatGroupFormPanelProps> = ({
       ? 'grid grid-cols-1 xl:grid-cols-2 gap-4 max-h-[min(85vh,900px)] overflow-y-auto pr-1'
       : 'grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8';
 
+  const labelForUid = (uid: string) => {
+    const u = users.find((x) => x.uid === uid);
+    if (!u) return uid.length > 10 ? `${uid.slice(0, 8)}…` : uid;
+    const name =
+      (u.displayName && u.displayName.trim()) ||
+      `${u.firstName || ''} ${u.lastName || ''}`.trim() ||
+      (u.name && String(u.name).trim()) ||
+      (u.email && u.email.trim()) ||
+      uid;
+    return name;
+  };
+
   return (
     <div className={variant === 'modal' ? 'w-full' : ''}>
       <div className={gridClass}>
@@ -429,9 +441,27 @@ const CreateChatGroupFormPanel: React.FC<CreateChatGroupFormPanelProps> = ({
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
-              <span className="font-medium text-gray-900">Summary:</span>{' '}
-              {formData.initialAdmins.length} admin(s), {formData.seedMembers.length} member(s)
+            <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600 space-y-2">
+              <div>
+                <span className="font-medium text-gray-900">Summary:</span>{' '}
+                {formData.initialAdmins.length} admin(s), {formData.seedMembers.length} member(s)
+              </div>
+              {formData.initialAdmins.length > 0 && (
+                <div>
+                  <span className="font-medium text-gray-800">Admins:</span>{' '}
+                  <span className="text-gray-700">
+                    {formData.initialAdmins.map(labelForUid).join(' · ')}
+                  </span>
+                </div>
+              )}
+              {formData.seedMembers.length > 0 && (
+                <div>
+                  <span className="font-medium text-gray-800">Members:</span>{' '}
+                  <span className="text-gray-700">
+                    {formData.seedMembers.map(labelForUid).join(' · ')}
+                  </span>
+                </div>
+              )}
             </div>
 
             {debugInfo && (

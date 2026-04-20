@@ -3,10 +3,11 @@
 //
 // Important: This file should stay very small; all business logic lives in lib/server/*.
 
-// Initialize Firebase Admin before any route (including lazy-loaded CJS handlers like admin/chats).
+// Initialize Firebase Admin before any route (including lazy-loaded CJS handlers).
 import '../lib/server/firebase-init.js';
 
 import url from 'url';
+import adminChatsHandler from '../lib/server/api/admin/chats.js';
 
 // ESM handlers
 import userAdminHandler from '../lib/server/api/user-admin.js';
@@ -124,14 +125,18 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
-  // Lazy-load the CJS endpoints only when called (keeps cold start smaller)
-  if (pathname === '/api/system-test' || pathname === '/api/admin-tools' || pathname === '/api/automation-hub' || pathname === '/api/chat-api' || pathname === '/api/admin/chats') {
+  // Admin chat creation (ESM, static import so Vercel bundles it — dynamic import of ../lib failed on serverless)
+  if (pathname === '/api/admin/chats') {
+    return adminChatsHandler(req, res);
+  }
+
+  // Lazy-load remaining CJS endpoints only when called (keeps cold start smaller)
+  if (pathname === '/api/system-test' || pathname === '/api/admin-tools' || pathname === '/api/automation-hub' || pathname === '/api/chat-api') {
     const cjsHandler =
       pathname === '/api/system-test' ? await lazyCjs('../lib/server/api/system-test.cjs') :
       pathname === '/api/admin-tools' ? await lazyCjs('../lib/server/api/admin-tools.cjs') :
       pathname === '/api/automation-hub' ? await lazyCjs('../lib/server/api/automation-hub.cjs') :
       pathname === '/api/chat-api' ? await lazyCjs('../lib/server/api/chat-api.cjs') :
-      pathname === '/api/admin/chats' ? await lazyCjs('../lib/server/api/admin/chats.cjs') :
       null;
 
     if (!cjsHandler) {
