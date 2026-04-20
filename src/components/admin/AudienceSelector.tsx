@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Loader } from 'lucide-react';
+import { Loader, X } from 'lucide-react';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import {
+  effectiveChatAudienceIds,
+  effectiveEventAudienceIds,
+  effectiveLocationAudienceLabels,
+} from '../../utils/eventAudienceUtils';
 
 export type RecipientMode = 'individuals' | 'group' | 'event' | 'chat' | 'location' | 'all_users';
 
@@ -9,9 +14,15 @@ export interface AudienceSelection {
   mode: RecipientMode;
   ids?: string[];
   groupId?: string;
+  /** @deprecated use eventIds */
   eventId?: string;
+  eventIds?: string[];
+  /** @deprecated use chatIds */
   chatId?: string;
+  chatIds?: string[];
+  /** @deprecated use locations */
   location?: string;
+  locations?: string[];
 }
 
 interface AudienceSelectorProps {
@@ -125,6 +136,43 @@ const AudienceSelector: React.FC<AudienceSelectorProps> = ({
     }
   };
 
+  const selectedEventIds = effectiveEventAudienceIds(selection);
+  const selectedChatIds = effectiveChatAudienceIds(selection);
+  const selectedLocations = effectiveLocationAudienceLabels(selection);
+
+  const toggleEventId = (id: string) => {
+    const next = new Set(selectedEventIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onSelectionChange({
+      ...selection,
+      eventIds: Array.from(next),
+      eventId: undefined,
+    });
+  };
+
+  const toggleChatId = (id: string) => {
+    const next = new Set(selectedChatIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onSelectionChange({
+      ...selection,
+      chatIds: Array.from(next),
+      chatId: undefined,
+    });
+  };
+
+  const toggleLocation = (loc: string) => {
+    const next = new Set(selectedLocations);
+    if (next.has(loc)) next.delete(loc);
+    else next.add(loc);
+    onSelectionChange({
+      ...selection,
+      locations: Array.from(next),
+      location: undefined,
+    });
+  };
+
   const loadLocations = async () => {
     try {
       setLoadingLocations(true);
@@ -173,27 +221,63 @@ const AudienceSelector: React.FC<AudienceSelectorProps> = ({
       {mode === 'event' && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select Event
+            Select events (one or more)
           </label>
+          {selectedEventIds.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {selectedEventIds.map((id) => {
+                const ev = events.find((e) => e.id === id);
+                const label = ev ? `${ev.name} (${new Date(ev.date).toLocaleDateString()})` : id;
+                return (
+                  <span
+                    key={id}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-100 text-blue-900 text-xs max-w-full"
+                  >
+                    <span className="truncate max-w-[200px]">{label}</span>
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => toggleEventId(id)}
+                      className="p-0.5 rounded hover:bg-blue-200 disabled:opacity-50"
+                      aria-label={`Remove ${label}`}
+                    >
+                      <X className="h-3 w-3 shrink-0" />
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
           {loadingEvents ? (
             <div className="flex items-center space-x-2 text-sm text-gray-500">
               <Loader className="h-4 w-4 animate-spin" />
               <span>Loading events...</span>
             </div>
           ) : (
-            <select
-              value={selection.eventId || ''}
-              onChange={(e) => onSelectionChange({ ...selection, eventId: e.target.value || undefined })}
-              disabled={disabled}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">-- Select an event --</option>
-              {events.map(event => (
-                <option key={event.id} value={event.id}>
-                  {event.name} ({event.location}) - {new Date(event.date).toLocaleDateString()}
-                </option>
-              ))}
-            </select>
+            <div className="max-h-52 overflow-y-auto border border-gray-200 rounded-xl p-2 space-y-1 bg-white">
+              {events.length === 0 ? (
+                <p className="text-sm text-gray-500 px-2 py-1">No events found.</p>
+              ) : (
+                events.map((event) => (
+                  <label
+                    key={event.id}
+                    className="flex items-start gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 rounded border-gray-300"
+                      checked={selectedEventIds.includes(event.id)}
+                      disabled={disabled}
+                      onChange={() => toggleEventId(event.id)}
+                    />
+                    <span className="text-gray-800">
+                      <span className="font-medium">{event.name}</span>
+                      <span className="text-gray-500"> — {event.location} · {new Date(event.date).toLocaleDateString()}</span>
+                    </span>
+                  </label>
+                ))
+              )}
+            </div>
           )}
         </div>
       )}
@@ -201,27 +285,63 @@ const AudienceSelector: React.FC<AudienceSelectorProps> = ({
       {mode === 'chat' && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select Chat
+            Select chats (one or more)
           </label>
+          {selectedChatIds.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {selectedChatIds.map((id) => {
+                const ch = chats.find((c) => c.id === id);
+                const label = ch ? `${ch.name} (${ch.memberCount} members)` : id;
+                return (
+                  <span
+                    key={id}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-100 text-blue-900 text-xs max-w-full"
+                  >
+                    <span className="truncate max-w-[200px]">{label}</span>
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => toggleChatId(id)}
+                      className="p-0.5 rounded hover:bg-blue-200 disabled:opacity-50"
+                      aria-label={`Remove ${label}`}
+                    >
+                      <X className="h-3 w-3 shrink-0" />
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
           {loadingChats ? (
             <div className="flex items-center space-x-2 text-sm text-gray-500">
               <Loader className="h-4 w-4 animate-spin" />
               <span>Loading chats...</span>
             </div>
           ) : (
-            <select
-              value={selection.chatId || ''}
-              onChange={(e) => onSelectionChange({ ...selection, chatId: e.target.value || undefined })}
-              disabled={disabled}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">-- Select a chat --</option>
-              {chats.map(chat => (
-                <option key={chat.id} value={chat.id}>
-                  {chat.name} ({chat.memberCount} members)
-                </option>
-              ))}
-            </select>
+            <div className="max-h-52 overflow-y-auto border border-gray-200 rounded-xl p-2 space-y-1 bg-white">
+              {chats.length === 0 ? (
+                <p className="text-sm text-gray-500 px-2 py-1">No chats found.</p>
+              ) : (
+                chats.map((chat) => (
+                  <label
+                    key={chat.id}
+                    className="flex items-start gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 rounded border-gray-300"
+                      checked={selectedChatIds.includes(chat.id)}
+                      disabled={disabled}
+                      onChange={() => toggleChatId(chat.id)}
+                    />
+                    <span className="text-gray-800">
+                      <span className="font-medium">{chat.name}</span>
+                      <span className="text-gray-500"> — {chat.memberCount} members</span>
+                    </span>
+                  </label>
+                ))
+              )}
+            </div>
           )}
         </div>
       )}
@@ -229,27 +349,56 @@ const AudienceSelector: React.FC<AudienceSelectorProps> = ({
       {mode === 'location' && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select Location
+            Select locations (one or more)
           </label>
+          {selectedLocations.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {selectedLocations.map((loc) => (
+                <span
+                  key={loc}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-100 text-blue-900 text-xs"
+                >
+                  {loc}
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => toggleLocation(loc)}
+                    className="p-0.5 rounded hover:bg-blue-200 disabled:opacity-50"
+                    aria-label={`Remove ${loc}`}
+                  >
+                    <X className="h-3 w-3 shrink-0" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
           {loadingLocations ? (
             <div className="flex items-center space-x-2 text-sm text-gray-500">
               <Loader className="h-4 w-4 animate-spin" />
               <span>Loading locations...</span>
             </div>
           ) : (
-            <select
-              value={selection.location || ''}
-              onChange={(e) => onSelectionChange({ ...selection, location: e.target.value || undefined })}
-              disabled={disabled}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">-- Select a location --</option>
-              {locations.map(loc => (
-                <option key={loc} value={loc}>
-                  {loc}
-                </option>
-              ))}
-            </select>
+            <div className="max-h-52 overflow-y-auto border border-gray-200 rounded-xl p-2 space-y-1 bg-white">
+              {locations.length === 0 ? (
+                <p className="text-sm text-gray-500 px-2 py-1">No locations from member profiles.</p>
+              ) : (
+                locations.map((loc) => (
+                  <label
+                    key={loc}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300"
+                      checked={selectedLocations.includes(loc)}
+                      disabled={disabled}
+                      onChange={() => toggleLocation(loc)}
+                    />
+                    <span className="text-gray-800">{loc}</span>
+                  </label>
+                ))
+              )}
+            </div>
           )}
         </div>
       )}

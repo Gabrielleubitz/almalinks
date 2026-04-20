@@ -11,6 +11,11 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { EventService } from './eventService';
+import {
+  effectiveChatAudienceIds,
+  effectiveEventAudienceIds,
+  effectiveLocationAudienceLabels,
+} from '../utils/eventAudienceUtils';
 
 export type RecipientMode = 'individuals' | 'group' | 'event' | 'chat' | 'location' | 'all_users';
 
@@ -26,8 +31,11 @@ export interface RecipientResolutionInput {
   ids?: string[];
   groupId?: string;
   eventId?: string;
+  eventIds?: string[];
   chatId?: string;
+  chatIds?: string[];
   location?: string;
+  locations?: string[];
 }
 
 /**
@@ -40,7 +48,8 @@ export class RecipientResolutionService {
    */
   static async resolveRecipients(input: RecipientResolutionInput): Promise<RecipientResolutionResult> {
     try {
-      const { mode, ids, groupId, eventId, chatId, location } = input;
+      const { mode, ids, groupId, eventId, eventIds, chatId, chatIds, location, locations } = input;
+      const audienceLike = { eventId, eventIds, chatId, chatIds, location, locations };
 
       // Validate input
       if (!mode || !['individuals', 'group', 'event', 'chat', 'location', 'all_users'].includes(mode)) {
@@ -80,41 +89,62 @@ export class RecipientResolutionService {
           recipients = [];
           break;
 
-        case 'event':
-          if (!eventId) {
+        case 'event': {
+          const evIds = effectiveEventAudienceIds(audienceLike);
+          if (!evIds.length) {
             return {
               ok: false,
               recipients: [],
               count: 0,
-              error: 'eventId is required for event mode'
+              error: 'Select at least one source event for event mode',
             };
           }
-          recipients = await this.resolveEventRecipients(eventId);
+          const merged = new Map<string, { userId: string; email: string; name?: string }>();
+          for (const eid of evIds) {
+            const batch = await this.resolveEventRecipients(eid);
+            batch.forEach((r) => merged.set(r.userId, r));
+          }
+          recipients = [...merged.values()];
           break;
+        }
 
-        case 'chat':
-          if (!chatId) {
+        case 'chat': {
+          const cIds = effectiveChatAudienceIds(audienceLike);
+          if (!cIds.length) {
             return {
               ok: false,
               recipients: [],
               count: 0,
-              error: 'chatId is required for chat mode'
+              error: 'Select at least one chat for chat mode',
             };
           }
-          recipients = await this.resolveChatRecipients(chatId);
+          const mergedChat = new Map<string, { userId: string; email: string; name?: string }>();
+          for (const cid of cIds) {
+            const batch = await this.resolveChatRecipients(cid);
+            batch.forEach((r) => mergedChat.set(r.userId, r));
+          }
+          recipients = [...mergedChat.values()];
           break;
+        }
 
-        case 'location':
-          if (!location) {
+        case 'location': {
+          const locs = effectiveLocationAudienceLabels(audienceLike);
+          if (!locs.length) {
             return {
               ok: false,
               recipients: [],
               count: 0,
-              error: 'location is required for location mode'
+              error: 'Select at least one location for location mode',
             };
           }
-          recipients = await this.resolveLocationRecipients(location);
+          const mergedLoc = new Map<string, { userId: string; email: string; name?: string }>();
+          for (const loc of locs) {
+            const batch = await this.resolveLocationRecipients(loc);
+            batch.forEach((r) => mergedLoc.set(r.userId, r));
+          }
+          recipients = [...mergedLoc.values()];
           break;
+        }
 
         case 'all_users':
           recipients = await this.resolveAllUsersRecipients();

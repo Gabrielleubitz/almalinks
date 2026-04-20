@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Users, Loader, AlertCircle, CheckCircle } from 'lucide-react';
 import { AudienceSelection, RecipientMode } from './AudienceSelector';
 import { RecipientResolutionService } from '../../services/recipientResolutionService';
+import {
+  effectiveChatAudienceIds,
+  effectiveEventAudienceIds,
+  effectiveLocationAudienceLabels,
+} from '../../utils/eventAudienceUtils';
 
 interface RecipientPreviewProps {
   mode: RecipientMode;
@@ -21,12 +26,12 @@ const RecipientPreview: React.FC<RecipientPreviewProps> = ({
 
   useEffect(() => {
     // Only resolve if we have a valid selection
-    const hasSelection = 
+    const hasSelection =
       (mode === 'individuals' && selection.ids && selection.ids.length > 0) ||
       (mode === 'group' && selection.groupId) ||
-      (mode === 'event' && selection.eventId) ||
-      (mode === 'chat' && selection.chatId) ||
-      (mode === 'location' && selection.location) ||
+      (mode === 'event' && effectiveEventAudienceIds(selection).length > 0) ||
+      (mode === 'chat' && effectiveChatAudienceIds(selection).length > 0) ||
+      (mode === 'location' && effectiveLocationAudienceLabels(selection).length > 0) ||
       mode === 'all_users';
 
     if (hasSelection) {
@@ -49,8 +54,11 @@ const RecipientPreview: React.FC<RecipientPreviewProps> = ({
         ids: selection.ids,
         groupId: selection.groupId,
         eventId: selection.eventId,
+        eventIds: selection.eventIds,
         chatId: selection.chatId,
-        location: selection.location
+        chatIds: selection.chatIds,
+        location: selection.location,
+        locations: selection.locations,
       });
 
       if (!result.ok) {
@@ -74,15 +82,12 @@ const RecipientPreview: React.FC<RecipientPreviewProps> = ({
     }
   };
 
-  if (!selection || 
-      (mode === 'individuals' && (!selection.ids || selection.ids.length === 0)) &&
-      (mode === 'group' && !selection.groupId) &&
-      (mode === 'event' && !selection.eventId) &&
-      (mode === 'chat' && !selection.chatId) &&
-      (mode === 'location' && !selection.location) &&
-      mode !== 'all_users') {
-    return null;
-  }
+  if (!selection) return null;
+  if (mode === 'individuals' && (!selection.ids || selection.ids.length === 0)) return null;
+  if (mode === 'group' && !selection.groupId) return null;
+  if (mode === 'event' && effectiveEventAudienceIds(selection).length === 0) return null;
+  if (mode === 'chat' && effectiveChatAudienceIds(selection).length === 0) return null;
+  if (mode === 'location' && effectiveLocationAudienceLabels(selection).length === 0) return null;
 
   return (
     <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">

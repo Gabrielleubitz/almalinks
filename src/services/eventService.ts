@@ -16,15 +16,26 @@ import { db, auth } from '../firebase/config';
 import { apiRequest } from '../utils/apiClient';
 import { nanoid } from 'nanoid';
 import type { EventPrivateDetails } from '../types/event';
+import {
+  effectiveChatAudienceIds,
+  effectiveEventAudienceIds,
+  effectiveLocationAudienceLabels,
+} from '../utils/eventAudienceUtils';
 
 export type EventAudienceMode = 'individuals' | 'group' | 'event' | 'chat' | 'location' | 'all_users';
 export interface AudienceSelection {
   mode: EventAudienceMode;
   ids?: string[];
   groupId?: string;
+  /** @deprecated Prefer eventIds; still read for older events */
   eventId?: string;
+  eventIds?: string[];
+  /** @deprecated Prefer chatIds */
   chatId?: string;
+  chatIds?: string[];
+  /** @deprecated Prefer locations */
   location?: string;
+  locations?: string[];
 }
 
 export interface ImageCropData {
@@ -115,9 +126,10 @@ export class EventService {
     return JSON.stringify({
       mode: audience.mode,
       ids: (audience.ids || []).slice().sort(),
-      eventId: audience.eventId || null,
-      chatId: audience.chatId || null,
-      location: audience.location || null,
+      eventIds: effectiveEventAudienceIds(audience).slice().sort(),
+      chatIds: effectiveChatAudienceIds(audience).slice().sort(),
+      locations: effectiveLocationAudienceLabels(audience).map((l) => l.toLowerCase()).slice().sort(),
+      groupId: audience.groupId || null,
     });
   }
 
@@ -132,18 +144,31 @@ export class EventService {
     let ids = new Set<string>();
     if (audience.mode === 'individuals') {
       ids = new Set((audience.ids || []).filter(Boolean));
-    } else if (audience.mode === 'event' && audience.eventId) {
-      const regsSnap = await getDocs(collection(db, 'events', audience.eventId, 'registrations'));
-      ids = new Set(regsSnap.docs.map((d) => d.id));
-    } else if (audience.mode === 'chat' && audience.chatId) {
-      const membersSnap = await getDocs(query(collection(db, 'chat_members'), where('chatId', '==', audience.chatId)));
-      ids = new Set(membersSnap.docs.map((d) => String(d.data()?.userId || '')).filter(Boolean));
-    } else if (audience.mode === 'location' && audience.location) {
-      const [citySnap, countrySnap] = await Promise.all([
-        getDocs(query(collection(db, 'users'), where('city', '==', audience.location), where('status', '==', 'approved'))),
-        getDocs(query(collection(db, 'users'), where('country', '==', audience.location), where('status', '==', 'approved'))),
-      ]);
-      ids = new Set([...citySnap.docs.map((d) => d.id), ...countrySnap.docs.map((d) => d.id)]);
+    } else if (audience.mode === 'event') {
+      const eventIds = effectiveEventAudienceIds(audience);
+      for (const eid of eventIds) {
+        const regsSnap = await getDocs(collection(db, 'events', eid, 'registrations'));
+        regsSnap.docs.forEach((d) => ids.add(d.id));
+      }
+    } else if (audience.mode === 'chat') {
+      const chatIds = effectiveChatAudienceIds(audience);
+      for (const cid of chatIds) {
+        const membersSnap = await getDocs(query(collection(db, 'chat_members'), where('chatId', '==', cid)));
+        membersSnap.docs.forEach((d) => {
+          const uid = String(d.data()?.userId || '').trim();
+          if (uid) ids.add(uid);
+        });
+      }
+    } else if (audience.mode === 'location') {
+      const locs = effectiveLocationAudienceLabels(audience);
+      for (const loc of locs) {
+        const [citySnap, countrySnap] = await Promise.all([
+          getDocs(query(collection(db, 'users'), where('city', '==', loc), where('status', '==', 'approved'))),
+          getDocs(query(collection(db, 'users'), where('country', '==', loc), where('status', '==', 'approved'))),
+        ]);
+        citySnap.docs.forEach((d) => ids.add(d.id));
+        countrySnap.docs.forEach((d) => ids.add(d.id));
+      }
     } else if (audience.mode === 'group' && audience.groupId) {
       try {
         const memSnap = await getDocs(
@@ -178,11 +203,11 @@ export class EventService {
     if (!viewer.uid) return false;
 
     if (audience.mode === 'location') {
-      const loc = String(audience.location || '').trim().toLowerCase();
-      if (!loc) return false;
+      const locs = effectiveLocationAudienceLabels(audience).map((l) => l.toLowerCase());
+      if (locs.length === 0) return false;
       const city = String(viewer.userData?.city || '').trim().toLowerCase();
       const country = String(viewer.userData?.country || '').trim().toLowerCase();
-      return city === loc || country === loc;
+      return locs.some((loc) => city === loc || country === loc);
     }
 
     const allowedUserIds = await this.resolveAudienceUserIds(audience, cache);

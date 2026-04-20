@@ -6,6 +6,7 @@ import { sendAdminEmail } from '../../services/emailService';
 import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/admin/EmailRecipientAutocomplete';
 import AudienceSelector, { RecipientMode, AudienceSelection } from '../../components/admin/AudienceSelector';
 import RecipientPreview from '../../components/admin/RecipientPreview';
+import { hasAudiencePickForMode } from '../../utils/eventAudienceUtils';
 import { auth } from '../../firebase/config';
 import { apiRequest } from '../../utils/apiClient';
 
@@ -228,14 +229,7 @@ const AdminEmail: React.FC = () => {
         return false;
       }
     } else {
-      // For audience modes, check if selection is valid (all_users needs no sub-selection)
-      const hasSelection = 
-        recipientMode === 'all_users' ||
-        (recipientMode === 'event' && audienceSelection.eventId) ||
-        (recipientMode === 'chat' && audienceSelection.chatId) ||
-        (recipientMode === 'location' && audienceSelection.location);
-
-      if (!hasSelection) {
+      if (!hasAudiencePickForMode(recipientMode, { ...audienceSelection, mode: recipientMode }, 0)) {
         setError(`Please select a ${recipientMode}`);
         return false;
       }

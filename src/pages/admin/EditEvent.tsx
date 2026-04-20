@@ -10,6 +10,7 @@ import { uploadImageToLibrary } from '../../services/imageUploadService';
 import CropImage from '../../components/profile/CropImage';
 import CoverPhotoCropModal, { type CoverCrop } from '../../components/profile/CoverPhotoCropModal';
 import AudienceSelector, { RecipientMode, AudienceSelection } from '../../components/admin/AudienceSelector';
+import { hasAudiencePickForMode } from '../../utils/eventAudienceUtils';
 import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/admin/EmailRecipientAutocomplete';
 import RecipientPreview from '../../components/admin/RecipientPreview';
 
@@ -116,7 +117,19 @@ const EditEvent: React.FC = () => {
         zoomRecordingUrl: privateDetails?.zoomRecordingUrl ?? privateDetails?.zoom_recording_url ?? '',
         zoomPassword: privateDetails?.zoomPassword ?? privateDetails?.zoom_password ?? '',
       });
-      const savedAudience = (event as EventData & { eventAudience?: AudienceSelection | null }).eventAudience || { mode: 'all_users' as RecipientMode };
+      const rawAudience = (event as EventData & { eventAudience?: AudienceSelection | null }).eventAudience || {
+        mode: 'all_users' as RecipientMode,
+      };
+      const savedAudience: AudienceSelection = { ...rawAudience };
+      if (savedAudience.mode === 'event' && savedAudience.eventId && !savedAudience.eventIds?.length) {
+        savedAudience.eventIds = [savedAudience.eventId];
+      }
+      if (savedAudience.mode === 'chat' && savedAudience.chatId && !savedAudience.chatIds?.length) {
+        savedAudience.chatIds = [savedAudience.chatId];
+      }
+      if (savedAudience.mode === 'location' && savedAudience.location && !savedAudience.locations?.length) {
+        savedAudience.locations = [savedAudience.location];
+      }
       setAudienceMode(savedAudience.mode || 'all_users');
       setAudienceSelection(savedAudience);
       if (savedAudience.mode === 'individuals' && Array.isArray(savedAudience.ids) && savedAudience.ids.length) {
@@ -169,13 +182,8 @@ const EditEvent: React.FC = () => {
       return false;
     }
     if (formData.status === 'active') {
-      const hasAudienceSelection =
-        audienceMode === 'all_users' ||
-        (audienceMode === 'individuals' && individualRecipientObjects.some((r) => !!r.uid)) ||
-        (audienceMode === 'event' && !!audienceSelection.eventId) ||
-        (audienceMode === 'chat' && !!audienceSelection.chatId) ||
-        (audienceMode === 'location' && !!audienceSelection.location);
-      if (!hasAudienceSelection) {
+      const uidCount = individualRecipientObjects.filter((r) => !!r.uid).length;
+      if (!hasAudiencePickForMode(audienceMode, { ...audienceSelection, mode: audienceMode }, uidCount)) {
         setError('For active events, choose who can see this event.');
         return false;
       }

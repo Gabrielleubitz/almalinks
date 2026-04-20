@@ -12,6 +12,7 @@ import CropImage from '../../components/profile/CropImage';
 import AudienceSelector, { RecipientMode, AudienceSelection } from '../../components/admin/AudienceSelector';
 import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/admin/EmailRecipientAutocomplete';
 import RecipientPreview from '../../components/admin/RecipientPreview';
+import { hasAudiencePickForMode } from '../../utils/eventAudienceUtils';
 
 const AddEvent: React.FC = () => {
   const navigate = useNavigate();
@@ -82,13 +83,8 @@ const AddEvent: React.FC = () => {
       return false;
     }
     if (formData.status === 'active') {
-      const hasAudienceSelection =
-        audienceMode === 'all_users' ||
-        (audienceMode === 'individuals' && individualRecipientObjects.some((r) => !!r.uid)) ||
-        (audienceMode === 'event' && !!audienceSelection.eventId) ||
-        (audienceMode === 'chat' && !!audienceSelection.chatId) ||
-        (audienceMode === 'location' && !!audienceSelection.location);
-      if (!hasAudienceSelection) {
+      const uidCount = individualRecipientObjects.filter((r) => !!r.uid).length;
+      if (!hasAudiencePickForMode(audienceMode, { ...audienceSelection, mode: audienceMode }, uidCount)) {
         setError('For active events, choose who can see this event.');
         return false;
       }
