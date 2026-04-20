@@ -27,6 +27,7 @@ const AddEvent: React.FC = () => {
     imageUrl: '',
     imageCrop: null as { scale: number; panX: number; panY: number } | null,
     status: 'active' as const,
+    chapter: '',
     meetingUrl: '',
     resourceLinkUrl: '',
     resourceLinkLabel: '',
@@ -128,6 +129,7 @@ const AddEvent: React.FC = () => {
           imageUrl: formData.imageUrl,
           imageCrop: formData.imageCrop,
           status: formData.status,
+          chapter: formData.chapter?.trim() || null,
           eventAudience:
             formData.status === 'active'
               ? {
@@ -242,6 +244,7 @@ const AddEvent: React.FC = () => {
         imageUrl: '',
         imageCrop: null,
         status: 'active',
+        chapter: '',
         meetingUrl: '',
         resourceLinkUrl: '',
         resourceLinkLabel: '',
@@ -274,7 +277,19 @@ const AddEvent: React.FC = () => {
         console.warn('[AddEvent] Follow-up step failed (event was created successfully):', err);
         setSavedAt(Date.now());
         setSuccess(`Event "${formData.name}" created successfully.`);
-        setFormData({ name: '', location: '', date: '', description: '', imageUrl: '', imageCrop: null, status: 'active', meetingUrl: '', resourceLinkUrl: '', resourceLinkLabel: '' });
+        setFormData({
+          name: '',
+          location: '',
+          date: '',
+          description: '',
+          imageUrl: '',
+          imageCrop: null,
+          status: 'active',
+          chapter: '',
+          meetingUrl: '',
+          resourceLinkUrl: '',
+          resourceLinkLabel: '',
+        });
         setPreviewSlug('');
         setTimeout(() => navigate('/admin'), 2000);
       }
@@ -397,6 +412,30 @@ const AddEvent: React.FC = () => {
                   placeholder="e.g., Deli Vino, Netanya"
                 />
               </div>
+            </div>
+
+            {/* Chapter (for HubSpot sync) */}
+            <div>
+              <label htmlFor="chapter" className="block text-sm font-medium text-gray-700 mb-2">Chapter (optional)</label>
+              <select
+                id="chapter"
+                name="chapter"
+                value={formData.chapter}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="">Select chapter...</option>
+                <option value="Tel Aviv">Tel Aviv</option>
+                <option value="New York">New York</option>
+                <option value="London">London</option>
+                <option value="Johannesburg">Johannesburg</option>
+                <option value="Mexico City">Mexico City</option>
+                <option value="Philadelphia">Philadelphia</option>
+                <option value="Sydney">Sydney</option>
+                <option value="Toronto">Toronto</option>
+                <option value="Costa Rica">Costa Rica</option>
+                <option value="International">International</option>
+              </select>
             </div>
 
             {/* Private details (only visible to approved registrants) */}
