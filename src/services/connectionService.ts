@@ -217,7 +217,7 @@ export class ConnectionService {
     switch (connectionType) {
       case 'auto':
         reasonType = 'event';
-        context = 'auto-connect on event';
+        context = 'auto-connect on event check-in';
         break;
       case 'admin':
         reasonType = 'admin';

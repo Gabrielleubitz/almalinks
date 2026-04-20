@@ -345,7 +345,7 @@ const ConnectionsCard: React.FC = () => {
       case 'auto':
         return {
           icon: Zap,
-          label: 'Connected by Event',
+          label: 'Connected at event check-in',
           bgColor: 'bg-green-100',
           textColor: 'text-green-800',
           iconColor: 'text-green-600'
@@ -407,7 +407,7 @@ const ConnectionsCard: React.FC = () => {
       return detailedConnection.reasons.map(reason => {
         switch (reason.type) {
           case 'event':
-            return 'Connected by Event';
+            return 'Connected at event check-in';
           case 'admin':
             return reason.context ? `Connected by Admin: "${reason.context}"` : 'Connected by Admin';
           case 'user':
@@ -421,7 +421,7 @@ const ConnectionsCard: React.FC = () => {
     // Fallback to legacy reason
     switch (connection.connectionType) {
       case 'auto':
-        return ['Connected by Event'];
+        return ['Connected at event check-in'];
       case 'admin':
         return ['Connected by Admin'];
       case 'manual':
@@ -654,7 +654,8 @@ const ConnectionsCard: React.FC = () => {
                               <div className="flex flex-wrap gap-1.5">
                                 {reasons.map((reason, index) => {
                                   const isAdminReason = reason.includes('Connected by Admin');
-                                  const isEventReason = reason.includes('Connected by Event');
+                                  const isEventReason =
+                                    /connected at event check-in|connected by event/i.test(reason);
                                   const isUserReason = reason.includes('Connected by Request');
 
                                   let badge;

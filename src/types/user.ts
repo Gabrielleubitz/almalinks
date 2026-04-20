@@ -150,6 +150,10 @@ export interface UserCard {
   profileVisibility: ProfileVisibility;
   canContact: boolean;
   canConnect: boolean;
+  /** From HubSpot contact properties (when synced). */
+  isTrustee?: boolean;
+  /** From HubSpot contact properties (when synced). */
+  isMentor?: boolean;
 }
 
 // Validation schemas

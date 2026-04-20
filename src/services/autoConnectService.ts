@@ -11,9 +11,14 @@ import { ConnectionService, ConnectionReason } from './connectionService';
 import { ConnectionType, EnhancedConnection, DiscoverabilityLevel } from '../types/connection';
 import { PrivacyService } from './privacyService';
 
+function registrationIsCheckedIn(data: unknown): boolean {
+  if (!data || typeof data !== 'object') return false;
+  return (data as { checkedIn?: boolean }).checkedIn === true;
+}
+
 export class AutoConnectService {
   /**
-   * Auto-connect a user with all other event registrants when they register
+   * Auto-connect a checked-in user with other checked-in attendees for the same event.
    */
   static async autoConnectForEvent(newUserUid: string, eventId: string): Promise<void> {
     try {
@@ -32,6 +37,14 @@ export class AutoConnectService {
         return;
       }
 
+      const newUserRegSnap = await retryOnNetworkFailure(() =>
+        getDoc(doc(db, 'events', eventId, 'registrations', newUserUid))
+      );
+      if (!newUserRegSnap.exists() || !registrationIsCheckedIn(newUserRegSnap.data())) {
+        console.log('⏭️ User is not checked in; skipping auto-connect:', newUserUid, eventId);
+        return;
+      }
+
       // Get new user's discoverability settings
       const newUserSettings = await PrivacyService.getUserDiscoverabilitySettings(newUserUid);
       
@@ -43,13 +56,13 @@ export class AutoConnectService {
       // Get all registrations for this event
       const registrationsRef = collection(db, 'events', eventId, 'registrations');
       const registrationsSnapshot = await retryOnNetworkFailure(() => getDocs(registrationsRef));
-      
+
       const existingUserIds = registrationsSnapshot.docs
-        .map(doc => doc.id)
-        .filter(uid => uid !== newUserUid); // Exclude the new user
+        .filter((d) => d.id !== newUserUid && registrationIsCheckedIn(d.data()))
+        .map((d) => d.id);
 
       if (existingUserIds.length === 0) {
-        console.log('ℹ️ No other users registered for event:', eventId);
+        console.log('ℹ️ No other checked-in users for event:', eventId);
         return;
       }
 
@@ -150,10 +163,12 @@ export class AutoConnectService {
       // Get all registrations
       const registrationsRef = collection(db, 'events', eventId, 'registrations');
       const registrationsSnapshot = await retryOnNetworkFailure(() => getDocs(registrationsRef));
-      const userIds = registrationsSnapshot.docs.map(doc => doc.id);
+      const userIds = registrationsSnapshot.docs
+        .filter((d) => registrationIsCheckedIn(d.data()))
+        .map((d) => d.id);
 
       if (userIds.length < 2) {
-        console.log('ℹ️ Not enough users for connections:', userIds.length);
+        console.log('ℹ️ Not enough checked-in users for connections:', userIds.length);
         return;
       }
 
@@ -216,7 +231,7 @@ export class AutoConnectService {
       const reason: Omit<ConnectionReason, 'timestamp'> = {
         type: 'event',
         eventId,
-        context: 'auto-connect on event registration'
+        context: 'auto-connect on event check-in'
       };
 
       await ConnectionService.createOrUpdateConnection(fromUid, toUid, reason);

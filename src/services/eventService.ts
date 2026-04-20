@@ -655,18 +655,7 @@ export class EventService {
       });
       
       console.log('✅ User registered for event:', eventId, userId);
-      
-      // ENHANCED: Trigger auto-connect after successful registration
-      try {
-        // Import here to avoid circular dependency
-        const { AutoConnectService } = await import('./autoConnectService');
-        await AutoConnectService.autoConnectForEvent(userId, eventId);
-        console.log('✅ Auto-connect completed for user registration:', userId, eventId);
-      } catch (autoConnectError) {
-        // Log but don't fail registration if auto-connect fails
-        console.error('⚠️ Auto-connect failed (registration still successful):', autoConnectError);
-      }
-      
+
     } catch (error) {
       console.error('❌ Error registering for event:', error);
       throw error;

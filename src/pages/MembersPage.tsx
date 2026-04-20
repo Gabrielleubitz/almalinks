@@ -17,6 +17,7 @@ import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import MemberMap from '../components/MemberMap';
 import ImageWithCrop from '../components/profile/ImageWithCrop';
+import { TrusteeMentorStar } from '../components/common/TrusteeMentorStar';
 import { linkedInProfileHref } from '../utils/linkedInUrl';
 
 interface MemberCard extends UserCardType {
@@ -427,7 +428,10 @@ const MembersPage: React.FC = () => {
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 truncate">{displayName}</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-1.5 min-w-0">
+                    <span className="truncate">{displayName}</span>
+                    <TrusteeMentorStar isTrustee={member.isTrustee} isMentor={member.isMentor} />
+                  </h3>
                   
                   {member.bioTitle && (
                     <p className="text-blue-600 font-medium text-sm mb-1">{member.bioTitle}</p>
@@ -554,7 +558,10 @@ const MembersPage: React.FC = () => {
 
         {/* Info */}
         <div className="text-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-1">{displayName}</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1 flex items-center justify-center gap-1.5 min-w-0">
+            <span className="line-clamp-1 min-w-0">{displayName}</span>
+            <TrusteeMentorStar isTrustee={member.isTrustee} isMentor={member.isMentor} />
+          </h3>
 
           {member.bioTitle && (
             <p className="text-blue-600 font-medium text-sm mb-2 line-clamp-2 leading-snug">{member.bioTitle}</p>

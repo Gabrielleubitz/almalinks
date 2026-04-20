@@ -17,6 +17,7 @@ import { UserProfile, UserProfileForm, UserProfileUpdate, UserDirectoryFilters, 
 import { FilteredProfile, filterProfileForViewer, getViewerRelationship, isProfileVisibleInDirectory } from '../utils/privacy';
 import { calculateProfileCompletion, normalizeUrl } from '../utils/validation';
 import { linkedInProfileHref } from '../utils/linkedInUrl';
+import { getTrusteeMentorFromHubspot } from '../utils/hubspotMemberRoles';
 import { ConnectionService } from './connectionService';
 
 export class UserService {
@@ -289,7 +290,8 @@ export class UserService {
         
         // Filter profile data
         const filteredProfile = filterProfileForViewer(user, relationship);
-        
+        const { isTrustee, isMentor } = getTrusteeMentorFromHubspot(user);
+
         // Create user card
         const userCard: UserCard = {
           uid: user.uid,
@@ -302,7 +304,9 @@ export class UserService {
           skills: (user.skills || []).slice(0, 3), // Show first 3 skills
           profileVisibility: user.profileVisibility,
           canContact: filteredProfile.canViewContact,
-          canConnect: filteredProfile.canConnect
+          canConnect: filteredProfile.canConnect,
+          ...(isTrustee ? { isTrustee: true } : {}),
+          ...(isMentor ? { isMentor: true } : {})
         };
         
         filteredUsers.push(userCard);
@@ -437,6 +441,8 @@ export class UserService {
           }
         }
         
+        const { isTrustee, isMentor } = getTrusteeMentorFromHubspot(user);
+
         const userCard: UserCard = {
           uid: user.uid,
           avatarUrl: user.avatarUrl || user.profileImage,
@@ -454,7 +460,9 @@ export class UserService {
           skills: (user.skills || []).slice(0, 3), // Show first 3 skills
           profileVisibility: user.profileVisibility || 'public', // Default to public if not set
           canContact: true, // Always allow contact for members page
-          canConnect: true  // Always allow connections
+          canConnect: true, // Always allow connections
+          ...(isTrustee ? { isTrustee: true } : {}),
+          ...(isMentor ? { isMentor: true } : {})
         };
         
         memberCards.push(userCard);
@@ -548,6 +556,8 @@ export class UserService {
         const searchableText = `${displayName} ${email} ${company} ${title}`.toLowerCase();
         
         if (searchableText.includes(searchQuery)) {
+          const { isTrustee, isMentor } = getTrusteeMentorFromHubspot(user);
+
           const userCard: UserCard = {
             uid: user.uid,
             id: user.uid, // Add id field for compatibility
@@ -567,7 +577,9 @@ export class UserService {
             skills: user.skills || [],
             profileVisibility: user.profileVisibility || 'public',
             canContact: true,
-            canConnect: true
+            canConnect: true,
+            ...(isTrustee ? { isTrustee: true } : {}),
+            ...(isMentor ? { isMentor: true } : {})
           };
           
           matchedUsers.push(userCard);

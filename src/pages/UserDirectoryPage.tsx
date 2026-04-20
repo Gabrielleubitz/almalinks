@@ -12,6 +12,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ImageWithCrop from '../components/profile/ImageWithCrop';
+import { TrusteeMentorStar } from '../components/common/TrusteeMentorStar';
 
 interface FilterOption {
   label: string;
@@ -550,8 +551,9 @@ const UserDirectoryPage: React.FC = () => {
                             to={`/profile/${userCard.uid}`}
                             className="block"
                           >
-                            <h3 className="font-bold text-gray-900 truncate group-hover:text-brand-blue transition-colors duration-200">
-                              {userCard.displayName}
+                            <h3 className="font-bold text-gray-900 truncate group-hover:text-brand-blue transition-colors duration-200 flex items-center gap-1.5 min-w-0">
+                              <span className="truncate min-w-0">{userCard.displayName}</span>
+                              <TrusteeMentorStar isTrustee={userCard.isTrustee} isMentor={userCard.isMentor} />
                             </h3>
                             {(userCard.title || userCard.company) && (
                               <p className="text-gray-600 text-sm truncate">
@@ -639,8 +641,9 @@ const UserDirectoryPage: React.FC = () => {
                         
                         <div className="flex-1 min-w-0">
                           <Link to={`/profile/${userCard.uid}`}>
-                            <h3 className="font-bold text-gray-900 group-hover:text-brand-blue transition-colors duration-200 mb-1">
-                              {userCard.displayName}
+                            <h3 className="font-bold text-gray-900 group-hover:text-brand-blue transition-colors duration-200 mb-1 flex items-center gap-1.5 min-w-0">
+                              <span className="truncate min-w-0">{userCard.displayName}</span>
+                              <TrusteeMentorStar isTrustee={userCard.isTrustee} isMentor={userCard.isMentor} />
                             </h3>
                           </Link>
                           
