@@ -287,9 +287,16 @@ const EventManagement: React.FC = () => {
     setAddingUser(true);
     setAddUserError(null);
     const isUpcoming = new Date(selectedEvent.date) > new Date();
-    const eventDateFormatted = formatDate(selectedEvent.date);
     let registered = 0;
     const errors: string[] = [];
+    let approvalEmailToken: string | null = null;
+    if (isUpcoming && auth.currentUser) {
+      try {
+        approvalEmailToken = await getIdToken(auth.currentUser);
+      } catch (e) {
+        console.warn('Could not get admin token for approval email:', e);
+      }
+    }
     try {
       for (let i = 0; i < selectedUsersToAdd.length; i++) {
         const u = selectedUsersToAdd[i];
@@ -312,24 +319,22 @@ const EventManagement: React.FC = () => {
             },
             { byAdmin: true }
           );
-          if (isUpcoming && email) {
+          if (isUpcoming && email && approvalEmailToken) {
             try {
-              await fetch('/api/email-service', {
+              const res = await fetch('/api/event-registration-approved-email', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  type: 'registration',
-                  email,
-                  name,
-                  eventDetails: {
-                    name: selectedEvent.name,
-                    date: eventDateFormatted,
-                    location: selectedEvent.location || 'TBD',
-                  },
-                }),
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${approvalEmailToken}`,
+                },
+                body: JSON.stringify({ eventId: selectedEvent.id, userId: u.uid }),
               });
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok || !data.ok) {
+                console.warn('Event approval email failed:', data.error || res.status);
+              }
             } catch (emailErr) {
-              console.warn('Registration email failed:', emailErr);
+              console.warn('Event approval email failed:', emailErr);
             }
           }
           registered++;
