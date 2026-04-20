@@ -146,7 +146,7 @@ function clearStoredStep() {
 }
 
 export default function OnboardingTour() {
-  const { user, markOnboardingComplete, checkProfileComplete, isPending, isRejected } = useAuth();
+  const { user, markOnboardingComplete, checkProfileComplete, isApproved } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -166,11 +166,13 @@ export default function OnboardingTour() {
   const isLastStep = currentStepIndex === ONBOARDING_STEPS.length - 1;
   const isFirstStep = currentStepIndex === 0;
 
+  // Only show the tour for fully approved members who haven't seen it yet.
+  // Explicitly excluding needs_signup, pending, and rejected via the isApproved
+  // check so the tour can never fire during the Google OAuth / signup-form flow.
   const shouldShow = Boolean(
     user &&
     user.hasSeenOnboarding !== true &&
-    !isPending &&
-    !isRejected
+    isApproved
   );
 
   // Expose checkProfileComplete for precondition (profile step)
