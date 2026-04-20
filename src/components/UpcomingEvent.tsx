@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Calendar, Clock, Users, ArrowRight } from 'lucide-react';
+import { MapPin, Calendar, Users, ArrowRight } from 'lucide-react';
 import { EventService, EventData } from '../services/eventService';
 import { useAuth } from '../hooks/useAuth';
 import CropImage from './profile/CropImage';
+import { EventDualTimezoneDisplay } from './EventDualTimezoneDisplay';
 
 const UpcomingEvent = () => {
   const [upcomingEvent, setUpcomingEvent] = useState<EventData | null>(null);
@@ -30,22 +31,6 @@ const UpcomingEvent = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
-      }),
-      time: date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    };
   };
 
   const getStatusBadge = (status: EventData['status']) => {
@@ -114,7 +99,6 @@ const UpcomingEvent = () => {
     );
   }
 
-  const formattedDate = formatDate(upcomingEvent.date);
   const isUserApproved = user && !isPending && isApproved;
 
   return (
@@ -154,27 +138,21 @@ const UpcomingEvent = () => {
             <div className="p-8 md:p-12">
               <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">{upcomingEvent.name}</h3>
               
-              <div className="grid md:grid-cols-3 gap-6 mb-8">
+              <div className="grid md:grid-cols-2 gap-6 mb-8">
                 {isUserApproved ? (
                   // Full details for approved users
                   <>
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-start space-x-4">
                       <div className="flex-shrink-0">
                         <Calendar className="h-8 w-8 text-red-700" />
                       </div>
-                      <div>
-                        <div className="font-semibold text-gray-900">When?</div>
-                        <div className="text-gray-600">{formattedDate.date}</div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-4">
-                      <div className="flex-shrink-0">
-                        <Clock className="h-8 w-8 text-brand-blue" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-gray-900">Time?</div>
-                        <div className="text-gray-600">{formattedDate.time}</div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-gray-900 mb-1">When?</div>
+                        <EventDualTimezoneDisplay
+                          layout="plain"
+                          eventStart={upcomingEvent.date}
+                          textClassName="text-gray-600"
+                        />
                       </div>
                     </div>
 
@@ -190,12 +168,11 @@ const UpcomingEvent = () => {
                   </>
                 ) : (
                   // Limited details for non-approved users
-                  <div className="md:col-span-3">
+                  <div className="md:col-span-2">
                     <div className="bg-gradient-to-r from-red-50 to-blue-50 p-6 rounded-xl text-center">
                       <div className="flex flex-col items-center justify-center space-y-4">
                         <div className="flex items-center space-x-3">
                           <Calendar className="h-6 w-6 text-red-700" />
-                          <Clock className="h-6 w-6 text-brand-blue" />
                           <MapPin className="h-6 w-6 text-red-700" />
                         </div>
                         <p className="text-lg font-medium text-gray-800">Sign up to see event details</p>

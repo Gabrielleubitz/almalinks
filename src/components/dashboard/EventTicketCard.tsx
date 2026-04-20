@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Calendar, MapPin, User, Mail, Phone, Briefcase, X, ExternalLink } from 'lucide-react';
 import logoSvg from '../../assets/alma-links-logo.svg';
+import { formatEventDualTimezones } from '../../utils/eventDateTimeZones';
 
 export interface EventTicketCardProps {
   eventName: string;
+  /** When set, date/time are shown in US Eastern and Israel (preferred). */
+  eventStartIso?: string;
   eventDate: string;
   eventTime: string;
   eventLocation: string;
@@ -29,6 +32,7 @@ export interface EventTicketCardProps {
  */
 const EventTicketCard: React.FC<EventTicketCardProps> = ({
   eventName,
+  eventStartIso,
   eventDate,
   eventTime,
   eventLocation,
@@ -44,6 +48,10 @@ const EventTicketCard: React.FC<EventTicketCardProps> = ({
   className = '',
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const dual = useMemo(
+    () => (eventStartIso ? formatEventDualTimezones(eventStartIso) : null),
+    [eventStartIso]
+  );
   const statusBadge = registrationStatus === 'pending'
     ? { label: 'Pending approval', class: 'bg-amber-100 text-amber-800' }
     : registrationStatus === 'approved'
@@ -56,8 +64,9 @@ const EventTicketCard: React.FC<EventTicketCardProps> = ({
   const displayTime = eventTime?.trim() || '—';
   const displayLocation = eventLocation?.trim() || '—';
 
-  // Compact date line for minimal view: "Mon, Feb 23 · 6:59 PM"
-  const dateTimeLine = [displayDate, displayTime].filter(Boolean).join(' · ') || '—';
+  const dateTimeLine = dual
+    ? `${dual.usEasternLine} · ${dual.israelLine}`
+    : [displayDate, displayTime].filter(Boolean).join(' · ') || '—';
 
   const eventPageUrl = eventSlug ? `/events/${eventSlug}` : null;
 
@@ -101,8 +110,18 @@ const EventTicketCard: React.FC<EventTicketCardProps> = ({
             <p className="text-gray-900 font-medium text-sm truncate" title={eventName}>
               {eventName || 'Event'}
             </p>
-            <p className="text-gray-500 text-xs mt-0.5 truncate" title={dateTimeLine}>
-              {dateTimeLine}
+            <p
+              className={`text-gray-500 text-xs mt-0.5 ${dual ? 'line-clamp-2 whitespace-normal' : 'truncate'}`}
+              title={dual ? `${dual.usEasternLine}\n${dual.israelLine}` : dateTimeLine}
+            >
+              {dual ? (
+                <>
+                  <span className="block">{dual.usEasternLine}</span>
+                  <span className="block">{dual.israelLine}</span>
+                </>
+              ) : (
+                dateTimeLine
+              )}
             </p>
           </div>
           <div className="flex flex-shrink-0 items-center gap-1">
@@ -158,7 +177,14 @@ const EventTicketCard: React.FC<EventTicketCardProps> = ({
                 <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-gray-500 text-xs">Date & time</p>
-                  <p className="text-gray-900">{displayDate} · {displayTime}</p>
+                  {dual ? (
+                    <div className="text-gray-900 space-y-1">
+                      <p className="leading-snug">{dual.usEasternLine}</p>
+                      <p className="leading-snug">{dual.israelLine}</p>
+                    </div>
+                  ) : (
+                    <p className="text-gray-900">{displayDate} · {displayTime}</p>
+                  )}
                 </div>
               </div>
               {displayLocation !== '—' && (

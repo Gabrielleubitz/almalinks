@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { getIdToken } from 'firebase/auth';
-import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, ArrowLeft, UserCheck, CheckCircle, Clock, Search, List, LayoutGrid, UserPlus, RefreshCw } from 'lucide-react';
+import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, ArrowLeft, UserCheck, CheckCircle, Search, List, LayoutGrid, UserPlus, RefreshCw } from 'lucide-react';
 import { EventService, EventData } from '../../services/eventService';
 import EventPositionChart from '../../components/analytics/EventPositionChart';
 import { UserService } from '../../services/userService';
@@ -9,6 +9,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../firebase/config';
 import type { UserCard } from '../../types/user';
 import { triggerEventCompletedThankYouEmail } from '../../utils/triggerEventCompletedThankYouEmail';
+import { EventDualTimezoneDisplay } from '../../components/EventDualTimezoneDisplay';
 
 type EventFilter = 'all' | 'upcoming' | 'past';
 type ViewMode = 'cards' | 'list';
@@ -545,18 +546,6 @@ const EventManagement: React.FC = () => {
     );
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   if (loading) {
     return (
       <div className="min-h-full overflow-x-hidden w-full max-w-full">
@@ -697,9 +686,10 @@ const EventManagement: React.FC = () => {
                       <div className="font-medium text-gray-900">{event.name}</div>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell text-sm text-gray-600">
-                      {formatDate(event.date)}
-                      <span className="text-gray-400 mx-1">•</span>
-                      <span className="truncate max-w-[180px] inline-block align-bottom" title={event.location}>{event.location}</span>
+                      <div className="space-y-1">
+                        <EventDualTimezoneDisplay layout="plain" eventStart={event.date} textClassName="text-xs text-gray-600" />
+                        <div className="truncate max-w-[220px]" title={event.location}>{event.location}</div>
+                      </div>
                     </td>
                     <td className="px-4 py-3">{getStatusBadge(event.status)}</td>
                     <td className="px-4 py-3 text-right">
@@ -761,10 +751,11 @@ const EventManagement: React.FC = () => {
                   <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 break-words">{event.name}</h3>
                   
                   <div className="space-y-2 mb-4">
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                      <span className="text-xs sm:text-sm">{formatDate(event.date)}</span>
-                    </div>
+                    <EventDualTimezoneDisplay
+                      eventStart={event.date}
+                      textClassName="text-gray-600 text-xs sm:text-sm"
+                      iconClassName="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-700 flex-shrink-0 mt-0.5"
+                    />
                     <div className="flex items-center space-x-2 text-gray-600">
                       <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                       <span className="text-xs sm:text-sm break-words">{event.location}</span>
@@ -940,9 +931,10 @@ const EventManagement: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 sm:p-6 border-b border-gray-200 gap-3 sm:gap-0">
               <div className="min-w-0 flex-1">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">Registrations for {selectedEvent.name}</h2>
-                <p className="text-sm sm:text-base text-gray-600 mt-1 break-words">
-                  {formatDate(selectedEvent.date)} • {selectedEvent.location}
-                </p>
+                <div className="text-sm sm:text-base text-gray-600 mt-1 space-y-1 break-words">
+                  <EventDualTimezoneDisplay layout="plain" eventStart={selectedEvent.date} />
+                  <div>{selectedEvent.location}</div>
+                </div>
               </div>
               <div className="flex items-center justify-end space-x-2 sm:space-x-3 flex-shrink-0">
                 <button

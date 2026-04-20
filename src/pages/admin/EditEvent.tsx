@@ -13,6 +13,7 @@ import AudienceSelector, { RecipientMode, AudienceSelection } from '../../compon
 import { hasAudiencePickForMode } from '../../utils/eventAudienceUtils';
 import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/admin/EmailRecipientAutocomplete';
 import RecipientPreview from '../../components/admin/RecipientPreview';
+import { EventDatetimeLocalDualPreview } from '../../components/EventDualTimezoneDisplay';
 import { triggerEventCompletedThankYouEmail } from '../../utils/triggerEventCompletedThankYouEmail';
 
 const EditEvent: React.FC = () => {
@@ -670,6 +671,7 @@ const EditEvent: React.FC = () => {
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
                 />
               </div>
+              <EventDatetimeLocalDualPreview value={formData.date} />
             </div>
 
             {/* Event Image: URL or upload */}

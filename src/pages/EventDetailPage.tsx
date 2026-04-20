@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { Calendar, MapPin, Clock, ArrowLeft, Users, CheckCircle, AlertCircle, Ticket, User, Linkedin, Briefcase, CalendarPlus, ExternalLink, Link as LinkIcon } from 'lucide-react';
+import { Calendar, MapPin, ArrowLeft, Users, CheckCircle, AlertCircle, Ticket, User, Linkedin, Briefcase, CalendarPlus, ExternalLink, Link as LinkIcon } from 'lucide-react';
 import { EventService, EventData } from '../services/eventService';
 import { getMyRegistration, createPending } from '../services/registrationService';
 import type { EventRegistrationWithStatus, EventPrivateDetails } from '../types/event';
@@ -12,6 +12,7 @@ import Footer from '../components/Footer';
 import EventPositionChart from '../components/analytics/EventPositionChart';
 import ReviewSection from '../components/reviews/ReviewSection';
 import CropImage from '../components/profile/CropImage';
+import { EventDualTimezoneDisplay } from '../components/EventDualTimezoneDisplay';
 
 const HOSTNAME_LABELS: Record<string, string> = {
   'zoom.us': 'Zoom',
@@ -285,22 +286,6 @@ const EventDetailPage: React.FC = () => {
     return `https://calendar.google.com/calendar/render?${params.toString()}`;
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
-      }),
-      time: date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    };
-  };
-
   const getStatusInfo = (status: EventData['status']) => {
     const statusInfo = {
       'active': {
@@ -389,7 +374,6 @@ const EventDetailPage: React.FC = () => {
   if (!event) return null;
 
   const statusInfo = getStatusInfo(event.status);
-  const formattedDate = formatDate(event.date);
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden w-full max-w-full">
@@ -435,14 +419,11 @@ const EventDetailPage: React.FC = () => {
               </h1>
               
               <div className="space-y-4 mb-8 fade-in-delay">
-                <div className="flex items-center space-x-3 text-lg">
-                  <Calendar className="h-6 w-6 text-red-700" />
-                  <span className="text-gray-700">{formattedDate.date}</span>
-                </div>
-                <div className="flex items-center space-x-3 text-lg">
-                  <Clock className="h-6 w-6 text-brand-blue" />
-                  <span className="text-gray-700">{formattedDate.time}</span>
-                </div>
+                <EventDualTimezoneDisplay
+                  eventStart={event.date}
+                  iconClassName="h-6 w-6 text-red-700 flex-shrink-0 mt-0.5"
+                  textClassName="text-gray-700 text-lg"
+                />
                 <div className="flex items-center space-x-3 text-lg">
                   <MapPin className="h-6 w-6 text-red-700" />
                   <span className="text-gray-700">
@@ -583,8 +564,9 @@ const EventDetailPage: React.FC = () => {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
             <EventTicketCard
               eventName={event.name}
-              eventDate={formattedDate.date}
-              eventTime={formattedDate.time}
+              eventStartIso={event.date}
+              eventDate=""
+              eventTime=""
               eventLocation={(privateDetails?.locationText || event.location) || ''}
               attendeeName={registration.name}
               attendeeEmail={registration.email}
@@ -635,18 +617,15 @@ const EventDetailPage: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Event Details</h3>
               <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <Calendar className="h-5 w-5 text-red-700" />
-                  <div>
-                    <div className="text-sm text-gray-500">Date</div>
-                    <div className="font-medium text-gray-900">{formattedDate.date}</div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Clock className="h-5 w-5 text-brand-blue" />
-                  <div>
-                    <div className="text-sm text-gray-500">Time</div>
-                    <div className="font-medium text-gray-900">{formattedDate.time}</div>
+                <div className="flex items-start space-x-3">
+                  <Calendar className="h-5 w-5 text-red-700 flex-shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <div className="text-sm text-gray-500">When</div>
+                    <EventDualTimezoneDisplay
+                      layout="plain"
+                      eventStart={event.date}
+                      textClassName="font-medium text-gray-900 text-sm"
+                    />
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">

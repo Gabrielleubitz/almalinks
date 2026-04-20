@@ -10,6 +10,7 @@ import Footer from '../components/Footer';
 import AnnouncementsSidebar from '../components/announcements/AnnouncementsSidebar';
 import ConnectionsCard from '../components/dashboard/ConnectionsCard';
 import EventTicketCard from '../components/dashboard/EventTicketCard';
+import { EventDualTimezoneDisplay } from '../components/EventDualTimezoneDisplay';
 import ProfilePictureUploader from '../components/profile/ProfilePictureUploader';
 import CoverPhotoUploader from '../components/profile/CoverPhotoUploader';
 import ImageWithCrop from '../components/profile/ImageWithCrop';
@@ -527,22 +528,6 @@ const EventsPage: React.FC = () => {
         {badge.label}
       </span>
     );
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
-      }),
-      time: date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    };
   };
 
   const isUpcoming = (dateString: string) => {
@@ -1782,7 +1767,6 @@ const EventsPage: React.FC = () => {
                 {(() => {
                   const activeTickets = userRegistrations.filter((r: any) => r.eventStatus === 'active');
                   const otherTickets = userRegistrations.filter((r: any) => r.eventStatus !== 'active');
-                  const fd = (d: string) => formatDate(d);
                   return (
                     <>
                       {/* Active tickets = tickets to active events */}
@@ -1794,8 +1778,9 @@ const EventsPage: React.FC = () => {
                               <div key={registration.eventId} className="slide-up" style={{ animationDelay: `${index * 0.15}s` }}>
                                 <EventTicketCard
                                   eventName={registration.eventName}
-                                  eventDate={fd(registration.eventDate).date}
-                                  eventTime={fd(registration.eventDate).time}
+                                  eventStartIso={registration.eventDate}
+                                  eventDate=""
+                                  eventTime=""
                                   eventLocation={registration.eventLocation ?? ''}
                                   attendeeName={registration.name}
                                   attendeeEmail={registration.email}
@@ -1821,8 +1806,9 @@ const EventsPage: React.FC = () => {
                               <EventTicketCard
                                 key={registration.eventId}
                                 eventName={registration.eventName}
-                                eventDate={fd(registration.eventDate).date}
-                                eventTime={fd(registration.eventDate).time}
+                                eventStartIso={registration.eventDate}
+                                eventDate=""
+                                eventTime=""
                                 eventLocation={registration.eventLocation ?? ''}
                                 attendeeName={registration.name}
                                 attendeeEmail={registration.email}
@@ -1927,14 +1913,10 @@ const EventsPage: React.FC = () => {
                       <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight break-words">{event.name}</h3>
                       
                       <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
-                        <div className="flex items-center space-x-3 text-gray-600 text-sm sm:text-base">
-                          <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-red-700 flex-shrink-0" />
-                          <span className="break-words">{formatDate(event.date).date}</span>
-                        </div>
-                        <div className="flex items-center space-x-3 text-gray-600 text-sm sm:text-base">
-                          <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-brand-blue flex-shrink-0" />
-                          <span className="break-words">{formatDate(event.date).time}</span>
-                        </div>
+                        <EventDualTimezoneDisplay
+                          eventStart={event.date}
+                          textClassName="text-gray-600 text-sm sm:text-base"
+                        />
                         <div className="flex items-center space-x-3 text-gray-600 text-sm sm:text-base">
                           <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-red-700 flex-shrink-0" />
                           <span className="break-words">{event.location}</span>
@@ -2041,10 +2023,11 @@ const EventsPage: React.FC = () => {
                     <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 break-words">{event.name}</h3>
                     
                     <div className="space-y-2 mb-4">
-                      <div className="flex items-center space-x-2 text-gray-600 text-xs sm:text-sm">
-                        <Calendar className="h-4 w-4 flex-shrink-0" />
-                        <span className="break-words">{formatDate(event.date).date}</span>
-                      </div>
+                      <EventDualTimezoneDisplay
+                        eventStart={event.date}
+                        textClassName="text-gray-600 text-xs sm:text-sm"
+                        iconClassName="h-4 w-4 text-red-700 flex-shrink-0 mt-0.5"
+                      />
                       <div className="flex items-center space-x-2 text-gray-600 text-xs sm:text-sm">
                         <MapPin className="h-4 w-4 flex-shrink-0" />
                         <span className="break-words">{event.location}</span>

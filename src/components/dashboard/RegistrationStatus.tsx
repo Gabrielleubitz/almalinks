@@ -335,6 +335,7 @@ const RegistrationStatus: React.FC = () => {
       <div className="flex flex-col items-center" aria-label="Your ticket">
         <EventTicketCard
           eventName={registration.eventName || 'AlmaLinks 4.0'}
+          eventStartIso={registration.eventDate}
           eventDate={ticketDate.date}
           eventTime={ticketDate.time}
           eventLocation={registration.eventLocation || 'Deli Vino, Netanya'}

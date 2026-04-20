@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Users, Clock, ArrowRight, Filter } from 'lucide-react';
+import { MapPin, Users, ArrowRight, Filter } from 'lucide-react';
 import { EventService, EventData } from '../services/eventService';
 import { useAuth } from '../hooks/useAuth';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import CropImage from '../components/profile/CropImage';
+import { EventDualTimezoneDisplay } from '../components/EventDualTimezoneDisplay';
 
 type EventFilter = 'all' | 'active' | 'completed';
 
@@ -119,25 +120,6 @@ const EventsPage: React.FC = () => {
         {labels[status]}
       </span>
     );
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
   };
 
   if (loading) {
@@ -262,14 +244,10 @@ const EventsPage: React.FC = () => {
                       <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight">{event.name}</h3>
                       
                       <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
-                        <div className="flex items-center space-x-2 sm:space-x-3 text-gray-600">
-                          <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-red-700 flex-shrink-0" />
-                          <span className="font-medium text-sm sm:text-base">{formatDate(event.date)}</span>
-                        </div>
-                        <div className="flex items-center space-x-2 sm:space-x-3 text-gray-600">
-                          <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-brand-blue flex-shrink-0" />
-                          <span className="font-medium text-sm sm:text-base">{formatTime(event.date)}</span>
-                        </div>
+                        <EventDualTimezoneDisplay
+                          eventStart={event.date}
+                          textClassName="text-gray-600 font-medium text-sm sm:text-base"
+                        />
                         {event.location && (
                           <div className="flex items-center space-x-2 sm:space-x-3 text-gray-600">
                             <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-red-700 flex-shrink-0" />
