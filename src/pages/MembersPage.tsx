@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MapPin, Briefcase, Plus, Linkedin, User, Grid, List, ExternalLink, Map, Check, X, Clock } from 'lucide-react';
+import { Search, MapPin, Briefcase, Plus, User, Grid, List, ExternalLink, Map, Check, X, Clock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { UserService } from '../services/userService';
 import { ConnectionService } from '../services/connectionService';
@@ -18,7 +18,6 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import MemberMap from '../components/MemberMap';
 import ImageWithCrop from '../components/profile/ImageWithCrop';
 import { TrusteeMentorStar } from '../components/common/TrusteeMentorStar';
-import { linkedInProfileHref } from '../utils/linkedInUrl';
 import { compareMembersByDisplayName } from '../utils/memberSort';
 
 interface MemberCard extends UserCardType {
@@ -26,7 +25,6 @@ interface MemberCard extends UserCardType {
   lastName?: string;
   bioTitle?: string;
   bio?: string;
-  linkedin?: string;
   isConnected?: boolean;
   connectionPending?: boolean;
 }
@@ -386,22 +384,6 @@ const MembersPage: React.FC = () => {
     const atDailyLimit = dailyRequestCount !== null && isOverDailyLimit(dailyRequestCount);
 
     const cardOutlineClass = hasIncomingRequest ? 'ring-2 ring-blue-500 border-blue-500' : '';
-    const linkedinHref = member.linkedin ? linkedInProfileHref(member.linkedin) : '';
-
-    const memberLinkedInTicket =
-      linkedinHref ? (
-        <div className="rounded-lg border border-dashed border-gray-300 bg-gradient-to-r from-gray-50 to-slate-50 px-4 py-2.5 flex items-center justify-center sm:justify-start gap-2">
-          <a
-            href={linkedinHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm font-medium text-[#0A66C2] hover:text-[#004182] hover:underline"
-          >
-            <Linkedin className="h-4 w-4 flex-shrink-0" aria-hidden />
-            <span>LinkedIn profile</span>
-          </a>
-        </div>
-      ) : null;
 
     if (viewMode === 'list') {
       return (
@@ -530,7 +512,6 @@ const MembersPage: React.FC = () => {
               </div>
             </div>
           </div>
-          {memberLinkedInTicket && <div className="mt-4 sm:pl-[calc(4rem+1rem)]">{memberLinkedInTicket}</div>}
         </div>
       );
     }
@@ -605,8 +586,6 @@ const MembersPage: React.FC = () => {
             </div>
           </div>
         )}
-
-        {memberLinkedInTicket && <div className="mb-3">{memberLinkedInTicket}</div>}
 
         {/* Spacer to push footer to bottom */}
         <div className="flex-grow"></div>
