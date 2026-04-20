@@ -197,12 +197,18 @@ const CreateChatGroupFormPanel: React.FC<CreateChatGroupFormPanelProps> = ({
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        const raw = await response.text();
+        let errorData: { message?: string; error?: string; details?: string } = {};
+        try {
+          errorData = raw ? (JSON.parse(raw) as typeof errorData) : {};
+        } catch {
+          errorData = { error: raw?.slice(0, 200) || 'Request failed' };
+        }
         const errorMessage =
-          (errorData as { message?: string; error?: string }).message ||
-          (errorData as { error?: string }).error ||
+          errorData.message ||
+          errorData.error ||
           `Failed to create chat group (${response.status})`;
-        const details = (errorData as { details?: string }).details;
+        const details = errorData.details;
         setDebugInfo(
           `Status: ${response.status} | User: ${user.uid}${details ? ` | ${details}` : ''}`
         );

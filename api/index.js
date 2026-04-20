@@ -3,6 +3,9 @@
 //
 // Important: This file should stay very small; all business logic lives in lib/server/*.
 
+// Initialize Firebase Admin before any route (including lazy-loaded CJS handlers like admin/chats).
+import '../lib/server/firebase-init.js';
+
 import url from 'url';
 
 // ESM handlers
