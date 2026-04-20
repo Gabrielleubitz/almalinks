@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { User, Phone, Briefcase, ArrowRight, ArrowLeft, CheckCircle, ChevronDown, Building2, Linkedin } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { apiRequest } from '../utils/apiClient';
+import { extractLinkedInVanity } from '../utils/linkedInUrl';
 import logoSvg from '../assets/alma-links-logo.svg';
 
 // Country codes data
@@ -203,8 +204,8 @@ const CompleteProfilePage: React.FC = () => {
         formattedPhone = formatPhoneNumber(selectedCountryCode, phoneNumber);
       }
 
-      // Format LinkedIn username (remove any linkedin.com prefix)
-      const formattedLinkedin = linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '');
+      // Format LinkedIn username (slug only; tolerates pasted full URLs and doubled /in/ paths)
+      const formattedLinkedin = extractLinkedInVanity(linkedinUsername);
 
       const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
       console.log('📝 Updating profile with:', { firstName, lastName, phone: formattedPhone, company, work, linkedinUsername: formattedLinkedin, position });

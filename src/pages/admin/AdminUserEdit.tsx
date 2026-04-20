@@ -21,6 +21,7 @@ import { useActivityTracking } from '../../hooks/useActivityTracking';
 import { UserService } from '../../services/userService';
 import { UserProfile, UserProfileForm } from '../../types/user';
 import { validateUserProfile } from '../../utils/validation';
+import { extractLinkedInVanity, linkedInProfileHref } from '../../utils/linkedInUrl';
 import { uploadProfilePicture, deleteProfilePicture, deleteCoverPhoto } from '../../services/profileService';
 import ProfilePictureUploader from '../../components/profile/ProfilePictureUploader';
 import CoverPhotoUploader from '../../components/profile/CoverPhotoUploader';
@@ -119,14 +120,12 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
         setUserRole((userProfile as any).role || 'member');
         
         // Convert profile to form data - map actual field names from database
-        // Handle LinkedIn URL conversion
+        // Handle LinkedIn URL conversion (canonical; fixes doubled /in/ paths)
         let linkedinUrl = '';
         if (userProfile.linkedin) {
-          linkedinUrl = userProfile.linkedin;
+          linkedinUrl = linkedInProfileHref(userProfile.linkedin) || userProfile.linkedin;
         } else if (userProfile.linkedinUsername) {
-          // Convert username to full URL if it's just a username
-          const username = userProfile.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '');
-          linkedinUrl = username ? `https://linkedin.com/in/${username}` : '';
+          linkedinUrl = linkedInProfileHref(userProfile.linkedinUsername) || '';
         }
         
         const profileFormData: UserProfileForm = {
@@ -203,16 +202,11 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       setErrors({});
       
       // Map form data back to database field names
-      // Extract LinkedIn username from URL for storage
       let linkedinUsername = '';
-      if (formData.linkedin) {
-        if (formData.linkedin.includes('linkedin.com')) {
-          // Extract username from URL
-          linkedinUsername = formData.linkedin.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '');
-        } else {
-          // If it's just a username, use as is
-          linkedinUsername = formData.linkedin;
-        }
+      let linkedinCanonical = '';
+      if (formData.linkedin?.trim()) {
+        linkedinUsername = extractLinkedInVanity(formData.linkedin);
+        linkedinCanonical = linkedInProfileHref(formData.linkedin) || formData.linkedin.trim();
       }
       
       const updateData: Record<string, unknown> = {
@@ -225,8 +219,8 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
         bio: formData.bio,
         skills: formData.skills,
         phone: formData.phone,
-        linkedin: formData.linkedin, // Store full URL
-        linkedinUsername: linkedinUsername, // Store just username
+        linkedin: linkedinCanonical || formData.linkedin,
+        linkedinUsername: linkedinUsername,
         website: formData.website,
         twitter: formData.twitter,
         city: formData.city,

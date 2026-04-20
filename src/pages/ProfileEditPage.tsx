@@ -22,6 +22,7 @@ import { UserService } from '../services/userService';
 import { apiRequest } from '../utils/apiClient';
 import { UserProfile, UserProfileForm } from '../types/user';
 import { validateUserProfile } from '../utils/validation';
+import { linkedInProfileHref } from '../utils/linkedInUrl';
 import { uploadProfilePicture, deleteProfilePicture } from '../services/profileService';
 import AdminHeader from '../components/admin/AdminHeader';
 import ProfilePictureUploader from '../components/profile/ProfilePictureUploader';
@@ -165,14 +166,12 @@ const ProfileEditPage: React.FC = () => {
         setProfile(userProfile as UserProfile);
         
         // Convert profile to form data - map actual field names from database
-        // Handle LinkedIn URL conversion
+        // Handle LinkedIn URL conversion (canonical URL; fixes doubled /in/ paths in stored data)
         let linkedinUrl = '';
         if (userProfile.linkedin) {
-          linkedinUrl = userProfile.linkedin;
+          linkedinUrl = linkedInProfileHref(userProfile.linkedin) || userProfile.linkedin;
         } else if (userProfile.linkedinUsername) {
-          // Convert username to full URL if it's just a username
-          const username = userProfile.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '');
-          linkedinUrl = username ? `https://linkedin.com/in/${username}` : '';
+          linkedinUrl = linkedInProfileHref(userProfile.linkedinUsername) || '';
         }
         
         const profileFormData: UserProfileForm = {
@@ -220,12 +219,9 @@ const ProfileEditPage: React.FC = () => {
     try {
       setSaving(true);
       setErrors({});
-      let linkedinUsername = '';
-      if (formData.linkedin) {
-        linkedinUsername = formData.linkedin.includes('linkedin.com')
-          ? formData.linkedin.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '')
-          : formData.linkedin;
-      }
+      const linkedinCanonical = formData.linkedin?.trim()
+        ? linkedInProfileHref(formData.linkedin) || formData.linkedin.trim()
+        : '';
       const updatePayload = {
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -239,7 +235,7 @@ const ProfileEditPage: React.FC = () => {
         bio: formData.bio,
         skills: formData.skills,
         phone: formData.phone,
-        linkedinUrl: formData.linkedin,
+        linkedinUrl: linkedinCanonical || undefined,
         website: formData.website,
         twitter: formData.twitter,
         city: formData.city,

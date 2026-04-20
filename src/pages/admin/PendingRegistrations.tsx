@@ -25,6 +25,7 @@ import { db, auth } from '../../firebase/config';
 import { useAuth } from '../../hooks/useAuth';
 import { useActivityTracking } from '../../hooks/useActivityTracking';
 import Toast from '../../components/ui/Toast';
+import { linkedInProfileHref } from '../../utils/linkedInUrl';
 
 interface UserData {
   uid: string;
@@ -805,9 +806,9 @@ const PendingRegistrations: React.FC = () => {
                             <Linkedin className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
                             <div>
                               <div className="text-gray-500">LinkedIn</div>
-                              {userData.linkedinUsername ? (
+                              {userData.linkedinUsername && linkedInProfileHref(userData.linkedinUsername) ? (
                                 <a
-                                  href={`https://linkedin.com/in/${userData.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '')}`}
+                                  href={linkedInProfileHref(userData.linkedinUsername)}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-brand-blue-light hover:underline font-medium"

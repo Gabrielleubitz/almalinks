@@ -1,4 +1,5 @@
 import { UserProfileForm, UserProfile } from '../types/user';
+import { linkedInProfileHref } from './linkedInUrl';
 
 export interface ValidationError {
   field: string;
@@ -231,15 +232,8 @@ export const normalizeUrl = (url: string, type: 'linkedin' | 'website' | 'twitte
   let normalized = url.trim();
   
   if (type === 'linkedin') {
-    // Ensure LinkedIn URL is properly formatted
-    if (!normalized.startsWith('http')) {
-      normalized = 'https://' + normalized;
-    }
-    if (!normalized.includes('linkedin.com/in/')) {
-      // Try to extract username and build proper URL
-      const username = normalized.split('/').pop();
-      normalized = `https://www.linkedin.com/in/${username}`;
-    }
+    const href = linkedInProfileHref(normalized);
+    return href || normalized;
   } else {
     // For website and twitter, ensure proper protocol
     if (!normalized.startsWith('http')) {

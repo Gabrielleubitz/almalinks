@@ -19,6 +19,7 @@ import Favicon from '../components/ui/Favicon';
 import ImageWithCrop from '../components/profile/ImageWithCrop';
 import BioHtml from '../components/profile/BioHtml';
 import { isSafeImageUrl } from '../utils/imageUrl';
+import { linkedInProfileHref } from '../utils/linkedInUrl';
 
 interface Connection {
   id: string;
@@ -434,11 +435,11 @@ const UserProfilePage: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Social Links</h3>
                   <div className="space-y-3">
-                    {userLinkedin && (
+                    {userLinkedin && linkedInProfileHref(userLinkedin) && (
                       <div className="flex items-center text-gray-600">
                         <Linkedin className="h-5 w-5 mr-3 text-gray-400" />
                         <a 
-                          href={`https://linkedin.com/in/${userLinkedin.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '')}`}
+                          href={linkedInProfileHref(userLinkedin)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="hover:text-brand-dark transition-colors"
@@ -476,7 +477,7 @@ const UserProfilePage: React.FC = () => {
                       </div>
                     )}
 
-                    {!userLinkedin && !profile.website && !profile.twitter && (
+                    {!linkedInProfileHref(userLinkedin) && !profile.website && !profile.twitter && (
                       <div className="text-gray-500 italic">
                         No social links available
                       </div>

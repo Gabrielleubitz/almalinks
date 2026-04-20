@@ -18,6 +18,7 @@ import RichTextBioEditor from '../components/profile/RichTextBioEditor';
 import BioHtml from '../components/profile/BioHtml';
 import type { CropValue, NormalizedCrop } from '../types/crop';
 import Favicon from '../components/ui/Favicon';
+import { linkedInProfileHref } from '../utils/linkedInUrl';
 import SavedIndicator from '../components/ui/SavedIndicator';
 
 // Country codes data for phone editing
@@ -557,17 +558,6 @@ const EventsPage: React.FC = () => {
     
     const positionOption = POSITION_OPTIONS.find(option => option.value === position);
     return positionOption ? positionOption.label : position;
-  };
-
-  // Format LinkedIn username for display
-  const formatLinkedinUrl = (username: string | undefined) => {
-    if (!username) return '';
-    
-    // Remove any linkedin.com prefix if present
-    const cleanUsername = username.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '');
-    
-    // Remove trailing slash if present
-    return cleanUsername.replace(/\/$/, '');
   };
 
   const upcomingEvents = events
@@ -1381,12 +1371,12 @@ const EventsPage: React.FC = () => {
                               <div className="font-medium">
                                 {user?.linkedinUsername ? (
                                   <a
-                                    href={`https://linkedin.com/in/${formatLinkedinUrl(user.linkedinUsername)}`}
+                                    href={linkedInProfileHref(user.linkedinUsername)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-brand-blue hover:text-brand-blue-hover hover:underline"
                                   >
-                                    {formatLinkedinUrl(user.linkedinUsername)}
+                                    {ConnectionService.formatLinkedinUrl(user.linkedinUsername)}
                                   </a>
                                 ) : (
                                   'Not provided'

@@ -35,6 +35,7 @@ import UserCreationForm from '../../components/admin/UserCreationForm';
 import BulkUserImport from '../../components/admin/BulkUserImport';
 import AuditLogViewer from '../../components/admin/AuditLogViewer';
 import { TempPasswordService } from '../../services/tempPasswordService';
+import { extractLinkedInVanity, linkedInProfileHref } from '../../utils/linkedInUrl';
 
 interface UserData {
   uid: string;
@@ -959,7 +960,7 @@ const UserManagement: React.FC = () => {
               </div>
 
               {/* Social Links */}
-              {selectedUser.linkedinUsername && (
+              {selectedUser.linkedinUsername && linkedInProfileHref(selectedUser.linkedinUsername) && (
                 <div>
                   <h4 className="text-lg font-semibold text-gray-900 mb-4">Social Links</h4>
                   <div className="flex items-center space-x-3">
@@ -967,12 +968,12 @@ const UserManagement: React.FC = () => {
                     <div>
                       <div className="text-sm text-gray-500">LinkedIn</div>
                       <a 
-                        href={`https://linkedin.com/in/${selectedUser.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '')}`}
+                        href={linkedInProfileHref(selectedUser.linkedinUsername)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-medium text-brand-light hover:text-blue-700 underline"
                       >
-                        linkedin.com/in/{selectedUser.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '')}
+                        linkedin.com/in/{extractLinkedInVanity(selectedUser.linkedinUsername)}
                       </a>
                     </div>
                   </div>

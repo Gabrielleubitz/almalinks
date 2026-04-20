@@ -10,6 +10,7 @@ import { EventService } from '../services/eventService';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import logoSvg from '../assets/alma-links-logo.svg';
+import { linkedInProfileHref } from '../utils/linkedInUrl';
 
 const ConnectPage: React.FC = () => {
   const navigate = useNavigate();
@@ -270,9 +271,9 @@ const ConnectPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  {targetUser.linkedinUsername && (
+                  {targetUser.linkedinUsername && linkedInProfileHref(targetUser.linkedinUsername) && (
                     <a
-                      href={`https://linkedin.com/in/${ConnectionService.formatLinkedinUrl(targetUser.linkedinUsername)}`}
+                      href={linkedInProfileHref(targetUser.linkedinUsername)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block w-full bg-brand-dark text-white px-4 py-2 rounded-lg hover:bg-brand-mid transition-colors duration-200 font-medium text-center mb-3"

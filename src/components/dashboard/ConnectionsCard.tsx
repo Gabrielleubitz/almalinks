@@ -6,6 +6,7 @@ import { ConnectionService, LegacyConnection, Connection } from '../../services/
 import { EventService } from '../../services/eventService';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import { linkedInProfileHref } from '../../utils/linkedInUrl';
 
 interface EnrichedConnection extends LegacyConnection {
   partnerData?: {
@@ -725,9 +726,9 @@ const ConnectionsCard: React.FC = () => {
 
                     {/* Footer Section - Contact and Actions */}
                     <div className="pt-3 border-t border-gray-100 space-y-2 mt-auto">
-                      {partner.linkedin && (
+                      {partner.linkedin && linkedInProfileHref(partner.linkedin) && (
                         <a
-                          href={`https://linkedin.com/in/${ConnectionService.formatLinkedinUrl(partner.linkedin)}`}
+                          href={linkedInProfileHref(partner.linkedin)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center text-xs text-brand-blue hover:text-brand-blue-hover transition-colors"

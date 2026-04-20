@@ -16,6 +16,7 @@ import { db, retryOnNetworkFailure } from '../firebase/config';
 import { UserProfile, UserProfileForm, UserProfileUpdate, UserDirectoryFilters, UserCard } from '../types/user';
 import { FilteredProfile, filterProfileForViewer, getViewerRelationship, isProfileVisibleInDirectory } from '../utils/privacy';
 import { calculateProfileCompletion, normalizeUrl } from '../utils/validation';
+import { linkedInProfileHref } from '../utils/linkedInUrl';
 import { ConnectionService } from './connectionService';
 
 export class UserService {
@@ -628,7 +629,9 @@ export class UserService {
         email: legacyData.email || '',
         title: legacyData.position || legacyData.work,
         company: legacyData.company,
-        linkedin: legacyData.linkedinUsername ? `https://www.linkedin.com/in/${legacyData.linkedinUsername}` : undefined,
+        linkedin: legacyData.linkedinUsername
+          ? linkedInProfileHref(legacyData.linkedinUsername) || undefined
+          : undefined,
         profileImage: legacyData.profileImage,
         avatarUrl: legacyData.profileImage,
         profileVisibility: 'event_only', // Default for existing users

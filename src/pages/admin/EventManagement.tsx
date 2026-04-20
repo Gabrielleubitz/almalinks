@@ -9,6 +9,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../firebase/config';
 import type { UserCard } from '../../types/user';
 import { triggerEventCompletedThankYouEmail } from '../../utils/triggerEventCompletedThankYouEmail';
+import { extractLinkedInVanity, linkedInProfileHref } from '../../utils/linkedInUrl';
 import { EventDualTimezoneDisplay } from '../../components/EventDualTimezoneDisplay';
 
 type EventFilter = 'all' | 'upcoming' | 'past';
@@ -511,17 +512,6 @@ const EventManagement: React.FC = () => {
     };
     
     return positionMap[position] || position;
-  };
-
-  // Format LinkedIn username for display
-  const formatLinkedinUrl = (username: string | undefined) => {
-    if (!username) return '';
-    
-    // Remove any linkedin.com prefix if present
-    const cleanUsername = username.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '');
-    
-    // Remove trailing slash if present
-    return cleanUsername.replace(/\/$/, '');
   };
 
   const getStatusBadge = (status: EventData['status']) => {
@@ -1175,14 +1165,14 @@ const EventManagement: React.FC = () => {
                             <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                               <div className="flex items-center text-xs sm:text-sm text-gray-900">
                                 <Linkedin className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 mr-1.5 sm:mr-2 flex-shrink-0" />
-                                {registration.linkedinUsername ? (
+                                {registration.linkedinUsername && linkedInProfileHref(registration.linkedinUsername) ? (
                                   <a 
-                                    href={`https://linkedin.com/in/${formatLinkedinUrl(registration.linkedinUsername)}`}
+                                    href={linkedInProfileHref(registration.linkedinUsername)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-brand-light hover:text-brand-mid hover:underline truncate max-w-[80px] sm:max-w-none"
                                   >
-                                    {formatLinkedinUrl(registration.linkedinUsername)}
+                                    {extractLinkedInVanity(registration.linkedinUsername)}
                                   </a>
                                 ) : (
                                   <span>Not provided</span>

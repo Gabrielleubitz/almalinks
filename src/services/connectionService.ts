@@ -12,6 +12,7 @@ import {
   deleteDoc
 } from 'firebase/firestore';
 import { db, retryOnNetworkFailure } from '../firebase/config';
+import { extractLinkedInVanity } from '../utils/linkedInUrl';
 
 // Connection reason with timestamp and context
 export interface ConnectionReason {
@@ -699,15 +700,9 @@ export class ConnectionService {
     return positionMap[position] || position;
   }
   
-  // Format LinkedIn username for display
+  /** Profile slug for display (handles full URLs and nested /in/ corruption). */
   static formatLinkedinUrl(username: string | undefined): string {
-    if (!username) return '';
-
-    // Remove any linkedin.com prefix if present
-    const cleanUsername = username.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '');
-
-    // Remove trailing slash if present
-    return cleanUsername.replace(/\/$/, '');
+    return extractLinkedInVanity(username || '');
   }
 
   // Remove all connections associated with a deleted event

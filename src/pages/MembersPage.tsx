@@ -17,6 +17,7 @@ import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import MemberMap from '../components/MemberMap';
 import ImageWithCrop from '../components/profile/ImageWithCrop';
+import { linkedInProfileHref } from '../utils/linkedInUrl';
 
 interface MemberCard extends UserCardType {
   firstName?: string;
@@ -440,9 +441,9 @@ const MembersPage: React.FC = () => {
                   >
                     <ExternalLink className="h-5 w-5" />
                   </button>
-                  {member.linkedin && (
+                  {member.linkedin && linkedInProfileHref(member.linkedin) && (
                     <a
-                      href={`https://linkedin.com/in/${member.linkedin}`}
+                      href={linkedInProfileHref(member.linkedin)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
@@ -602,9 +603,9 @@ const MembersPage: React.FC = () => {
             >
               <ExternalLink className="h-5 w-5" />
             </button>
-            {member.linkedin && (
+            {member.linkedin && linkedInProfileHref(member.linkedin) && (
               <a
-                href={`https://linkedin.com/in/${member.linkedin}`}
+                href={linkedInProfileHref(member.linkedin)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 text-gray-400 hover:text-brand-blue transition-colors border border-gray-200 rounded-lg hover:border-blue-200"

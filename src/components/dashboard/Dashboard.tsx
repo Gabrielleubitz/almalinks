@@ -7,6 +7,7 @@ import RegistrationForm from './RegistrationForm';
 import RegistrationStatus from './RegistrationStatus';
 import logoSvg from '../../assets/alma-links-logo.svg';
 import ProfilePictureUploader from '../profile/ProfilePictureUploader';
+import { extractLinkedInVanity, linkedInProfileHref } from '../../utils/linkedInUrl';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -46,17 +47,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   };
 
   const isRegistered = !!registration;
-
-  // Format LinkedIn username for display
-  const formatLinkedinUrl = (username: string | undefined) => {
-    if (!username) return '';
-    
-    // Remove any linkedin.com prefix if present
-    const cleanUsername = username.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '');
-    
-    // Remove trailing slash if present
-    return cleanUsername.replace(/\/$/, '');
-  };
 
   // Handle profile picture upload success
   const handleProfilePictureSuccess = (imageUrl: string) => {
@@ -240,14 +230,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                           <div>
                             <div className="text-sm text-gray-500">LinkedIn</div>
                             <div className="font-medium">
-                              {user?.linkedinUsername ? (
+                              {user?.linkedinUsername && linkedInProfileHref(user.linkedinUsername) ? (
                                 <a 
-                                  href={`https://linkedin.com/in/${formatLinkedinUrl(user.linkedinUsername)}`}
+                                  href={linkedInProfileHref(user.linkedinUsername)}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-brand-light hover:text-brand-mid hover:underline"
                                 >
-                                  {formatLinkedinUrl(user.linkedinUsername)}
+                                  {extractLinkedInVanity(user.linkedinUsername)}
                                 </a>
                               ) : (
                                 'Not provided'
