@@ -13,6 +13,22 @@ import {
 
 export class PrivacyService {
   /**
+   * Coerce Firestore / legacy profile fields to a valid discoverability level.
+   * Many profiles only set `profileVisibility`; auto-connect reads `discoverability` first.
+   */
+  static normalizeDiscoverabilityFromUserData(userData: Record<string, unknown>): DiscoverabilityLevel {
+    const disc = userData.discoverability;
+    const hasDisc =
+      disc !== undefined &&
+      disc !== null &&
+      (typeof disc !== 'string' || String(disc).trim() !== '');
+    const raw = hasDisc ? disc : (userData.profileVisibility ?? 'event_only');
+    const s = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+    if (s === 'public' || s === 'event_only' || s === 'hidden') return s;
+    return 'event_only';
+  }
+
+  /**
    * Update user's discoverability settings
    */
   static async updateDiscoverabilitySettings(
@@ -56,12 +72,12 @@ export class PrivacyService {
         throw new Error('User not found');
       }
 
-      const userData = userDoc.data();
-      
+      const userData = userDoc.data() as Record<string, unknown>;
+
       return {
-        discoverability: userData.discoverability || 'event_only',
-        discoverabilityConsented: userData.discoverabilityConsented || false,
-        discoverabilityConsentedAt: userData.discoverabilityConsentedAt?.toDate()
+        discoverability: PrivacyService.normalizeDiscoverabilityFromUserData(userData),
+        discoverabilityConsented: Boolean(userData.discoverabilityConsented),
+        discoverabilityConsentedAt: (userData.discoverabilityConsentedAt as { toDate?: () => Date } | undefined)?.toDate?.()
       };
       
     } catch (error) {
@@ -166,7 +182,7 @@ export class PrivacyService {
         work: userData.work || 'Not specified',
         position: userData.position || '',
         profileImage: userData.profileImage || null,
-        discoverability: userData.discoverability || 'event_only',
+        discoverability: PrivacyService.normalizeDiscoverabilityFromUserData(userData as Record<string, unknown>),
         lastActive: serverTimestamp(),
         eventIds,
         searchTokens,

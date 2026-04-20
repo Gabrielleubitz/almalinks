@@ -69,6 +69,10 @@ export interface LegacyConnection {
   toProfileImage?: string | null;
 }
 
+function asConnectionReasonArray(reasons: unknown): ConnectionReason[] {
+  return Array.isArray(reasons) ? (reasons as ConnectionReason[]) : [];
+}
+
 export class ConnectionService {
   // Helper method to generate consistent connection ID from two UIDs
   static generateConnectionId(uid1: string, uid2: string): string {
@@ -129,9 +133,10 @@ export class ConnectionService {
       if (existingConnectionDoc.exists()) {
         // Update existing connection
         const existingConnection = existingConnectionDoc.data() as Connection;
-        
+        const existingReasons = asConnectionReasonArray(existingConnection.reasons);
+
         // Check if this exact reason already exists
-        const reasonExists = existingConnection.reasons.some(r => 
+        const reasonExists = existingReasons.some(r => 
           r.type === reason.type && 
           r.eventId === reason.eventId &&
           r.adminId === adminId &&
@@ -146,7 +151,7 @@ export class ConnectionService {
         // Add new reason to existing connection
         connection = {
           ...existingConnection,
-          reasons: [...existingConnection.reasons, newReason],
+          reasons: [...existingReasons, newReason],
           updatedAt: serverNow,
           // Update cached user data in case it changed
           uid1Name: uid1Data.displayName || uid1Data.name || '',
@@ -342,9 +347,9 @@ export class ConnectionService {
       const connection = await this.checkExistingConnection(uid1, uid2);
       
       if (!connection) return false;
-      
-      // Check if any reason is for this specific event
-      return connection.reasons.some(reason => 
+
+      const reasons = asConnectionReasonArray(connection.reasons);
+      return reasons.some(reason => 
         reason.type === 'event' && reason.eventId === eventId
       );
     } catch (error) {

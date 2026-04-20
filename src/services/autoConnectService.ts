@@ -2,18 +2,25 @@ import {
   collection, 
   doc, 
   getDoc, 
-  getDocs, 
-  query, 
-  where
+  getDocs
 } from 'firebase/firestore';
 import { db, retryOnNetworkFailure } from '../firebase/config';
 import { ConnectionService, ConnectionReason } from './connectionService';
-import { ConnectionType, EnhancedConnection, DiscoverabilityLevel } from '../types/connection';
+import { DiscoverabilityLevel, UserDiscoverabilitySettings } from '../types/connection';
 import { PrivacyService } from './privacyService';
 
 function registrationIsCheckedIn(data: unknown): boolean {
   if (!data || typeof data !== 'object') return false;
   return (data as { checkedIn?: boolean }).checkedIn === true;
+}
+
+async function getDiscoverabilityOrDefault(uid: string): Promise<UserDiscoverabilitySettings> {
+  try {
+    return await PrivacyService.getUserDiscoverabilitySettings(uid);
+  } catch (e) {
+    console.warn('⚠️ Discoverability fetch failed; using event_only for auto-connect:', uid, e);
+    return { discoverability: 'event_only', discoverabilityConsented: true };
+  }
 }
 
 export class AutoConnectService {
@@ -45,8 +52,7 @@ export class AutoConnectService {
         return;
       }
 
-      // Get new user's discoverability settings
-      const newUserSettings = await PrivacyService.getUserDiscoverabilitySettings(newUserUid);
+      const newUserSettings = await getDiscoverabilityOrDefault(newUserUid);
       
       if (newUserSettings.discoverability === 'hidden') {
         console.log('⏭️ User has hidden discoverability, skipping auto-connect:', newUserUid);
@@ -80,7 +86,7 @@ export class AutoConnectService {
       // Process users individually using new connection system
       for (const existingUid of existingUserIds) {
         try {
-          const otherUserSettings = await PrivacyService.getUserDiscoverabilitySettings(existingUid);
+          const otherUserSettings = await getDiscoverabilityOrDefault(existingUid);
           
           if (this.shouldAutoConnect(newUserSettings.discoverability, otherUserSettings.discoverability)) {
             // Check if connection already exists
@@ -94,6 +100,14 @@ export class AutoConnectService {
             }
           } else {
             skippedConnections++;
+            if (import.meta.env.DEV) {
+              console.log('⏭️ Auto-connect skipped (discoverability needs public or event_only for both):', {
+                newUser: newUserUid,
+                otherUser: existingUid,
+                newLevel: newUserSettings.discoverability,
+                otherLevel: otherUserSettings.discoverability,
+              });
+            }
           }
         } catch (error) {
           console.error('❌ Error processing connection for user:', existingUid, error);
@@ -178,7 +192,7 @@ export class AutoConnectService {
 
       for (const userId of userIds) {
         // Get user's privacy settings
-        const userSettings = await PrivacyService.getUserDiscoverabilitySettings(userId);
+        const userSettings = await getDiscoverabilityOrDefault(userId);
         
         if (userSettings.discoverability === 'hidden') {
           console.log('⏭️ Skipping hidden user:', userId);
@@ -193,7 +207,7 @@ export class AutoConnectService {
           processed.add(`${userId}-${otherUserId}`);
           processed.add(`${otherUserId}-${userId}`);
 
-          const otherUserSettings = await PrivacyService.getUserDiscoverabilitySettings(otherUserId);
+          const otherUserSettings = await getDiscoverabilityOrDefault(otherUserId);
           
           if (this.shouldAutoConnect(userSettings.discoverability, otherUserSettings.discoverability)) {
             // Check if connection already exists
