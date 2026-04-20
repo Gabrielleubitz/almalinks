@@ -57,6 +57,7 @@ const SystemTestPage: React.FC = () => {
     { key: 'test', label: 'Test email' },
     { key: 'welcome', label: 'Welcome (signup received)' },
     { key: 'welcome-approved', label: 'Welcome approved' },
+    { key: 'application-follow-up', label: 'Thank you for your application (intro / Zoom)' },
     { key: 'event-announcement', label: 'Event announcement' },
     { key: 'registration-confirmation', label: 'Registration confirmation' },
     { key: 'event-reminder', label: 'Event reminder' },
