@@ -19,6 +19,7 @@ import MemberMap from '../components/MemberMap';
 import ImageWithCrop from '../components/profile/ImageWithCrop';
 import { TrusteeMentorStar } from '../components/common/TrusteeMentorStar';
 import { linkedInProfileHref } from '../utils/linkedInUrl';
+import { compareMembersByDisplayName } from '../utils/memberSort';
 
 interface MemberCard extends UserCardType {
   firstName?: string;
@@ -169,7 +170,8 @@ const MembersPage: React.FC = () => {
         console.log(`📊 membersCount: ${membersWithConnections.length}`);
         console.log(`📊 membersLoading: false`);
       }
-      
+
+      membersWithConnections.sort(compareMembersByDisplayName);
       setMembers(membersWithConnections);
     } catch (error) {
       console.error('❌ CRITICAL: Error loading members:', error);
@@ -209,6 +211,7 @@ const MembersPage: React.FC = () => {
       );
     });
 
+    filtered.sort(compareMembersByDisplayName);
     setFilteredMembers(filtered);
     
     if (import.meta.env.DEV) {
@@ -779,37 +782,24 @@ const MembersPage: React.FC = () => {
       {/* Members Grid */}
       <section className="py-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Results Info */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
+          {searchQuery.trim() ? (
+            <div className="mb-8">
               <p className="text-gray-600">
-                {searchQuery ? (
-                  <>Showing {filteredMembers.length} results for "{searchQuery}"</>
-                ) : (
-                  <>{filteredMembers.length} members in our community</>
-                )}
+                Search results for &quot;{searchQuery}&quot;
               </p>
             </div>
-          </div>
+          ) : null}
 
-          {/* Members List - incoming request members first, then rest */}
+          {/* Members list (alphabetical by display name) */}
           {filteredMembers.length > 0 ? (
-            <div className={
-              viewMode === 'grid' 
-                ? "grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
-                : "space-y-4"
-            }>
-              {(() => {
-                const requesterIds = new Set(incomingRequests.map(r => r.requesterId || r.fromUid).filter(Boolean));
-                const sorted = [...filteredMembers].sort((a, b) => {
-                  const aFirst = requesterIds.has(a.uid);
-                  const bFirst = requesterIds.has(b.uid);
-                  if (aFirst && !bFirst) return -1;
-                  if (!aFirst && bFirst) return 1;
-                  return 0;
-                });
-                return sorted.map(renderMemberCard);
-              })()}
+            <div
+              className={
+                viewMode === 'grid'
+                  ? 'grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+                  : 'space-y-4'
+              }
+            >
+              {filteredMembers.map(renderMemberCard)}
             </div>
           ) : (
             <div className="text-center py-16">

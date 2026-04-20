@@ -326,10 +326,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               <h3 className="text-xl font-bold mb-4">Community</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span>Total Members</span>
-                  <span className="font-bold">250+</span>
-                </div>
-                <div className="flex items-center justify-between">
                   <span>Events Hosted</span>
                   <span className="font-bold">3</span>
                 </div>

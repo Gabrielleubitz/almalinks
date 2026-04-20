@@ -13,6 +13,7 @@ import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ImageWithCrop from '../components/profile/ImageWithCrop';
 import { TrusteeMentorStar } from '../components/common/TrusteeMentorStar';
+import { compareMembersByDisplayName } from '../utils/memberSort';
 
 interface FilterOption {
   label: string;
@@ -172,6 +173,7 @@ const UserDirectoryPage: React.FC = () => {
       );
     }
 
+    filtered.sort(compareMembersByDisplayName);
     setFilteredUsers(filtered);
   };
 
@@ -477,14 +479,6 @@ const UserDirectoryPage: React.FC = () => {
                 )}
               </div>
             )}
-          </div>
-
-          {/* Results Count */}
-          <div className="flex items-center justify-between mb-6">
-            <p className="text-gray-600">
-              Showing <span className="font-semibold text-gray-900">{filteredUsers.length}</span> of{' '}
-              <span className="font-semibold text-gray-900">{users.length}</span> members
-            </p>
           </div>
 
           {/* User Grid/List */}

@@ -18,6 +18,7 @@ import { FilteredProfile, filterProfileForViewer, getViewerRelationship, isProfi
 import { calculateProfileCompletion, normalizeUrl } from '../utils/validation';
 import { linkedInProfileHref } from '../utils/linkedInUrl';
 import { getTrusteeMentorFromHubspot } from '../utils/hubspotMemberRoles';
+import { compareMembersByDisplayName } from '../utils/memberSort';
 import { ConnectionService } from './connectionService';
 
 export class UserService {
@@ -317,6 +318,8 @@ export class UserService {
         }
       }
       
+      filteredUsers.sort(compareMembersByDisplayName);
+
       console.log(`✅ Retrieved ${filteredUsers.length} users for directory`);
       return filteredUsers;
       
@@ -467,7 +470,9 @@ export class UserService {
         
         memberCards.push(userCard);
       }
-      
+
+      memberCards.sort(compareMembersByDisplayName);
+
       console.log(`✅ Retrieved ${memberCards.length} approved members for directory`);
       return memberCards;
       
