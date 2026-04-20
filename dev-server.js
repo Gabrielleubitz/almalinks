@@ -14,6 +14,7 @@ import emailServiceHandler from './lib/server/api/email-service.js';
 import deleteUserHandler from './lib/server/api/delete-user.js';
 import sendEventAnnouncementHandler from './lib/server/api/send-event-announcement.js';
 import welcomeEmailHandler from './lib/server/api/welcome-email.js';
+import applicationFollowUpEmailHandler from './lib/server/api/application-follow-up-email.js';
 import syncEventToHubspotHandler from './lib/server/api/sync-event-to-hubspot.js';
 import syncAllEventsToHubspotHandler from './lib/server/api/sync-all-events-to-hubspot.js';
 import deleteEventFromHubspotHandler from './lib/server/api/delete-event-from-hubspot.js';
@@ -114,6 +115,11 @@ app.post('/api/send-event-announcement', (req, res) => {
 app.post('/api/welcome-email', (req, res) => {
   console.log('Welcome Email API called');
   welcomeEmailHandler(req, res);
+});
+
+app.post('/api/application-follow-up-email', (req, res) => {
+  console.log('Application follow-up email API called');
+  applicationFollowUpEmailHandler(req, res);
 });
 
 // HubSpot: sync event to Deal (create/update)

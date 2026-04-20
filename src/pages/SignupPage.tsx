@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, Phone, Briefcase, ArrowRight, ArrowLeft, AlertCircle, ChevronDown, Linkedin, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowRight, ArrowLeft, AlertCircle, ChevronDown, Linkedin, CheckCircle, MapPin, Building2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { auth } from '../firebase/config';
+import { extractLinkedInVanity } from '../utils/linkedInUrl';
 import logoSvg from '../assets/alma-links-logo.svg';
 import RichTextBioEditor from '../components/profile/RichTextBioEditor';
 import AlmaAuthCard from '../components/ui/AlmaAuthCard';
@@ -45,36 +46,9 @@ const COUNTRY_CODES = [
   { code: '+57', name: 'Colombia', flag: '🇨🇴' },
 ];
 
-// Position options
-const POSITION_OPTIONS = [
-  { value: 'investor', label: 'Investor' },
-  { value: 'c_level', label: 'C-Level Executive (CEO, CTO, etc.)' },
-  { value: 'vp_level', label: 'VP Level' },
-  { value: 'director', label: 'Director' },
-  { value: 'senior_manager', label: 'Senior Manager' },
-  { value: 'manager', label: 'Manager' },
-  { value: 'senior_contributor', label: 'Senior Contributor' },
-  { value: 'individual_contributor', label: 'Individual Contributor' },
-  { value: 'junior_level', label: 'Junior Level' },
-  { value: 'founder', label: 'Founder' },
-  { value: 'consultant', label: 'Consultant' },
-  { value: 'student', label: 'Student' },
-  { value: 'other', label: 'Other' }
-];
-
-// Chapter options (must match HubSpot allowed values)
-const CHAPTER_OPTIONS = [
-  'New York',
-  'Tel Aviv',
-  'Johannesburg',
-  'London',
-  'Mexico City',
-  'Philadelphia',
-  'Sydney',
-  'Toronto',
-  'Costa Rica',
-  'International',
-];
+function stripHtmlToText(html: string): string {
+  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
@@ -85,12 +59,15 @@ const SignupPage: React.FC = () => {
     lastName: '',
     email: '',
     phoneNumber: '',
-    company: '',
-    linkedinUsername: '',
-    position: '',
-    chapter: '',
+    address: '',
+    industry: '',
+    linkedinProfile: '',
     bioTitle: '',
+    expertiseAreas: '',
+    lookingToGain: '',
+    offerToMembers: '',
     bio: '',
+    heardAboutAlma: '',
     password: ''
   });
   const [selectedCountryCode, setSelectedCountryCode] = useState('+972'); // Default to Israel
@@ -153,7 +130,7 @@ const SignupPage: React.FC = () => {
     }));
   }, [signedInWithGoogle, user]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
     // For phone number, only allow digits
@@ -221,7 +198,7 @@ const SignupPage: React.FC = () => {
     }
     
     if (!formData.phoneNumber.trim()) {
-      setValidationError('Please enter your phone number');
+      setValidationError('Please enter your mobile number');
       return false;
     }
     
@@ -229,22 +206,48 @@ const SignupPage: React.FC = () => {
     try {
       formatPhoneNumber(selectedCountryCode, formData.phoneNumber);
     } catch (error) {
-      setValidationError('Please enter a valid phone number');
+      setValidationError('Please enter a valid mobile number');
       return false;
     }
     
-    if (!formData.company.trim()) {
-      setValidationError('Please enter your company name');
+    if (!formData.address.trim()) {
+      setValidationError('Please enter your address');
       return false;
     }
-
-    if (!formData.position) {
-      setValidationError('Please select your position');
+    if (!formData.industry.trim()) {
+      setValidationError('Please enter your industry');
       return false;
     }
-
-    if (!formData.chapter.trim()) {
-      setValidationError('Please select your chapter');
+    if (!formData.linkedinProfile.trim()) {
+      setValidationError('Please enter your LinkedIn profile URL or username');
+      return false;
+    }
+    if (!extractLinkedInVanity(formData.linkedinProfile)) {
+      setValidationError('Please enter a valid LinkedIn profile URL or username');
+      return false;
+    }
+    if (!formData.bioTitle.trim()) {
+      setValidationError('Please enter your current role and company');
+      return false;
+    }
+    if (!formData.expertiseAreas.trim()) {
+      setValidationError('Please describe your key areas of expertise');
+      return false;
+    }
+    if (!formData.lookingToGain.trim()) {
+      setValidationError('Please tell us what you are looking to gain from AlmaLinks');
+      return false;
+    }
+    if (!formData.offerToMembers.trim()) {
+      setValidationError('Please tell us what you can offer to other members');
+      return false;
+    }
+    if (!stripHtmlToText(formData.bio)) {
+      setValidationError('Please describe your entrepreneurial or business background');
+      return false;
+    }
+    if (!formData.heardAboutAlma.trim()) {
+      setValidationError('Please tell us how you heard about AlmaLinks');
       return false;
     }
     
@@ -284,55 +287,38 @@ const SignupPage: React.FC = () => {
     try {
       // Format phone number
       const formattedPhone = formatPhoneNumber(selectedCountryCode, formData.phoneNumber);
+      const linkedinUsername = extractLinkedInVanity(formData.linkedinProfile);
       
       setIsSubmitting(true);
-      // Console logs for development debugging (not shown in UI)
       const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim();
-      if (import.meta.env.DEV) {
-        console.log('📝 Attempting registration for:', formData.email);
-        console.log('📝 Profile data:', {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          phone: formattedPhone,
-          company: formData.company,
-          linkedinUsername: formData.linkedinUsername,
-          position: formData.position
-        });
-      }
+      const joinPayload = {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        phone: formattedPhone,
+        company: formData.bioTitle.trim(),
+        linkedinUsername,
+        position: 'other',
+        bioTitle: formData.bioTitle.trim(),
+        bio: formData.bio || undefined,
+        address: formData.address.trim(),
+        industry: formData.industry.trim(),
+        expertiseAreas: formData.expertiseAreas.trim(),
+        lookingToGain: formData.lookingToGain.trim(),
+        offerToMembers: formData.offerToMembers.trim(),
+        heardAboutAlma: formData.heardAboutAlma.trim(),
+      };
 
       if (signedInWithGoogle && user) {
         const { JoinRequestService } = await import('../services/joinRequestService');
         await JoinRequestService.createJoinRequest(user.uid, {
           email: formData.email,
-          firstName: formData.firstName.trim(),
-          lastName: formData.lastName.trim(),
           name: fullName,
           displayName: fullName,
-          phone: formattedPhone,
-          company: formData.company,
-          linkedinUsername: formData.linkedinUsername,
-          position: formData.position,
-          chapter: formData.chapter || undefined,
-          bioTitle: formData.bioTitle || undefined,
-          bio: formData.bio || undefined,
-          city: undefined,
-          country: undefined,
-          timezone: undefined,
-          website: undefined,
-          twitter: undefined,
-          skills: undefined
+          ...joinPayload,
         });
       } else {
         await register(formData.email, formData.password, fullName, {
-          firstName: formData.firstName.trim(),
-          lastName: formData.lastName.trim(),
-          phone: formattedPhone,
-          company: formData.company,
-          linkedinUsername: formData.linkedinUsername,
-          position: formData.position,
-          chapter: formData.chapter || undefined,
-          bioTitle: formData.bioTitle || undefined,
-          bio: formData.bio || undefined,
+          ...joinPayload,
           status: 'pending'
         });
       }
@@ -357,9 +343,15 @@ const SignupPage: React.FC = () => {
     formData.lastName.trim() &&
     formData.email.trim() &&
     formData.phoneNumber.trim() &&
-    formData.company.trim() &&
-    formData.position &&
-    formData.chapter.trim() &&
+    formData.address.trim() &&
+    formData.industry.trim() &&
+    formData.linkedinProfile.trim() &&
+    formData.bioTitle.trim() &&
+    formData.expertiseAreas.trim() &&
+    formData.lookingToGain.trim() &&
+    formData.offerToMembers.trim() &&
+    stripHtmlToText(formData.bio) &&
+    formData.heardAboutAlma.trim() &&
     (signedInWithGoogle || (formData.password.trim() && formData.password.length >= 6));
 
   const displayError = validationError || error;
@@ -375,10 +367,10 @@ const SignupPage: React.FC = () => {
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Registration Successful!
+              Thank you for applying
             </h2>
             <p className="text-gray-600 mb-6">
-              Your account has been created and is pending admin approval. Setting up your account...
+              We received your application. Taking you to the next steps…
             </p>
             <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto"></div>
           </div>
@@ -391,8 +383,8 @@ const SignupPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#DCE8F6] via-white to-[#eef4fc] flex flex-col items-center justify-center px-3 sm:px-4 pt-4 sm:pt-6 pb-4 sm:pb-6 relative overflow-x-hidden w-full max-w-full">
       <div className="w-full max-w-4xl flex-shrink-0 my-4 mb-0">
         <AlmaAuthCard
-          title="Join AlmaLinks"
-          subtitle="Create your account to connect with members, discover events, and join conversations worldwide."
+          title="Apply to AlmaLinks"
+          subtitle="Complete this application so our team can review your fit with the community."
           logoUrl={logoSvg}
         >
           <div className="mb-6">
@@ -410,8 +402,8 @@ const SignupPage: React.FC = () => {
             <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-[var(--brand-blue-dark)] to-[var(--brand-blue-light)] rounded-full mb-3">
               <User className="h-7 w-7 text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">Create your account</h2>
-            <p className="text-sm text-gray-600">Fill in your details to join AlmaLinks</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">Application</h2>
+            <p className="text-sm text-gray-600">Application questions</p>
           </div>
 
           {displayError && (
@@ -513,10 +505,10 @@ const SignupPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Phone Number with Country Code */}
+            {/* Mobile with country code */}
             <div>
               <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number *
+                Mobile *
               </label>
               <div className="flex space-x-2">
                 {/* Country Code Dropdown */}
@@ -569,136 +561,171 @@ const SignupPage: React.FC = () => {
               )}
             </div>
 
-            {/* Company */}
+            {/* Address */}
             <div>
-              <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
-                Company *
+              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                Address *
               </label>
               <div className="relative">
-                <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <textarea
+                  id="address"
+                  name="address"
+                  required
+                  rows={3}
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation resize-y"
+                  placeholder="City, country, and any detail that helps us place you"
+                  disabled={isSubmitting}
+                  autoComplete="street-address"
+                />
+              </div>
+            </div>
+
+            {/* Industry */}
+            <div>
+              <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-2">
+                Industry *
+              </label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
-                  id="company"
-                  name="company"
+                  id="industry"
+                  name="industry"
                   type="text"
                   required
-                  value={formData.company}
+                  value={formData.industry}
                   onChange={handleInputChange}
                   className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
-                  placeholder="e.g., TechCorp, Google, Self-Employed"
-                  autoComplete="organization"
+                  placeholder="e.g., venture capital, fintech, consulting"
                   disabled={isSubmitting}
                 />
               </div>
             </div>
 
-            {/* LinkedIn Username (optional) */}
+            {/* LinkedIn Profile */}
             <div>
-              <label htmlFor="linkedinUsername" className="block text-sm font-medium text-gray-700 mb-2">
-                LinkedIn Username
+              <label htmlFor="linkedinProfile" className="block text-sm font-medium text-gray-700 mb-2">
+                LinkedIn Profile *
               </label>
               <div className="relative">
                 <Linkedin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
-                  id="linkedinUsername"
-                  name="linkedinUsername"
+                  id="linkedinProfile"
+                  name="linkedinProfile"
                   type="text"
-                  value={formData.linkedinUsername}
+                  required
+                  value={formData.linkedinProfile}
                   onChange={handleInputChange}
                   className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
-                  placeholder="e.g., johndoe (optional)"
+                  placeholder="Profile URL or username (e.g. johndoe or linkedin.com/in/johndoe)"
                   disabled={isSubmitting}
                 />
               </div>
-              {formData.linkedinUsername && (
-                <div className="mt-2 text-sm text-gray-600">
-                  <span className="font-medium">Preview:</span> linkedin.com/in/{formData.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '')}
-                </div>
-              )}
             </div>
 
-            {/* Position */}
-            <div>
-              <label htmlFor="position" className="block text-sm font-medium text-gray-700 mb-2">
-                Position *
-              </label>
-              <div className="relative">
-                <select
-                  id="position"
-                  name="position"
-                  required
-                  value={formData.position}
-                  onChange={handleInputChange}
-                  className="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 appearance-none min-h-[44px] touch-manipulation"
-                  disabled={isSubmitting}
-                  aria-label="Position"
-                >
-                  <option value="" disabled>Select your position...</option>
-                  {POSITION_OPTIONS.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Chapter (City) */}
-            <div>
-              <label htmlFor="chapter" className="block text-sm font-medium text-gray-700 mb-2">
-                Chapter (City) *
-              </label>
-              <div className="relative">
-                <select
-                  id="chapter"
-                  name="chapter"
-                  required
-                  value={formData.chapter}
-                  onChange={handleInputChange}
-                  className="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 appearance-none min-h-[44px] touch-manipulation"
-                  disabled={isSubmitting}
-                  aria-label="Chapter (City)"
-                >
-                  <option value="" disabled>Select your chapter...</option>
-                  {CHAPTER_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Bio (short) - optional */}
+            {/* Current role and company (short) */}
             <div>
               <label htmlFor="bioTitle" className="block text-sm font-medium text-gray-700 mb-2">
-                Bio (short)
+                Current role and company (bio short) *
               </label>
               <input
                 id="bioTitle"
                 name="bioTitle"
                 type="text"
+                required
                 value={formData.bioTitle}
                 onChange={handleInputChange}
-                maxLength={60}
+                maxLength={120}
                 className="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
-                placeholder="A short tagline (max 60 characters)"
+                placeholder="e.g., Partner at Example Capital"
                 disabled={isSubmitting}
               />
             </div>
 
-            {/* Bio (long) - optional */}
+            {/* Key areas of expertise */}
+            <div>
+              <label htmlFor="expertiseAreas" className="block text-sm font-medium text-gray-700 mb-2">
+                Key areas of expertise *
+              </label>
+              <textarea
+                id="expertiseAreas"
+                name="expertiseAreas"
+                required
+                rows={3}
+                value={formData.expertiseAreas}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 resize-y"
+                placeholder="Topics, sectors, or skills where you can add value"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            {/* What are you looking to gain */}
+            <div>
+              <label htmlFor="lookingToGain" className="block text-sm font-medium text-gray-700 mb-2">
+                What are you looking to gain from AlmaLinks? *
+              </label>
+              <textarea
+                id="lookingToGain"
+                name="lookingToGain"
+                required
+                rows={3}
+                value={formData.lookingToGain}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 resize-y"
+                placeholder="Goals, introductions, learning, community — whatever matters to you"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            {/* What can you offer */}
+            <div>
+              <label htmlFor="offerToMembers" className="block text-sm font-medium text-gray-700 mb-2">
+                What can you offer to other members (locally and globally)? *
+              </label>
+              <textarea
+                id="offerToMembers"
+                name="offerToMembers"
+                required
+                rows={3}
+                value={formData.offerToMembers}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 resize-y"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            {/* Entrepreneurial / business background (long) */}
             <div>
               <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
-                Bio (long)
+                Please briefly describe your entrepreneurial or business background (bio long) *
               </label>
               <RichTextBioEditor
                 value={formData.bio}
                 onChange={(html) => setFormData(prev => ({ ...prev, bio: html }))}
-                placeholder="Tell us about your background. Use the toolbar for bold, italic, underline, and highlight."
+                placeholder="Use the toolbar for emphasis where helpful."
                 disabled={isSubmitting}
-                maxLength={2000}
+                maxLength={4000}
+              />
+            </div>
+
+            {/* How did you hear about AlmaLinks */}
+            <div>
+              <label htmlFor="heardAboutAlma" className="block text-sm font-medium text-gray-700 mb-2">
+                How did you hear about AlmaLinks? (including referral details if applicable) *
+              </label>
+              <textarea
+                id="heardAboutAlma"
+                name="heardAboutAlma"
+                required
+                rows={2}
+                value={formData.heardAboutAlma}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 resize-y"
+                placeholder="Member referral, event, social media, etc."
+                disabled={isSubmitting}
               />
             </div>
 
@@ -755,11 +782,11 @@ const SignupPage: React.FC = () => {
               {isSubmitting ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Creating Account...</span>
+                  <span>Submitting…</span>
                 </>
               ) : (
                 <>
-                  <span>Create Account</span>
+                  <span>Submit application</span>
                   <ArrowRight className="h-5 w-5" />
                 </>
               )}
@@ -820,7 +847,7 @@ const SignupPage: React.FC = () => {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">
-              We will review your LinkedIn profile before granting access. All signups require admin approval.
+              Applications are reviewed by the AlmaLinks team. You will see confirmation and next steps after you submit.
             </p>
           </div>
         </AlmaAuthCard>

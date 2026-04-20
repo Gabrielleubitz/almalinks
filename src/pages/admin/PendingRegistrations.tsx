@@ -18,7 +18,8 @@ import {
   FileText,
   MapPin,
   Globe,
-  Trash2
+  Trash2,
+  Send
 } from 'lucide-react';
 import { collection, getDocs, doc, updateDoc, query, where, orderBy, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../firebase/config';
@@ -46,6 +47,13 @@ interface UserData {
   website?: string;
   twitter?: string;
   skills?: string[];
+  address?: string;
+  industry?: string;
+  expertiseAreas?: string;
+  lookingToGain?: string;
+  offerToMembers?: string;
+  heardAboutAlma?: string;
+  applicationFollowUpSentAt?: any;
   status: 'pending' | 'approved' | 'rejected';
   createdAt?: any;
   profileImage?: string | null;
@@ -77,6 +85,13 @@ function mapRequestToUserData(request: any): UserData {
     website: request.website || '',
     twitter: request.twitter || '',
     skills: Array.isArray(request.skills) ? request.skills : [],
+    address: request.address || '',
+    industry: request.industry || '',
+    expertiseAreas: request.expertiseAreas || '',
+    lookingToGain: request.lookingToGain || '',
+    offerToMembers: request.offerToMembers || '',
+    heardAboutAlma: request.heardAboutAlma || '',
+    applicationFollowUpSentAt: request.applicationFollowUpSentAt,
     status: 'pending',
     createdAt: request.createdAt,
     profileImage: request.profileImage ?? null
@@ -102,6 +117,7 @@ const PendingRegistrations: React.FC = () => {
   const [confirmReject, setConfirmReject] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [followUpSendingId, setFollowUpSendingId] = useState<string | null>(null);
 
   useEffect(() => {
     // Use realtime listener for immediate updates when new signups occur
@@ -319,10 +335,47 @@ const PendingRegistrations: React.FC = () => {
     const filtered = pendingUsers.filter(user => 
       (user.name?.toLowerCase().includes(term) || false) || 
       (user.email?.toLowerCase().includes(term) || false) ||
-      (user.work?.toLowerCase().includes(term) || false)
+      (user.work?.toLowerCase().includes(term) || false) ||
+      (user.company?.toLowerCase().includes(term) || false) ||
+      (user.bioTitle?.toLowerCase().includes(term) || false) ||
+      (user.industry?.toLowerCase().includes(term) || false) ||
+      (user.address?.toLowerCase().includes(term) || false) ||
+      (user.heardAboutAlma?.toLowerCase().includes(term) || false)
     );
     
     setFilteredUsers(filtered);
+  };
+
+  const sendApplicationIntroEmail = async (joinRequestId: string) => {
+    if (!auth.currentUser) {
+      showToast('You must be signed in to send email.', 'error');
+      return;
+    }
+    setFollowUpSendingId(joinRequestId);
+    try {
+      const idToken = await auth.currentUser.getIdToken();
+      const res = await fetch('/api/application-follow-up-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ joinRequestId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(typeof data.error === 'string' ? data.error : 'Failed to send intro email');
+      }
+      showToast('Intro email sent to the applicant (CC per server config).', 'success');
+      logAdminAction('Sent application intro follow-up email', {
+        targetUserId: joinRequestId,
+      });
+    } catch (e: any) {
+      console.error('Intro email error:', e);
+      showToast(e?.message || 'Failed to send intro email', 'error');
+    } finally {
+      setFollowUpSendingId(null);
+    }
   };
 
   const handleApproveUser = async (userId: string) => {
@@ -565,7 +618,22 @@ const PendingRegistrations: React.FC = () => {
   };
 
   const hasExtraDetails = (u: UserData) =>
-    !!(u.bioTitle || u.bio || u.chapter || u.city || u.country || u.website || u.twitter || (u.skills && u.skills.length > 0));
+    !!(
+      u.bioTitle ||
+      u.bio ||
+      u.chapter ||
+      u.city ||
+      u.country ||
+      u.website ||
+      u.twitter ||
+      (u.skills && u.skills.length > 0) ||
+      u.address ||
+      u.industry ||
+      u.expertiseAreas ||
+      u.lookingToGain ||
+      u.offerToMembers ||
+      u.heardAboutAlma
+    );
 
   if (loading) {
     return (
@@ -623,7 +691,7 @@ const PendingRegistrations: React.FC = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by name, email, or work..."
+                placeholder="Search by name, email, industry, address…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue-dark/20 focus:border-brand-blue-dark transition-all"
@@ -671,8 +739,13 @@ const PendingRegistrations: React.FC = () => {
                             </div>
                             <div className="min-w-0">
                               <h3 className="text-lg font-bold text-gray-900 truncate">{userData.name || 'No Name'}</h3>
-                              <p className="text-gray-600 text-sm">{formatPosition(userData.position)}</p>
+                              <p className="text-gray-600 text-sm">{userData.bioTitle || formatPosition(userData.position)}</p>
                               <p className="text-xs text-gray-500 mt-0.5">Registered on {formatDate(userData.createdAt)}</p>
+                              {userData.applicationFollowUpSentAt && (
+                                <p className="text-xs text-green-700 mt-1">
+                                  Intro email sent {formatDate(userData.applicationFollowUpSentAt)}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:flex-shrink-0">
@@ -729,6 +802,30 @@ const PendingRegistrations: React.FC = () => {
                             ) : (
                               <>
                                 <button
+                                  type="button"
+                                  onClick={() => {
+                                    setConfirmReject(null);
+                                    setConfirmDelete(null);
+                                    void sendApplicationIntroEmail(userData.uid);
+                                  }}
+                                  disabled={
+                                    !userData.email ||
+                                    followUpSendingId === userData.uid ||
+                                    processingUser === userData.uid
+                                  }
+                                  className="inline-flex items-center justify-center gap-2 bg-white border-2 border-brand-blue-dark text-brand-blue-dark px-4 py-2.5 rounded-xl font-medium hover:bg-blue-50 disabled:opacity-50 text-sm"
+                                  title="Sends the Hadrat intro email; CC is set on the server (APPLICATION_FOLLOW_UP_CC)."
+                                >
+                                  {followUpSendingId === userData.uid ? (
+                                    <div className="w-5 h-5 border-2 border-brand-blue-dark border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <>
+                                      <Send className="h-5 w-5" />
+                                      Send intro email
+                                    </>
+                                  )}
+                                </button>
+                                <button
                                   onClick={() => {
                                     setConfirmReject(null);
                                     setConfirmDelete(null);
@@ -784,22 +881,29 @@ const PendingRegistrations: React.FC = () => {
                           <div className="flex items-start gap-3">
                             <Phone className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
                             <div>
-                              <div className="text-gray-500">Phone</div>
+                              <div className="text-gray-500">Mobile</div>
                               <div className="font-medium text-gray-900">{userData.phone || '—'}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3 sm:col-span-2">
+                            <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <div className="text-gray-500">Address</div>
+                              <div className="font-medium text-gray-900 whitespace-pre-wrap">{userData.address || '—'}</div>
                             </div>
                           </div>
                           <div className="flex items-start gap-3">
                             <Briefcase className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
                             <div>
-                              <div className="text-gray-500">Company</div>
-                              <div className="font-medium text-gray-900">{userData.company || '—'}</div>
+                              <div className="text-gray-500">Industry</div>
+                              <div className="font-medium text-gray-900">{userData.industry || '—'}</div>
                             </div>
                           </div>
                           <div className="flex items-start gap-3">
                             <User className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
                             <div>
-                              <div className="text-gray-500">Work</div>
-                              <div className="font-medium text-gray-900">{userData.work || '—'}</div>
+                              <div className="text-gray-500">Role / company (short)</div>
+                              <div className="font-medium text-gray-900">{userData.bioTitle || userData.company || '—'}</div>
                             </div>
                           </div>
                           <div className="flex items-start gap-3 sm:col-span-2">
@@ -839,6 +943,42 @@ const PendingRegistrations: React.FC = () => {
 
                             {expanded && (
                               <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 sm:p-5 space-y-4 text-sm">
+                                {userData.expertiseAreas && (
+                                  <div>
+                                    <div className="flex items-center gap-2 text-gray-500 mb-1">
+                                      <FileText className="h-4 w-4" />
+                                      Key areas of expertise
+                                    </div>
+                                    <p className="text-gray-900 whitespace-pre-wrap">{userData.expertiseAreas}</p>
+                                  </div>
+                                )}
+                                {userData.lookingToGain && (
+                                  <div>
+                                    <div className="flex items-center gap-2 text-gray-500 mb-1">
+                                      <FileText className="h-4 w-4" />
+                                      Looking to gain from AlmaLinks
+                                    </div>
+                                    <p className="text-gray-900 whitespace-pre-wrap">{userData.lookingToGain}</p>
+                                  </div>
+                                )}
+                                {userData.offerToMembers && (
+                                  <div>
+                                    <div className="flex items-center gap-2 text-gray-500 mb-1">
+                                      <FileText className="h-4 w-4" />
+                                      What they can offer to members
+                                    </div>
+                                    <p className="text-gray-900 whitespace-pre-wrap">{userData.offerToMembers}</p>
+                                  </div>
+                                )}
+                                {userData.heardAboutAlma && (
+                                  <div>
+                                    <div className="flex items-center gap-2 text-gray-500 mb-1">
+                                      <FileText className="h-4 w-4" />
+                                      How they heard about AlmaLinks
+                                    </div>
+                                    <p className="text-gray-900 whitespace-pre-wrap">{userData.heardAboutAlma}</p>
+                                  </div>
+                                )}
                                 {userData.bioTitle && (
                                   <div>
                                     <div className="flex items-center gap-2 text-gray-500 mb-1">
@@ -930,9 +1070,10 @@ const PendingRegistrations: React.FC = () => {
           <div className="p-6 sm:p-8 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl">
             <h3 className="font-semibold text-gray-900 mb-2">Registration approval</h3>
             <ul className="text-sm text-gray-600 space-y-1">
-              <li><strong>Approve</strong> — Grants access and sends an email notification. All signup data (including bio, chapter, skills) is copied to the user&apos;s profile.</li>
+              <li><strong>Send intro email</strong> — Optional. Sends the introductory message from AlmaLinks; the server CC list is configured in environment variables. Signup no longer auto-emails applicants.</li>
+              <li><strong>Approve</strong> — Grants access and sends the member welcome / onboarding email from communications@almalinks.org (when configured).</li>
               <li><strong>Reject</strong> — Marks the request as rejected. The user can sign in again to submit a new request.</li>
-              <li>Use <strong>View full details</strong> to see short bio, bio, chapter, location, and skills before deciding.</li>
+              <li>Use <strong>View full details</strong> for long-form answers and bio before deciding.</li>
             </ul>
           </div>
         </div>

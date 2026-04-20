@@ -63,6 +63,12 @@ export interface ProfileData {
   website?: string;
   twitter?: string;
   skills?: string[];
+  address?: string;
+  industry?: string;
+  expertiseAreas?: string;
+  lookingToGain?: string;
+  offerToMembers?: string;
+  heardAboutAlma?: string;
 }
 
 const getAuthErrorMessage = (errorCode: string): string => {
@@ -231,7 +237,13 @@ export const useAuth = () => {
           timezone: profileData?.timezone,
           website: profileData?.website,
           twitter: profileData?.twitter,
-          skills: profileData?.skills
+          skills: profileData?.skills,
+          address: profileData?.address,
+          industry: profileData?.industry,
+          expertiseAreas: profileData?.expertiseAreas,
+          lookingToGain: profileData?.lookingToGain,
+          offerToMembers: profileData?.offerToMembers,
+          heardAboutAlma: profileData?.heardAboutAlma,
         };
 
         const createdRequest = await JoinRequestService.createJoinRequest(firebaseUser.uid, joinRequestData);

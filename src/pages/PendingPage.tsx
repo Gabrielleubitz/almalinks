@@ -54,7 +54,7 @@ const PendingPage: React.FC = () => {
       <div className="w-full max-w-4xl flex-shrink-0 mb-0">
         <AlmaAuthCard
           title="Thank you for applying"
-          subtitle="Your application to AlmaLinks is under review. We’ll email you as soon as a decision is made."
+          subtitle="We appreciate your interest in the AlmaLinks community."
           logoUrl={logoSvg}
         >
           {/* Back to sign in */}
@@ -74,10 +74,10 @@ const PendingPage: React.FC = () => {
               <Clock className="h-7 w-7 sm:h-8 sm:w-8 text-yellow-600" />
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
-              Application pending review
+              We received your application
             </h2>
-            <p className="text-sm sm:text-base text-gray-600">
-              Thanks for signing up. Our team is reviewing your application. You&apos;ll receive an email when a decision is made.
+            <p className="text-sm sm:text-base text-gray-600 text-left max-w-2xl mx-auto">
+              Thank you for applying to join the AlmaLinks community. We truly appreciate your interest and the time you took to share your background with us. Our team will review your application and will be in touch.
             </p>
           </div>
 
@@ -89,10 +89,10 @@ const PendingPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-yellow-800 mb-1.5">What happens next</h3>
-                  <ul className="text-sm text-yellow-800 space-y-1.5">
-                    <li>• We&apos;ll review your LinkedIn profile and professional details.</li>
-                    <li>• If we need anything else, we&apos;ll reach out by email.</li>
-                    <li>• Once approved, you&apos;ll be able to sign in and access all member features.</li>
+                  <ul className="text-sm text-yellow-800 space-y-1.5 list-disc list-inside">
+                    <li>Our team will review your application.</li>
+                    <li>We will follow up with next steps once the review process is complete.</li>
+                    <li>If any additional information is needed, we will reach out via email.</li>
                   </ul>
                 </div>
               </div>
@@ -106,16 +106,23 @@ const PendingPage: React.FC = () => {
                 <div>
                   <h3 className="font-semibold text-blue-900 mb-1.5">Need to update something?</h3>
                   <p className="text-sm text-blue-800 mb-2">
-                    If you have questions or want to share updated information, you can contact the AlmaLinks team:
+                    If you have any questions or would like to share additional information, feel free to contact us at:
                   </p>
                   <a
-                    href="mailto:info@almalinks.org"
+                    href="mailto:communications@almalinks.org"
                     className="text-sm text-brand-blue hover:text-brand-blue-hover font-medium"
                   >
-                    info@almalinks.org
+                    communications@almalinks.org
                   </a>
                 </div>
               </div>
+            </div>
+
+            <div className="rounded-2xl p-4 sm:p-5 border border-gray-200 bg-gray-50/80 text-left">
+              <h3 className="font-semibold text-gray-900 mb-2">Disclaimer</h3>
+              <p className="text-sm text-gray-700">
+                AlmaLinks reserves the right to approve membership based on organizational considerations and community composition, ensuring alignment with our values, criteria and the overall view.
+              </p>
             </div>
           </div>
 

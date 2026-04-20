@@ -37,6 +37,8 @@ export interface JoinRequest {
   adminNotifiedAt?: Timestamp | Date; // Timestamp when admin notification email was sent
   userNotifiedAt?: Timestamp | Date; // Timestamp when user confirmation email was sent
   welcomeEmailSentAt?: Timestamp | Date; // Set by backend when Mailchimp welcome email is sent
+  applicationFollowUpSentAt?: Timestamp | Date;
+  applicationFollowUpSentBy?: string;
   // Additional profile fields that might be provided during signup (e.g. Google profile picture)
   profileImage?: string | null;
   profileImagePublicId?: string | null;
@@ -48,6 +50,13 @@ export interface JoinRequest {
   website?: string;
   twitter?: string;
   skills?: string[];
+  /** Full mailing / street address (application question) */
+  address?: string;
+  industry?: string;
+  expertiseAreas?: string;
+  lookingToGain?: string;
+  offerToMembers?: string;
+  heardAboutAlma?: string;
 }
 
 export interface JoinRequestFormData {
@@ -70,6 +79,12 @@ export interface JoinRequestFormData {
   website?: string;
   twitter?: string;
   skills?: string[];
+  address?: string;
+  industry?: string;
+  expertiseAreas?: string;
+  lookingToGain?: string;
+  offerToMembers?: string;
+  heardAboutAlma?: string;
 }
 
 export class JoinRequestService {
@@ -107,7 +122,7 @@ export class JoinRequestService {
         company: formData.company || '',
         work: formData.work || '',
         linkedinUsername: formData.linkedinUsername || '',
-        position: formData.position || '',
+        position: (formData.position && String(formData.position).trim()) || 'other',
         chapter: formData.chapter || '',
         status: 'pending',
         createdAt: serverTimestamp()
@@ -143,6 +158,21 @@ export class JoinRequestService {
       }
       if (formData.profileImagePublicId !== undefined) {
         joinRequestPayload.profileImagePublicId = formData.profileImagePublicId;
+      }
+
+      const textApplicationFields = [
+        'address',
+        'industry',
+        'expertiseAreas',
+        'lookingToGain',
+        'offerToMembers',
+        'heardAboutAlma',
+      ] as const;
+      for (const key of textApplicationFields) {
+        const v = formData[key];
+        if (typeof v === 'string' && v.trim() !== '') {
+          joinRequestPayload[key] = v.trim();
+        }
       }
 
       // Sanitize the payload to remove any undefined values (safety check)
@@ -241,37 +271,7 @@ export class JoinRequestService {
         status: verifiedData.status
       });
 
-      // Send welcome email via Mailchimp Marketing (server-side, non-blocking)
-      try {
-        fetch('/api/welcome-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            joinRequestId: uid,
-            email: verifiedData.email,
-            displayName: verifiedData.name || verifiedData.displayName || '',
-            firstName: (verifiedData.name || verifiedData.displayName || '').trim().split(/\s+/)[0] || '',
-          }),
-        })
-          .then(async (response) => {
-            const result = await response.json().catch(() => ({}));
-            if (response.ok && result.ok && !result.skipped) {
-              console.log('[signup] Welcome email sent (Mandrill)', result.messageId);
-            } else if (result.skipped) {
-              console.log('[signup] Welcome email skipped (already sent)');
-            } else {
-              console.warn('[signup] Welcome email failed — response:', response.status, 'details:', result);
-              if (result.details) {
-                console.warn('[signup] Mandrill details:', result.details);
-              }
-            }
-          })
-          .catch((err: any) => {
-            console.warn('[signup] Welcome email request failed (non-blocking):', err?.message);
-          });
-      } catch (welcomeErr: any) {
-        console.warn('[signup] Welcome email init error (non-blocking):', welcomeErr?.message);
-      }
+      // Automatic applicant email on signup is disabled; admins send the intro email from Pending Registrations when ready.
 
       // Send admin notification (non-blocking)
       // Check if already notified to prevent duplicates
@@ -619,6 +619,24 @@ export class JoinRequestService {
       }
       if (request.skills && Array.isArray(request.skills) && request.skills.length > 0) {
         userProfilePayload.skills = request.skills;
+      }
+      if ((request as any).address) {
+        userProfilePayload.address = String((request as any).address).trim();
+      }
+      if ((request as any).industry) {
+        userProfilePayload.industry = String((request as any).industry).trim();
+      }
+      if ((request as any).expertiseAreas) {
+        userProfilePayload.expertiseAreas = String((request as any).expertiseAreas).trim();
+      }
+      if ((request as any).lookingToGain) {
+        userProfilePayload.lookingToGain = String((request as any).lookingToGain).trim();
+      }
+      if ((request as any).offerToMembers) {
+        userProfilePayload.offerToMembers = String((request as any).offerToMembers).trim();
+      }
+      if ((request as any).heardAboutAlma) {
+        userProfilePayload.heardAboutAlma = String((request as any).heardAboutAlma).trim();
       }
 
       // Sanitize the payload to remove any undefined values
