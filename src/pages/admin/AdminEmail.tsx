@@ -18,6 +18,7 @@ const EMAIL_TEMPLATES: { key: string; label: string }[] = [
   { key: 'event-announcement', label: 'Event announcement' },
   { key: 'registration-confirmation', label: 'Registration confirmation' },
   { key: 'event-reminder', label: 'Event reminder' },
+  { key: 'event-thank-you-attending', label: 'Thank you for attending (post-event + review link)' },
   { key: 'password-reset', label: 'Password reset' },
   { key: 'user-credentials', label: 'User credentials' },
 ];
