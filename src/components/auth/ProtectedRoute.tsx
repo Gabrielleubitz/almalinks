@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
-  const { user, loading, isAdmin, isMember, isPending, isRejected, networkError, roleLoading } = useAuth();
+  const { user, loading, isAdmin, isMember, isPending, isApproved, isRejected, isNeedsSignup, networkError, roleLoading } = useAuth();
   const [retryCount, setRetryCount] = useState(0);
   const [showRetryButton, setShowRetryButton] = useState(false);
 
@@ -73,6 +73,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
     return <Navigate to="/login" replace />;
   }
 
+  // Google-authed but signup form not yet submitted — send back to complete it
+  if (isNeedsSignup) {
+    console.log('⚠️ ProtectedRoute - User authenticated via Google but signup form not submitted, redirecting to /signup');
+    return <Navigate to="/signup" replace />;
+  }
+
   // Check if user is pending approval - CRITICAL CHECK
   if (isPending) {
     console.log('⏳ ProtectedRoute - User is pending approval, redirecting to pending page');
@@ -120,6 +126,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
       console.log('❌ ProtectedRoute - Member access required but user is not approved');
       return <Navigate to="/pending" replace />;
     }
+    // (isApproved is now properly imported from useAuth above)
   }
 
   console.log('✅ ProtectedRoute - Access granted for role:', user.role);

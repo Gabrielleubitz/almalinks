@@ -7,7 +7,7 @@ import AlmaAuthCard from '../components/ui/AlmaAuthCard';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, login, error, loading, checkProfileComplete, isPending, isRejected, resetPassword, signInWithGoogle } = useAuth();
+  const { user, login, error, loading, checkProfileComplete, isPending, isRejected, isNeedsSignup, resetPassword, signInWithGoogle } = useAuth();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -28,7 +28,10 @@ const LoginPage: React.FC = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user && !loading) {
-      if (isPending) {
+      if (isNeedsSignup) {
+        // Google OAuth completed but signup form not yet submitted
+        navigate('/signup');
+      } else if (isPending) {
         navigate('/pending');
       } else if (isRejected) {
         navigate('/re-request-access');
@@ -38,7 +41,7 @@ const LoginPage: React.FC = () => {
         navigate('/complete-profile');
       }
     }
-  }, [user, loading, navigate, checkProfileComplete, isPending, isRejected]);
+  }, [user, loading, navigate, checkProfileComplete, isPending, isRejected, isNeedsSignup]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

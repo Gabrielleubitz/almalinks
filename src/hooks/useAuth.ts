@@ -467,10 +467,12 @@ export const useAuth = () => {
           hasSeenOnboarding: false
         };
       } else {
-        // No join request and no user doc - this is unusual
-              // Do NOT auto-create anything - user must explicitly sign up or re-request
-              console.log('⚠️ No user profile or join request found. User must sign up or re-request access.');
-              console.log('⚠️ NOT auto-creating join request - user must do this explicitly');
+        // No join request and no user doc.
+              // This happens when a user completes Google OAuth on the signup page but
+              // hasn't yet submitted the registration form.  We use a special sentinel
+              // status so ProtectedRoute can redirect them back to /signup rather than
+              // sending them to /pending with no actual join request.
+              console.log('⚠️ No user profile or join request found. User must complete signup form.');
               
               // Create minimal profile from Auth data only (no Firestore writes)
               userProfile = {
@@ -478,7 +480,7 @@ export const useAuth = () => {
                 email: firebaseUser.email,
                 displayName: firebaseUser.displayName,
                 role: 'member',
-                status: 'pending', // Will be determined by routing logic
+                status: 'needs_signup', // sentinel: Google-authed but form not yet submitted
                 phone: '',
                 company: '',
                 work: '',
@@ -975,6 +977,8 @@ export const useAuth = () => {
   const isPending = user?.status === 'pending';
   const isApproved = user?.status === 'approved';
   const isRejected = user?.status === 'rejected';
+  /** True when the user authenticated with Google but has not yet submitted the signup form. */
+  const isNeedsSignup = user?.status === 'needs_signup';
   const isInUserView = isAdmin && adminViewMode === 'user';
   const isInAdminView = isAdmin && adminViewMode === 'admin';
   
@@ -1010,6 +1014,7 @@ export const useAuth = () => {
     isPending,
     isApproved,
     isRejected,
+    isNeedsSignup,
     roleLoading,
     checkProfileComplete,
     updateProfile: updateUserProfile,
