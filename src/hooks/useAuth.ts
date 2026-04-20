@@ -63,6 +63,7 @@ export interface ProfileData {
   website?: string;
   twitter?: string;
   skills?: string[];
+  /** Join-request / signup only — never written to users/{uid} profile */
   address?: string;
   industry?: string;
   expertiseAreas?: string;

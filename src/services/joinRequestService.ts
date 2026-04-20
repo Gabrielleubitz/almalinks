@@ -562,7 +562,7 @@ export class JoinRequestService {
         approvedBy
       }));
 
-      // Create user document from join request data (all signup fields flow to profile)
+      // Create user document from join request data (member-directory fields only; application Q&A remains on joinRequests)
       const firstName = request.firstName?.trim() || (request.name || request.displayName || '').trim().split(/\s+/)[0] || 'User';
       const lastName = request.lastName?.trim() || (request.name || request.displayName || '').trim().split(/\s+/).slice(1).join(' ') || '';
       const fullName = [firstName, lastName].filter(Boolean).join(' ') || (request.name || request.displayName || '').trim();
@@ -620,24 +620,8 @@ export class JoinRequestService {
       if (request.skills && Array.isArray(request.skills) && request.skills.length > 0) {
         userProfilePayload.skills = request.skills;
       }
-      if ((request as any).address) {
-        userProfilePayload.address = String((request as any).address).trim();
-      }
-      if ((request as any).industry) {
-        userProfilePayload.industry = String((request as any).industry).trim();
-      }
-      if ((request as any).expertiseAreas) {
-        userProfilePayload.expertiseAreas = String((request as any).expertiseAreas).trim();
-      }
-      if ((request as any).lookingToGain) {
-        userProfilePayload.lookingToGain = String((request as any).lookingToGain).trim();
-      }
-      if ((request as any).offerToMembers) {
-        userProfilePayload.offerToMembers = String((request as any).offerToMembers).trim();
-      }
-      if ((request as any).heardAboutAlma) {
-        userProfilePayload.heardAboutAlma = String((request as any).heardAboutAlma).trim();
-      }
+      // Application-only answers (address, industry, expertise, motivation, referral, etc.)
+      // stay on joinRequests only — they are not copied to users/{uid} (member profile).
 
       // Sanitize the payload to remove any undefined values
       const sanitizedUserProfile = sanitizeForFirestore(userProfilePayload);

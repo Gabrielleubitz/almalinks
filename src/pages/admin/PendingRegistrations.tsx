@@ -5,18 +5,10 @@ import {
   Search, 
   ArrowLeft, 
   AlertCircle, 
-  CheckCircle, 
   X, 
   User, 
-  Mail, 
-  Phone, 
-  Briefcase, 
-  Linkedin,
-  ChevronDown,
-  ChevronRight,
   Check,
   FileText,
-  MapPin,
   Globe,
   Trash2,
   Send
@@ -33,6 +25,8 @@ interface UserData {
   email: string;
   name: string;
   displayName?: string;
+  firstName?: string;
+  lastName?: string;
   phone: string;
   company: string;
   work: string;
@@ -71,6 +65,8 @@ function mapRequestToUserData(request: any): UserData {
     email: request.email || '',
     name: request.name || request.displayName || '',
     displayName: request.displayName || request.name || '',
+    firstName: request.firstName || '',
+    lastName: request.lastName || '',
     phone: request.phone || '',
     company: request.company || '',
     work: request.work || '',
@@ -98,6 +94,20 @@ function mapRequestToUserData(request: any): UserData {
   };
 }
 
+function applicationText(v?: string | null): string {
+  const t = (v ?? '').trim();
+  return t ? t : '—';
+}
+
+function ApplicationField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="py-2.5 border-b border-gray-100 last:border-0">
+      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</div>
+      <div className="mt-1 text-sm text-gray-900 break-words">{children}</div>
+    </div>
+  );
+}
+
 const PendingRegistrations: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -116,7 +126,6 @@ const PendingRegistrations: React.FC = () => {
   const [processingUser, setProcessingUser] = useState<string | null>(null);
   const [confirmReject, setConfirmReject] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [followUpSendingId, setFollowUpSendingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -334,6 +343,8 @@ const PendingRegistrations: React.FC = () => {
     const term = searchTerm.toLowerCase();
     const filtered = pendingUsers.filter(user => 
       (user.name?.toLowerCase().includes(term) || false) || 
+      (user.firstName?.toLowerCase().includes(term) || false) ||
+      (user.lastName?.toLowerCase().includes(term) || false) ||
       (user.email?.toLowerCase().includes(term) || false) ||
       (user.work?.toLowerCase().includes(term) || false) ||
       (user.company?.toLowerCase().includes(term) || false) ||
@@ -617,24 +628,6 @@ const PendingRegistrations: React.FC = () => {
     return positionMap[position] || position;
   };
 
-  const hasExtraDetails = (u: UserData) =>
-    !!(
-      u.bioTitle ||
-      u.bio ||
-      u.chapter ||
-      u.city ||
-      u.country ||
-      u.website ||
-      u.twitter ||
-      (u.skills && u.skills.length > 0) ||
-      u.address ||
-      u.industry ||
-      u.expertiseAreas ||
-      u.lookingToGain ||
-      u.offerToMembers ||
-      u.heardAboutAlma
-    );
-
   if (loading) {
     return (
       <div className="min-h-full overflow-x-hidden w-full max-w-full">
@@ -710,8 +703,14 @@ const PendingRegistrations: React.FC = () => {
               </div>
             ) : (
               filteredUsers.map((userData) => {
-                const expanded = expandedId === userData.uid;
-                const hasExtra = hasExtraDetails(userData);
+                const nameParts = (userData.name || '').trim().split(/\s+/).filter(Boolean);
+                const displayFirst =
+                  userData.firstName?.trim() || nameParts[0] || '—';
+                const displayLast =
+                  userData.lastName?.trim() ||
+                  (nameParts.length > 1 ? nameParts.slice(1).join(' ') : '') ||
+                  '—';
+
                 return (
                   <div
                     key={userData.uid}
@@ -870,195 +869,112 @@ const PendingRegistrations: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                          <div className="flex items-start gap-3">
-                            <Mail className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                            <div className="min-w-0">
-                              <div className="text-gray-500">Email</div>
-                              <div className="font-medium text-gray-900 break-all">{userData.email || '—'}</div>
+                        <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-4 sm:p-5">
+                          <div className="flex items-center gap-2 mb-3">
+                            <FileText className="h-4 w-4 text-brand-blue-dark flex-shrink-0" />
+                            <h4 className="text-sm font-semibold text-gray-900">Application (full submission)</h4>
+                          </div>
+                          <div className="sm:columns-2 sm:gap-x-8 [column-fill:_balance]">
+                            <div className="break-inside-avoid">
+                              <ApplicationField label="First name">{displayFirst}</ApplicationField>
+                              <ApplicationField label="Last name">{displayLast}</ApplicationField>
+                              <ApplicationField label="Email address">
+                                <span className="break-all">{applicationText(userData.email)}</span>
+                              </ApplicationField>
+                              <ApplicationField label="Mobile">{applicationText(userData.phone)}</ApplicationField>
+                              <ApplicationField label="Address">
+                                <span className="whitespace-pre-wrap">{applicationText(userData.address)}</span>
+                              </ApplicationField>
+                              <ApplicationField label="Industry">{applicationText(userData.industry)}</ApplicationField>
+                              <ApplicationField label="LinkedIn profile">
+                                {userData.linkedinUsername && linkedInProfileHref(userData.linkedinUsername) ? (
+                                  <a
+                                    href={linkedInProfileHref(userData.linkedinUsername)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-brand-blue-light hover:underline font-medium break-all"
+                                  >
+                                    {linkedInProfileHref(userData.linkedinUsername)}
+                                  </a>
+                                ) : (
+                                  '—'
+                                )}
+                              </ApplicationField>
+                              <ApplicationField label="Current role and company (bio short)">
+                                {applicationText(userData.bioTitle || userData.company)}
+                              </ApplicationField>
+                            </div>
+                            <div className="break-inside-avoid">
+                              <ApplicationField label="Key areas of expertise">
+                                <span className="whitespace-pre-wrap">{applicationText(userData.expertiseAreas)}</span>
+                              </ApplicationField>
+                              <ApplicationField label="What are you looking to gain from AlmaLinks?">
+                                <span className="whitespace-pre-wrap">{applicationText(userData.lookingToGain)}</span>
+                              </ApplicationField>
+                              <ApplicationField label="What can you offer to other members (locally and globally)?">
+                                <span className="whitespace-pre-wrap">{applicationText(userData.offerToMembers)}</span>
+                              </ApplicationField>
+                              <ApplicationField label="Entrepreneurial / business background (bio long)">
+                                {userData.bio?.trim() ? (
+                                  userData.bio.includes('<') ? (
+                                    <div
+                                      className="text-gray-900 prose prose-sm max-w-none prose-p:my-1"
+                                      dangerouslySetInnerHTML={{ __html: userData.bio }}
+                                    />
+                                  ) : (
+                                    <span className="whitespace-pre-wrap">{userData.bio}</span>
+                                  )
+                                ) : (
+                                  '—'
+                                )}
+                              </ApplicationField>
+                              <ApplicationField label="How did you hear about AlmaLinks? (referral details)">
+                                <span className="whitespace-pre-wrap">{applicationText(userData.heardAboutAlma)}</span>
+                              </ApplicationField>
                             </div>
                           </div>
-                          <div className="flex items-start gap-3">
-                            <Phone className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                            <div>
-                              <div className="text-gray-500">Mobile</div>
-                              <div className="font-medium text-gray-900">{userData.phone || '—'}</div>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-3 sm:col-span-2">
-                            <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                            <div className="min-w-0">
-                              <div className="text-gray-500">Address</div>
-                              <div className="font-medium text-gray-900 whitespace-pre-wrap">{userData.address || '—'}</div>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-3">
-                            <Briefcase className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                            <div>
-                              <div className="text-gray-500">Industry</div>
-                              <div className="font-medium text-gray-900">{userData.industry || '—'}</div>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-3">
-                            <User className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                            <div>
-                              <div className="text-gray-500">Role / company (short)</div>
-                              <div className="font-medium text-gray-900">{userData.bioTitle || userData.company || '—'}</div>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-3 sm:col-span-2">
-                            <Linkedin className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                            <div>
-                              <div className="text-gray-500">LinkedIn</div>
-                              {userData.linkedinUsername && linkedInProfileHref(userData.linkedinUsername) ? (
-                                <a
-                                  href={linkedInProfileHref(userData.linkedinUsername)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-brand-blue-light hover:underline font-medium"
-                                >
-                                  View profile
-                                </a>
-                              ) : (
-                                <span className="font-medium text-gray-500">—</span>
-                              )}
+
+                          <div className="mt-5 pt-4 border-t border-gray-200">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Other signup fields (directory / legacy)</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-800">
+                              <div><span className="text-gray-500">Position: </span>{applicationText(formatPosition(userData.position))}</div>
+                              <div><span className="text-gray-500">Chapter: </span>{applicationText(userData.chapter)}</div>
+                              <div><span className="text-gray-500">Work: </span>{applicationText(userData.work)}</div>
+                              <div><span className="text-gray-500">Company (stored): </span>{applicationText(userData.company)}</div>
+                              <div><span className="text-gray-500">City: </span>{applicationText(userData.city)}</div>
+                              <div><span className="text-gray-500">Country: </span>{applicationText(userData.country)}</div>
+                              <div className="sm:col-span-2"><span className="text-gray-500">Timezone: </span>{applicationText(userData.timezone)}</div>
+                              <div className="sm:col-span-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                <span className="text-gray-500">Website: </span>
+                                {userData.website?.trim() ? (
+                                  <a href={userData.website.startsWith('http') ? userData.website : `https://${userData.website}`} target="_blank" rel="noopener noreferrer" className="text-brand-blue-light hover:underline break-all">
+                                    {userData.website}
+                                  </a>
+                                ) : (
+                                  <span>—</span>
+                                )}
+                              </div>
+                              <div className="sm:col-span-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                <span className="text-gray-500">Twitter: </span>
+                                {userData.twitter?.trim() ? (
+                                  <a href={userData.twitter.startsWith('http') ? userData.twitter : `https://${userData.twitter}`} target="_blank" rel="noopener noreferrer" className="text-brand-blue-light hover:underline break-all">
+                                    {userData.twitter}
+                                  </a>
+                                ) : (
+                                  <span>—</span>
+                                )}
+                              </div>
+                              <div className="sm:col-span-2">
+                                <span className="text-gray-500">Skills: </span>
+                                {userData.skills && userData.skills.length > 0 ? (
+                                  <span>{userData.skills.join(', ')}</span>
+                                ) : (
+                                  <span>—</span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
-
-                        {hasExtra && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => setExpandedId(expanded ? null : userData.uid)}
-                              className="inline-flex items-center gap-2 text-sm font-medium text-brand-blue-dark hover:text-brand-blue-light transition-colors"
-                            >
-                              {expanded ? (
-                                <ChevronDown className="h-4 w-4" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4" />
-                              )}
-                              {expanded ? 'Hide full details' : 'View full details'}
-                            </button>
-
-                            {expanded && (
-                              <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 sm:p-5 space-y-4 text-sm">
-                                {userData.expertiseAreas && (
-                                  <div>
-                                    <div className="flex items-center gap-2 text-gray-500 mb-1">
-                                      <FileText className="h-4 w-4" />
-                                      Key areas of expertise
-                                    </div>
-                                    <p className="text-gray-900 whitespace-pre-wrap">{userData.expertiseAreas}</p>
-                                  </div>
-                                )}
-                                {userData.lookingToGain && (
-                                  <div>
-                                    <div className="flex items-center gap-2 text-gray-500 mb-1">
-                                      <FileText className="h-4 w-4" />
-                                      Looking to gain from AlmaLinks
-                                    </div>
-                                    <p className="text-gray-900 whitespace-pre-wrap">{userData.lookingToGain}</p>
-                                  </div>
-                                )}
-                                {userData.offerToMembers && (
-                                  <div>
-                                    <div className="flex items-center gap-2 text-gray-500 mb-1">
-                                      <FileText className="h-4 w-4" />
-                                      What they can offer to members
-                                    </div>
-                                    <p className="text-gray-900 whitespace-pre-wrap">{userData.offerToMembers}</p>
-                                  </div>
-                                )}
-                                {userData.heardAboutAlma && (
-                                  <div>
-                                    <div className="flex items-center gap-2 text-gray-500 mb-1">
-                                      <FileText className="h-4 w-4" />
-                                      How they heard about AlmaLinks
-                                    </div>
-                                    <p className="text-gray-900 whitespace-pre-wrap">{userData.heardAboutAlma}</p>
-                                  </div>
-                                )}
-                                {userData.bioTitle && (
-                                  <div>
-                                    <div className="flex items-center gap-2 text-gray-500 mb-1">
-                                      <FileText className="h-4 w-4" />
-                                      Short bio
-                                    </div>
-                                    <p className="text-gray-900 font-medium">{userData.bioTitle}</p>
-                                  </div>
-                                )}
-                                {userData.bio && (
-                                  <div>
-                                    <div className="flex items-center gap-2 text-gray-500 mb-1">
-                                      <FileText className="h-4 w-4" />
-                                      Bio
-                                    </div>
-                                    {userData.bio.includes('<') ? (
-                                      <div
-                                        className="text-gray-700 prose prose-sm max-w-none prose-p:my-1"
-                                        dangerouslySetInnerHTML={{ __html: userData.bio }}
-                                      />
-                                    ) : (
-                                      <p className="text-gray-700 whitespace-pre-wrap">{userData.bio}</p>
-                                    )}
-                                  </div>
-                                )}
-                                {userData.chapter && (
-                                  <div>
-                                    <div className="flex items-center gap-2 text-gray-500 mb-1">
-                                      <MapPin className="h-4 w-4" />
-                                      Chapter
-                                    </div>
-                                    <p className="text-gray-900">{userData.chapter}</p>
-                                  </div>
-                                )}
-                                {(userData.city || userData.country) && (
-                                  <div>
-                                    <div className="flex items-center gap-2 text-gray-500 mb-1">
-                                      <MapPin className="h-4 w-4" />
-                                      Location
-                                    </div>
-                                    <p className="text-gray-900">{[userData.city, userData.country].filter(Boolean).join(', ')}</p>
-                                  </div>
-                                )}
-                                {userData.timezone && (
-                                  <div>
-                                    <div className="text-gray-500 mb-1">Timezone</div>
-                                    <p className="text-gray-900">{userData.timezone}</p>
-                                  </div>
-                                )}
-                                {(userData.website || userData.twitter) && (
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <Globe className="h-4 w-4 text-gray-400" />
-                                    {userData.website && (
-                                      <a href={userData.website.startsWith('http') ? userData.website : `https://${userData.website}`} target="_blank" rel="noopener noreferrer" className="text-brand-blue-light hover:underline">
-                                        Website
-                                      </a>
-                                    )}
-                                    {userData.twitter && (
-                                      <a href={userData.twitter.startsWith('http') ? userData.twitter : `https://${userData.twitter}`} target="_blank" rel="noopener noreferrer" className="text-brand-blue-light hover:underline">
-                                        Twitter
-                                      </a>
-                                    )}
-                                  </div>
-                                )}
-                                {userData.skills && userData.skills.length > 0 && (
-                                  <div>
-                                    <div className="text-gray-500 mb-2">Skills</div>
-                                    <div className="flex flex-wrap gap-2">
-                                      {userData.skills.map((s, i) => (
-                                        <span key={i} className="px-2.5 py-1 rounded-lg bg-brand-blue-dark/10 text-brand-blue-dark text-xs font-medium">
-                                          {s}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -1073,7 +989,7 @@ const PendingRegistrations: React.FC = () => {
               <li><strong>Send intro email</strong> — Optional. Sends the introductory message from AlmaLinks; the server CC list is configured in environment variables. Signup no longer auto-emails applicants.</li>
               <li><strong>Approve</strong> — Grants access and sends the member welcome / onboarding email from communications@almalinks.org (when configured).</li>
               <li><strong>Reject</strong> — Marks the request as rejected. The user can sign in again to submit a new request.</li>
-              <li>Use <strong>View full details</strong> for long-form answers and bio before deciding.</li>
+              <li>The full application is shown above for each pending request. Approving copies only member-directory fields to the user profile; application-only answers remain on the join request record.</li>
             </ul>
           </div>
         </div>
