@@ -382,6 +382,22 @@ const MembersPage: React.FC = () => {
     const atDailyLimit = dailyRequestCount !== null && isOverDailyLimit(dailyRequestCount);
 
     const cardOutlineClass = hasIncomingRequest ? 'ring-2 ring-blue-500 border-blue-500' : '';
+    const linkedinHref = member.linkedin ? linkedInProfileHref(member.linkedin) : '';
+
+    const memberLinkedInTicket =
+      linkedinHref ? (
+        <div className="rounded-lg border border-dashed border-gray-300 bg-gradient-to-r from-gray-50 to-slate-50 px-4 py-2.5 flex items-center justify-center sm:justify-start gap-2">
+          <a
+            href={linkedinHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[#0A66C2] hover:text-[#004182] hover:underline"
+          >
+            <Linkedin className="h-4 w-4 flex-shrink-0" aria-hidden />
+            <span>LinkedIn profile</span>
+          </a>
+        </div>
+      ) : null;
 
     if (viewMode === 'list') {
       return (
@@ -441,17 +457,6 @@ const MembersPage: React.FC = () => {
                   >
                     <ExternalLink className="h-5 w-5" />
                   </button>
-                  {member.linkedin && linkedInProfileHref(member.linkedin) && (
-                    <a
-                      href={linkedInProfileHref(member.linkedin)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                      title="LinkedIn Profile"
-                    >
-                      <Linkedin className="h-5 w-5" />
-                    </a>
-                  )}
 
                   {hasIncomingRequest && incomingReq && (
                     <div className="flex items-center gap-1">
@@ -518,6 +523,7 @@ const MembersPage: React.FC = () => {
               </div>
             </div>
           </div>
+          {memberLinkedInTicket && <div className="mt-4 sm:pl-[calc(4rem+1rem)]">{memberLinkedInTicket}</div>}
         </div>
       );
     }
@@ -590,6 +596,8 @@ const MembersPage: React.FC = () => {
           </div>
         )}
 
+        {memberLinkedInTicket && <div className="mb-3">{memberLinkedInTicket}</div>}
+
         {/* Spacer to push footer to bottom */}
         <div className="flex-grow"></div>
 
@@ -603,17 +611,6 @@ const MembersPage: React.FC = () => {
             >
               <ExternalLink className="h-5 w-5" />
             </button>
-            {member.linkedin && linkedInProfileHref(member.linkedin) && (
-              <a
-                href={linkedInProfileHref(member.linkedin)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 text-gray-400 hover:text-brand-blue transition-colors border border-gray-200 rounded-lg hover:border-blue-200"
-                title="LinkedIn Profile"
-              >
-                <Linkedin className="h-5 w-5" />
-              </a>
-            )}
           </div>
 
           {hasIncomingRequest && incomingReq && (
