@@ -4,6 +4,7 @@ import { UserProfile } from '../../types/user';
 import { getVisibilityDescription } from '../../utils/privacy';
 import Favicon from '../ui/Favicon';
 import BioHtml from './BioHtml';
+import { formatMemberMonthYear } from '../../utils/firestoreDate';
 
 interface ProfilePreviewCardProps {
   profile: UserProfile;
@@ -39,6 +40,7 @@ const ProfilePreviewCard: React.FC<ProfilePreviewCardProps> = ({
   const displayName = profile.displayName || 'Your Name';
   const avatarColor = getAvatarColor(displayName);
   const hasProfileImage = profile.avatarUrl || profile.profileImage;
+  const memberSinceLabel = formatMemberMonthYear(profile.joinedAt, profile.createdAt);
 
   const getVisibilityIcon = (visibility: string) => {
     switch (visibility) {
@@ -231,19 +233,12 @@ const ProfilePreviewCard: React.FC<ProfilePreviewCardProps> = ({
         </div>
 
         {/* Member Since */}
-        {(profile.joinedAt || profile.createdAt) && (() => {
-          const ts = profile.joinedAt ?? profile.createdAt;
-          const date = ts?.toDate ? ts.toDate() : (ts instanceof Date ? ts : new Date(ts));
-          if (Number.isNaN(date.getTime())) return null;
-          return (
-            <div className="flex items-center text-gray-500 text-xs">
-              <Calendar className="h-3 w-3 mr-2" />
-              <span>
-                Member since {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </span>
-            </div>
-          );
-        })()}
+        {memberSinceLabel && (
+          <div className="flex items-center text-gray-500 text-xs">
+            <Calendar className="h-3 w-3 mr-2" />
+            <span>Member since {memberSinceLabel}</span>
+          </div>
+        )}
 
         {/* Completion Percentage */}
         {showEditMode && profile.profileCompletionPercentage !== undefined && (

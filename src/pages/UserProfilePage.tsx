@@ -20,6 +20,7 @@ import ImageWithCrop from '../components/profile/ImageWithCrop';
 import BioHtml from '../components/profile/BioHtml';
 import { isSafeImageUrl } from '../utils/imageUrl';
 import { linkedInProfileHref } from '../utils/linkedInUrl';
+import { formatMemberMonthYear } from '../utils/firestoreDate';
 
 interface Connection {
   id: string;
@@ -155,24 +156,6 @@ const UserProfilePage: React.FC = () => {
     return () => window.removeEventListener('keydown', onEscape);
   }, [showAvatarModal, closeAvatarModal]);
 
-  const formatDate = (timestamp: any): string => {
-    if (!timestamp) return '';
-    
-    let date;
-    if (timestamp?.toDate) {
-      date = timestamp.toDate();
-    } else if (timestamp instanceof Date) {
-      date = timestamp;
-    } else {
-      date = new Date(timestamp);
-    }
-    
-    return date.toLocaleDateString('en-US', {
-      month: 'long',
-      year: 'numeric'
-    });
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
@@ -227,6 +210,7 @@ const UserProfilePage: React.FC = () => {
   const avatarColor = getAvatarColor(displayName);
 
   const profileImageUrl = profile.profileImage || profile.avatarUrl;
+  const joinedMonthYear = formatMemberMonthYear(profile.joinedAt, profile.createdAt);
   const avatarFallback = (
     <div className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-3xl`}>
       {displayName.charAt(0)}
@@ -423,10 +407,10 @@ const UserProfilePage: React.FC = () => {
                       </div>
                     )}
                     
-                    {(profile.joinedAt || profile.createdAt) && (
+                    {joinedMonthYear && (
                       <div className="flex items-center text-gray-600">
                         <Calendar className="h-5 w-5 mr-3 text-gray-400" />
-                        Joined {formatDate(profile.joinedAt ?? profile.createdAt)}
+                        Joined {joinedMonthYear}
                       </div>
                     )}
                   </div>
