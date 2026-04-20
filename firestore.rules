@@ -212,6 +212,19 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // --- Event reviews (public read on event page; create/update/delete own doc; admin full access) ---
+    match /event_reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.eventId is string
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.comment is string;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow read, write: if isAdmin();
+    }
+
     // --- Default: deny any other collection ---
     match /{document=**} {
       allow read, write: if false;

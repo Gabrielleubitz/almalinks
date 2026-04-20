@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Calendar, MapPin, Clock, ArrowLeft, Users, CheckCircle, AlertCircle, Ticket, User, Linkedin, Briefcase, CalendarPlus, ExternalLink, Link as LinkIcon } from 'lucide-react';
 import { EventService, EventData } from '../services/eventService';
 import { getMyRegistration, createPending } from '../services/registrationService';
@@ -75,6 +75,7 @@ function ResourceLinkCard({ url, label: customLabel }: { url: string; label?: st
 const EventDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { logEventRegistration } = useActivityTracking();
   
@@ -118,6 +119,17 @@ const EventDetailPage: React.FC = () => {
       document.title = 'AlmaLinks - Where Bold Ideas Meet Real Conversations';
     };
   }, [event, error]);
+
+  const isEventCompleted = event?.status === 'completed';
+
+  useEffect(() => {
+    if (!event?.id || !isEventCompleted) return;
+    if (searchParams.get('review') !== '1') return;
+    const timer = window.setTimeout(() => {
+      document.getElementById('event-reviews')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [event?.id, isEventCompleted, searchParams]);
 
   const loadEvent = async () => {
     if (!slug) return;
@@ -323,8 +335,6 @@ const EventDetailPage: React.FC = () => {
   const handleApplyToSpeak = () => {
     window.location.href = "mailto:speakers@almalinks.com?subject=Speaker Application for " + event?.name;
   };
-
-  const isEventCompleted = event?.status === 'completed';
 
   if (loading) {
     return (
@@ -693,7 +703,11 @@ const EventDetailPage: React.FC = () => {
 
       {/* Reviews Section - Only show for completed events */}
       {isEventCompleted && (
-        <ReviewSection eventId={event.id} isCompleted={isEventCompleted} />
+        <ReviewSection
+          eventId={event.id}
+          isCompleted={isEventCompleted}
+          userCheckedIn={registration?.checkedIn === true}
+        />
       )}
 
       <Footer />

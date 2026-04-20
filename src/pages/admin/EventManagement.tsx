@@ -8,6 +8,7 @@ import { UserService } from '../../services/userService';
 import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../firebase/config';
 import type { UserCard } from '../../types/user';
+import { triggerEventCompletedThankYouEmail } from '../../utils/triggerEventCompletedThankYouEmail';
 
 type EventFilter = 'all' | 'upcoming' | 'past';
 type ViewMode = 'cards' | 'list';
@@ -81,7 +82,12 @@ const EventManagement: React.FC = () => {
     setUpdatingStatus(eventId);
     try {
       await EventService.updateEventStatus(eventId, newStatus);
-      
+      if (newStatus === 'completed') {
+        triggerEventCompletedThankYouEmail(eventId).then((r) => {
+          if (!r.ok) console.warn('[EventManagement] Thank-you emails:', r.error);
+        });
+      }
+
       // Update local state
       setEvents(prev => prev.map(event => 
         event.id === eventId 

@@ -65,6 +65,8 @@ export interface EventData {
   chapter?: string | null;
   /** Optional audience targeting for who can see the event when public statuses are used. */
   eventAudience?: AudienceSelection | null;
+  /** Set when post-completion thank-you emails were sent to checked-in attendees. */
+  postCompletionThankYouSentAt?: any;
 }
 
 export interface EventRegistration {

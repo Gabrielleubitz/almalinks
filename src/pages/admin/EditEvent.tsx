@@ -13,6 +13,7 @@ import AudienceSelector, { RecipientMode, AudienceSelection } from '../../compon
 import { hasAudiencePickForMode } from '../../utils/eventAudienceUtils';
 import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/admin/EmailRecipientAutocomplete';
 import RecipientPreview from '../../components/admin/RecipientPreview';
+import { triggerEventCompletedThankYouEmail } from '../../utils/triggerEventCompletedThankYouEmail';
 
 const EditEvent: React.FC = () => {
   const navigate = useNavigate();
@@ -288,6 +289,15 @@ const EditEvent: React.FC = () => {
               }
             : null,
       });
+
+      const becameCompleted =
+        originalEvent?.status !== 'completed' && formData.status === 'completed';
+      if (becameCompleted) {
+        triggerEventCompletedThankYouEmail(eventId).then((r) => {
+          if (!r.ok) console.warn('[EditEvent] Thank-you emails:', r.error);
+        });
+      }
+
       // Private details + HubSpot sync: use server APIs (bypasses client Firestore rules)
       let hubspotStatus = '';
       let announcementStatus = '';

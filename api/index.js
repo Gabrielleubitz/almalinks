@@ -19,6 +19,7 @@ import mailchimpSyncContactHandler from '../lib/server/api/mailchimp-sync-contac
 import mailchimpImportUsersHandler from '../lib/server/api/mailchimp-import-users.js';
 import sendEventAnnouncementHandler from '../lib/server/api/send-event-announcement.js';
 import eventRegistrationApprovedEmailHandler from '../lib/server/api/event-registration-approved-email.js';
+import eventCompletedThankYouEmailHandler from '../lib/server/api/event-completed-thank-you-email.js';
 import welcomeEmailHandler from '../lib/server/api/welcome-email.js';
 import testMandrillHandler from '../lib/server/api/test-mandrill.js';
 import adminTestMailjetHandler from '../lib/server/api/admin-test-mailjet.js';
@@ -77,6 +78,7 @@ const routeTable = new Map([
   ['/api/mailchimp-import-users', mailchimpImportUsersHandler],
   ['/api/send-event-announcement', sendEventAnnouncementHandler],
   ['/api/event-registration-approved-email', eventRegistrationApprovedEmailHandler],
+  ['/api/event-completed-thank-you-email', eventCompletedThankYouEmailHandler],
   ['/api/welcome-email', welcomeEmailHandler],
   ['/api/test-mandrill', testMandrillHandler],
   ['/api/sync-hubspot-contacts', syncHubspotContactsHandler],
