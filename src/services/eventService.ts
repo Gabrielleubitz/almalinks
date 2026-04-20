@@ -471,7 +471,10 @@ export class EventService {
   }
 
   // Get single event by ID
-  static async getEventById(eventId: string): Promise<EventData | null> {
+  static async getEventById(
+    eventId: string,
+    options?: { skipAudienceVisibility?: boolean }
+  ): Promise<EventData | null> {
     try {
       const docRef = doc(db, 'events', eventId);
       const docSnap = await getDoc(docRef);
@@ -479,9 +482,11 @@ export class EventService {
       if (docSnap.exists()) {
         const event = { id: docSnap.id, ...docSnap.data() } as EventData;
 
-        const viewer = await this.getCurrentViewerContext();
-        const canSee = await this.canViewerSeeEvent(event, viewer, new Map());
-        if (!canSee) return null;
+        if (!options?.skipAudienceVisibility) {
+          const viewer = await this.getCurrentViewerContext();
+          const canSee = await this.canViewerSeeEvent(event, viewer, new Map());
+          if (!canSee) return null;
+        }
 
         // Add slug if missing
         if (!event.slug) {
@@ -595,7 +600,7 @@ export class EventService {
         const newSlug = generateSlug(eventData.name);
 
         // Get current event to check if slug should be updated
-        const currentEvent = await this.getEventById(eventId);
+        const currentEvent = await this.getEventById(eventId, { skipAudienceVisibility: true });
         if (currentEvent && currentEvent.slug !== newSlug) {
           // Ensure new slug is unique
           const uniqueSlug = await this.ensureUniqueSlug(newSlug);

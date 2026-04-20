@@ -78,7 +78,7 @@ const EditEvent: React.FC = () => {
       console.log('🔄 EditEvent - Loading event with ID:', eventId);
       setLoading(true);
       setError(null);
-      const event = await EventService.getEventById(eventId);
+      const event = await EventService.getEventById(eventId, { skipAudienceVisibility: true });
       
       if (!event) {
         console.error('❌ EditEvent - Event not found for ID:', eventId);
@@ -133,7 +133,20 @@ const EditEvent: React.FC = () => {
       setAudienceMode(savedAudience.mode || 'all_users');
       setAudienceSelection(savedAudience);
       if (savedAudience.mode === 'individuals' && Array.isArray(savedAudience.ids) && savedAudience.ids.length) {
-        setIndividualRecipientObjects(savedAudience.ids.map((uid) => ({ uid, email: '' })));
+        const hydrated = await Promise.all(
+          savedAudience.ids.map(async (uid) => {
+            const u = await EventService.getUserById(uid);
+            const email = (u?.email || '').trim();
+            const name = (u?.name || u?.displayName || '') as string;
+            return { uid, email, name: name || undefined };
+          })
+        );
+        const withEmail = hydrated.filter((r) => r.email);
+        setIndividualRecipientObjects(withEmail);
+        setIndividualRecipients(withEmail.map((r) => r.email).join(', '));
+      } else {
+        setIndividualRecipientObjects([]);
+        setIndividualRecipients('');
       }
       
       setPreviewSlug(event.slug);
@@ -200,6 +213,18 @@ const EditEvent: React.FC = () => {
     // Normalize strings for comparison (trim, treat null/undefined as '')
     const s = (v: string | undefined) => (v ?? '').toString().trim();
 
+    const nextAudience =
+      formData.status === 'active'
+        ? {
+            mode: audienceMode,
+            ...(audienceMode === 'individuals'
+              ? { ids: [...new Set(individualRecipientObjects.map((r) => r.uid).filter(Boolean) as string[])].sort() }
+              : audienceSelection),
+          }
+        : null;
+    const prevAudience = (originalEvent as EventData & { eventAudience?: AudienceSelection | null }).eventAudience;
+    const audienceChanged = JSON.stringify(nextAudience) !== JSON.stringify(prevAudience ?? null);
+
     return (
       formData.name !== originalEvent.name ||
       formData.location !== originalEvent.location ||
@@ -213,7 +238,8 @@ const EditEvent: React.FC = () => {
       s(formData.resourceLinkUrl) !== s(orig.resourceLinkUrl) ||
       s(formData.resourceLinkLabel) !== s(orig.resourceLinkLabel) ||
       s(formData.zoomRecordingUrl) !== s(orig.zoomRecordingUrl) ||
-      s(formData.zoomPassword) !== s(orig.zoomPassword)
+      s(formData.zoomPassword) !== s(orig.zoomPassword) ||
+      audienceChanged
     );
   };
 
@@ -331,6 +357,32 @@ const EditEvent: React.FC = () => {
           }
         }
       }
+
+      const savedEventAudience =
+        formData.status === 'active'
+          ? {
+              mode: audienceMode,
+              ...(audienceMode === 'individuals'
+                ? { ids: [...new Set(individualRecipientObjects.map((r) => r.uid).filter(Boolean) as string[])] }
+                : audienceSelection),
+            }
+          : null;
+      setOriginalEvent((prev) =>
+        prev
+          ? {
+              ...prev,
+              name: formData.name,
+              location: formData.location,
+              date: formData.date,
+              description: formData.description,
+              imageUrl: formData.imageUrl,
+              imageCrop: formData.imageCrop ?? null,
+              status: formData.status,
+              chapter: formData.chapter?.trim() || null,
+              eventAudience: savedEventAudience as EventData['eventAudience'],
+            }
+          : null
+      );
 
       setSuccess(`Event "${formData.name}" updated successfully!${hubspotStatus}${announcementStatus}`);
       setSavedAt(Date.now());
@@ -747,9 +799,13 @@ const EditEvent: React.FC = () => {
               </select>
             </div>
 
-            {formData.status === 'active' && (
-              <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-4">
-                <p className="text-sm font-medium text-blue-900">Who should see this active event?</p>
+            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-4">
+                <p className="text-sm font-medium text-blue-900">Who should see this event?</p>
+                {formData.status !== 'active' && (
+                  <p className="text-xs text-blue-800">
+                    Visibility settings are stored on the event and apply when status is Active.
+                  </p>
+                )}
                 <AudienceSelector
                   mode={audienceMode}
                   selection={audienceSelection}
@@ -795,8 +851,7 @@ const EditEvent: React.FC = () => {
                 {audienceRecipientCount !== null && (
                   <p className="text-xs text-blue-800">Estimated audience: {audienceRecipientCount}</p>
                 )}
-              </div>
-            )}
+            </div>
 
             {/* Submit Buttons */}
             <div className="flex justify-center space-x-4 pt-6">

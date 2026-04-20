@@ -80,7 +80,7 @@ const EventRegistrationsPage: React.FC = () => {
           listEventRegistrations(eventFilter, {
             status: statusFilter as 'pending' | 'approved' | 'rejected',
           }),
-          EventService.getEventById(eventFilter),
+          EventService.getEventById(eventFilter, { skipAudienceVisibility: true }),
         ]);
         setRows(
           list.map((r) => ({

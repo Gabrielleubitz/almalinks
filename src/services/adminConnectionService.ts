@@ -493,7 +493,7 @@ export class AdminConnectionService {
       const registeredEventIds = await this.getUserRegisteredEventIds(userId);
       const events = [];
       for (const eventId of registeredEventIds) {
-        const event = await EventService.getEventById(eventId);
+        const event = await EventService.getEventById(eventId, { skipAudienceVisibility: true });
         if (event) {
           events.push(event);
         }
