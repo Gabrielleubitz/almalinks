@@ -33,7 +33,12 @@ function timestampToMs(t: unknown): number {
   return 0;
 }
 
-const ConnectionsCard: React.FC = () => {
+export interface ConnectionsCardProps {
+  /** Denser layout and brand-colored avatars for dashboard sidebar. */
+  compact?: boolean;
+}
+
+const ConnectionsCard: React.FC<ConnectionsCardProps> = ({ compact = false }) => {
   const { user } = useAuth();
   const [connections, setConnections] = useState<EnrichedConnection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -316,29 +321,6 @@ const ConnectionsCard: React.FC = () => {
     ? scrollPosition < scrollContainerRef.current.scrollWidth - scrollContainerRef.current.clientWidth - 10
     : false;
   
-  // Generate avatar color based on name
-  const getAvatarColor = (name: string) => {
-    const colors = [
-      'from-red-500 to-red-600',
-      'from-blue-500 to-blue-600',
-      'from-green-500 to-green-600',
-      'from-purple-500 to-purple-600',
-      'from-yellow-500 to-yellow-600',
-      'from-pink-500 to-pink-600',
-      'from-indigo-500 to-indigo-600',
-      'from-teal-500 to-teal-600'
-    ];
-    
-    // Simple hash function to get consistent color for same name
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    const index = Math.abs(hash) % colors.length;
-    return colors[index];
-  };
-
   // Get connection reason badge with clearer text
   const getConnectionReasonBadge = (connectionType: string) => {
     switch (connectionType) {
@@ -455,13 +437,27 @@ const ConnectionsCard: React.FC = () => {
   };
   
   return (
-    <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 border border-gray-100">
+    <div
+      className={
+        compact
+          ? 'bg-transparent rounded-none shadow-none p-0 border-0'
+          : 'bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 border border-gray-100'
+      }
+    >
       {/* Header - Stacked on mobile, horizontal on desktop */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
+      <div
+        className={
+          compact
+            ? 'flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-2 sm:gap-0'
+            : 'flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-0'
+        }
+      >
         {/* Title Row - Full width on mobile */}
         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-shrink-0">
-          <Users className="h-5 w-5 sm:h-6 sm:w-6 text-brand-blue flex-shrink-0" />
-          <h3 className="text-lg sm:text-xl font-bold text-gray-900 whitespace-nowrap">My Connections</h3>
+          <Users className={compact ? 'h-4 w-4 text-brand-blue flex-shrink-0' : 'h-5 w-5 sm:h-6 sm:w-6 text-brand-blue flex-shrink-0'} />
+          <h3 className={compact ? 'text-sm font-bold text-gray-900 whitespace-nowrap' : 'text-lg sm:text-xl font-bold text-gray-900 whitespace-nowrap'}>
+            My Connections
+          </h3>
         </div>
         
         {/* Controls Row - Full width on mobile, auto on desktop */}
@@ -471,7 +467,11 @@ const ConnectionsCard: React.FC = () => {
             <select
               value={selectedEventId}
               onChange={handleEventChange}
-              className="w-full sm:w-auto appearance-none bg-white border border-gray-300 rounded-lg px-3 py-2 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[44px] sm:min-h-0"
+              className={
+                compact
+                  ? 'w-full sm:w-auto appearance-none bg-white border border-gray-300 rounded-md px-2 py-1.5 pr-7 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs min-h-[40px] sm:min-h-0'
+                  : 'w-full sm:w-auto appearance-none bg-white border border-gray-300 rounded-lg px-3 py-2 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[44px] sm:min-h-0'
+              }
               disabled={loadingEvents || events.length === 0}
             >
               <option value="all">All Events</option>
@@ -517,17 +517,17 @@ const ConnectionsCard: React.FC = () => {
       </div>
       
       {loading ? (
-        <div className="text-center py-8">
-          <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your connections...</p>
+        <div className={compact ? 'text-center py-4' : 'text-center py-8'}>
+          <div className={`border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto ${compact ? 'mb-2 h-6 w-6' : 'mb-4 h-8 w-8'}`}></div>
+          <p className={compact ? 'text-xs text-gray-600' : 'text-gray-600'}>Loading your connections...</p>
         </div>
       ) : loadingEvents ? (
-        <div className="text-center py-8">
-          <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your events...</p>
+        <div className={compact ? 'text-center py-4' : 'text-center py-8'}>
+          <div className={`border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto ${compact ? 'mb-2 h-6 w-6' : 'mb-4 h-8 w-8'}`}></div>
+          <p className={compact ? 'text-xs text-gray-600' : 'text-gray-600'}>Loading your events...</p>
         </div>
       ) : connections.length === 0 ? (
-        <div className="text-center py-8 bg-gray-50 rounded-2xl">
+        <div className={compact ? 'text-center py-4 bg-gray-50 rounded-lg px-2' : 'text-center py-8 bg-gray-50 rounded-2xl'}>
           <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h4 className="text-lg font-semibold text-gray-900 mb-2">No Connections Yet</h4>
           <p className="text-gray-600 mb-4">
@@ -566,14 +566,12 @@ const ConnectionsCard: React.FC = () => {
           {/* Scrollable container */}
           <div 
             ref={scrollContainerRef}
-            className="flex overflow-x-auto pb-4 space-x-4 scrollbar-hide"
+            className={compact ? 'flex overflow-x-auto pb-2 space-x-2 scrollbar-hide' : 'flex overflow-x-auto pb-4 space-x-4 scrollbar-hide'}
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {connections.map((connection) => {
               const partner = getFinalPartnerData(connection);
               if (!partner) return null;
-              
-              const avatarColor = getAvatarColor(partner.name);
               
               // Handle event name display - show multiple events in "All Events" view
               let eventName = 'AlmaLinks Event';
@@ -600,12 +598,16 @@ const ConnectionsCard: React.FC = () => {
               return (
                 <div
                   key={connection.id}
-                  className="flex-shrink-0 w-64 bg-white rounded-xl border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col"
+                  className={
+                    compact
+                      ? 'flex-shrink-0 w-[11.5rem] bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-all duration-200 overflow-hidden flex flex-col'
+                      : 'flex-shrink-0 w-64 bg-white rounded-xl border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col'
+                  }
                 >
-                  <div className="p-5 flex flex-col h-full">
+                  <div className={compact ? 'p-3 flex flex-col h-full' : 'p-5 flex flex-col h-full'}>
                     {/* Header Section - Avatar and Name */}
-                    <div className="flex items-start space-x-3 mb-4">
-                      <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                    <div className={compact ? 'flex items-start space-x-2 mb-2' : 'flex items-start space-x-3 mb-4'}>
+                      <div className={compact ? 'w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-brand-dark' : 'w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-brand-dark'}>
                         {partner.profileImage ? (
                           <img
                             src={partner.profileImage}
@@ -624,14 +626,14 @@ const ConnectionsCard: React.FC = () => {
                           />
                         ) : null}
                         <div
-                          className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-lg ${partner.profileImage ? 'hidden' : 'flex'}`}
+                          className={`w-full h-full bg-brand-dark flex items-center justify-center text-white font-semibold ${compact ? 'text-sm' : 'text-lg'} ${partner.profileImage ? 'hidden' : 'flex'}`}
                         >
-                          {partner.name.charAt(0)}
+                          {partner.name.charAt(0).toUpperCase()}
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-gray-900 line-clamp-1 mb-1">{partner.name}</h4>
-                        <p className="text-sm text-gray-600 line-clamp-2 leading-snug">{partner.work}</p>
+                        <h4 className={compact ? 'text-sm font-semibold text-gray-900 line-clamp-1 mb-0.5' : 'font-semibold text-gray-900 line-clamp-1 mb-1'}>{partner.name}</h4>
+                        <p className={compact ? 'text-xs text-gray-600 line-clamp-2 leading-snug' : 'text-sm text-gray-600 line-clamp-2 leading-snug'}>{partner.work}</p>
                       </div>
                     </div>
 

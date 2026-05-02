@@ -1,23 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, ArrowRight, Clock, Users, RotateCcw, User, Mail, Phone, Briefcase, Ticket, Download, Edit, Save, X, Check, AlertCircle, ChevronDown, Linkedin, Globe, Twitter, CheckCircle, TrendingUp, MessageCircle, Compass, Map, Heart, Camera } from 'lucide-react';
+import { Calendar, MapPin, ArrowRight, Clock, Users, RotateCcw, User, Mail, Phone, Briefcase, Edit, X, Check, AlertCircle, ChevronDown, Linkedin, Globe, Twitter, CheckCircle, TrendingUp, Heart } from 'lucide-react';
 import { EventService, EventData } from '../services/eventService';
 import { ConnectionService } from '../services/connectionService';
 import { useAuth } from '../hooks/useAuth';
-import { useActivityTracking } from '../hooks/useActivityTracking';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AnnouncementsSidebar from '../components/announcements/AnnouncementsSidebar';
 import ConnectionsCard from '../components/dashboard/ConnectionsCard';
-import EventTicketCard from '../components/dashboard/EventTicketCard';
-import { EventTimeDisplay } from '../components/EventTimeDisplay';
-import { getRestrictedEventAccessLabel } from '../utils/eventAccessLabel';
 import ProfilePictureUploader from '../components/profile/ProfilePictureUploader';
-import CoverPhotoUploader from '../components/profile/CoverPhotoUploader';
 import ImageWithCrop from '../components/profile/ImageWithCrop';
 import RichTextBioEditor from '../components/profile/RichTextBioEditor';
 import BioHtml from '../components/profile/BioHtml';
-import type { CropValue, NormalizedCrop } from '../types/crop';
+import type { CropValue } from '../types/crop';
 import Favicon from '../components/ui/Favicon';
 import { linkedInProfileHref } from '../utils/linkedInUrl';
 import SavedIndicator from '../components/ui/SavedIndicator';
@@ -77,15 +72,12 @@ const POSITION_OPTIONS = [
   { value: 'other', label: 'Other' }
 ];
 
-const DASHBOARD_EVENTS_INITIAL = 6;
-
 const EventsPage: React.FC = () => {
   const [events, setEvents] = useState<EventData[]>([]);
   const [userRegistrations, setUserRegistrations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [registrationsLoading, setRegistrationsLoading] = useState(true);
   const [connectionsCount, setConnectionsCount] = useState<number>(0);
-  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
   const [showAllPast, setShowAllPast] = useState(false);
   
   // Edit profile state
@@ -117,8 +109,6 @@ const EventsPage: React.FC = () => {
   const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(null);
   const [coverCrop, setCoverCrop] = useState<CropValue | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
-  const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
-  const [showCoverEditor, setShowCoverEditor] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -412,26 +402,6 @@ const EventsPage: React.FC = () => {
     scheduleAutoSave();
   };
 
-  // Start editing profile
-  const handleEditProfile = () => {
-    setIsEditingProfile(true);
-    setProfileUpdateError(null);
-    setProfileUpdateSuccess(null);
-  };
-
-  // Scroll to profile section and enable editing
-  const scrollToProfile = () => {
-    setIsEditingProfile(true);
-    setProfileUpdateError(null);
-    setProfileUpdateSuccess(null);
-    setTimeout(() => {
-      profileSectionRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
-    }, 100);
-  };
-
   // Cancel editing profile
   const handleCancelEdit = () => {
     setIsEditingProfile(false);
@@ -484,63 +454,6 @@ const EventsPage: React.FC = () => {
     setImageUploadError(errorMessage);
   };
 
-  // Cover photo
-  const handleCoverPhotoSuccess = (url: string) => {
-    setCoverPhotoUrl(url);
-    setCoverUploadError(null);
-  };
-  const handleCoverPhotoError = (errorMessage: string) => {
-    setCoverUploadError(errorMessage);
-  };
-  const handleCoverPhotoRemove = () => {
-    setCoverPhotoUrl(null);
-    setCoverCrop(null);
-    setCoverUploadError(null);
-  };
-  const handleCoverTemplateSelect = async (url: string) => {
-    setCoverPhotoUrl(url);
-    setCoverUploadError(null);
-    try {
-      await updateProfile({ coverPhotoUrl: url });
-      setLastSavedAt(Date.now());
-    } catch (e: unknown) {
-      setCoverUploadError(e instanceof Error ? e.message : 'Failed to set cover');
-    }
-  };
-  const handleCoverConfirm = async (url: string, crop: NormalizedCrop) => {
-    setCoverPhotoUrl(url);
-    setCoverCrop(crop);
-    setCoverUploadError(null);
-    try {
-      await updateProfile({ coverPhotoUrl: url, coverCrop: crop });
-      setLastSavedAt(Date.now());
-    } catch (e: unknown) {
-      setCoverUploadError(e instanceof Error ? e.message : 'Failed to set cover');
-    }
-  };
-  const handleCoverConfirmEdit = (url: string, crop: NormalizedCrop) => {
-    setCoverPhotoUrl(url);
-    setCoverCrop(crop);
-    setCoverUploadError(null);
-  };
-
-  const getStatusBadge = (status: EventData['status']) => {
-    const badges = {
-      'active': { bg: 'bg-green-100', text: 'text-green-800', label: 'Register Now' },
-      'sold-out': { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Sold Out' },
-      'completed': { bg: 'bg-blue-50', text: 'text-blue-800', label: 'Completed' }
-    };
-    
-    const badge = badges[status as keyof typeof badges];
-    if (!badge) return null;
-
-    return (
-      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${badge.bg} ${badge.text}`}>
-        {badge.label}
-      </span>
-    );
-  };
-
   const isUpcoming = (dateString: string) => {
     return new Date(dateString) > new Date();
   };
@@ -552,16 +465,6 @@ const EventsPage: React.FC = () => {
     navigate(`/events/${slug}`); // Use slug instead of eventId
   };
 
-  const handleRegisterClick = (e: React.MouseEvent, slug: string, status: EventData['status']) => {
-    // Prevent event bubbling and default behavior
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (status === 'active') {
-      navigate(`/events/${slug}`); // Use slug instead of eventId
-    }
-  };
-
   // Format position for display
   const formatPosition = (position: string | undefined): string => {
     if (!position) return '';
@@ -570,16 +473,30 @@ const EventsPage: React.FC = () => {
     return positionOption ? positionOption.label : position;
   };
 
-  const upcomingEvents = events
-    .filter(event => isUpcoming(event.date))
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   const pastEvents = events
     .filter(event => !isUpcoming(event.date))
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  const upcomingDisplay = showAllUpcoming ? upcomingEvents : upcomingEvents.slice(0, DASHBOARD_EVENTS_INITIAL);
-  const pastDisplay = showAllPast ? pastEvents : pastEvents.slice(0, DASHBOARD_EVENTS_INITIAL);
-  const hasMoreUpcoming = upcomingEvents.length > DASHBOARD_EVENTS_INITIAL;
-  const hasMorePast = pastEvents.length > DASHBOARD_EVENTS_INITIAL;
+
+  const upcomingRsvpRegistrations = [...userRegistrations]
+    .filter((r: { eventId?: string; registrationStatus?: string }) => {
+      const ev = events.find((e) => e.id === r.eventId);
+      if (!ev || !isUpcoming(ev.date)) return false;
+      return r.registrationStatus === 'pending' || r.registrationStatus === 'approved';
+    })
+    .sort((a: { eventId?: string }, b: { eventId?: string }) => {
+      const da = events.find((e) => e.id === a.eventId)?.date || '';
+      const db = events.find((e) => e.id === b.eventId)?.date || '';
+      return new Date(da).getTime() - new Date(db).getTime();
+    });
+
+  const pastEventsAttended = pastEvents.filter((event) => {
+    const reg = userRegistrations.find(
+      (r: { eventId?: string; registrationStatus?: string }) => r.eventId === event.id
+    );
+    return reg?.registrationStatus === 'approved';
+  });
+  const pastAttendedDisplay = showAllPast ? pastEventsAttended : pastEventsAttended.slice(0, 4);
+  const hasMorePastAttended = pastEventsAttended.length > 4;
 
   const selectedCountry = COUNTRY_CODES.find(country => country.code === selectedCountryCode);
 
@@ -639,79 +556,40 @@ const EventsPage: React.FC = () => {
         <section
           className={
             isAdmin && isInUserView
-              ? 'pt-6 sm:pt-8 pb-6 sm:pb-8 md:pb-12 bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full box-border'
-              : 'pt-[var(--content-offset-top)] sm:pt-24 md:pt-28 pb-6 sm:pb-8 md:pb-12 bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full box-border'
+              ? 'pt-6 sm:pt-8 pb-4 sm:pb-6 bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full box-border'
+              : 'pt-[var(--content-offset-top)] sm:pt-20 pb-4 sm:pb-6 bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full box-border max-h-[calc(100dvh-4.5rem)] lg:max-h-[calc(100dvh-5rem)] overflow-y-auto'
           }
         >
           <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 w-full max-w-full box-border">
-            
-            {/* Dashboard Header */}
-            <div className="mb-6 sm:mb-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
-                <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Dashboard</h1>
-                  <p className="text-sm sm:text-base text-gray-600">Manage your profile, tickets, and connections</p>
-                </div>
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Profile</h1>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {profileCompletion.percentage}% complete · {connectionsCount} connection{connectionsCount === 1 ? '' : 's'} · {upcomingRsvpRegistrations.length} upcoming RSVP{upcomingRsvpRegistrations.length === 1 ? '' : 's'}
+                </p>
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditingProfile(true);
+                  setProfileUpdateError(null);
+                  setProfileUpdateSuccess(null);
+                  setTimeout(() => profileSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-dark text-white text-sm font-medium hover:bg-brand-dark-hover shrink-0"
+              >
+                <Edit className="h-4 w-4" />
+                Edit profile
+              </button>
             </div>
 
-            {/* Quick Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                    <User className="h-6 w-6 text-brand-blue" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Profile Status</p>
-                    <p className="font-semibold text-gray-900">Active Member</p>
-                  </div>
-                </div>
-              </div>
+            {/* Main + sidebar */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 w-full max-w-full">
 
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                    <Ticket className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Event Tickets</p>
-                    <p className="font-semibold text-gray-900">{userRegistrations.length} Active</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                    <Users className="h-6 w-6 text-brand-dark" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Total Connections</p>
-                    <p className="font-semibold text-gray-900">{connectionsCount}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <button
-                  onClick={scrollToProfile}
-                  className="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-4 py-3 rounded-xl hover:shadow-lg active:shadow-md transition-all shadow-sm font-medium min-h-[44px] md:min-h-0 touch-manipulation"
-                >
-                  <Edit className="h-5 w-5" />
-                  <span>Edit Profile</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 w-full max-w-full">
-
-              {/* Profile Section - Takes 3/4 of the space (onboarding spotlight: chapter lives in profile) */}
-              <div ref={profileSectionRef} className="lg:col-span-3 space-y-6 w-full max-w-full min-w-0" data-onboarding="chapter">
-                <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 w-full max-w-full min-w-0 overflow-hidden">
-                  <div className="flex items-center justify-between mb-4 sm:mb-6">
-                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Your Profile</h2>
+              <div ref={profileSectionRef} className="lg:col-span-8 space-y-4 w-full max-w-full min-w-0" data-onboarding="chapter">
+                <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 border border-gray-100 w-full max-w-full min-w-0 overflow-hidden">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-base font-semibold text-gray-900">Your Profile</h2>
                   </div>
 
                   {/* Success Message */}
@@ -733,23 +611,6 @@ const EventsPage: React.FC = () => {
                   {isEditingProfile ? (
                     /* Edit Mode */
                     <div className="space-y-6 sm:space-y-8 w-full max-w-full min-w-0">
-                      {/* Cover Photo Section */}
-                      <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 w-full max-w-full min-w-0">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Cover photo</h3>
-                        <p className="text-sm text-gray-500 mb-4">Add, change, or remove the background image above your profile picture on your public profile (like LinkedIn).</p>
-                        <CoverPhotoUploader
-                          currentCoverUrl={coverPhotoUrl}
-                          onUploadSuccess={handleCoverPhotoSuccess}
-                          onUploadError={handleCoverPhotoError}
-                          onRemove={handleCoverPhotoRemove}
-                          onTemplateSelect={handleCoverTemplateSelect}
-                          onCoverConfirm={handleCoverConfirmEdit}
-                        />
-                        {coverUploadError && (
-                          <p className="text-red-600 text-sm mt-2">{coverUploadError}</p>
-                        )}
-                      </div>
-
                       {/* Profile Picture Section */}
                       <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 w-full max-w-full min-w-0">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h3>
@@ -1251,118 +1112,53 @@ const EventsPage: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    /* View Mode - same style as user profile page: cover + overlapping avatar */
-                    <div className="space-y-8">
-                      {/* Cover photo with camera toggle (profile-page style) */}
-                      <div className="relative aspect-[3/1] w-full min-h-[140px] sm:min-h-[160px] -mx-4 sm:-mx-6 -mt-2 rounded-t-2xl overflow-hidden bg-gradient-to-r from-brand-blue-dark to-brand-blue-light">
-                        {coverPhotoUrl ? (
+                    <div className="space-y-5">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-4 pb-4 border-b border-gray-100">
+                        <div className="relative mx-auto sm:mx-0 h-20 w-20 flex-shrink-0 rounded-full overflow-hidden ring-2 ring-gray-100 bg-brand-dark text-white">
+                          {user?.profileImage || profileImageUrl ? (
                             <ImageWithCrop
-                              src={coverPhotoUrl}
-                              crop={coverCrop}
-                              shape="rect"
+                              src={(profileImageUrl || user?.profileImage) as string}
+                              crop={profileImageCrop ?? (user as { profileImageCrop?: CropValue | null })?.profileImageCrop ?? null}
+                              shape="circle"
                               alt=""
+                              className="absolute inset-0 h-full w-full"
                               urlIsCropped={true}
+                              fallback={
+                                <span className="flex h-full w-full items-center justify-center text-lg font-semibold bg-brand-dark">
+                                  {(user?.displayName?.trim()?.charAt(0) || user?.email?.trim()?.charAt(0) || '?').toUpperCase()}
+                                </span>
+                              }
                             />
-                          ) : null}
-                        <div className="absolute inset-0 bg-black bg-opacity-20" />
-                        <button
-                          type="button"
-                          onClick={() => setShowCoverEditor((v) => !v)}
-                          className="absolute top-3 right-3 p-2 rounded-full bg-white/90 text-gray-700 hover:bg-white shadow-sm transition-colors"
-                          title="Edit cover photo"
-                          aria-label="Edit cover photo"
-                        >
-                          <Camera className="h-5 w-5" />
-                        </button>
-                      </div>
-
-                      {/* Cover editor (upload / template / remove) - toggled by camera */}
-                      {showCoverEditor && (
-                        <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
-                          <CoverPhotoUploader
-                            currentCoverUrl={coverPhotoUrl}
-                            currentCoverCrop={coverCrop}
-                            onUploadSuccess={(url) => {
-                                handleCoverPhotoSuccess(url);
-                                setShowCoverEditor(false);
-                              }}
-                              onUploadError={handleCoverPhotoError}
-                              onRemove={() => {
-                                handleCoverPhotoRemove();
-                                setShowCoverEditor(false);
-                              }}
-                              onTemplateSelect={(url) => {
-                                handleCoverTemplateSelect(url);
-                                setShowCoverEditor(false);
-                              }}
-                              onCoverConfirm={(url, crop) => {
-                                handleCoverConfirm(url, crop);
-                                setShowCoverEditor(false);
-                              }}
-                          />
-                          {coverUploadError && (
-                            <p className="text-red-600 text-sm mt-2">{coverUploadError}</p>
+                          ) : (
+                            <span className="flex h-full w-full items-center justify-center text-xl font-semibold">
+                              {(user?.displayName?.trim()?.charAt(0) || user?.email?.trim()?.charAt(0) || '?').toUpperCase()}
+                            </span>
                           )}
                         </div>
-                      )}
-
-                      {/* Avatar overlapping cover + name (profile-page style) */}
-                      <div className="relative px-0 sm:px-0 pb-6 -mt-16">
-                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                          <div className="flex flex-col items-center md:items-start">
-                            <ProfilePictureUploader
-                              currentImageUrl={user?.profileImage || profileImageUrl || null}
-                              currentCrop={profileImageCrop ?? (user as { profileImageCrop?: CropValue | null })?.profileImageCrop ?? null}
-                              onUploadSuccess={handleProfilePictureSuccess}
-                              onUploadError={handleProfilePictureError}
-                              size="lg"
-                            />
-                            {imageUploadError && (
-                              <p className="text-red-600 text-sm mt-2">{imageUploadError}</p>
-                            )}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => { setIsEditingProfile(true); scrollToProfile(); }}
-                            className="hidden md:inline-flex items-center px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors text-sm font-medium self-start"
-                          >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit Profile
-                          </button>
-                        </div>
-                        <div className="mt-6 text-center md:text-left px-4 sm:px-0">
-                          <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                        <div className="flex-1 min-w-0 text-center sm:text-left">
+                          <h3 className="text-xl font-bold text-gray-900">
                             {user?.displayName || 'Your Name'}
                           </h3>
                           {user?.bioTitle && (
-                            <div className="bg-blue-50 rounded-lg p-3 mb-4">
-                              <p className="text-blue-800 font-medium">{user.bioTitle}</p>
-                            </div>
+                            <p className="text-sm text-brand-dark font-medium mt-1">{user.bioTitle}</p>
                           )}
-                          <div className="text-gray-600 space-y-1">
+                          <div className="text-gray-600 text-sm space-y-0.5 mt-2">
                             {user?.email && (
-                              <div className="flex items-center justify-center md:justify-start space-x-2">
-                                <Mail className="h-4 w-4" />
-                                <span>{user.email}</span>
+                              <div className="flex items-center justify-center sm:justify-start gap-2">
+                                <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                                <span className="truncate">{user.email}</span>
                               </div>
                             )}
                             {user?.phone && (
-                              <div className="flex items-center justify-center md:justify-start space-x-2">
-                                <Phone className="h-4 w-4" />
+                              <div className="flex items-center justify-center sm:justify-start gap-2">
+                                <Phone className="h-3.5 w-3.5 flex-shrink-0" />
                                 <span>{user.phone}</span>
                               </div>
                             )}
                           </div>
-                        </div>
-                        <div className="mt-4 md:hidden">
-                          <button
-                            type="button"
-                            onClick={() => { setIsEditingProfile(true); scrollToProfile(); }}
-                            className="w-full inline-flex items-center justify-center px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors text-sm font-medium"
-                          >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit Profile
-                          </button>
+                          {imageUploadError && (
+                            <p className="text-red-600 text-xs mt-2">{imageUploadError}</p>
+                          )}
                         </div>
                       </div>
 
@@ -1557,53 +1353,76 @@ const EventsPage: React.FC = () => {
                   <div className="p-4 sm:p-6 border-b border-gray-100">
                     <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Your Network</h2>
                   </div>
-                  <div className="p-4 sm:p-6 w-full max-w-full min-w-0 overflow-x-auto">
-                    <ConnectionsCard />
+                  <div className="p-3 sm:p-4 w-full max-w-full min-w-0 overflow-x-auto max-h-[220px] overflow-y-auto">
+                    <ConnectionsCard compact />
                   </div>
                 </div>
               </div>
 
-              
-              {/* Sidebar - Takes 1/4 of the space */}
-              <div className="lg:col-span-1 space-y-4 sm:space-y-6 w-full max-w-full min-w-0">
-                
-                {/* Quick Actions Card */}
-                <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 w-full max-w-full min-w-0 overflow-hidden">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Quick Actions</h3>
-                  <div className="space-y-2 sm:space-y-3 w-full">
-                    <Link
-                      to="/members"
-                      className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 rounded-xl transition-colors group min-h-[44px] sm:min-h-0 touch-manipulation"
-                    >
-                      <Users className="h-5 w-5 text-gray-500 group-hover:text-brand-blue transition-colors" />
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">Browse Members</span>
-                    </Link>
-
-                    <Link
-                      to="/events"
-                      className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 rounded-xl transition-colors group min-h-[44px] sm:min-h-0 touch-manipulation"
-                    >
-                      <Calendar className="h-5 w-5 text-gray-500 group-hover:text-brand-blue transition-colors" />
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">View Events</span>
-                    </Link>
-
-                    <Link
-                      to="/chats"
-                      className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 rounded-xl transition-colors group min-h-[44px] sm:min-h-0 touch-manipulation"
-                    >
-                      <MessageCircle className="h-5 w-5 text-gray-500 group-hover:text-brand-blue transition-colors" />
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">My Chats</span>
-                    </Link>
-
-                    <Link
-                      to="/discover-chats"
-                      className="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 rounded-xl transition-colors group min-h-[44px] sm:min-h-0 touch-manipulation"
-                    >
-                      <Compass className="h-5 w-5 text-gray-500 group-hover:text-brand-blue transition-colors" />
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">Discover Chats</span>
-                    </Link>
-                  </div>
+              <div className="lg:col-span-4 space-y-3 w-full max-w-full min-w-0">
+                <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4 border border-gray-100 w-full max-w-full min-w-0 overflow-hidden">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Your Upcoming AlmaLinks Events</h3>
+                  {registrationsLoading ? (
+                    <p className="text-xs text-gray-500 py-2">Loading…</p>
+                  ) : upcomingRsvpRegistrations.length === 0 ? (
+                    <p className="text-xs text-gray-600 mb-3">No new upcoming events at the moment</p>
+                  ) : (
+                    <ul className="space-y-2 mb-3 max-h-[11rem] overflow-y-auto">
+                      {upcomingRsvpRegistrations.map((reg: { eventId: string; eventName?: string; registrationStatus?: string; eventSlug?: string }) => {
+                        const ev = events.find((e) => e.id === reg.eventId);
+                        const slug = reg.eventSlug || ev?.slug;
+                        if (!slug) return null;
+                        return (
+                          <li key={reg.eventId}>
+                            <Link
+                              to={`/events/${slug}`}
+                              className="flex items-start justify-between gap-2 rounded-lg border border-gray-100 px-2 py-1.5 hover:bg-gray-50 text-left"
+                            >
+                              <span className="text-xs font-medium text-gray-900 line-clamp-2">{reg.eventName || ev?.name}</span>
+                              <span className={`text-[10px] uppercase shrink-0 px-1.5 py-0.5 rounded ${reg.registrationStatus === 'approved' ? 'bg-green-100 text-green-800' : 'bg-amber-50 text-amber-800'}`}>
+                                {reg.registrationStatus === 'approved' ? 'RSVP' : 'Pending'}
+                              </span>
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  <Link
+                    to="/events"
+                    className="block w-full text-center text-xs font-semibold text-white bg-brand-dark hover:bg-brand-dark-hover rounded-lg py-2 px-3 transition-colors"
+                  >
+                    Explore events
+                  </Link>
                 </div>
+
+                {pastEventsAttended.length > 0 && (
+                  <div className="bg-white rounded-xl shadow-sm p-3 border border-gray-100">
+                    <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Past events you joined</h3>
+                    <ul className="space-y-1">
+                      {pastAttendedDisplay.map((event) => (
+                        <li key={event.id}>
+                          <button
+                            type="button"
+                            onClick={(e) => handleEventClick(e, event.slug)}
+                            className="w-full text-left text-[11px] text-gray-600 hover:text-brand-dark truncate py-0.5"
+                          >
+                            {event.name}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                    {hasMorePastAttended && !showAllPast && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllPast(true)}
+                        className="text-[10px] text-brand-blue font-medium mt-1"
+                      >
+                        Show all ({pastEventsAttended.length})
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* Announcements Card */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden w-full max-w-full min-w-0">
@@ -1721,7 +1540,11 @@ const EventsPage: React.FC = () => {
                       )}
 
                       <button
-                        onClick={scrollToProfile}
+                        type="button"
+                        onClick={() => {
+                          setIsEditingProfile(true);
+                          setTimeout(() => profileSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                        }}
                         className="w-full mt-3 text-xs font-medium text-white bg-brand-blue hover:bg-brand-blue-hover active:bg-brand-blue-hover py-2.5 px-3 rounded-lg transition-colors duration-200 min-h-[44px] sm:min-h-0 touch-manipulation"
                       >
                         Complete Profile
@@ -1731,332 +1554,6 @@ const EventsPage: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-      )}
-
-      {/* Event Tickets Section - Part of main dashboard */}
-      {user && (
-        <section className="py-8 bg-gradient-to-br from-gray-50 to-white overflow-x-hidden">
-          <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-            <div className="mb-6 sm:mb-8">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">
-                    Your <span className="gradient-text">Event Tickets</span>
-                  </h2>
-                  <p className="text-sm sm:text-base text-gray-600">Manage your event registrations and tickets</p>
-                </div>
-                <button 
-                  onClick={() => window.location.href = '/events'}
-                  className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-4 sm:px-6 py-2.5 sm:py-2 rounded-xl hover:shadow-lg active:shadow-md transition-all duration-300 font-medium flex items-center justify-center space-x-2 min-h-[44px] sm:min-h-0 touch-manipulation w-full sm:w-auto"
-                >
-                  <Calendar className="h-4 w-4" />
-                  <span>Browse Events</span>
-                </button>
-              </div>
-            </div>
-
-            {registrationsLoading ? (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
-                <div className="w-8 h-8 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading your tickets...</p>
-              </div>
-            ) : userRegistrations.length > 0 ? (
-              <div className="space-y-8">
-                {(() => {
-                  const activeTickets = userRegistrations.filter((r: any) => r.eventStatus === 'active');
-                  const otherTickets = userRegistrations.filter((r: any) => r.eventStatus !== 'active');
-                  return (
-                    <>
-                      {/* Active tickets = tickets to active events */}
-                      {activeTickets.length > 0 && (
-                        <div>
-                          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Active tickets</h3>
-                          <div className="flex flex-wrap gap-4 sm:gap-6 justify-center lg:justify-start">
-                            {activeTickets.map((registration: any, index: number) => (
-                              <div key={registration.eventId} className="slide-up" style={{ animationDelay: `${index * 0.15}s` }}>
-                                <EventTicketCard
-                                  eventName={registration.eventName}
-                                  eventStartIso={registration.eventDate}
-                                  eventDate=""
-                                  eventTime=""
-                                  eventLocation={registration.eventLocation ?? ''}
-                                  venueAddress={registration.eventVenueAddress ?? undefined}
-                                  attendeeName={registration.name}
-                                  attendeeEmail={registration.email}
-                                  attendeePhone={registration.phone}
-                                  attendeeWork={registration.work}
-                                  ticketId={registration.eventId?.slice(-8).toUpperCase() || registration.userId?.slice(-8).toUpperCase() || 'TICKET'}
-                                  isExpired={false}
-                                  eventImageUrl={registration.eventImage}
-                                  eventSlug={registration.eventSlug}
-                                  registrationStatus={registration.registrationStatus}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {/* Other events (sold-out, completed, etc.) */}
-                      {otherTickets.length > 0 && (
-                        <div>
-                          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Other events</h3>
-                          <div className="flex flex-wrap gap-4 sm:gap-6 justify-center lg:justify-start">
-                            {otherTickets.map((registration: any) => (
-                              <EventTicketCard
-                                key={registration.eventId}
-                                eventName={registration.eventName}
-                                eventStartIso={registration.eventDate}
-                                eventDate=""
-                                eventTime=""
-                                eventLocation={registration.eventLocation ?? ''}
-                                venueAddress={registration.eventVenueAddress ?? undefined}
-                                attendeeName={registration.name}
-                                attendeeEmail={registration.email}
-                                attendeePhone={registration.phone}
-                                attendeeWork={registration.work}
-                                ticketId={registration.eventId?.slice(-8).toUpperCase() || registration.userId?.slice(-8).toUpperCase() || 'TICKET'}
-                                isExpired
-                                eventImageUrl={registration.eventImage}
-                                eventSlug={registration.eventSlug}
-                                registrationStatus={registration.registrationStatus}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-                <div className="p-12 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Ticket className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No tickets yet</h3>
-                  <p className="text-gray-600 mb-6">
-                    You haven't registered for any events yet. Discover amazing networking opportunities!
-                  </p>
-                  <button
-                    onClick={() => window.location.href = '/events'}
-                    className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-xl hover:shadow-lg active:shadow-md transition-all duration-300 font-medium min-h-[44px] sm:min-h-0 touch-manipulation"
-                  >
-                    Explore Events
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* Upcoming Events */}
-      {upcomingEvents.length > 0 && (
-        <section className="py-12 sm:py-16 bg-white overflow-x-hidden">
-          <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-            <div className="mb-6 sm:mb-8">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">
-                    Upcoming <span className="gradient-text">Events</span>
-                  </h2>
-                  <p className="text-sm sm:text-base text-gray-600">
-                    Don't miss these exclusive networking opportunities
-                  </p>
-                </div>
-                <Link
-                  to="/events"
-                  className="text-brand-blue hover:text-brand-blue-hover active:text-brand-blue-hover font-medium flex items-center justify-center sm:justify-start space-x-2 min-h-[44px] sm:min-h-0 touch-manipulation"
-                >
-                  <span>View All Events</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              {upcomingDisplay.map((event, index) => {
-                const isRegistered = userRegistrations.some(reg => reg.eventId === event.id);
-                
-                return (
-                  <div
-                    key={event.id}
-                    className={`bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 overflow-hidden hover-lift cursor-pointer slide-up`}
-                    style={{ animationDelay: `${index * 0.2}s` }}
-                    onClick={(e) => handleEventClick(e, event.slug)} // Use slug
-                  >
-                    {/* Event Image */}
-                    <div className="h-36 sm:h-40 bg-gray-200 relative">
-                      <img
-                        src={event.imageUrl}
-                        alt={event.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjMyMCIgdmlld0JveD0iMCAwIDYwMCAzMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI2MDAiIGhlaWdodD0iMzIwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMDAgMTYwQzMwNS41MjMgMTYwIDMxMCAxNTUuNTIzIDMxMCAxNTBTMzA1LjUyMyAxNDAgMzAwIDE0MFMyOTAgMTQ0LjQ3NyAyOTAgMTUwUzI5NC40NzcgMTYwIDMwMCAxNjBaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg==';
-                        }}
-                      />
-                      <div className="absolute top-4 right-4">
-                        {isRegistered ? (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                            Registered
-                          </span>
-                        ) : (
-                          getStatusBadge(event.status)
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Event Content */}
-                    <div className="p-4 sm:p-6 md:p-8">
-                      <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight break-words">{event.name}</h3>
-                      
-                      <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
-                        <EventTimeDisplay
-                          event={event}
-                          textClassName="text-gray-600 text-sm sm:text-base"
-                          iconClassName="h-4 w-4 sm:h-5 sm:w-5 text-red-700 flex-shrink-0 mt-0.5"
-                        />
-                        <div className="flex items-center space-x-3 text-gray-600 text-sm sm:text-base">
-                          <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-red-700 flex-shrink-0" />
-                          <span className="break-words">{event.location}</span>
-                        </div>
-                        {getRestrictedEventAccessLabel(event.eventAudience ?? null) ? (
-                          <p className="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-2 py-1 inline-block">
-                            {getRestrictedEventAccessLabel(event.eventAudience ?? null)}
-                          </p>
-                        ) : null}
-                      </div>
-
-                      <p className="text-gray-600 mb-4 leading-relaxed line-clamp-2 text-sm sm:text-base break-words">
-                        {event.description}
-                      </p>
-
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div />
-                        {isRegistered ? (
-                          <span className="bg-green-100 text-green-800 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base">
-                            Registered ✓
-                          </span>
-                        ) : event.status === 'active' ? (
-                          <button 
-                            onClick={(e) => handleRegisterClick(e, event.slug, event.status)} // Use slug
-                            className="bg-gray-900 text-white px-5 sm:px-8 py-3 sm:py-3.5 rounded-xl hover:bg-gray-800 active:scale-[0.99] transition-all font-bold flex items-center justify-center gap-2 min-h-[48px] sm:min-h-0 touch-manipulation text-sm sm:text-base w-full sm:w-auto shadow-md"
-                          >
-                            <span>Register Now</span>
-                            <ArrowRight className="h-4 w-4" />
-                          </button>
-                        ) : (
-                          <button 
-                            disabled
-                            className="bg-gray-300 text-gray-500 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full font-semibold cursor-not-allowed text-sm sm:text-base min-h-[44px] sm:min-h-0 w-full sm:w-auto"
-                          >
-                            {event.status === 'sold-out' ? 'Sold Out' : 'Registration Closed'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            {hasMoreUpcoming && !showAllUpcoming && (
-              <div className="mt-6 sm:mt-8 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => setShowAllUpcoming(true)}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors min-h-[44px] touch-manipulation"
-                >
-                  Show more upcoming events ({upcomingEvents.length - DASHBOARD_EVENTS_INITIAL} more)
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* Past Events */}
-      {pastEvents.length > 0 && (
-        <section className="py-12 sm:py-16 bg-gray-50 overflow-x-hidden">
-          <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-            <div className="mb-6 sm:mb-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">
-                    Past <span className="gradient-text">Events</span>
-                  </h2>
-                  <p className="text-sm sm:text-base text-gray-600">
-                    Our successful networking gatherings
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {pastDisplay.map((event, index) => (
-                <div
-                  key={event.id}
-                  className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover-lift cursor-pointer slide-up`}
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                  onClick={(e) => handleEventClick(e, event.slug)} // Use slug
-                >
-                  {/* Event Image */}
-                  <div className="h-36 bg-gray-200 relative">
-                    <img
-                      src={event.imageUrl}
-                      alt={event.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDQwMCAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMTkyIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMDAgOTZDMjA1LjUyMyA5NiAyMTAgOTEuNTIzIDIxMCA4NlMyMDUuNTIzIDc2IDIwMCA3NlMxOTAgODAuNDc3IDE5MCA4NlMxOTQuNDc3IDk2IDIwMCA5NloiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
-                      }}
-                    />
-                    <div className="absolute top-4 right-4">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-800">
-                        Completed
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Event Content */}
-                  <div className="p-4 sm:p-6">
-                    <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 break-words">{event.name}</h3>
-                    
-                    <div className="space-y-2 mb-4">
-                      <EventTimeDisplay
-                        event={event}
-                        textClassName="text-gray-600 text-xs sm:text-sm"
-                        iconClassName="h-4 w-4 text-red-700 flex-shrink-0 mt-0.5"
-                      />
-                      <div className="flex items-center space-x-2 text-gray-600 text-xs sm:text-sm">
-                        <MapPin className="h-4 w-4 flex-shrink-0" />
-                        <span className="break-words">{event.location}</span>
-                      </div>
-                    </div>
-
-                    <p className="text-gray-600 text-xs sm:text-sm line-clamp-2 break-words">
-                      {event.description}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {hasMorePast && !showAllPast && (
-              <div className="mt-6 sm:mt-8 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => setShowAllPast(true)}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors min-h-[44px] touch-manipulation"
-                >
-                  Show more past events ({pastEvents.length - DASHBOARD_EVENTS_INITIAL} more)
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-            )}
           </div>
         </section>
       )}
