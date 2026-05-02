@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MapPin, User, Check, X, Clock } from 'lucide-react';
+import { Search, MapPin, User, Check, X, Clock, UserPlus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { UserService } from '../services/userService';
 import { ConnectionService } from '../services/connectionService';
@@ -40,6 +40,7 @@ const MembersPage: React.FC = () => {
   const [sentRequestIds, setSentRequestIds] = useState<Set<string>>(new Set()); // Track which users we've sent requests to
   const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
   const [respondingRequestId, setRespondingRequestId] = useState<string | null>(null);
+  const [showConnectionRequestsPanel, setShowConnectionRequestsPanel] = useState(false);
 
   useEffect(() => {
     if (!currentUser?.uid) return;
@@ -248,6 +249,28 @@ const MembersPage: React.FC = () => {
     }
   };
 
+  const requesterDisplayName = useCallback((req: ConnectionRequest) => {
+    const r = req.requester;
+    if (r?.displayName?.trim()) return r.displayName.trim();
+    if (r?.name?.trim()) return r.name.trim();
+    if (req.fromName?.trim()) return req.fromName.trim();
+    return 'Member';
+  }, []);
+
+  const requesterImage = (req: ConnectionRequest) =>
+    req.requester?.profileImage || req.fromProfileImage || '';
+
+  const requesterUid = (req: ConnectionRequest) => req.requesterId || req.fromUid;
+
+  useEffect(() => {
+    if (!showConnectionRequestsPanel) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowConnectionRequestsPanel(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showConnectionRequestsPanel]);
+
   const renderMemberCard = (member: MemberCard) => {
     const displayName = member.displayName ||
                        `${member.firstName || ''} ${member.lastName || ''}`.trim() ||
@@ -442,6 +465,27 @@ const MembersPage: React.FC = () => {
                 </button>
               ))}
             </div>
+
+            {currentUser?.uid ? (
+              <div className="mt-5 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowConnectionRequestsPanel(true);
+                    void loadIncomingRequests();
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-gray-200 bg-white text-sm font-semibold text-gray-900 shadow-sm hover:border-brand-blue hover:bg-blue-50/40 transition-colors"
+                >
+                  <UserPlus className="h-4 w-4 text-brand-dark shrink-0" aria-hidden />
+                  <span>Connection requests</span>
+                  {incomingRequests.length > 0 ? (
+                    <span className="min-w-[1.35rem] rounded-full bg-brand-dark px-1.5 py-0.5 text-xs font-bold leading-none text-white tabular-nums">
+                      {incomingRequests.length}
+                    </span>
+                  ) : null}
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </section>
@@ -493,6 +537,122 @@ const MembersPage: React.FC = () => {
           )}
         </div>
       </section>
+
+      {showConnectionRequestsPanel && currentUser?.uid ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="members-conn-req-title"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            aria-label="Close connection requests"
+            onClick={() => setShowConnectionRequestsPanel(false)}
+          />
+          <div className="relative z-10 flex max-h-[min(90dvh,32rem)] w-full flex-col rounded-t-2xl border border-gray-200 bg-white shadow-xl sm:max-h-[min(85dvh,28rem)] sm:max-w-lg sm:rounded-2xl">
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-4 py-3">
+              <h2 id="members-conn-req-title" className="text-lg font-bold text-gray-900">
+                Connection requests
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowConnectionRequestsPanel(false)}
+                className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+              {incomingRequests.length === 0 ? (
+                <p className="py-10 text-center text-sm text-gray-600">
+                  No pending connection requests right now.
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {incomingRequests.map((req) => {
+                    const uid = requesterUid(req);
+                    const name = requesterDisplayName(req);
+                    const img = requesterImage(req);
+                    const note = (req.message || req.note || '').trim();
+                    const busy = respondingRequestId === req.id;
+                    return (
+                      <li
+                        key={req.id}
+                        className="rounded-xl border border-gray-100 bg-gray-50/80 p-3"
+                      >
+                        <div className="flex gap-3">
+                          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-gray-100 bg-brand-dark">
+                            {img ? (
+                              <img src={img} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-white">
+                                {name.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-gray-900 leading-snug">{name}</p>
+                            {(req.fromWork || req.requester?.work) ? (
+                              <p className="mt-0.5 text-xs text-gray-600 line-clamp-2">
+                                {req.requester?.work || req.fromWork}
+                              </p>
+                            ) : null}
+                            {note ? (
+                              <p className="mt-2 text-xs text-gray-700 line-clamp-4 whitespace-pre-wrap">
+                                {note}
+                              </p>
+                            ) : null}
+                            <Link
+                              to={`/profile/${uid}`}
+                              className="mt-2 inline-block text-xs font-medium text-brand-blue hover:text-brand-blue-hover"
+                              onClick={() => setShowConnectionRequestsPanel(false)}
+                            >
+                              View profile
+                            </Link>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => handleRespondToRequest(req.id, 'accepted')}
+                            className="inline-flex items-center gap-1 rounded-lg bg-brand-dark px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-dark-hover disabled:opacity-50"
+                          >
+                            {busy ? '…' : (
+                              <>
+                                <Check className="h-3.5 w-3.5" />
+                                Accept
+                              </>
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => handleRespondToRequest(req.id, 'rejected')}
+                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+                          >
+                            {busy ? (
+                              '…'
+                            ) : (
+                              <>
+                                <X className="h-3.5 w-3.5" />
+                                Reject
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <Footer />
     </div>
