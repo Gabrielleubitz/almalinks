@@ -112,6 +112,9 @@ const ChatsPage: React.FC = () => {
                   : `${chats.length} chat${chats.length === 1 ? '' : 's'}`
                 }
               </p>
+              <p className="text-xs text-amber-900 bg-amber-50 border border-amber-100 rounded-md px-2 py-1.5 mt-2 max-w-xl leading-snug">
+                Chat layout and flows are on hold while we redesign for a simpler experience. You can still use your existing chats below.
+              </p>
             </div>
             
             <div className="flex items-center gap-2">

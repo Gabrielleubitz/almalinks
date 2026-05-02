@@ -1,32 +1,42 @@
 import React from 'react';
-import { Star } from 'lucide-react';
 
 type Props = {
   isTrustee?: boolean;
   isMentor?: boolean;
   className?: string;
+  /** When true, use compact pills suitable for dense member cards. */
+  compact?: boolean;
 };
 
 /**
- * Small visual marker for members flagged as trustee and/or mentor in HubSpot.
+ * Visible markers for members flagged as trustee and/or mentor in HubSpot.
  */
-export function TrusteeMentorStar({ isTrustee, isMentor, className = '' }: Props) {
+export function TrusteeMentorStar({ isTrustee, isMentor, className = '', compact = false }: Props) {
   if (!isTrustee && !isMentor) return null;
 
-  const parts: string[] = [];
-  if (isTrustee) parts.push('Trustee');
-  if (isMentor) parts.push('Mentor');
-  const title = parts.join(' · ');
+  const base =
+    compact
+      ? 'text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded'
+      : 'text-xs font-semibold px-2 py-0.5 rounded-md';
 
   return (
-    <span
-      className={`inline-flex items-center justify-center ${className}`.trim()}
-      title={title}
-    >
-      <Star
-        className="h-4 w-4 text-amber-500 fill-amber-400 flex-shrink-0"
-        aria-label={title}
-      />
+    <span className={`inline-flex flex-wrap items-center gap-1 ${className}`.trim()}>
+      {isTrustee && (
+        <span
+          className={`${base} bg-amber-100 text-amber-900 border border-amber-200`}
+          title="Trustee"
+        >
+          Trustee
+        </span>
+      )}
+      {isMentor && (
+        <span
+          className={`${base} bg-sky-100 text-sky-900 border border-sky-200`}
+          title="Mentor"
+        >
+          Mentor
+        </span>
+      )}
     </span>
   );
 }

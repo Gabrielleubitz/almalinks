@@ -19,6 +19,11 @@ import { calculateProfileCompletion, normalizeUrl } from '../utils/validation';
 import { linkedInProfileHref } from '../utils/linkedInUrl';
 import { getTrusteeMentorFromHubspot } from '../utils/hubspotMemberRoles';
 import { compareMembersByDisplayName } from '../utils/memberSort';
+import {
+  resolveDirectoryAvatarUrl,
+  resolveDirectoryBioTitle,
+  resolveStoredChapter,
+} from '../utils/memberHubspotDisplay';
 import { ConnectionService } from './connectionService';
 
 export class UserService {
@@ -255,7 +260,9 @@ export class UserService {
         // Apply search filter
         if (filters.search) {
           const searchTerm = filters.search.toLowerCase();
-          const searchableText = `${user.displayName} ${user.title} ${user.company} ${user.bioTitle} ${user.bio} ${(user.skills || []).join(' ')}`.toLowerCase();
+          const bioLine = resolveDirectoryBioTitle(user) || '';
+          const ch = resolveStoredChapter(user) || '';
+          const searchableText = `${user.displayName} ${user.title} ${user.company} ${user.bioTitle} ${bioLine} ${user.bio} ${(user.skills || []).join(' ')} ${ch}`.toLowerCase();
           
           if (!searchableText.includes(searchTerm)) {
             continue;
@@ -294,14 +301,20 @@ export class UserService {
         const { isTrustee, isMentor } = getTrusteeMentorFromHubspot(user);
 
         // Create user card
+        const avatarResolved = resolveDirectoryAvatarUrl(user);
+        const bioTitleResolved = resolveDirectoryBioTitle(user);
+        const chapterStored = resolveStoredChapter(user);
+
         const userCard: UserCard = {
           uid: user.uid,
-          avatarUrl: user.avatarUrl || user.profileImage,
+          avatarUrl: avatarResolved || user.avatarUrl || user.profileImage,
           displayName: user.displayName,
           title: user.title,
           company: user.company,
           city: user.city,
           country: user.country,
+          chapter: chapterStored ?? undefined,
+          bioTitle: bioTitleResolved,
           skills: (user.skills || []).slice(0, 3), // Show first 3 skills
           profileVisibility: user.profileVisibility,
           canContact: filteredProfile.canViewContact,
@@ -446,9 +459,13 @@ export class UserService {
         
         const { isTrustee, isMentor } = getTrusteeMentorFromHubspot(user);
 
+        const avatarResolved = resolveDirectoryAvatarUrl(user);
+        const bioTitleResolved = resolveDirectoryBioTitle(user);
+        const chapterStored = resolveStoredChapter(user);
+
         const userCard: UserCard = {
           uid: user.uid,
-          avatarUrl: user.avatarUrl || user.profileImage,
+          avatarUrl: avatarResolved || user.avatarUrl || user.profileImage,
           displayName: displayName,
           firstName: firstName,
           lastName: lastName,
@@ -457,7 +474,8 @@ export class UserService {
           company: user.company,
           city: user.city,
           country: user.country,
-          bioTitle: user.bioTitle,
+          chapter: chapterStored ?? undefined,
+          bioTitle: bioTitleResolved,
           bio: user.bio, // Add full bio for search functionality
           linkedin: user.linkedin,
           skills: (user.skills || []).slice(0, 3), // Show first 3 skills
@@ -562,11 +580,14 @@ export class UserService {
         
         if (searchableText.includes(searchQuery)) {
           const { isTrustee, isMentor } = getTrusteeMentorFromHubspot(user);
+          const avatarResolved = resolveDirectoryAvatarUrl(user);
+          const bioTitleResolved = resolveDirectoryBioTitle(user);
+          const chapterStored = resolveStoredChapter(user);
 
           const userCard: UserCard = {
             uid: user.uid,
             id: user.uid, // Add id field for compatibility
-            avatarUrl: user.avatarUrl || user.profileImage,
+            avatarUrl: avatarResolved || user.avatarUrl || user.profileImage,
             displayName: displayName,
             name: displayName, // Add name field for compatibility
             firstName: user.firstName,
@@ -576,7 +597,8 @@ export class UserService {
             email: user.email, // Include email for admin searches
             city: user.city,
             country: user.country,
-            bioTitle: user.bioTitle,
+            chapter: chapterStored ?? undefined,
+            bioTitle: bioTitleResolved,
             bio: user.bio,
             linkedin: user.linkedin,
             skills: user.skills || [],

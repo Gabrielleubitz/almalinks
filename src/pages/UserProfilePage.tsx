@@ -1,17 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, User, Briefcase, MapPin, Calendar, Linkedin, Mail, Users, Shield, Clock, ChevronLeft,
-  Phone, Globe, Twitter, MessageCircle, UserPlus, Share, MoreHorizontal, Edit3, Copy, X
+import {
+  User, MapPin, Linkedin, Mail, Users, Shield, ChevronLeft,
+  Globe, Twitter, UserPlus, Edit3, X
 } from 'lucide-react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db, retryOnNetworkFailure } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import { UserService } from '../services/userService';
 import { ConnectionService } from '../services/connectionService';
+import { ConnectionRequestService } from '../services/connectionRequestService';
+import {
+  getDailyRequestCount,
+  isOverDailyLimit,
+  DAILY_LIMIT_MESSAGE,
+} from '../services/connectionRequestLimitService';
 import { UserProfile } from '../types/user';
 import { FilteredProfile } from '../utils/privacy';
-import { getVisibilityDescription } from '../utils/privacy';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -20,7 +23,13 @@ import ImageWithCrop from '../components/profile/ImageWithCrop';
 import BioHtml from '../components/profile/BioHtml';
 import { isSafeImageUrl } from '../utils/imageUrl';
 import { linkedInProfileHref } from '../utils/linkedInUrl';
-import { formatMemberMonthYear } from '../utils/firestoreDate';
+import { TrusteeMentorStar } from '../components/common/TrusteeMentorStar';
+import { getTrusteeMentorFromHubspot } from '../utils/hubspotMemberRoles';
+import { formatChapterDisplayLabel } from '../utils/memberDirectoryChapters';
+import {
+  resolveDirectoryAvatarUrl,
+  resolveDirectoryBioTitle,
+} from '../utils/memberHubspotDisplay';
 
 interface Connection {
   id: string;
@@ -38,6 +47,28 @@ const UserProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [outgoingPending, setOutgoingPending] = useState(false);
+  const [dailyRequestCount, setDailyRequestCount] = useState<number | null>(null);
+
+  const refreshConnectionUi = useCallback(async () => {
+    if (!userId || !currentUser?.uid || userId === currentUser.uid) return;
+    try {
+      const [sent, daily] = await Promise.all([
+        ConnectionRequestService.getSentRequests(currentUser.uid),
+        getDailyRequestCount(currentUser.uid),
+      ]);
+      setDailyRequestCount(daily);
+      const pendingToThis = sent.some(
+        (r) =>
+          r.status === 'pending' &&
+          (r.targetId === userId || r.toUid === userId)
+      );
+      setOutgoingPending(pendingToThis);
+    } catch {
+      setOutgoingPending(false);
+    }
+  }, [userId, currentUser?.uid]);
 
   useEffect(() => {
     if (userId) {
@@ -47,6 +78,11 @@ const UserProfilePage: React.FC = () => {
       }
     }
   }, [userId, currentUser?.uid]);
+
+  useEffect(() => {
+    if (!userId || !currentUser?.uid) return;
+    refreshConnectionUi();
+  }, [userId, currentUser?.uid, refreshConnectionUi]);
 
   const loadUserProfile = async () => {
     if (!userId) return;
@@ -98,54 +134,51 @@ const UserProfilePage: React.FC = () => {
       
       if (connection) {
         setConnections([connection]);
+      } else {
+        setConnections([]);
       }
+      await refreshConnectionUi();
     } catch (err) {
       console.error('❌ Error loading connections:', err);
     }
   };
 
-  // Generate avatar color based on name
-  const getAvatarColor = (name: string) => {
-    const colors = [
-      'from-red-500 to-red-600',
-      'from-blue-500 to-blue-600',
-      'from-green-500 to-green-600',
-      'from-purple-500 to-purple-600',
-      'from-yellow-500 to-yellow-600',
-      'from-pink-500 to-pink-600',
-      'from-indigo-500 to-indigo-600',
-      'from-teal-500 to-teal-600'
-    ];
-    
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    const index = Math.abs(hash) % colors.length;
-    return colors[index];
-  };
+  const handleConnect = async () => {
+    if (!userId || !currentUser?.uid || connecting) return;
+    if (userId === currentUser.uid) return;
 
-  const formatPosition = (position: string | undefined): string => {
-    if (!position) return '';
-    
-    const positionMap: Record<string, string> = {
-      'investor': 'Investor',
-      'c_level': 'C-Level Executive',
-      'vp_level': 'VP Level',
-      'director': 'Director',
-      'senior_manager': 'Senior Manager',
-      'manager': 'Manager',
-      'senior_contributor': 'Senior Contributor',
-      'individual_contributor': 'Individual Contributor',
-      'junior_level': 'Junior Level',
-      'founder': 'Founder',
-      'consultant': 'Consultant',
-      'student': 'Student',
-      'other': 'Other'
-    };
-    
-    return positionMap[position] || position;
+    try {
+      setConnecting(true);
+
+      if (currentUser.role === 'admin') {
+        const { AdminConnectionService } = await import('../services/adminConnectionService');
+        await AdminConnectionService.createAdminConnection(
+          currentUser.uid,
+          userId,
+          currentUser.uid,
+          { reason: 'Admin connection from profile' }
+        );
+        await loadMutualConnections();
+      } else {
+        await ConnectionRequestService.sendConnectionRequest(currentUser.uid, userId, {});
+        setOutgoingPending(true);
+        await refreshConnectionUi();
+        getDailyRequestCount(currentUser.uid).then(setDailyRequestCount);
+      }
+    } catch (error: any) {
+      const msg = error?.message ?? '';
+      const isAlreadySent =
+        msg.includes('already sent') ||
+        msg.includes('not yet responded') ||
+        msg.includes('Connection request already');
+      if (isAlreadySent) {
+        setOutgoingPending(true);
+        return;
+      }
+      alert(msg || 'Could not send connection request. Please try again.');
+    } finally {
+      setConnecting(false);
+    }
   };
 
   const closeAvatarModal = useCallback(() => setShowAvatarModal(false), []);
@@ -185,7 +218,7 @@ const UserProfilePage: React.FC = () => {
                 onClick={() => navigate(-1)}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-dark hover:bg-brand-mid"
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
+                <ChevronLeft className="h-4 w-4 mr-2" />
                 Back
               </button>
             </div>
@@ -196,33 +229,52 @@ const UserProfilePage: React.FC = () => {
     );
   }
 
-  // Handle different name field variations (legacy compatibility)
-  const displayName = profile.displayName || 
-    (profile as any).name || 
+  const displayName =
+    profile.displayName ||
+    (profile as any).name ||
     `${profile.firstName || ''} ${profile.lastName || ''}`.trim() ||
     'Member';
-  
-  // Handle legacy work/title field mapping
+
   const userTitle = profile.title || (profile as any).work || '';
   const userCompany = profile.company || '';
   const userLinkedin = profile.linkedin || (profile as any).linkedinUsername || '';
-  const userPosition = (profile as any).position || '';
-  const avatarColor = getAvatarColor(displayName);
-
-  const profileImageUrl = profile.profileImage || profile.avatarUrl;
-  const joinedMonthYear = formatMemberMonthYear(profile.joinedAt, profile.createdAt);
+  const fullProfile = profile as UserProfile;
+  const bioTitleLine = resolveDirectoryBioTitle(fullProfile);
+  const profileImageUrl =
+    resolveDirectoryAvatarUrl(fullProfile) ||
+    profile.profileImage ||
+    profile.avatarUrl ||
+    '';
   const avatarFallback = (
-    <div className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-3xl`}>
+    <div className="w-full h-full bg-brand-dark flex items-center justify-center text-white/90 font-bold text-2xl">
       {displayName.charAt(0)}
     </div>
   );
   const canOpenAvatarLightbox = isSafeImageUrl(profileImageUrl || null);
+  const { isTrustee, isMentor } = getTrusteeMentorFromHubspot(fullProfile);
+  const chapterLabel = formatChapterDisplayLabel(profile.chapter ?? null);
+
+  const isOwner = currentUser?.uid === userId;
+  const showConnect =
+    !!currentUser?.uid &&
+    !isOwner &&
+    userId &&
+    connections.length === 0 &&
+    profile.canConnect !== false;
+  const atDailyLimit = dailyRequestCount !== null && isOverDailyLimit(dailyRequestCount);
+  const connectDisabled =
+    connecting || outgoingPending || atDailyLimit || !showConnect;
+
+  let connectLabel = 'Connect';
+  if (connecting) connectLabel = 'Sending…';
+  else if (outgoingPending) connectLabel = 'Request sent';
+  else if (connections.length > 0) connectLabel = 'Connected';
+  else if (atDailyLimit) connectLabel = 'Daily limit';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
       <Header />
 
-      {/* Avatar lightbox */}
       {showAvatarModal && profileImageUrl && canOpenAvatarLightbox && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
@@ -247,282 +299,212 @@ const UserProfilePage: React.FC = () => {
           />
         </div>
       )}
-      
-      {/* Profile Header */}
-      <div className="pt-[var(--content-offset-top)] pb-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Back Button */}
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center text-brand-dark hover:text-purple-700 mb-8 font-medium transition-colors duration-200"
-          >
-            <ChevronLeft className="h-5 w-5 mr-1" />
-            Back
-          </button>
 
-          {/* Profile Card */}
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-            {/* Cover / banner: custom photo or blue gradient */}
-            <div className="relative z-0 aspect-[3/1] w-full min-h-[140px] sm:min-h-[160px] bg-gradient-to-r from-brand-blue-dark to-brand-blue-light overflow-hidden">
-              <ImageWithCrop
-                src={String((profile as any).coverPhotoUrl || '')}
-                crop={(profile as any).coverCrop ?? null}
-                shape="rect"
-                alt=""
-                urlIsCropped={true}
-              />
-              <div className="absolute inset-0 bg-black bg-opacity-20 pointer-events-none" />
-            </div>
-            
-            <div className="relative z-10 px-8 pb-8 bg-white">
-              {/* Avatar - click to enlarge when image present */}
-              <div className="flex items-start justify-between -mt-16 mb-6">
+      <div className="pt-[var(--content-offset-top)] pb-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center text-brand-dark hover:text-brand-blue font-medium text-sm"
+            >
+              <ChevronLeft className="h-5 w-5 mr-0.5" />
+              Back
+            </button>
+            {(isOwner || currentUser?.role === 'admin') && (
+              <div className="flex flex-wrap gap-2">
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/dashboard')}
+                    className="inline-flex items-center px-3 py-1.5 bg-brand-dark text-white rounded-lg hover:bg-brand-mid text-sm font-medium"
+                  >
+                    <Edit3 className="h-4 w-4 mr-1.5" />
+                    Dashboard
+                  </button>
+                )}
+                {currentUser?.role === 'admin' && !isOwner && userId && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/admin/users/${userId}/edit`)}
+                    className="inline-flex items-center px-3 py-1.5 bg-brand-dark text-white rounded-lg hover:bg-brand-mid text-sm font-medium"
+                  >
+                    <Edit3 className="h-4 w-4 mr-1.5" />
+                    Admin edit
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="grid md:grid-cols-5 gap-0 md:divide-x md:divide-gray-100">
+              <aside className="md:col-span-2 p-6 md:p-8 space-y-4 border-b md:border-b-0 border-gray-100">
                 <div
                   role={canOpenAvatarLightbox ? 'button' : undefined}
                   tabIndex={canOpenAvatarLightbox ? 0 : undefined}
                   onClick={() => canOpenAvatarLightbox && setShowAvatarModal(true)}
-                  onKeyDown={(e) => canOpenAvatarLightbox && (e.key === 'Enter' || e.key === ' ') && setShowAvatarModal(true)}
-                  className={`relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white flex-shrink-0 ${canOpenAvatarLightbox ? 'cursor-pointer hover:ring-4 hover:ring-brand-blue/30 transition-all' : ''}`}
+                  onKeyDown={(e) =>
+                    canOpenAvatarLightbox && (e.key === 'Enter' || e.key === ' ') && setShowAvatarModal(true)
+                  }
+                  className={`relative w-28 h-28 rounded-full overflow-hidden border-2 border-gray-100 mx-auto md:mx-0 ${
+                    canOpenAvatarLightbox ? 'cursor-pointer hover:ring-2 hover:ring-brand-blue/40' : ''
+                  }`}
                 >
                   <ImageWithCrop
                     src={String(profileImageUrl || '')}
                     crop={(profile as any).profileImageCrop ?? null}
                     shape="circle"
-                    alt={displayName}
+                    alt=""
                     className="rounded-full"
                     urlIsCropped={true}
                     fallback={avatarFallback}
                   />
                 </div>
-                
-                <div className="mt-4 flex flex-col items-end space-y-2">
-                  {/* Edit Button - Show if viewing own profile or if admin */}
-                  {(currentUser?.uid === userId || currentUser?.role === 'admin') && (
-                    <div className="flex space-x-2">
-                      {/* Regular Edit Button - Always show for own profile */}
-                      {currentUser?.uid === userId && (
-                        <button
-                          onClick={() => navigate('/dashboard')}
-                          className="inline-flex items-center px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors duration-200 text-sm font-medium"
-                        >
-                          <Edit3 className="h-4 w-4 mr-2" />
-                          Dashboard
-                        </button>
-                      )}
-                      
-                      {/* Admin Edit Button - Only show for admins viewing other profiles */}
-                      {currentUser?.role === 'admin' && currentUser?.uid !== userId && (
-                        <button
-                          onClick={() => navigate(`/admin/users/${userId}/edit`)}
-                          className="inline-flex items-center px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors duration-200 text-sm font-medium"
-                        >
-                          <Edit3 className="h-4 w-4 mr-2" />
-                          Admin Edit
-                        </button>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Connection Status */}
-                  {connections.length > 0 && (
-                    <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                      <Users className="h-4 w-4 mr-1" />
-                      Connected
-                    </div>
-                  )}
-                </div>
-              </div>
 
-              {/* Name and Role */}
-              <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{displayName}</h1>
-                
-                {/* Bio Title */}
-                {profile.bioTitle && (
-                  <div className="bg-blue-50 rounded-lg p-3 mb-3">
-                    <p className="text-blue-800 font-medium text-center">
-                      {profile.bioTitle}
+                <div className="text-center md:text-left space-y-2">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">{displayName}</h1>
+                  <div className="flex flex-wrap justify-center md:justify-start gap-1.5">
+                    <TrusteeMentorStar isTrustee={isTrustee} isMentor={isMentor} />
+                    {profile.role === 'admin' && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                        <Shield className="h-3 w-3 mr-1" />
+                        Admin
+                      </span>
+                    )}
+                    {connections.length > 0 && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                        <Users className="h-3 w-3 mr-1" />
+                        Connected
+                      </span>
+                    )}
+                  </div>
+                  {bioTitleLine ? (
+                    <p className="text-sm font-medium text-brand-dark leading-snug">{bioTitleLine}</p>
+                  ) : null}
+                  {(userTitle || userCompany) && (
+                    <p className="text-xs text-gray-500">
+                      {[userTitle, userCompany].filter(Boolean).join(' · ')}
                     </p>
-                  </div>
-                )}
-
-                {(userTitle || userCompany) && (
-                  <div className="mb-2">
-                    {userTitle && (
-                      <p className="text-lg text-gray-600 mb-1">{userTitle}</p>
-                    )}
-                    {userCompany && (
-                      <p className="text-gray-500">{userCompany}</p>
-                    )}
-                  </div>
-                )}
-
-                {userPosition && (
-                  <div className="mb-2">
-                    <p className="text-sm text-gray-600">{formatPosition(userPosition)}</p>
-                  </div>
-                )}
-
-                {/* Location */}
-                {(profile.city || profile.country) && (
-                  <div className="flex items-center text-gray-600 mb-2">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    <span>{[profile.city, profile.country].filter(Boolean).join(', ')}</span>
-                  </div>
-                )}
-
-                {profile.role === 'admin' && (
-                  <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mt-2">
-                    <Shield className="h-3 w-3 mr-1" />
-                    Admin
-                  </div>
-                )}
-              </div>
-
-              {/* Contact & Social Links */}
-              <div className="grid md:grid-cols-2 gap-6 mb-8">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
-                  <div className="space-y-3">
-                    {profile.email && (
-                      <div className="flex items-center text-gray-600">
-                        <Mail className="h-5 w-5 mr-3 text-gray-400" />
-                        <a href={`mailto:${profile.email}`} className="hover:text-brand-dark transition-colors">
-                          {profile.email}
-                        </a>
-                      </div>
-                    )}
-                    
-                    {profile.phone && (
-                      <div className="flex items-center text-gray-600">
-                        <Phone className="h-5 w-5 mr-3 text-gray-400" />
-                        <span>{profile.phone}</span>
-                      </div>
-                    )}
-
-                    {profile.timezone && (
-                      <div className="flex items-center text-gray-600">
-                        <Clock className="h-5 w-5 mr-3 text-gray-400" />
-                        <span>{profile.timezone}</span>
-                      </div>
-                    )}
-                    
-                    {joinedMonthYear && (
-                      <div className="flex items-center text-gray-600">
-                        <Calendar className="h-5 w-5 mr-3 text-gray-400" />
-                        Joined {joinedMonthYear}
-                      </div>
-                    )}
-                  </div>
+                  )}
+                  {chapterLabel ? (
+                    <p className="text-xs text-gray-600">
+                      <span className="text-gray-400">Chapter</span> · {chapterLabel}
+                    </p>
+                  ) : null}
+                  {(profile.city || profile.country) && (
+                    <p className="text-xs text-gray-600 flex items-start justify-center md:justify-start gap-1">
+                      <MapPin className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" aria-hidden />
+                      {[profile.city, profile.country].filter(Boolean).join(', ')}
+                    </p>
+                  )}
                 </div>
 
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Social Links</h3>
-                  <div className="space-y-3">
-                    {userLinkedin && linkedInProfileHref(userLinkedin) && (
-                      <div className="flex items-center text-gray-600">
-                        <Linkedin className="h-5 w-5 mr-3 text-gray-400" />
-                        <a 
-                          href={linkedInProfileHref(userLinkedin)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-brand-dark transition-colors"
-                        >
-                          LinkedIn Profile
-                        </a>
-                      </div>
-                    )}
-
-                    {profile.website && (
-                      <div className="flex items-center text-gray-600">
-                        <Favicon url={profile.website} size={20} iconClassName="text-gray-400" className="mr-3" />
-                        <a 
-                          href={profile.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-brand-dark transition-colors"
-                        >
-                          {profile.website.replace(/^https?:\/\//, '')}
-                        </a>
-                      </div>
-                    )}
-
-                    {profile.twitter && (
-                      <div className="flex items-center text-gray-600">
-                        <Twitter className="h-5 w-5 mr-3 text-gray-400" />
-                        <a 
-                          href={`https://twitter.com/${profile.twitter}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-brand-dark transition-colors"
-                        >
-                          @{profile.twitter}
-                        </a>
-                      </div>
-                    )}
-
-                    {!linkedInProfileHref(userLinkedin) && !profile.website && !profile.twitter && (
-                      <div className="text-gray-500 italic">
-                        No social links available
-                      </div>
-                    )}
-
-                  </div>
+                <div className="space-y-3 text-sm border-t border-gray-100 pt-4">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Contact</p>
+                  {profile.email && (
+                    <a
+                      href={`mailto:${profile.email}`}
+                      className="flex items-center gap-2 text-gray-700 hover:text-brand-dark break-all"
+                    >
+                      <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      {profile.email}
+                    </a>
+                  )}
+                  {userLinkedin && linkedInProfileHref(userLinkedin) && (
+                    <a
+                      href={linkedInProfileHref(userLinkedin)!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-gray-700 hover:text-brand-dark"
+                    >
+                      <Linkedin className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      LinkedIn
+                    </a>
+                  )}
+                  {profile.website && (
+                    <a
+                      href={profile.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-gray-700 hover:text-brand-dark break-all"
+                    >
+                      <Globe className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      {profile.website.replace(/^https?:\/\//, '')}
+                    </a>
+                  )}
+                  {profile.twitter && (
+                    <a
+                      href={`https://twitter.com/${profile.twitter}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-gray-700 hover:text-brand-dark"
+                    >
+                      <Twitter className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      @{profile.twitter}
+                    </a>
+                  )}
                 </div>
-              </div>
+              </aside>
 
-              {/* Bio Section */}
-              {profile.bio && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">About</h3>
-                  <BioHtml html={profile.bio} />
-                </div>
-              )}
-
-              {/* Skills Section */}
-              {profile.skills && profile.skills.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Skills & Expertise</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.skills.map((skill, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium"
+              <section className="md:col-span-3 p-6 md:p-8 flex flex-col min-h-0">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">About</h2>
+                  {showConnect && (
+                    <div className="flex flex-col items-stretch sm:items-end gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => void handleConnect()}
+                        disabled={connectDisabled}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-brand-dark text-white text-sm font-medium hover:bg-brand-dark-hover disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {skill}
+                        <UserPlus className="h-4 w-4" />
+                        {connectLabel}
+                      </button>
+                      {atDailyLimit && !outgoingPending && (
+                        <span className="text-xs text-amber-700 text-right max-w-[14rem]">{DAILY_LIMIT_MESSAGE}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {profile.bio ? (
+                  <div className="prose prose-sm max-w-none text-gray-700">
+                    <BioHtml html={profile.bio} />
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No bio yet.</p>
+                )}
+
+                {profile.skills && profile.skills.length > 0 && (
+                  <div className="mt-5 pt-4 border-t border-gray-100">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Skills</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {profile.skills.map((skill, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-medium"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {connections.length > 0 && (
+                  <p className="mt-4 text-xs text-gray-500">
+                    {connections.map((c) => (
+                      <span key={c.id}>
+                        Connected
+                        {c.reasons?.length
+                          ? ` · ${ConnectionService.formatReasons(c.reasons)}`
+                          : ''}
                       </span>
                     ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Connection History */}
-              {connections.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Connection Details</h3>
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    {connections.map((connection) => (
-                      <div key={connection.id} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <Users className="h-5 w-5 text-gray-400" />
-                          <div>
-                            <p className="font-medium text-gray-900">Connected</p>
-                            <p className="text-sm text-gray-500">
-                              via {connection.reasons ? 
-                                ConnectionService.formatReasons(connection.reasons) : 
-                                'Network Connection'
-                              }
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {ConnectionService.formatTimestamp(connection.createdAt || connection.updatedAt)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                  </p>
+                )}
+              </section>
             </div>
           </div>
         </div>

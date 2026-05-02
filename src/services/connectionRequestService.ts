@@ -80,12 +80,17 @@ export class ConnectionRequestService {
             throw new Error(data.error || `HTTP ${response.status}: Failed to create connection request`);
           }
         } catch (apiError: any) {
-          if (import.meta.env.DEV) {
-            console.warn('[ConnectionRequestService] API call failed, using Firestore fallback:', apiError.message);
-            requestId = await this.sendConnectionRequestFirestore(fromUid, toUid, options);
-          } else {
+          const msg = String(apiError?.message || '');
+          // Expected client errors: do not duplicate via Firestore fallback
+          if (
+            /401|403|409|Cannot send connection|yourself|already exists|already sent|not yet responded|Connection request already|today's connection limit|daily limit/i.test(
+              msg
+            )
+          ) {
             throw apiError;
           }
+          console.warn('[ConnectionRequestService] API failed, using Firestore fallback:', msg);
+          requestId = await this.sendConnectionRequestFirestore(fromUid, toUid, options);
         }
       } else {
         requestId = await this.sendConnectionRequestFirestore(fromUid, toUid, options);

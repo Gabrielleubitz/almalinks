@@ -51,6 +51,7 @@ export const filterProfileForViewer = (
     displayName: profile.displayName,
     title: profile.title,
     company: profile.company,
+    chapter: profile.chapter,
     bioTitle: profile.bioTitle,
     bio: profile.bio,
     skills: profile.skills,

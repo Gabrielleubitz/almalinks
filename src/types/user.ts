@@ -144,6 +144,8 @@ export interface UserCard {
   city?: string;
   country?: string;
   bioTitle?: string;
+  /** Stored chapter (HubSpot / profile); UI may map e.g. Johannesburg → "South Africa". */
+  chapter?: string | null;
   bio?: string;
   linkedin?: string;
   skills: string[];
