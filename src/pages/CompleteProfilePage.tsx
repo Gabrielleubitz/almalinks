@@ -130,10 +130,10 @@ const CompleteProfilePage: React.FC = () => {
       setMissingFields(missing);
       console.log('📝 Missing fields:', missing);
 
-      // If profile is already complete, redirect to events
+      // If profile is already complete, redirect to main member home
       if (checkProfileComplete()) {
-        console.log('✅ Profile already complete, redirecting to events');
-        navigate('/events');
+        console.log('✅ Profile already complete, redirecting to members');
+        navigate('/members');
       }
     }
   }, [user, profileInitialized, navigate, checkProfileComplete]);
@@ -246,7 +246,7 @@ const CompleteProfilePage: React.FC = () => {
         console.warn('HubSpot sync after complete-profile failed (non-blocking):', hubErr);
       }
       console.log('✅ Profile updated successfully');
-      navigate('/events');
+      navigate('/members');
     } catch (err) {
       console.error('Profile update error:', err);
     } finally {

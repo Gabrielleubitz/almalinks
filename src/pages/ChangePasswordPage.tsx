@@ -31,7 +31,7 @@ const ChangePasswordPage: React.FC = () => {
         // If no password change required, redirect to events
         if (!requirement.required) {
           console.log('✅ No password change required, redirecting to events');
-          navigate('/events', { replace: true });
+          navigate('/members', { replace: true });
         }
       }
     };
@@ -115,7 +115,7 @@ const ChangePasswordPage: React.FC = () => {
 
       // Redirect to events after 2 seconds
       setTimeout(() => {
-        navigate('/events', { replace: true });
+        navigate('/members', { replace: true });
       }, 2000);
     } catch (err: any) {
       console.error('❌ Error changing password:', err);

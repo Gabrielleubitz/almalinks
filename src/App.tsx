@@ -83,7 +83,7 @@ function App() {
         <Route path="/connect" element={<ConnectPage />} />
         
         {/* Legacy /welcome: redirect to dashboard; onboarding tour overlay shows for first-time users */}
-        <Route path="/welcome" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/welcome" element={<Navigate to="/members" replace />} />
         
         {/* Protected Routes */}
         <Route 
@@ -230,12 +230,12 @@ const TermsGate: React.FC<{ user: any; authLoading: boolean }> = ({
       return;
     }
 
-    // Only show for approved users on the member dashboard
+    // Approved members: show on main home surfaces (My Profile or Members)
     const isApproved = user.status === 'approved';
     const path = (location && location.pathname) || '';
-    const onDashboard = path === '/dashboard';
+    const onMemberHome = path === '/dashboard' || path === '/members';
 
-    if (!isApproved || !onDashboard) {
+    if (!isApproved || !onMemberHome) {
       setShowTermsModal(false);
       return;
     }

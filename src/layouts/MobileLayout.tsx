@@ -63,26 +63,20 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
     setShowMenu(false);
   };
 
-  // Navigation items
+  // Navigation: Members, Events, Chats, My Profile, Admin
   const navItems = [
-    {
-      label: 'Dashboard',
-      path: '/dashboard',
-      icon: Home,
-      show: user && !isPending
-    },
-    {
-      label: 'Events',
-      path: '/events',
-      icon: Calendar,
-      show: true
-    },
     {
       label: 'Members',
       path: '/members',
       icon: Users,
       show: user && !isPending,
       badge: notificationCounts.pendingConnectionRequests > 0 ? notificationCounts.pendingConnectionRequests : undefined
+    },
+    {
+      label: 'Events',
+      path: '/events',
+      icon: Calendar,
+      show: true
     },
     {
       label: 'Chats',
@@ -92,17 +86,18 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
       badge: notificationCounts.unreadChats > 0 ? notificationCounts.unreadChats : undefined
     },
     {
+      label: 'My Profile',
+      path: '/dashboard',
+      icon: Home,
+      show: user && !isPending,
+      highlight: true as const
+    },
+    {
       label: 'Admin',
       path: '/admin',
       icon: Shield,
       show: isAdmin && !isPending,
       badge: notificationCounts.pendingRegistrations > 0 ? notificationCounts.pendingRegistrations : undefined
-    },
-    {
-      label: 'Profile',
-      path: user ? `/profile/${user.uid}` : '/profile',
-      icon: User,
-      show: user && !isPending
     }
   ];
 
@@ -134,8 +129,9 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
               {/* Profile Avatar */}
               {user && (
                 <button
-                  onClick={() => handleNavigation(user ? `/profile/${user.uid}` : '/dashboard')}
-                  className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-red-500 to-blue-500 text-white font-bold text-sm"
+                  onClick={() => handleNavigation('/dashboard')}
+                  className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-brand-dark text-white font-bold text-sm ring-2 ring-brand-light"
+                  title="My Profile"
                 >
                   {user.profileImage ? (
                     <img
@@ -193,7 +189,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
               {user && (
                 <div className="p-4 border-b border-gray-200 bg-gray-50">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-red-500 to-blue-500 text-white font-bold">
+                    <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center bg-brand-dark text-white font-bold">
                       {user.profileImage ? (
                         <img
                           src={user.profileImage}
@@ -226,17 +222,25 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
                     if (!item.show) return null;
                     
                     const Icon = item.icon;
-                    const isActive = location.pathname === item.path || 
-                                   (item.path === '/admin' && location.pathname.startsWith('/admin'));
+                    const isActive =
+                      location.pathname === item.path ||
+                      (item.path === '/events' && location.pathname.startsWith('/events/')) ||
+                      (item.path === '/chats' && location.pathname.startsWith('/chats/')) ||
+                      (item.path === '/admin' && location.pathname.startsWith('/admin'));
+                    const isMyProfile = 'highlight' in item && item.highlight;
                     
                     return (
                       <button
                         key={item.path}
                         onClick={() => handleNavigation(item.path)}
-                        className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${
-                          isActive
-                            ? 'bg-blue-50 text-brand-blue border-l-4 border-brand-blue'
-                            : 'text-gray-700 hover:bg-gray-100'
+                        className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors border ${
+                          isActive && isMyProfile
+                            ? 'bg-brand-dark text-white border-brand-dark'
+                            : isActive
+                            ? 'bg-blue-50 text-brand-blue border-l-4 border-brand-blue border-y-transparent border-r-transparent'
+                            : isMyProfile
+                            ? 'text-brand-dark border-brand-light bg-brand-light/40 hover:bg-brand-light'
+                            : 'text-gray-700 hover:bg-gray-100 border-transparent'
                         }`}
                         style={{ minHeight: '48px' }} // Larger tap target for mobile
                       >

@@ -30,8 +30,8 @@ const AuthWrapper: React.FC = () => {
         navigate('/admin', { replace: true });
       } else if (user.role === 'member') {
         if (checkProfileComplete()) {
-          console.log('👤 Redirecting member to /events');
-          navigate('/events', { replace: true });
+          console.log('👤 Redirecting member to /members');
+          navigate('/members', { replace: true });
         } else {
           console.log('👤 Redirecting member to complete profile');
           navigate('/complete-profile', { replace: true });

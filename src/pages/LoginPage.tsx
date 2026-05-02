@@ -36,7 +36,7 @@ const LoginPage: React.FC = () => {
       } else if (isRejected) {
         navigate('/re-request-access');
       } else if (checkProfileComplete()) {
-        navigate('/events');
+        navigate('/members');
       } else {
         navigate('/complete-profile');
       }

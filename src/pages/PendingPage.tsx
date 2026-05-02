@@ -19,7 +19,7 @@ const PendingPage: React.FC = () => {
       if (snap.exists()) {
         const data = snap.data();
         if (data?.status === 'approved') {
-          navigate('/dashboard', { replace: true });
+          navigate('/complete-profile', { replace: true });
         }
       }
     }, (err) => {

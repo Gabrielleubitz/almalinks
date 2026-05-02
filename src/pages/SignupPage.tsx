@@ -84,7 +84,7 @@ const SignupPage: React.FC = () => {
 
     if (user.status === 'approved') {
       // Already a full member — send them into the app
-      navigate('/events', { replace: true });
+      navigate('/members', { replace: true });
       return;
     }
     if (user.status === 'pending') {

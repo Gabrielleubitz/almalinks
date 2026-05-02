@@ -176,35 +176,13 @@ const SpeakerAwareHeader: React.FC = () => {
             />
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className={`text-sm font-medium transition-colors duration-200 ${
-                location.pathname === '/dashboard'
-                  ? 'text-brand-dark font-semibold'
-                  : 'text-gray-600 hover:text-brand-blue'
-              }`}
-            >
-              Dashboard
-            </button>
-            <button
-              data-onboarding="events"
-              data-tour="events"
-              onClick={() => navigate('/events')}
-              className={`text-sm font-medium transition-colors duration-200 ${
-                location.pathname === '/events'
-                  ? 'text-brand-dark font-semibold'
-                  : 'text-gray-600 hover:text-brand-blue'
-              }`}
-            >
-              Events
-            </button>
+          {/* Desktop Navigation — Members, Events, Chats, My Profile */}
+          <nav className="hidden md:flex items-center space-x-2 lg:space-x-4">
             <button
               data-onboarding="community"
               data-tour="members"
               onClick={() => navigate('/members')}
-              className={`flex items-center gap-2 text-sm font-medium transition-colors duration-200 ${
+              className={`flex items-center gap-2 text-sm font-medium transition-colors duration-200 px-2 py-1 rounded-lg ${
                 location.pathname === '/members'
                   ? 'text-brand-dark font-semibold'
                   : 'text-gray-600 hover:text-brand-blue'
@@ -218,10 +196,22 @@ const SpeakerAwareHeader: React.FC = () => {
               )}
             </button>
             <button
+              data-onboarding="events"
+              data-tour="events"
+              onClick={() => navigate('/events')}
+              className={`text-sm font-medium transition-colors duration-200 px-2 py-1 rounded-lg ${
+                location.pathname === '/events' || location.pathname.startsWith('/events/')
+                  ? 'text-brand-dark font-semibold'
+                  : 'text-gray-600 hover:text-brand-blue'
+              }`}
+            >
+              Events
+            </button>
+            <button
               data-tour="chats"
               onClick={() => navigate('/chats')}
-              className={`flex items-center gap-2 text-sm font-medium transition-colors duration-200 ${
-                location.pathname === '/chats'
+              className={`flex items-center gap-2 text-sm font-medium transition-colors duration-200 px-2 py-1 rounded-lg ${
+                location.pathname === '/chats' || location.pathname.startsWith('/chats/')
                   ? 'text-brand-dark font-semibold'
                   : 'text-gray-600 hover:text-brand-blue'
               }`}
@@ -232,6 +222,18 @@ const SpeakerAwareHeader: React.FC = () => {
                   {notificationCounts.unreadChats > 99 ? '99+' : notificationCounts.unreadChats}
                 </span>
               )}
+            </button>
+            <button
+              data-onboarding="profile"
+              data-tour="my-profile"
+              onClick={() => navigate('/dashboard')}
+              className={`text-sm font-medium transition-colors duration-200 px-3 py-1.5 rounded-lg border ${
+                location.pathname === '/dashboard'
+                  ? 'bg-brand-dark text-white border-brand-dark shadow-sm font-semibold'
+                  : 'text-brand-dark border-brand-light bg-brand-light/50 hover:bg-brand-light'
+              }`}
+            >
+              My Profile
             </button>
             <button
               onClick={() => navigate('/help')}
@@ -275,14 +277,14 @@ const SpeakerAwareHeader: React.FC = () => {
               <span className="text-sm">Donate</span>
             </a>
 
-            {/* Profile Button - View own profile (onboarding spotlight target) */}
+            {/* Avatar — opens My Profile (same as dashboard) */}
             <button
-              data-onboarding="profile"
-              data-tour="profile"
-              onClick={() => navigate(`/profile/${user?.uid}`)}
+              type="button"
+              onClick={() => navigate('/dashboard')}
               className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+              title="My Profile"
             >
-              <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-red-500 to-blue-500 text-white font-bold text-sm">
+              <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-brand-dark text-white font-bold text-sm ring-2 ring-brand-light">
                 {user.profileImage ? (
                   <img
                     src={user.profileImage}
@@ -290,14 +292,14 @@ const SpeakerAwareHeader: React.FC = () => {
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSIzMCIgZmlsbD0iIzlDQTNBRiIvPgo8ZWxsaXBzZSBjeD0iMTAwIiBjeT0iMTQwIiByeD0iNDAiIHJ5PSIyMCIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4=';
+                      target.style.display = 'none';
                     }}
                   />
                 ) : (
                   user?.displayName?.charAt(0) || user?.name?.charAt(0) || user?.email?.charAt(0) || '?'
                 )}
               </div>
-              <span className="font-medium text-sm sm:text-base hidden sm:inline">
+              <span className="font-medium text-sm sm:text-base hidden sm:inline max-w-[8rem] truncate">
                 {user?.displayName?.split(' ')[0] || user?.name?.split(' ')[0] || 'User'}
               </span>
             </button>
@@ -328,30 +330,6 @@ const SpeakerAwareHeader: React.FC = () => {
         <div className="md:hidden bg-white border-t border-gray-200 mobile-menu-container">
           <div className="px-4 py-4 space-y-2">
             <button
-              onClick={() => handleNavigation('/dashboard')}
-              className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
-                location.pathname === '/dashboard'
-                  ? 'text-brand-dark bg-brand-light font-semibold'
-                  : 'text-gray-600 hover:text-brand-blue hover:bg-gray-50'
-              }`}
-            >
-              <User className="h-4 w-4" />
-              <span>Dashboard</span>
-            </button>
-
-            <button
-              onClick={() => handleNavigation('/events')}
-              className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
-                location.pathname === '/events'
-                  ? 'text-brand-dark bg-brand-light font-semibold'
-                  : 'text-gray-600 hover:text-brand-blue hover:bg-gray-50'
-              }`}
-            >
-              <Calendar className="h-4 w-4" />
-              <span>Events</span>
-            </button>
-
-            <button
               onClick={() => handleNavigation('/members')}
               className={`flex items-center justify-between w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
                 location.pathname === '/members'
@@ -371,9 +349,21 @@ const SpeakerAwareHeader: React.FC = () => {
             </button>
 
             <button
+              onClick={() => handleNavigation('/events')}
+              className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
+                location.pathname === '/events' || location.pathname.startsWith('/events/')
+                  ? 'text-brand-dark bg-brand-light font-semibold'
+                  : 'text-gray-600 hover:text-brand-blue hover:bg-gray-50'
+              }`}
+            >
+              <Calendar className="h-4 w-4" />
+              <span>Events</span>
+            </button>
+
+            <button
               onClick={() => handleNavigation('/chats')}
               className={`flex items-center justify-between w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium ${
-                location.pathname === '/chats'
+                location.pathname === '/chats' || location.pathname.startsWith('/chats/')
                   ? 'text-brand-dark bg-brand-light font-semibold'
                   : 'text-gray-600 hover:text-brand-blue hover:bg-gray-50'
               }`}
@@ -387,6 +377,18 @@ const SpeakerAwareHeader: React.FC = () => {
                   {notificationCounts.unreadChats > 99 ? '99+' : notificationCounts.unreadChats}
                 </span>
               )}
+            </button>
+
+            <button
+              onClick={() => handleNavigation('/dashboard')}
+              className={`flex items-center space-x-3 w-full px-4 py-4 text-base rounded-lg transition-colors touch-manipulation font-medium border ${
+                location.pathname === '/dashboard'
+                  ? 'bg-brand-dark text-white border-brand-dark font-semibold'
+                  : 'text-brand-dark border-brand-light bg-brand-light/40 hover:bg-brand-light'
+              }`}
+            >
+              <User className="h-4 w-4" />
+              <span>My Profile</span>
             </button>
 
             <button
@@ -449,7 +451,7 @@ const SpeakerAwareHeader: React.FC = () => {
                       }}
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-red-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    <div className="w-full h-full bg-brand-dark rounded-full flex items-center justify-center text-white font-bold text-lg">
                       {user?.displayName?.charAt(0) || user?.name?.charAt(0) || user?.email?.charAt(0) || '?'}
                     </div>
                   )}

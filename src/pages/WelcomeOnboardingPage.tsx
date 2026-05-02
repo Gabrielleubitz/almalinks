@@ -47,7 +47,7 @@ const WelcomeOnboardingPage: React.FC = () => {
       if (user.role === 'admin') {
         navigate('/admin', { replace: true });
       } else if (checkProfileComplete()) {
-        navigate('/events', { replace: true });
+        navigate('/members', { replace: true });
       } else {
         navigate('/complete-profile', { replace: true });
       }
