@@ -10,7 +10,7 @@ import { auth } from '../../firebase/config';
 import type { UserCard } from '../../types/user';
 import { triggerEventCompletedThankYouEmail } from '../../utils/triggerEventCompletedThankYouEmail';
 import { extractLinkedInVanity, linkedInProfileHref } from '../../utils/linkedInUrl';
-import { EventDualTimezoneDisplay } from '../../components/EventDualTimezoneDisplay';
+import { EventTimeDisplay } from '../../components/EventTimeDisplay';
 
 type EventFilter = 'all' | 'upcoming' | 'past';
 type ViewMode = 'cards' | 'list';
@@ -677,7 +677,7 @@ const EventManagement: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell text-sm text-gray-600">
                       <div className="space-y-1">
-                        <EventDualTimezoneDisplay layout="plain" eventStart={event.date} textClassName="text-xs text-gray-600" />
+                        <EventTimeDisplay layout="plain" event={event} textClassName="text-xs text-gray-600" />
                         <div className="truncate max-w-[220px]" title={event.location}>{event.location}</div>
                       </div>
                     </td>
@@ -741,8 +741,8 @@ const EventManagement: React.FC = () => {
                   <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 break-words">{event.name}</h3>
                   
                   <div className="space-y-2 mb-4">
-                    <EventDualTimezoneDisplay
-                      eventStart={event.date}
+                    <EventTimeDisplay
+                      event={event}
                       textClassName="text-gray-600 text-xs sm:text-sm"
                       iconClassName="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-700 flex-shrink-0 mt-0.5"
                     />
@@ -922,7 +922,7 @@ const EventManagement: React.FC = () => {
               <div className="min-w-0 flex-1">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">Registrations for {selectedEvent.name}</h2>
                 <div className="text-sm sm:text-base text-gray-600 mt-1 space-y-1 break-words">
-                  <EventDualTimezoneDisplay layout="plain" eventStart={selectedEvent.date} />
+                  <EventTimeDisplay layout="plain" event={selectedEvent} />
                   <div>{selectedEvent.location}</div>
                 </div>
               </div>

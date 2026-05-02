@@ -14,6 +14,7 @@ import { hasAudiencePickForMode } from '../../utils/eventAudienceUtils';
 import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/admin/EmailRecipientAutocomplete';
 import RecipientPreview from '../../components/admin/RecipientPreview';
 import { EventDatetimeLocalDualPreview } from '../../components/EventDualTimezoneDisplay';
+import { ALMA_CHAPTER_SELECT_VALUES } from '../../utils/eventChapterTimezones';
 import { triggerEventCompletedThankYouEmail } from '../../utils/triggerEventCompletedThankYouEmail';
 
 const EditEvent: React.FC = () => {
@@ -43,6 +44,8 @@ const EditEvent: React.FC = () => {
     resourceLinkUrl: '',
     resourceLinkLabel: '',
     chapter: '',
+    eventFormat: 'in_person' as 'in_person' | 'virtual' | 'hybrid',
+    costNote: '',
     zoomRecordingUrl: '',
     zoomPassword: '',
   });
@@ -126,6 +129,8 @@ const EditEvent: React.FC = () => {
         resourceLinkUrl: privateDetails?.resourceLinkUrl ?? '',
         resourceLinkLabel: privateDetails?.resourceLinkLabel ?? '',
         chapter: (event as { chapter?: string }).chapter ?? '',
+        eventFormat: (event as EventData).eventFormat ?? 'in_person',
+        costNote: (event as EventData).costNote ?? '',
         zoomRecordingUrl: privateDetails?.zoomRecordingUrl ?? privateDetails?.zoom_recording_url ?? '',
         zoomPassword: privateDetails?.zoomPassword ?? privateDetails?.zoom_password ?? '',
       });
@@ -246,6 +251,8 @@ const EditEvent: React.FC = () => {
       JSON.stringify(formData.imageCrop) !== JSON.stringify(originalEvent.imageCrop) ||
       formData.status !== originalEvent.status ||
       s(formData.chapter) !== s((originalEvent as { chapter?: string }).chapter) ||
+      formData.eventFormat !== ((originalEvent as EventData).eventFormat ?? 'in_person') ||
+      s(formData.costNote) !== s((originalEvent as EventData).costNote) ||
       s(formData.meetingUrl) !== s(orig.meetingUrl) ||
       s(formData.venueAddress) !== s(orig.venueAddress) ||
       s(formData.resourceLinkUrl) !== s(orig.resourceLinkUrl) ||
@@ -291,6 +298,8 @@ const EditEvent: React.FC = () => {
         imageCrop: formData.imageCrop ?? null,
         status: formData.status,
         chapter: formData.chapter?.trim() || null,
+        eventFormat: formData.eventFormat,
+        costNote: formData.costNote?.trim() || null,
         eventAudience:
           formData.status === 'active'
             ? {
@@ -402,6 +411,8 @@ const EditEvent: React.FC = () => {
               imageCrop: formData.imageCrop ?? null,
               status: formData.status,
               chapter: formData.chapter?.trim() || null,
+              eventFormat: formData.eventFormat,
+              costNote: formData.costNote?.trim() || null,
               eventAudience: savedEventAudience as EventData['eventAudience'],
             }
           : null
@@ -584,9 +595,27 @@ const EditEvent: React.FC = () => {
               </div>
             </div>
 
-            {/* Chapter (for HubSpot sync) */}
             <div>
-              <label htmlFor="chapter" className="block text-sm font-medium text-gray-700 mb-2">Chapter (optional)</label>
+              <label htmlFor="eventFormat" className="block text-sm font-medium text-gray-700 mb-2">
+                Event format *
+              </label>
+              <select
+                id="eventFormat"
+                name="eventFormat"
+                value={formData.eventFormat}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="in_person">In person</option>
+                <option value="virtual">Zoom / online</option>
+                <option value="hybrid">Hybrid</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="chapter" className="block text-sm font-medium text-gray-700 mb-2">
+                Chapter {formData.eventFormat === 'in_person' ? '(local time)' : '(optional)'}
+              </label>
               <select
                 id="chapter"
                 name="chapter"
@@ -594,18 +623,27 @@ const EditEvent: React.FC = () => {
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
-                <option value="">Select chapter...</option>
-                <option value="Tel Aviv">Tel Aviv</option>
-                <option value="New York">New York</option>
-                <option value="London">London</option>
-                <option value="Johannesburg">Johannesburg</option>
-                <option value="Mexico City">Mexico City</option>
-                <option value="Philadelphia">Philadelphia</option>
-                <option value="Sydney">Sydney</option>
-                <option value="Toronto">Toronto</option>
-                <option value="Costa Rica">Costa Rica</option>
-                <option value="International">International</option>
+                {ALMA_CHAPTER_SELECT_VALUES.map(v => (
+                  <option key={v || 'none'} value={v}>
+                    {v || 'Select chapter…'}
+                  </option>
+                ))}
               </select>
+            </div>
+
+            <div>
+              <label htmlFor="costNote" className="block text-sm font-medium text-gray-700 mb-2">
+                Cost / pricing note (optional)
+              </label>
+              <textarea
+                id="costNote"
+                name="costNote"
+                rows={2}
+                value={formData.costNote}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                placeholder="Shown on the public event page"
+              />
             </div>
 
             {/* Private details (approved registrants only) */}

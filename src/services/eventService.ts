@@ -63,6 +63,12 @@ export interface EventData {
   hubspotDealId?: string;
   /** Chapter (e.g. Tel Aviv) for HubSpot sync */
   chapter?: string | null;
+  /** How the event is run; drives time display (local vs US/IL). */
+  eventFormat?: 'in_person' | 'virtual' | 'hybrid' | null;
+  /** Optional IANA override for in-person local time (otherwise derived from chapter). */
+  displayTimezone?: string | null;
+  /** Optional note shown on event page (e.g. pricing later). */
+  costNote?: string | null;
   /** Optional audience targeting for who can see the event when public statuses are used. */
   eventAudience?: AudienceSelection | null;
   /** Set when post-completion thank-you emails were sent to checked-in attendees. */

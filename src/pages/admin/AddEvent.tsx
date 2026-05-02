@@ -14,6 +14,7 @@ import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/adm
 import RecipientPreview from '../../components/admin/RecipientPreview';
 import { hasAudiencePickForMode } from '../../utils/eventAudienceUtils';
 import { EventDatetimeLocalDualPreview } from '../../components/EventDualTimezoneDisplay';
+import { ALMA_CHAPTER_SELECT_VALUES } from '../../utils/eventChapterTimezones';
 
 const AddEvent: React.FC = () => {
   const navigate = useNavigate();
@@ -28,6 +29,8 @@ const AddEvent: React.FC = () => {
     imageCrop: null as { scale: number; panX: number; panY: number } | null,
     status: 'active' as const,
     chapter: '',
+    eventFormat: 'in_person' as 'in_person' | 'virtual' | 'hybrid',
+    costNote: '',
     meetingUrl: '',
     venueAddress: '',
     resourceLinkUrl: '',
@@ -131,6 +134,8 @@ const AddEvent: React.FC = () => {
           imageCrop: formData.imageCrop,
           status: formData.status,
           chapter: formData.chapter?.trim() || null,
+          eventFormat: formData.eventFormat,
+          costNote: formData.costNote?.trim() || null,
           eventAudience:
             formData.status === 'active'
               ? {
@@ -248,6 +253,8 @@ const AddEvent: React.FC = () => {
         imageCrop: null,
         status: 'active',
         chapter: '',
+        eventFormat: 'in_person',
+        costNote: '',
         meetingUrl: '',
         venueAddress: '',
         resourceLinkUrl: '',
@@ -290,6 +297,8 @@ const AddEvent: React.FC = () => {
           imageCrop: null,
           status: 'active',
           chapter: '',
+          eventFormat: 'in_person',
+          costNote: '',
           meetingUrl: '',
           venueAddress: '',
           resourceLinkUrl: '',
@@ -419,9 +428,32 @@ const AddEvent: React.FC = () => {
               </div>
             </div>
 
-            {/* Chapter (for HubSpot sync) */}
+            {/* Event format */}
             <div>
-              <label htmlFor="chapter" className="block text-sm font-medium text-gray-700 mb-2">Chapter (optional)</label>
+              <label htmlFor="eventFormat" className="block text-sm font-medium text-gray-700 mb-2">
+                Event format *
+              </label>
+              <select
+                id="eventFormat"
+                name="eventFormat"
+                value={formData.eventFormat}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="in_person">In person</option>
+                <option value="virtual">Zoom / online</option>
+                <option value="hybrid">Hybrid</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                In person shows local chapter time; online/hybrid shows US Eastern and Israel on one line for members.
+              </p>
+            </div>
+
+            {/* Chapter (HubSpot + local time for in-person) */}
+            <div>
+              <label htmlFor="chapter" className="block text-sm font-medium text-gray-700 mb-2">
+                Chapter {formData.eventFormat === 'in_person' ? '(sets local event time)' : '(optional)'}
+              </label>
               <select
                 id="chapter"
                 name="chapter"
@@ -429,18 +461,27 @@ const AddEvent: React.FC = () => {
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
-                <option value="">Select chapter...</option>
-                <option value="Tel Aviv">Tel Aviv</option>
-                <option value="New York">New York</option>
-                <option value="London">London</option>
-                <option value="Johannesburg">Johannesburg</option>
-                <option value="Mexico City">Mexico City</option>
-                <option value="Philadelphia">Philadelphia</option>
-                <option value="Sydney">Sydney</option>
-                <option value="Toronto">Toronto</option>
-                <option value="Costa Rica">Costa Rica</option>
-                <option value="International">International</option>
+                {ALMA_CHAPTER_SELECT_VALUES.map(v => (
+                  <option key={v || 'none'} value={v}>
+                    {v || 'Select chapter…'}
+                  </option>
+                ))}
               </select>
+            </div>
+
+            <div>
+              <label htmlFor="costNote" className="block text-sm font-medium text-gray-700 mb-2">
+                Cost / pricing note (optional)
+              </label>
+              <textarea
+                id="costNote"
+                name="costNote"
+                rows={2}
+                value={formData.costNote}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                placeholder="e.g. Complimentary for members, or ticket link later"
+              />
             </div>
 
             {/* Private details (only visible to approved registrants) */}

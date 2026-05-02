@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { Calendar, MapPin, ArrowLeft, Users, CheckCircle, AlertCircle, Ticket, User, Linkedin, Briefcase, CalendarPlus, ExternalLink, Link as LinkIcon } from 'lucide-react';
+import { MapPin, ArrowLeft, CheckCircle, AlertCircle, Ticket, CalendarPlus, ExternalLink, Link as LinkIcon } from 'lucide-react';
 import { EventService, EventData } from '../services/eventService';
 import { getMyRegistration, createPending } from '../services/registrationService';
 import type { EventRegistrationWithStatus, EventPrivateDetails } from '../types/event';
@@ -9,10 +9,10 @@ import { useAuth } from '../hooks/useAuth';
 import { useActivityTracking } from '../hooks/useActivityTracking';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import EventPositionChart from '../components/analytics/EventPositionChart';
 import ReviewSection from '../components/reviews/ReviewSection';
 import CropImage from '../components/profile/CropImage';
-import { EventDualTimezoneDisplay } from '../components/EventDualTimezoneDisplay';
+import { EventTimeDisplay, eventFormatLabel } from '../components/EventTimeDisplay';
+import { getRestrictedEventAccessLabel } from '../utils/eventAccessLabel';
 import {
   approvedEventCalendarLocation,
   approvedEventPrimaryLocation,
@@ -323,10 +323,6 @@ const EventDetailPage: React.FC = () => {
     return statusInfo[status];
   };
 
-  const handleApplyToSpeak = () => {
-    window.location.href = "mailto:speakers@almalinks.com?subject=Speaker Application for " + event?.name;
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-white overflow-x-hidden w-full max-w-full">
@@ -380,204 +376,221 @@ const EventDetailPage: React.FC = () => {
   if (!event) return null;
 
   const statusInfo = getStatusInfo(event.status);
+  const accessLabel = getRestrictedEventAccessLabel(event.eventAudience ?? null);
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden w-full max-w-full">
       <Header />
-      
-      {/* Reference for scrolling to top */}
-      <div ref={topRef}></div>
-      
-      {/* Hero Section */}
-      <section className="pt-[var(--content-offset-top)] sm:pt-32 pb-16 bg-gradient-to-br from-gray-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Back Button */}
-          <div className="mb-8">
-            <button
-              onClick={() => navigate('/events')}
-              className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
-            >
-              <ArrowLeft className="h-5 w-5" />
-              <span>Back to Events</span>
-            </button>
-          </div>
 
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Event Image */}
-            <div className="order-2 lg:order-1 w-full h-96 rounded-3xl shadow-xl overflow-hidden relative">
-              <CropImage
-                src={event.imageUrl}
-                crop={event.imageCrop ?? null}
-                alt={event.name}
-                mode="block"
-                className="w-full h-full"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjM4NCIgdmlld0JveD0iMCAwIDYwMCAzODQiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI2MDAiIGhlaWdodD0iMzg0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMDAgMTkyQzMwNS41MjMgMTkyIDMxMCAxODcuNTIzIDMxMCAxODJTMzA1LjUyMyAxNzIgMzAwIDE3MlMyOTAgMTc2LjQ3NyAyOTAgMTgyUzI5NC40NzcgMTkyIDMwMCAxOTJaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg==';
-                }}
-              />
-            </div>
+      <div ref={topRef} />
 
-            {/* Event Details */}
-            <div className="order-1 lg:order-2">
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 fade-in">
-                {event.name}
-              </h1>
-              
-              <div className="space-y-4 mb-8 fade-in-delay">
-                <EventDualTimezoneDisplay
-                  eventStart={event.date}
-                  iconClassName="h-6 w-6 text-red-700 flex-shrink-0 mt-0.5"
-                  textClassName="text-gray-700 text-lg"
-                />
-                <div className="flex items-start space-x-3 text-lg">
-                  <MapPin className="h-6 w-6 text-red-700 flex-shrink-0 mt-0.5" />
-                  <div className="text-gray-700 min-w-0">
-                    {registration?.status === 'approved' && privateDetails ? (
-                      <>
-                        <span className="block">
-                          {approvedEventPrimaryLocation(event.location, privateDetails)}
-                        </span>
-                        {approvedEventVenueAddress(privateDetails) ? (
-                          <span className="block text-base text-gray-600 mt-1 whitespace-pre-wrap">
-                            {approvedEventVenueAddress(privateDetails)}
+      <section className="pt-[var(--content-offset-top)] pb-6 sm:pb-8 bg-white border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <button
+            type="button"
+            onClick={() => navigate('/events')}
+            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm font-medium mb-4"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to events
+          </button>
+
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-6">
+            <div className="flex flex-col-reverse sm:flex-row gap-5 sm:gap-8 sm:items-start">
+              <div className="flex-1 min-w-0 space-y-3">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">{event.name}</h1>
+
+                <div className="space-y-2 text-sm sm:text-base text-gray-800">
+                  <EventTimeDisplay
+                    event={event}
+                    textClassName="text-gray-800"
+                    iconClassName="h-5 w-5 text-red-700 shrink-0 mt-0.5"
+                  />
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-5 w-5 text-red-700 shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      {registration?.status === 'approved' && privateDetails ? (
+                        <>
+                          <span className="block font-medium">
+                            {approvedEventPrimaryLocation(event.location, privateDetails)}
                           </span>
-                        ) : null}
-                      </>
-                    ) : registration?.status === 'pending' || (registration && registration.status !== 'rejected') ? (
-                      'Location will be shared after your registration is approved.'
-                    ) : (
-                      event.location
-                    )}
-                  </div>
-                </div>
-                {registration?.status === 'approved' && privateDetails?.meetingUrl && (
-                  <div className="flex items-center space-x-3 text-lg">
-                    <LinkIcon className="h-6 w-6 text-brand-blue flex-shrink-0" />
-                    <a href={privateDetails.meetingUrl} target="_blank" rel="noopener noreferrer" className="text-brand-blue hover:underline break-all">
-                      Join meeting
-                    </a>
-                  </div>
-                )}
-                <div className="flex items-center space-x-3 text-lg">
-                  <Users className="h-6 w-6 text-gray-500" />
-                  <span className="text-gray-700">Exclusive Event</span>
-                </div>
-                
-              </div>
-
-              {/* Status Messages */}
-              {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-3 animate-pulse">
-                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-                  <p className="text-red-600 text-sm font-medium">{error}</p>
-                </div>
-              )}
-
-              {success && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center space-x-3 animate-pulse">
-                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-                  <p className="text-green-600 text-sm font-medium">{success}</p>
-                </div>
-              )}
-
-              {/* Registration Button */}
-              <div className="slide-up">
-                {!user ? (
-                  <div className="space-y-3">
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        navigate('/signup');
-                      }}
-                      className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold text-lg"
-                    >
-                      Join AlmaLinks to Register
-                    </button>
-                    <p className="text-center text-gray-600 text-sm">
-                      Already have an account?{' '}
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          navigate('/login');
-                        }}
-                        className="text-red-600 hover:text-red-700 font-medium"
-                      >
-                        Sign in
-                      </button>
-                    </p>
-                  </div>
-                ) : registration?.status === 'pending' ? (
-                  <div className="space-y-2 p-4 bg-amber-50 rounded-xl border border-amber-200">
-                    <p className="text-amber-800 font-medium">Registration pending approval.</p>
-                    <p className="text-sm text-amber-700">We&apos;ll email you the event details once confirmed.</p>
-                  </div>
-                ) : registration?.status === 'rejected' ? (
-                  <div className="space-y-2 p-4 bg-red-50 rounded-xl border border-red-200">
-                    <p className="text-red-800 font-medium">Registration not approved.</p>
-                    {registration.rejectionReason && (
-                      <p className="text-sm text-red-700">{registration.rejectionReason}</p>
-                    )}
-                  </div>
-                ) : registration?.status === 'approved' ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-3 p-4 bg-green-50 rounded-xl border border-green-200">
-                      <CheckCircle className="h-6 w-6 text-green-600" />
-                      <span className="text-lg font-semibold text-green-600">Approved — you&apos;re in</span>
+                          {approvedEventVenueAddress(privateDetails) ? (
+                            <span className="block text-gray-600 text-sm mt-1 whitespace-pre-wrap">
+                              {approvedEventVenueAddress(privateDetails)}
+                            </span>
+                          ) : null}
+                        </>
+                      ) : registration?.status === 'pending' ||
+                        (registration && registration.status !== 'rejected') ? (
+                        <span className="text-gray-600">Full address after approval.</span>
+                      ) : (
+                        <span className="font-medium">{event.location}</span>
+                      )}
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setShowTicket(!showTicket);
-                        }}
-                        className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2"
-                      >
-                        <Ticket className="h-5 w-5" />
-                        <span>{showTicket ? 'Hide Ticket' : 'View Ticket'}</span>
-                      </button>
+                  </div>
+                  {registration?.status === 'approved' && privateDetails?.meetingUrl && (
+                    <div className="flex items-center gap-2">
+                      <LinkIcon className="h-5 w-5 text-brand-blue shrink-0" />
                       <a
-                        href={createGoogleCalendarUrl()}
+                        href={privateDetails.meetingUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-white text-brand-blue border border-blue-200 px-6 py-3 rounded-full hover:bg-blue-50 transition-all duration-300 font-semibold flex items-center justify-center space-x-2"
+                        className="text-brand-blue font-medium hover:underline break-all"
                       >
-                        <CalendarPlus className="h-5 w-5" />
-                        <span>Add to calendar</span>
+                        Join online
                       </a>
                     </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
+                      {eventFormatLabel(event.eventFormat ?? null)}
+                    </span>
+                    {event.chapter ? (
+                      <span className="text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 px-2 py-1 rounded-md">
+                        {event.chapter}
+                      </span>
+                    ) : null}
+                    {accessLabel ? (
+                      <span className="text-xs font-semibold text-amber-900 bg-amber-50 border border-amber-100 px-2 py-1 rounded-md">
+                        {accessLabel}
+                      </span>
+                    ) : null}
                   </div>
-                ) : (
-                  <button
-                    onClick={handleRegister}
-                    disabled={!statusInfo.canRegister || registering}
-                    className={`text-white px-8 py-4 rounded-full transition-all duration-300 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed ${statusInfo.buttonClass} ${
-                      registering ? 'animate-pulse' : ''
-                    }`}
-                  >
-                    {registering ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>Submitting...</span>
+                </div>
+
+                <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/80 px-3 py-2.5 text-sm text-gray-700">
+                  <span className="font-semibold text-gray-800">Cost: </span>
+                  {event.costNote?.trim()
+                    ? event.costNote.trim()
+                    : 'Included with membership unless noted later.'}
+                </div>
+
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex gap-2 text-sm text-red-800">
+                    <AlertCircle className="h-5 w-5 shrink-0" />
+                    {error}
+                  </div>
+                )}
+                {success && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-xl flex gap-2 text-sm text-green-800">
+                    <CheckCircle className="h-5 w-5 shrink-0" />
+                    {success}
+                  </div>
+                )}
+
+                <div className="pt-2">
+                  {!user ? (
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={e => {
+                          e.preventDefault();
+                          navigate('/signup');
+                        }}
+                        className="w-full min-h-[52px] rounded-xl bg-gray-900 text-white text-lg font-bold shadow-md hover:bg-gray-800 transition-colors"
+                      >
+                        Join AlmaLinks to register
+                      </button>
+                      <p className="text-center text-sm text-gray-600">
+                        Already a member?{' '}
+                        <button
+                          type="button"
+                          className="text-brand-blue-dark font-semibold hover:underline"
+                          onClick={e => {
+                            e.preventDefault();
+                            navigate('/login');
+                          }}
+                        >
+                          Sign in
+                        </button>
+                      </p>
+                    </div>
+                  ) : registration?.status === 'pending' ? (
+                    <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-sm text-amber-900">
+                      <p className="font-semibold">Registration pending approval.</p>
+                      <p className="mt-1 text-amber-800">We&apos;ll email details once confirmed.</p>
+                    </div>
+                  ) : registration?.status === 'rejected' ? (
+                    <div className="p-4 bg-red-50 rounded-xl border border-red-200 text-sm">
+                      <p className="font-semibold text-red-900">Registration not approved.</p>
+                      {registration.rejectionReason && (
+                        <p className="mt-1 text-red-800">{registration.rejectionReason}</p>
+                      )}
+                    </div>
+                  ) : registration?.status === 'approved' ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 p-3 bg-green-50 rounded-xl border border-green-200 text-green-900 font-semibold text-sm">
+                        <CheckCircle className="h-5 w-5 shrink-0" />
+                        You&apos;re registered
                       </div>
-                    ) : (
-                      statusInfo.buttonText
-                    )}
-                  </button>
-                )}
-                
-                {!statusInfo.canRegister && (
-                  <p className="text-gray-600 mt-2">{statusInfo.message}</p>
-                )}
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <button
+                          type="button"
+                          onClick={e => {
+                            e.preventDefault();
+                            setShowTicket(!showTicket);
+                          }}
+                          className="flex-1 min-h-[48px] rounded-xl border-2 border-gray-900 text-gray-900 font-semibold hover:bg-gray-50"
+                        >
+                          {showTicket ? 'Hide ticket' : 'View ticket'}
+                        </button>
+                        <a
+                          href={createGoogleCalendarUrl()}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 min-h-[48px] inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800"
+                        >
+                          <CalendarPlus className="h-5 w-5" />
+                          Calendar
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleRegister}
+                      disabled={!statusInfo.canRegister || registering}
+                      className={`w-full min-h-[52px] rounded-xl text-lg font-bold text-white shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${statusInfo.buttonClass}`}
+                    >
+                      {registering ? (
+                        <span className="inline-flex items-center justify-center gap-2">
+                          <span className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Submitting…
+                        </span>
+                      ) : (
+                        statusInfo.buttonText
+                      )}
+                    </button>
+                  )}
+                  {!statusInfo.canRegister && user && (
+                    <p className="text-sm text-gray-600 mt-2">{statusInfo.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-center sm:block shrink-0 mx-auto sm:mx-0">
+                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-gray-200 shadow-inner bg-gray-100">
+                  <CropImage
+                    src={event.imageUrl}
+                    crop={event.imageCrop ?? null}
+                    alt=""
+                    mode="block"
+                    className="w-full h-full"
+                    onError={e => {
+                      const target = e.target as HTMLImageElement;
+                      target.src =
+                        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIGZpbGw9IiNGM0Y0RjYiLz48L3N2Zz4=';
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Digital Ticket - site-style card (approved only) */}
       {showTicket && registration?.status === 'approved' && registration && event && (
-        <section className="py-16 bg-gray-50" aria-label="Your ticket">
+        <section className="py-8 bg-gray-50 border-b border-gray-100" aria-label="Your ticket">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
             <EventTicketCard
               eventName={event.name}
@@ -597,102 +610,38 @@ const EventDetailPage: React.FC = () => {
               href={createGoogleCalendarUrl()}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 text-brand-blue-dark hover:text-brand-blue-light font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2"
+              className="mt-3 text-sm font-semibold text-brand-blue-dark hover:underline inline-flex items-center gap-1"
             >
-              <CalendarPlus className="h-5 w-5" />
-              <span>Add to Google Calendar</span>
+              <CalendarPlus className="h-4 w-4" />
+              Add to Google Calendar
             </a>
           </div>
         </section>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Event Description */}
-          <div className="md:col-span-2">
-            <section className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-              <h2 className="text-3xl font-bold text-gray-900 mb-8">
-                About This Event
-              </h2>
-              <div className="prose prose-lg max-w-none">
-                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {event.description}
-                </p>
-              </div>
-            </section>
-            
-            {/* Position Analytics Chart - Only show for active events */}
-            {event.status !== 'non-active' && (
-              <div className="mt-8">
-                <EventPositionChart eventId={event.id} />
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="md:col-span-1 space-y-8">
-            {/* Event Details Summary */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Event Details</h3>
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <Calendar className="h-5 w-5 text-red-700 flex-shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <div className="text-sm text-gray-500">When</div>
-                    <EventDualTimezoneDisplay
-                      layout="plain"
-                      eventStart={event.date}
-                      textClassName="font-medium text-gray-900 text-sm"
-                    />
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <MapPin className="h-5 w-5 text-red-700 flex-shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <div className="text-sm text-gray-500">Location</div>
-                    <div className="font-medium text-gray-900">
-                      {registration?.status === 'approved' && privateDetails
-                        ? approvedEventPrimaryLocation(event.location, privateDetails)
-                        : registration?.status === 'pending'
-                          ? 'Shared after approval'
-                          : event.location}
-                    </div>
-                    {registration?.status === 'approved' && privateDetails && approvedEventVenueAddress(privateDetails) ? (
-                      <div className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">
-                        {approvedEventVenueAddress(privateDetails)}
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Users className="h-5 w-5 text-gray-500" />
-                  <div>
-                    <div className="text-sm text-gray-500">Type</div>
-                    <div className="font-medium text-gray-900">Exclusive Event</div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Add to Calendar Button */}
-              {registration?.status === 'approved' && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <a
-                    href={createGoogleCalendarUrl()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center space-x-2 w-full justify-center bg-brand-dark text-white px-4 py-2 rounded-lg hover:bg-brand-mid transition-colors duration-200 font-medium"
-                  >
-                    <CalendarPlus className="h-5 w-5" />
-                    <span>Add to Google Calendar</span>
-                  </a>
-                </div>
-              )}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
+          <div className="lg:col-span-2">
+            <h2 className="text-lg font-bold text-gray-900 mb-3">About</h2>
+            <div className="text-gray-700 text-sm sm:text-base leading-relaxed whitespace-pre-wrap border border-gray-100 rounded-xl p-4 sm:p-5 bg-white">
+              {event.description}
             </div>
-
-            {/* Event link / Resources (approved only) */}
+          </div>
+          <div className="lg:col-span-1 space-y-4">
+            {registration?.status === 'approved' && (
+              <a
+                href={createGoogleCalendarUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-900 hover:bg-gray-50"
+              >
+                <CalendarPlus className="h-4 w-4" />
+                Add to calendar
+              </a>
+            )}
             {registration?.status === 'approved' && privateDetails?.resourceLinkUrl && (
-              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Event link</h3>
+              <div className="rounded-xl border border-gray-200 p-4 bg-white">
+                <h3 className="text-sm font-bold text-gray-900 mb-2">Resources</h3>
                 <ResourceLinkCard
                   url={privateDetails.resourceLinkUrl}
                   label={privateDetails.resourceLinkLabel}

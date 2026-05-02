@@ -50,3 +50,26 @@ export function formatDualFromDatetimeLocal(localValue: string): {
   if (Number.isNaN(d.getTime())) return null;
   return formatEventDualTimezones(d);
 }
+
+/** One line for virtual / hybrid: full date in US Eastern + short Israel time (less vertical clutter than two labeled lines). */
+export function formatCompactDualTime(iso: string | Date): string {
+  const d = toInstant(iso);
+  if (!d) return '—';
+  const primary = new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: EVENT_TZ_US_EASTERN,
+    timeZoneName: 'short',
+  }).format(d);
+  const israelShort = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: EVENT_TZ_ISRAEL,
+    timeZoneName: 'short',
+  }).format(d);
+  return `${primary} · ${israelShort}`;
+}

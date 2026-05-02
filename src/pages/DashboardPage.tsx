@@ -10,7 +10,8 @@ import Footer from '../components/Footer';
 import AnnouncementsSidebar from '../components/announcements/AnnouncementsSidebar';
 import ConnectionsCard from '../components/dashboard/ConnectionsCard';
 import EventTicketCard from '../components/dashboard/EventTicketCard';
-import { EventDualTimezoneDisplay } from '../components/EventDualTimezoneDisplay';
+import { EventTimeDisplay } from '../components/EventTimeDisplay';
+import { getRestrictedEventAccessLabel } from '../utils/eventAccessLabel';
 import ProfilePictureUploader from '../components/profile/ProfilePictureUploader';
 import CoverPhotoUploader from '../components/profile/CoverPhotoUploader';
 import ImageWithCrop from '../components/profile/ImageWithCrop';
@@ -1888,7 +1889,7 @@ const EventsPage: React.FC = () => {
                     onClick={(e) => handleEventClick(e, event.slug)} // Use slug
                   >
                     {/* Event Image */}
-                    <div className="h-48 sm:h-56 md:h-64 bg-gray-200 relative">
+                    <div className="h-36 sm:h-40 bg-gray-200 relative">
                       <img
                         src={event.imageUrl}
                         alt={event.name}
@@ -1914,26 +1915,28 @@ const EventsPage: React.FC = () => {
                       <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight break-words">{event.name}</h3>
                       
                       <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
-                        <EventDualTimezoneDisplay
-                          eventStart={event.date}
+                        <EventTimeDisplay
+                          event={event}
                           textClassName="text-gray-600 text-sm sm:text-base"
+                          iconClassName="h-4 w-4 sm:h-5 sm:w-5 text-red-700 flex-shrink-0 mt-0.5"
                         />
                         <div className="flex items-center space-x-3 text-gray-600 text-sm sm:text-base">
                           <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-red-700 flex-shrink-0" />
                           <span className="break-words">{event.location}</span>
                         </div>
+                        {getRestrictedEventAccessLabel(event.eventAudience ?? null) ? (
+                          <p className="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-2 py-1 inline-block">
+                            {getRestrictedEventAccessLabel(event.eventAudience ?? null)}
+                          </p>
+                        ) : null}
                       </div>
 
-                      <p className="text-gray-600 mb-6 leading-relaxed line-clamp-3 text-sm sm:text-base break-words">
+                      <p className="text-gray-600 mb-4 leading-relaxed line-clamp-2 text-sm sm:text-base break-words">
                         {event.description}
                       </p>
 
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
-                          <Users className="h-4 w-4" />
-                          <span>Exclusive Event</span>
-                        </div>
-                        
+                        <div />
                         {isRegistered ? (
                           <span className="bg-green-100 text-green-800 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base">
                             Registered ✓
@@ -1941,7 +1944,7 @@ const EventsPage: React.FC = () => {
                         ) : event.status === 'active' ? (
                           <button 
                             onClick={(e) => handleRegisterClick(e, event.slug, event.status)} // Use slug
-                            className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-full hover:shadow-lg active:shadow-md transition-all duration-300 font-semibold flex items-center justify-center space-x-2 min-h-[44px] sm:min-h-0 touch-manipulation text-sm sm:text-base w-full sm:w-auto"
+                            className="bg-gray-900 text-white px-5 sm:px-8 py-3 sm:py-3.5 rounded-xl hover:bg-gray-800 active:scale-[0.99] transition-all font-bold flex items-center justify-center gap-2 min-h-[48px] sm:min-h-0 touch-manipulation text-sm sm:text-base w-full sm:w-auto shadow-md"
                           >
                             <span>Register Now</span>
                             <ArrowRight className="h-4 w-4" />
@@ -2002,7 +2005,7 @@ const EventsPage: React.FC = () => {
                   onClick={(e) => handleEventClick(e, event.slug)} // Use slug
                 >
                   {/* Event Image */}
-                  <div className="h-48 bg-gray-200 relative">
+                  <div className="h-36 bg-gray-200 relative">
                     <img
                       src={event.imageUrl}
                       alt={event.name}
@@ -2024,8 +2027,8 @@ const EventsPage: React.FC = () => {
                     <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 break-words">{event.name}</h3>
                     
                     <div className="space-y-2 mb-4">
-                      <EventDualTimezoneDisplay
-                        eventStart={event.date}
+                      <EventTimeDisplay
+                        event={event}
                         textClassName="text-gray-600 text-xs sm:text-sm"
                         iconClassName="h-4 w-4 text-red-700 flex-shrink-0 mt-0.5"
                       />

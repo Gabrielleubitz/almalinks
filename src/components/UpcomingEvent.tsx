@@ -4,7 +4,7 @@ import { MapPin, Calendar, Users, ArrowRight } from 'lucide-react';
 import { EventService, EventData } from '../services/eventService';
 import { useAuth } from '../hooks/useAuth';
 import CropImage from './profile/CropImage';
-import { EventDualTimezoneDisplay } from './EventDualTimezoneDisplay';
+import { EventTimeDisplay } from './EventTimeDisplay';
 
 const UpcomingEvent = () => {
   const [upcomingEvent, setUpcomingEvent] = useState<EventData | null>(null);
@@ -117,7 +117,7 @@ const UpcomingEvent = () => {
           {/* Event Card - Same design as events listing page */}
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden hover-lift slide-up">
             {/* Event Image */}
-            <div className="h-64 md:h-80 bg-gray-200 relative overflow-hidden">
+            <div className="h-44 md:h-52 bg-gray-200 relative overflow-hidden">
               <CropImage
                 src={upcomingEvent.imageUrl}
                 crop={upcomingEvent.imageCrop ?? null}
@@ -148,9 +148,9 @@ const UpcomingEvent = () => {
                       </div>
                       <div className="min-w-0">
                         <div className="font-semibold text-gray-900 mb-1">When?</div>
-                        <EventDualTimezoneDisplay
+                        <EventTimeDisplay
                           layout="plain"
-                          eventStart={upcomingEvent.date}
+                          event={upcomingEvent}
                           textClassName="text-gray-600"
                         />
                       </div>
