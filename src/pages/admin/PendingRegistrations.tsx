@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Users, 
-  Search, 
-  ArrowLeft, 
-  AlertCircle, 
-  X, 
-  User, 
+import {
+  Users,
+  Search,
+  ArrowLeft,
+  AlertCircle,
+  X,
   Check,
   FileText,
-  Globe,
-  Trash2,
-  Send
+  Send,
 } from 'lucide-react';
 import { collection, getDocs, doc, updateDoc, query, where, orderBy, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../firebase/config';
@@ -50,6 +47,9 @@ interface UserData {
   applicationFollowUpSentAt?: any;
   status: 'pending' | 'approved' | 'rejected';
   createdAt?: any;
+  rejectedAt?: any;
+  rejectedBy?: string;
+  rejectionReason?: string;
   profileImage?: string | null;
 }
 
@@ -88,8 +88,11 @@ function mapRequestToUserData(request: any): UserData {
     offerToMembers: request.offerToMembers || '',
     heardAboutAlma: request.heardAboutAlma || '',
     applicationFollowUpSentAt: request.applicationFollowUpSentAt,
-    status: 'pending',
+    status: (request.status as UserData['status']) || 'pending',
     createdAt: request.createdAt,
+    rejectedAt: request.rejectedAt,
+    rejectedBy: request.rejectedBy || '',
+    rejectionReason: request.rejectionReason || '',
     profileImage: request.profileImage ?? null
   };
 }
@@ -124,9 +127,12 @@ const PendingRegistrations: React.FC = () => {
     type: 'success'
   });
   const [processingUser, setProcessingUser] = useState<string | null>(null);
-  const [confirmReject, setConfirmReject] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [rejectModal, setRejectModal] = useState<{ uid: string; reason: string } | null>(null);
   const [followUpSendingId, setFollowUpSendingId] = useState<string | null>(null);
+  const [tab, setTab] = useState<'pending' | 'rejected'>('pending');
+  const [rejectedUsers, setRejectedUsers] = useState<UserData[]>([]);
+  const [rejectedLoading, setRejectedLoading] = useState(false);
+  const [rejectedError, setRejectedError] = useState<string | null>(null);
 
   useEffect(() => {
     // Use realtime listener for immediate updates when new signups occur
@@ -453,21 +459,82 @@ const PendingRegistrations: React.FC = () => {
     }
   };
 
-  const handleRejectUser = async (userId: string) => {
+  const loadRejectedUsers = async () => {
+    setRejectedLoading(true);
+    setRejectedError(null);
+    try {
+      const { JoinRequestService } = await import('../../services/joinRequestService');
+      const requests = await JoinRequestService.getRejectedRequests();
+      setRejectedUsers(requests.map((request: any) => mapRequestToUserData(request)));
+    } catch (err: any) {
+      console.error('❌ Failed to load rejected requests', err);
+      setRejectedError(err?.message || 'Unable to load rejected applicants.');
+      setRejectedUsers([]);
+    } finally {
+      setRejectedLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (tab === 'rejected') {
+      loadRejectedUsers();
+    }
+  }, [tab]);
+
+  const sendRejectionLogToComms = async (
+    applicant: UserData,
+    reason: string,
+  ) => {
+    const subject = `Membership applicant rejected: ${applicant.name || applicant.email || applicant.uid}`;
+    const safeName = applicant.name || applicant.displayName || '—';
+    const safeEmail = applicant.email || '—';
+    const safePhone = applicant.phone || '—';
+    const safeLinkedIn = applicant.linkedinUsername
+      ? (linkedInProfileHref(applicant.linkedinUsername) || applicant.linkedinUsername)
+      : '—';
+    const rejectedByAdmin = user?.displayName || user?.email || user?.uid || 'Admin';
+    const when = new Date().toISOString();
+    const reasonOut = reason && reason.trim() ? reason.trim() : '(no reason provided)';
+    try {
+      const response = await fetch('/api/email-service', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'admin-notification',
+          subject,
+          email: 'communications@almalinks.org',
+          name: 'AlmaLinks Communications',
+          applicantName: safeName,
+          applicantEmail: safeEmail,
+          applicantPhone: safePhone,
+          applicantLinkedIn: safeLinkedIn,
+          applicantUid: applicant.uid,
+          rejectedBy: rejectedByAdmin,
+          rejectedAt: when,
+          rejectionReason: reasonOut,
+        }),
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        console.warn('Rejection log email (comms) failed (non-blocking):', errData?.error || response.status);
+      }
+    } catch (logErr) {
+      console.warn('Rejection log email (comms) error (non-blocking):', logErr);
+    }
+  };
+
+  const handleRejectUser = async (userId: string, reason: string) => {
     if (!user?.uid) return;
 
     const userToReject = pendingUsers.find(u => u.uid === userId);
+    const trimmedReason = (reason || '').trim();
     setProcessingUser(userId);
 
     try {
-      console.log('❌ Rejecting join request for user:', userId);
-
       const { JoinRequestService } = await import('../../services/joinRequestService');
-      await JoinRequestService.rejectRequest(userId, user.uid);
+      await JoinRequestService.rejectRequest(userId, user.uid, trimmedReason);
 
-      console.log('✅ Join request rejected successfully');
-
-      // Send rejection email (instructions + re-request link + AlmaLinks contact)
+      // Send rejection email (applicant)
       if (userToReject?.email) {
         try {
           const res = await fetch('/api/email-service', {
@@ -488,54 +555,38 @@ const PendingRegistrations: React.FC = () => {
         }
       }
 
-      // Update local state - remove from pending list immediately
+      if (userToReject) {
+        await sendRejectionLogToComms(userToReject, trimmedReason);
+      }
+
       setPendingUsers(prev => prev.filter(u => u.uid !== userId));
       setFilteredUsers(prev => prev.filter(u => u.uid !== userId));
 
-      showToast('User rejected. Rejection email sent with re-request instructions.', 'success');
+      showToast(
+        trimmedReason
+          ? 'Applicant rejected. Reason logged and emails sent.'
+          : 'Applicant rejected and emails sent.',
+        'success',
+      );
 
-      // Log admin rejection activity
-      logAdminAction('Rejected join request', {
+      logAdminAction('Rejected membership applicant', {
         targetUserId: userId,
         targetEmail: userToReject?.email,
-        targetName: userToReject?.name || userToReject?.displayName
+        targetName: userToReject?.name || userToReject?.displayName,
+        reasonProvided: Boolean(trimmedReason),
       });
+
+      setRejectModal(null);
+
+      if (tab === 'rejected') {
+        await loadRejectedUsers();
+      }
     } catch (error: any) {
       console.error('❌ Error rejecting user:', error);
-      const errorMessage = error.message || 'Failed to reject user. Please try again.';
+      const errorMessage = error.message || 'Failed to reject applicant. Please try again.';
       showToast(errorMessage, 'error');
     } finally {
       setProcessingUser(null);
-      setConfirmReject(null);
-    }
-  };
-
-  const handleRejectAndDeleteUser = async (userId: string) => {
-    if (!user?.uid) return;
-    setProcessingUser(userId);
-
-    try {
-      console.log('🗑️ Rejecting and fully deleting user (no email):', userId);
-      const { JoinRequestService } = await import('../../services/joinRequestService');
-      await JoinRequestService.rejectAndDeleteUser(userId, user.uid);
-
-      // Remove from local state
-      setPendingUsers(prev => prev.filter(u => u.uid !== userId));
-      setFilteredUsers(prev => prev.filter(u => u.uid !== userId));
-
-      showToast('User rejected and fully deleted. No email was sent.', 'success');
-
-      // Log admin full delete activity
-      logAdminAction('Rejected and deleted join request', {
-        targetUserId: userId
-      });
-    } catch (error: any) {
-      console.error('❌ Error rejecting and deleting user:', error);
-      const errorMessage = error.message || 'Failed to reject and delete user. Please try again.';
-      showToast(errorMessage, 'error');
-    } finally {
-      setProcessingUser(null);
-      setConfirmDelete(null);
     }
   };
 
@@ -675,30 +726,62 @@ const PendingRegistrations: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] ring-1 ring-black/[0.06] border border-gray-200/80 overflow-hidden">
           <div className="p-6 sm:p-8 border-b border-gray-100">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Pending Registrations</h2>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Membership Applicants</h2>
+                <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                  People who applied through the website and have not been vetted yet. (Event registrations live under Event Registrations.)
+                </p>
+              </div>
               <span className="text-sm text-gray-500">
-                {filteredUsers.length} of {pendingUsers.length} pending
+                {tab === 'pending'
+                  ? `${filteredUsers.length} of ${pendingUsers.length} pending`
+                  : `${rejectedUsers.length} rejected`}
               </span>
             </div>
-            <div className="mt-4 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by name, email, industry, address…"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue-dark/20 focus:border-brand-blue-dark transition-all"
-              />
+
+            <div className="mt-4 inline-flex rounded-xl bg-gray-100 p-1 text-sm">
+              <button
+                type="button"
+                onClick={() => setTab('pending')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  tab === 'pending' ? 'bg-white text-brand-blue-dark shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Pending
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab('rejected')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  tab === 'rejected' ? 'bg-white text-brand-blue-dark shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Rejected
+              </button>
             </div>
+
+            {tab === 'pending' ? (
+              <div className="mt-4 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by name, email, industry, address…"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue-dark/20 focus:border-brand-blue-dark transition-all"
+                />
+              </div>
+            ) : null}
           </div>
 
+          {tab === 'pending' ? (
           <div className="divide-y divide-gray-100">
             {filteredUsers.length === 0 ? (
               <div className="text-center py-16 px-4">
                 <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-600 font-medium">No pending registrations</p>
+                <p className="text-gray-600 font-medium">No pending applicants</p>
                 <p className="text-gray-500 text-sm mt-1">
-                  {searchTerm ? `No results for "${searchTerm}"` : 'All registrations have been processed'}
+                  {searchTerm ? `No results for "${searchTerm}"` : 'All applications have been processed'}
                 </p>
               </div>
             ) : (
@@ -748,124 +831,48 @@ const PendingRegistrations: React.FC = () => {
                             </div>
                           </div>
                           <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:flex-shrink-0">
-                            {confirmReject === userData.uid ? (
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-                                <span className="text-sm text-red-700">
-                                  Reject this request and send a polite rejection email?
-                                </span>
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => handleRejectUser(userData.uid)}
-                                    disabled={processingUser === userData.uid}
-                                    className="bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
-                                  >
-                                    {processingUser === userData.uid ? (
-                                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                    ) : (
-                                      'Reject & email'
-                                    )}
-                                  </button>
-                                  <button
-                                    onClick={() => setConfirmReject(null)}
-                                    className="bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </div>
-                            ) : confirmDelete === userData.uid ? (
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-                                <span className="text-sm text-red-700">
-                                  Permanently delete this signup and account? No email will be sent.
-                                </span>
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => handleRejectAndDeleteUser(userData.uid)}
-                                    disabled={processingUser === userData.uid}
-                                    className="bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-800 disabled:opacity-50"
-                                  >
-                                    {processingUser === userData.uid ? (
-                                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                    ) : (
-                                      'Delete user'
-                                    )}
-                                  </button>
-                                  <button
-                                    onClick={() => setConfirmDelete(null)}
-                                    className="bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setConfirmReject(null);
-                                    setConfirmDelete(null);
-                                    void sendApplicationIntroEmail(userData.uid);
-                                  }}
-                                  disabled={
-                                    !userData.email ||
-                                    followUpSendingId === userData.uid ||
-                                    processingUser === userData.uid
-                                  }
-                                  className="inline-flex items-center justify-center gap-2 bg-white border-2 border-brand-blue-dark text-brand-blue-dark px-4 py-2.5 rounded-xl font-medium hover:bg-blue-50 disabled:opacity-50 text-sm"
-                                  title="Sends the Hadrat intro email; CC is set on the server (APPLICATION_FOLLOW_UP_CC)."
-                                >
-                                  {followUpSendingId === userData.uid ? (
-                                    <div className="w-5 h-5 border-2 border-brand-blue-dark border-t-transparent rounded-full animate-spin" />
-                                  ) : (
-                                    <>
-                                      <Send className="h-5 w-5" />
-                                      Send intro email
-                                    </>
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setConfirmReject(null);
-                                    setConfirmDelete(null);
-                                    handleApproveUser(userData.uid);
-                                  }}
-                                  disabled={processingUser === userData.uid}
-                                  className="inline-flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2.5 rounded-xl font-medium hover:bg-green-700 disabled:opacity-50 text-sm"
-                                >
-                                  {processingUser === userData.uid ? (
-                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                  ) : (
-                                    <>
-                                      <Check className="h-5 w-5" />
-                                      Approve
-                                    </>
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setConfirmDelete(null);
-                                    setConfirmReject(userData.uid);
-                                  }}
-                                  disabled={processingUser === userData.uid}
-                                  className="inline-flex items-center justify-center gap-2 bg-red-50 text-red-700 px-4 py-2.5 rounded-xl font-medium hover:bg-red-100 disabled:opacity-50 text-sm"
-                                >
-                                  <X className="h-5 w-5" />
-                                  Reject
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setConfirmReject(null);
-                                    setConfirmDelete(userData.uid);
-                                  }}
-                                  disabled={processingUser === userData.uid}
-                                  className="inline-flex items-center justify-center gap-2 bg-red-100 text-red-800 px-4 py-2.5 rounded-xl font-medium hover:bg-red-200 disabled:opacity-50 text-sm"
-                                >
-                                  <Trash2 className="h-5 w-5" />
-                                  Reject & delete
-                                </button>
-                              </>
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => void sendApplicationIntroEmail(userData.uid)}
+                              disabled={
+                                !userData.email ||
+                                followUpSendingId === userData.uid ||
+                                processingUser === userData.uid
+                              }
+                              className="inline-flex items-center justify-center gap-2 bg-white border-2 border-brand-blue-dark text-brand-blue-dark px-4 py-2.5 rounded-xl font-medium hover:bg-blue-50 disabled:opacity-50 text-sm"
+                              title="Sends the AlmaLinks intro email; CC list comes from APPLICATION_FOLLOW_UP_CC."
+                            >
+                              {followUpSendingId === userData.uid ? (
+                                <div className="w-5 h-5 border-2 border-brand-blue-dark border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <>
+                                  <Send className="h-5 w-5" />
+                                  Send intro email
+                                </>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleApproveUser(userData.uid)}
+                              disabled={processingUser === userData.uid}
+                              className="inline-flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2.5 rounded-xl font-medium hover:bg-green-700 disabled:opacity-50 text-sm"
+                            >
+                              {processingUser === userData.uid ? (
+                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <>
+                                  <Check className="h-5 w-5" />
+                                  Approve
+                                </>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => setRejectModal({ uid: userData.uid, reason: '' })}
+                              disabled={processingUser === userData.uid}
+                              className="inline-flex items-center justify-center gap-2 bg-red-50 text-red-700 px-4 py-2.5 rounded-xl font-medium hover:bg-red-100 disabled:opacity-50 text-sm"
+                            >
+                              <X className="h-5 w-5" />
+                              Reject
+                            </button>
                           </div>
                         </div>
 
@@ -982,17 +989,141 @@ const PendingRegistrations: React.FC = () => {
               })
             )}
           </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {rejectedError && (
+                <div className="p-6 bg-red-50/60 text-sm text-red-700 flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                  <p>{rejectedError}</p>
+                </div>
+              )}
+              {rejectedLoading ? (
+                <div className="text-center py-16 px-4">
+                  <div className="w-10 h-10 border-4 border-brand-blue-dark/20 border-t-brand-blue-dark rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-gray-600 text-sm">Loading rejected applicants…</p>
+                </div>
+              ) : rejectedUsers.length === 0 ? (
+                <div className="text-center py-16 px-4">
+                  <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-600 font-medium">No rejected applicants</p>
+                  <p className="text-gray-500 text-sm mt-1">Rejection history will appear here.</p>
+                </div>
+              ) : (
+                rejectedUsers.map((userData) => (
+                  <div key={userData.uid} className="p-6 sm:p-8">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <h3 className="text-base font-semibold text-gray-900">{userData.name || userData.email || '—'}</h3>
+                          <p className="text-sm text-gray-600">{userData.email || '—'}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Applied {formatDate(userData.createdAt)} · Rejected {formatDate(userData.rejectedAt)}
+                            {userData.rejectedBy ? ` · By ${userData.rejectedBy}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-red-100 bg-red-50/70 p-4">
+                        <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-1">Internal rejection reason</p>
+                        <p className="text-sm text-gray-900 whitespace-pre-wrap">
+                          {(userData.rejectionReason || '').trim() || '(no reason provided)'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
 
           <div className="p-6 sm:p-8 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl">
-            <h3 className="font-semibold text-gray-900 mb-2">Registration approval</h3>
+            <h3 className="font-semibold text-gray-900 mb-2">How approvals work</h3>
             <ul className="text-sm text-gray-600 space-y-1">
-              <li><strong>Send intro email</strong> — Optional. Sends the introductory message from AlmaLinks; the server CC list is configured in environment variables. Signup no longer auto-emails applicants.</li>
-              <li><strong>Approve</strong> — Grants access and sends the member welcome / onboarding email from communications@almalinks.org (when configured).</li>
-              <li><strong>Reject</strong> — Marks the request as rejected. The user can sign in again to submit a new request.</li>
-              <li>The full application is shown above for each pending request. Approving copies only member-directory fields to the user profile; application-only answers remain on the join request record.</li>
+              <li><strong>Send intro email</strong> — Optional. Sends the introductory message from AlmaLinks; the server CC list is configured in <code>APPLICATION_FOLLOW_UP_CC</code>.</li>
+              <li><strong>Approve</strong> — Creates the member account and sends the welcome email from <code>communications@almalinks.org</code>. HubSpot contact is upserted at this point (and not earlier).</li>
+              <li><strong>Reject</strong> — Marks the application as rejected with your internal reason note. The applicant receives a polite rejection email; a copy of the reason is logged to <code>communications@almalinks.org</code>. Rejected applications show up under the Rejected tab.</li>
             </ul>
           </div>
         </div>
+
+        {rejectModal ? (
+          <div
+            className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reject-modal-title"
+          >
+            <button
+              type="button"
+              className="absolute inset-0 bg-black/40"
+              aria-label="Close reject dialog"
+              onClick={() => (processingUser ? undefined : setRejectModal(null))}
+            />
+            <div className="relative z-10 w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl bg-white shadow-xl border border-gray-200 p-5 sm:p-6">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 id="reject-modal-title" className="text-lg font-bold text-gray-900">Reject application</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Internal note logged with the rejection and sent to communications@almalinks.org. The applicant is not shown your reason.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => (processingUser ? undefined : setRejectModal(null))}
+                  className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <label htmlFor="rejection-reason" className="block text-sm font-medium text-gray-700 mt-4 mb-2">
+                Rejection reason (internal)
+              </label>
+              <textarea
+                id="rejection-reason"
+                rows={5}
+                value={rejectModal.reason}
+                onChange={(e) => setRejectModal((prev) => (prev ? { ...prev, reason: e.target.value } : prev))}
+                placeholder="e.g. Not a fit for our membership criteria right now — not enough leadership experience yet."
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-blue-dark/20 focus:border-brand-blue-dark text-sm"
+                disabled={Boolean(processingUser)}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Required. Saved to the join request and emailed internally for record-keeping.
+              </p>
+              <div className="mt-4 flex flex-col sm:flex-row sm:justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRejectModal(null)}
+                  disabled={Boolean(processingUser)}
+                  className="px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!rejectModal.reason.trim()) {
+                      showToast('Please add a rejection reason for the internal log.', 'error');
+                      return;
+                    }
+                    void handleRejectUser(rejectModal.uid, rejectModal.reason);
+                  }}
+                  disabled={Boolean(processingUser)}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+                >
+                  {processingUser === rejectModal.uid ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <X className="h-4 w-4" />
+                      Reject and email
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

@@ -34,6 +34,8 @@ export interface JoinRequest {
   approvedBy?: string;
   rejectedAt?: Timestamp | Date;
   rejectedBy?: string;
+  /** Internal note explaining why the application was rejected. Captured from the admin reject modal. */
+  rejectionReason?: string;
   adminNotifiedAt?: Timestamp | Date; // Timestamp when admin notification email was sent
   userNotifiedAt?: Timestamp | Date; // Timestamp when user confirmation email was sent
   welcomeEmailSentAt?: Timestamp | Date; // Set by backend when Mailchimp welcome email is sent
@@ -535,6 +537,47 @@ export class JoinRequestService {
   }
 
   /**
+   * Fetch all join requests whose status is `rejected`, newest first.
+   * Used by the Membership Applicants admin page to surface a "Rejected" tab.
+   * Falls back to client-side sorting when the composite index is missing.
+   */
+  static async getRejectedRequests(): Promise<JoinRequest[]> {
+    try {
+      const requestsRef = collection(db, 'joinRequests');
+      try {
+        const q = query(
+          requestsRef,
+          where('status', '==', 'rejected'),
+          orderBy('rejectedAt', 'desc')
+        );
+        const snapshot = await retryOnNetworkFailure(() => getDocs(q));
+        return snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() })) as JoinRequest[];
+      } catch (orderByError: any) {
+        if (orderByError.code === 'failed-precondition' || orderByError.message?.includes('index')) {
+          console.warn('⚠️ Index missing for rejected query; loading without orderBy.');
+          const q = query(requestsRef, where('status', '==', 'rejected'));
+          const snapshot = await retryOnNetworkFailure(() => getDocs(q));
+          const requests = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() })) as JoinRequest[];
+          requests.sort((a, b) => {
+            const aTime =
+              (a.rejectedAt as any)?.toDate?.()?.getTime?.() ??
+              (a.createdAt as any)?.toDate?.()?.getTime?.() ?? 0;
+            const bTime =
+              (b.rejectedAt as any)?.toDate?.()?.getTime?.() ??
+              (b.createdAt as any)?.toDate?.()?.getTime?.() ?? 0;
+            return bTime - aTime;
+          });
+          return requests;
+        }
+        throw orderByError;
+      }
+    } catch (error) {
+      console.error('❌ Error getting rejected requests:', error);
+      return [];
+    }
+  }
+
+  /**
    * Approve a join request and create user document
    */
   static async approveRequest(
@@ -650,7 +693,8 @@ export class JoinRequestService {
    */
   static async rejectRequest(
     uid: string,
-    rejectedBy: string
+    rejectedBy: string,
+    rejectionReason?: string
   ): Promise<void> {
     try {
       console.log('❌ Rejecting join request for:', uid);
@@ -661,13 +705,14 @@ export class JoinRequestService {
         throw new Error('Join request not found');
       }
 
-      // Update join request status to 'rejected'
-      // This removes it from the pending list (which filters by status === 'pending')
+      const trimmedReason = (rejectionReason || '').trim();
+
       const requestRef = doc(db, 'joinRequests', uid);
       await retryOnNetworkFailure(() => updateDoc(requestRef, {
         status: 'rejected',
         rejectedAt: serverTimestamp(),
-        rejectedBy
+        rejectedBy,
+        ...(trimmedReason ? { rejectionReason: trimmedReason } : {})
       }));
 
       console.log('✅ Join request rejected successfully');

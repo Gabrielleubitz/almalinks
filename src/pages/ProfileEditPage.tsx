@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Save, 
-  User, 
-  Mail, 
-  Phone, 
-  Briefcase, 
-  MapPin, 
-  Shield, 
+import {
+  ArrowLeft,
+  Save,
+  User,
+  Mail,
+  Phone,
+  Briefcase,
+  MapPin,
   CheckCircle,
   AlertCircle,
   X,
@@ -29,7 +28,6 @@ import ProfilePictureUploader from '../components/profile/ProfilePictureUploader
 import ProfileBasicsStep from '../components/signup/steps/ProfileBasicsStep';
 import AboutYouStep from '../components/signup/steps/AboutYouStep';
 import ContactLocationStep from '../components/signup/steps/ContactLocationStep';
-import PrivacyStep from '../components/signup/steps/PrivacyStep';
 
 const ProfileEditPage: React.FC = () => {
   const { user, linkGoogleAccount, isGoogleLinked, getSignInMethods, setPasswordForGoogleUser } = useAuth();
@@ -56,7 +54,9 @@ const ProfileEditPage: React.FC = () => {
     country: '',
     timezone: '',
     showPhone: false,
-    profileVisibility: 'event_only'
+    // User-facing privacy chooser was removed: members are public by default.
+    // Admins can still change visibility from AdminUserEdit if needed.
+    profileVisibility: 'public'
   });
   
   const [loading, setLoading] = useState(true);
@@ -193,7 +193,7 @@ const ProfileEditPage: React.FC = () => {
           country: userProfile.country || '',
           timezone: userProfile.timezone || '',
           showPhone: userProfile.showPhone || false,
-          profileVisibility: userProfile.profileVisibility || 'event_only'
+          profileVisibility: userProfile.profileVisibility || 'public'
         };
         
         setFormData(profileFormData);
@@ -596,20 +596,6 @@ const ProfileEditPage: React.FC = () => {
                 Contact & Location
               </h3>
               <ContactLocationStep
-                formData={formData}
-                errors={errors}
-                touchedFields={touchedFields}
-                onUpdate={updateFormData}
-              />
-            </div>
-
-            {/* Privacy Settings Section */}
-            <div className="p-6 border border-gray-200 rounded-xl">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Shield className="h-5 w-5 mr-2 text-brand-blue" />
-                Privacy Settings
-              </h3>
-              <PrivacyStep
                 formData={formData}
                 errors={errors}
                 touchedFields={touchedFields}

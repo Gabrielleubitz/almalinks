@@ -254,7 +254,7 @@ const SignupPage: React.FC = () => {
     // Password required only for email/password signups (not Google SSO)
     if (!signedInWithGoogle) {
       if (!formData.password.trim()) {
-        setValidationError('Please create a password');
+        setValidationError('Please choose a portal password');
         return false;
       }
       if (formData.password.length < 6) {
@@ -744,9 +744,12 @@ const SignupPage: React.FC = () => {
               </div>
             ) : (
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password *
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  Choose a password for your AlmaLinks portal *
                 </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  If your application is approved, you&rsquo;ll use this password to sign in at almalinks.org. (You can change it anytime.)
+                </p>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
@@ -756,7 +759,7 @@ const SignupPage: React.FC = () => {
                     value={formData.password}
                     onChange={handleInputChange}
                     className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
-                    placeholder="Create a password (min. 6 characters)"
+                    placeholder="At least 6 characters"
                     minLength={6}
                     disabled={isSubmitting}
                     autoComplete="new-password"

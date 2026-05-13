@@ -42,6 +42,9 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
   const { logAdminAction } = useActivityTracking();
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [tempPasswordBusy, setTempPasswordBusy] = useState(false);
+  const [tempPasswordError, setTempPasswordError] = useState<string | null>(null);
   const [formData, setFormData] = useState<UserProfileForm>({
     firstName: '',
     lastName: '',
@@ -85,6 +88,49 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ visible: true, message, type });
     setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 4000);
+  };
+
+  const handleGenerateTempPassword = async () => {
+    if (!userId || !currentUser?.uid) return;
+    setTempPasswordBusy(true);
+    setTempPasswordError(null);
+    setTempPassword(null);
+    try {
+      const response = await fetch('/api/user-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'generate-temp-password',
+          adminId: currentUser.uid,
+          targetUserId: userId,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || 'Failed to generate temporary password');
+      }
+      setTempPassword(String(data.tempPassword || '').trim());
+      logAdminAction('Generated temporary password for member', {
+        targetUserId: userId,
+        targetEmail: profile?.email,
+        targetName: profile?.displayName || profile?.firstName,
+      });
+    } catch (err: any) {
+      console.error('Failed to generate temp password', err);
+      setTempPasswordError(err?.message || 'Failed to generate temporary password');
+    } finally {
+      setTempPasswordBusy(false);
+    }
+  };
+
+  const handleCopyTempPassword = async () => {
+    if (!tempPassword) return;
+    try {
+      await navigator.clipboard.writeText(tempPassword);
+      showToast('Temporary password copied to clipboard.', 'success');
+    } catch (_) {
+      showToast('Could not copy automatically. Select and copy manually.', 'error');
+    }
   };
 
   useEffect(() => {
@@ -618,6 +664,72 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
                 touchedFields={touchedFields}
                 onUpdate={updateFormData}
               />
+            </div>
+
+            {/* Admin: one-time temporary password */}
+            <div className="p-6 border border-amber-200 bg-amber-50/50 rounded-xl">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1 flex items-center">
+                <Shield className="h-5 w-5 mr-2 text-amber-600" />
+                Issue temporary password
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Member passwords cannot be viewed after they change them &mdash; Firebase only stores hashes.
+                Use this to generate a one-time strong temporary password the member can use to sign in;
+                they will be forced to change it on next login. Share it through a secure channel.
+              </p>
+
+              {tempPasswordError ? (
+                <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                  {tempPasswordError}
+                </div>
+              ) : null}
+
+              {tempPassword ? (
+                <div className="mb-3 p-3 bg-white border border-amber-300 rounded-lg">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                    Temporary password (shown once)
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 font-mono text-base text-gray-900 break-all select-all">
+                      {tempPassword}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={handleCopyTempPassword}
+                      className="px-3 py-2 rounded-lg bg-brand-dark text-white text-xs font-semibold hover:bg-brand-mid"
+                    >
+                      Copy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTempPassword(null)}
+                      className="px-3 py-2 rounded-lg border border-gray-300 text-xs text-gray-700 hover:bg-gray-50"
+                    >
+                      Hide
+                    </button>
+                  </div>
+                  <p className="text-xs text-amber-700 mt-2">
+                    Once you leave this page or click Hide, we cannot show this password again.
+                    The member must change it on next login.
+                  </p>
+                </div>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={handleGenerateTempPassword}
+                disabled={tempPasswordBusy}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 disabled:opacity-50"
+              >
+                {tempPasswordBusy ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Generating…</span>
+                  </>
+                ) : (
+                  <span>{tempPassword ? 'Regenerate temporary password' : 'Generate temporary password'}</span>
+                )}
+              </button>
             </div>
 
           </div>

@@ -818,13 +818,25 @@ export const useAuth = () => {
           // required fields and explicitly create the join request.
           console.log('📝 Google signup: deferring join request until form submit');
         } else {
-          // New user via login or other flow – create join request/profile now.
-          console.log('📝 Creating new user profile from Google account');
-          await createOrUpdateUserProfile(result.user, {
-            name: result.user.displayName || '',
-            profileImage: result.user.photoURL || null, // Google profile picture
-            profileImagePublicId: null // not Cloudinary
-          });
+          // Login mode and no member profile exists.
+          // We must NOT auto-create a thin join request from Google data — that
+          // produces useless "ghost" applications in HubSpot/Firestore. Instead,
+          // check if the user already has an in-flight join request (e.g. they
+          // applied earlier with the same Google account and we are now letting
+          // them sign back in to the pending page). If so, we leave their auth
+          // session in place so onAuthStateChanged can route them to /pending.
+          const existingRequest = await getDoc(doc(db, 'joinRequests', result.user.uid));
+          if (!existingRequest.exists()) {
+            console.warn('🚫 Google login blocked: no member profile and no application on file');
+            await signOut(auth);
+            const blockErr: any = new Error(
+              'You need to submit an application before signing in with Google.'
+            );
+            blockErr.code = 'auth/needs-application';
+            setError(blockErr.message);
+            throw blockErr;
+          }
+          console.log('ℹ️ Google login: existing pending/rejected join request – allowing sign-in');
         }
       } else {
         // Existing profile - mark Google as linked; pull profile picture from Google if none set

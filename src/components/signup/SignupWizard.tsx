@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Check, User, Briefcase, MapPin, Shield } from 'lucide-react';
-import { UserProfileForm, ProfileVisibility } from '../../types/user';
-import { validateField, ValidationError, formatFieldName } from '../../utils/validation';
-import { getVisibilityDescription } from '../../utils/privacy';
+import { ArrowLeft, ArrowRight, Check, User, Briefcase, MapPin } from 'lucide-react';
+import { UserProfileForm } from '../../types/user';
+import { validateField } from '../../utils/validation';
 import ProfileBasicsStep from './steps/ProfileBasicsStep';
 import AboutYouStep from './steps/AboutYouStep';
 import ContactLocationStep from './steps/ContactLocationStep';
-import PrivacyStep from './steps/PrivacyStep';
 import SignupProgress from './SignupProgress';
 
 export interface SignupWizardProps {
@@ -37,13 +35,6 @@ const STEPS = [
     description: 'How can people reach you?',
     icon: MapPin,
     fields: ['phone', 'linkedin', 'website', 'twitter', 'city', 'country', 'timezone', 'showPhone']
-  },
-  {
-    id: 'privacy',
-    title: 'Privacy Settings',
-    description: 'Control who can see your profile',
-    icon: Shield,
-    fields: ['profileVisibility']
   }
 ];
 
@@ -72,7 +63,9 @@ const SignupWizard: React.FC<SignupWizardProps> = ({
     country: '',
     timezone: '',
     showPhone: false,
-    profileVisibility: 'event_only',
+    // All members are publicly visible by default; the user-facing privacy chooser
+    // has been removed (admins can still adjust visibility on AdminUserEdit).
+    profileVisibility: 'public',
     ...initialData
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -206,15 +199,6 @@ const SignupWizard: React.FC<SignupWizardProps> = ({
       case 2:
         return (
           <ContactLocationStep
-            formData={formData}
-            errors={errors}
-            touchedFields={touchedFields}
-            onUpdate={updateFormData}
-          />
-        );
-      case 3:
-        return (
-          <PrivacyStep
             formData={formData}
             errors={errors}
             touchedFields={touchedFields}

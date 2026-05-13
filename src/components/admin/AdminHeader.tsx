@@ -42,7 +42,7 @@ const adminNavGroups = [
     label: 'People',
     items: [
       { to: '/admin/users', label: 'Users', icon: Users },
-      { to: '/admin/pending-registrations', label: 'Pending Registrations', icon: UserPlus },
+      { to: '/admin/pending-registrations', label: 'Membership Applicants', icon: UserPlus },
     ],
   },
   {

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Eye, EyeOff, Mail, Lock, ArrowRight, AlertCircle, CheckCircle, UserPlus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import logoSvg from '../assets/alma-links-logo.svg';
 import AlmaAuthCard from '../components/ui/AlmaAuthCard';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, login, error, loading, checkProfileComplete, isPending, isRejected, isNeedsSignup, resetPassword, signInWithGoogle } = useAuth();
   
   const [formData, setFormData] = useState({
@@ -272,6 +273,35 @@ const LoginPage: React.FC = () => {
                 </p>
               </div>
 
+              {/* New applicants CTA: prominent so non-members never end up applying via Google */}
+              <Link
+                to="/signup"
+                className="mb-5 sm:mb-6 flex items-center justify-between gap-3 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 hover:border-orange-300 transition-colors group"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-orange-500/10 text-orange-600 flex-shrink-0">
+                    <UserPlus className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-gray-900">Not a member yet?</span>
+                    <span className="block text-xs text-gray-600 truncate">Submit an application to AlmaLinks &mdash; it takes a few minutes.</span>
+                  </span>
+                </div>
+                <span className="inline-flex items-center text-xs sm:text-sm font-semibold text-orange-700 group-hover:text-orange-800 whitespace-nowrap">
+                  Apply
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </span>
+              </Link>
+
+              {new URLSearchParams(location.search).get('notice') === 'apply_first' ? (
+                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-700 flex-shrink-0 mt-0.5" />
+                  <p className="text-yellow-800 text-xs sm:text-sm">
+                    We don&rsquo;t have an AlmaLinks account on file for that Google address. Please submit a membership application first &mdash; we&rsquo;ll let you know when it&rsquo;s approved.
+                  </p>
+                </div>
+              ) : null}
+
               {displayError && (
                 <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-2 sm:space-x-3">
                   <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 flex-shrink-0" />
@@ -289,8 +319,10 @@ const LoginPage: React.FC = () => {
                       try {
                         setIsSubmitting(true);
                         await signInWithGoogle();
-                      } catch (_) {
-                        // Error shown by useAuth
+                      } catch (err: any) {
+                        if (err?.code === 'auth/needs-application') {
+                          navigate('/signup?notice=apply_first');
+                        }
                       } finally {
                         setIsSubmitting(false);
                       }
@@ -410,8 +442,11 @@ const LoginPage: React.FC = () => {
                   try {
                     setIsSubmitting(true);
                     await signInWithGoogle();
-                  } catch (err) {
-                    // Error is handled by useAuth hook
+                  } catch (err: any) {
+                    if (err?.code === 'auth/needs-application') {
+                      navigate('/signup?notice=apply_first');
+                    }
+                    // other errors are surfaced via useAuth's error state
                   } finally {
                     setIsSubmitting(false);
                   }
