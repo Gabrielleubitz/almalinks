@@ -1,35 +1,78 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
 import type { EventData } from '../services/eventService';
-import { formatEventStartForMembers } from '../utils/eventDisplayTime';
+import { formatEventDateAndTime } from '../utils/eventDisplayTime';
 
 type EventTimeFields = Pick<EventData, 'date'> &
   Partial<Pick<EventData, 'chapter' | 'eventFormat' | 'displayTimezone'>>;
 
 interface EventTimeDisplayProps {
   event: EventTimeFields;
-  layout?: 'withIcon' | 'plain';
+  layout?: 'withIcon' | 'plain' | 'split';
   textClassName?: string;
   iconClassName?: string;
+  showLabels?: boolean;
 }
 
 export const EventTimeDisplay: React.FC<EventTimeDisplayProps> = ({
   event,
-  layout = 'withIcon',
+  layout = 'split',
   textClassName = 'text-gray-700',
   iconClassName = 'h-4 w-4 sm:h-5 sm:w-5 text-red-700 flex-shrink-0 mt-0.5',
+  showLabels = true,
 }) => {
-  const line = formatEventStartForMembers(event.date, {
+  const { dateLine, timeLine, timeSecondaryLine } = formatEventDateAndTime(event.date, {
     eventFormat: event.eventFormat,
     chapter: event.chapter,
     displayTimezone: event.displayTimezone,
   });
-  const text = <div className={`text-sm leading-snug ${textClassName}`}>{line}</div>;
-  if (layout === 'plain') return text;
+
+  const lines = (
+    <div className={`space-y-0.5 ${textClassName}`}>
+      <p className="text-sm leading-snug">
+        {showLabels ? (
+          <>
+            <span className="font-semibold text-gray-800">Date: </span>
+            {dateLine}
+          </>
+        ) : (
+          dateLine
+        )}
+      </p>
+      <p className="text-sm leading-snug">
+        {showLabels ? (
+          <>
+            <span className="font-semibold text-gray-800">Time: </span>
+            {timeLine}
+          </>
+        ) : (
+          timeLine
+        )}
+      </p>
+      {timeSecondaryLine ? (
+        <p className="text-xs text-gray-600 leading-snug">
+          {showLabels ? (
+            <>
+              <span className="font-medium text-gray-700">Also: </span>
+              {timeSecondaryLine}
+            </>
+          ) : (
+            timeSecondaryLine
+          )}
+        </p>
+      ) : null}
+    </div>
+  );
+
+  if (layout === 'plain' || layout === 'split') return lines;
+
+  const legacyLine = timeSecondaryLine
+    ? `${dateLine} · ${timeLine} · ${timeSecondaryLine}`
+    : `${dateLine} · ${timeLine}`;
   return (
     <div className="flex items-start gap-2 sm:gap-3">
       <Calendar className={iconClassName} aria-hidden />
-      <div className="min-w-0">{text}</div>
+      <div className={`text-sm leading-snug min-w-0 ${textClassName}`}>{legacyLine}</div>
     </div>
   );
 };

@@ -18,6 +18,7 @@ import {
   approvedEventPrimaryLocation,
   approvedEventVenueAddress,
 } from '../utils/eventPrivateLocation';
+import { isEventEnded } from '../utils/eventStatus';
 
 const HOSTNAME_LABELS: Record<string, string> = {
   'zoom.us': 'Zoom',
@@ -206,7 +207,7 @@ const EventDetailPage: React.FC = () => {
       return;
     }
 
-    if (event.status !== 'active') {
+    if (event.status !== 'active' || isEventEnded(event)) {
       setError('Registration is not available for this event');
       return;
     }
@@ -335,7 +336,7 @@ const EventDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
-        <Footer />
+        <Footer compact />
       </div>
     );
   }
@@ -368,7 +369,7 @@ const EventDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
-        <Footer />
+        <Footer compact />
       </div>
     );
   }
@@ -376,6 +377,8 @@ const EventDetailPage: React.FC = () => {
   if (!event) return null;
 
   const statusInfo = getStatusInfo(event.status);
+  const ended = isEventEnded(event);
+  const canRegister = statusInfo.canRegister && !ended;
   const accessLabel = getRestrictedEventAccessLabel(event.eventAudience ?? null);
 
   return (
@@ -395,17 +398,34 @@ const EventDetailPage: React.FC = () => {
             Back to events
           </button>
 
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-6">
-            <div className="flex flex-col-reverse sm:flex-row gap-5 sm:gap-8 sm:items-start">
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="w-full aspect-[21/9] sm:aspect-[3/1] max-h-52 sm:max-h-56 bg-gray-100">
+              <CropImage
+                src={event.imageUrl}
+                crop={event.imageCrop ?? null}
+                alt=""
+                mode="block"
+                className="w-full h-full object-cover"
+                onError={e => {
+                  const target = e.target as HTMLImageElement;
+                  target.src =
+                    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDgwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNGM0Y0RjYiLz48L3N2Zz4=';
+                }}
+              />
+            </div>
+            <div className="p-4 sm:p-6">
+            <div className="flex flex-col gap-5 sm:gap-6">
               <div className="flex-1 min-w-0 space-y-3">
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">{event.name}</h1>
 
+                {ended ? (
+                  <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                    Event Ended
+                  </span>
+                ) : null}
+
                 <div className="space-y-2 text-sm sm:text-base text-gray-800">
-                  <EventTimeDisplay
-                    event={event}
-                    textClassName="text-gray-800"
-                    iconClassName="h-5 w-5 text-red-700 shrink-0 mt-0.5"
-                  />
+                  <EventTimeDisplay event={event} layout="split" textClassName="text-gray-800" />
                   <div className="flex items-start gap-2">
                     <MapPin className="h-5 w-5 text-red-700 shrink-0 mt-0.5" />
                     <div className="min-w-0">
@@ -479,7 +499,11 @@ const EventDetailPage: React.FC = () => {
                 )}
 
                 <div className="pt-2">
-                  {!user ? (
+                  {ended && !registration ? (
+                    <div className="w-full min-h-[52px] rounded-xl bg-gray-100 text-gray-600 text-lg font-bold flex items-center justify-center border border-gray-200">
+                      Event Ended
+                    </div>
+                  ) : !user && !ended ? (
                     <div className="space-y-2">
                       <button
                         type="button"
@@ -487,7 +511,7 @@ const EventDetailPage: React.FC = () => {
                           e.preventDefault();
                           navigate('/signup');
                         }}
-                        className="w-full min-h-[52px] rounded-xl bg-gray-900 text-white text-lg font-bold shadow-md hover:bg-gray-800 transition-colors"
+                        className="w-full min-h-[56px] rounded-xl bg-gray-900 text-white text-lg font-bold shadow-md hover:bg-gray-800 transition-colors"
                       >
                         Join AlmaLinks to register
                       </button>
@@ -534,23 +558,29 @@ const EventDetailPage: React.FC = () => {
                         >
                           {showTicket ? 'Hide ticket' : 'View ticket'}
                         </button>
-                        <a
-                          href={createGoogleCalendarUrl()}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 min-h-[48px] inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800"
-                        >
-                          <CalendarPlus className="h-5 w-5" />
-                          Calendar
-                        </a>
+                        {!ended ? (
+                          <a
+                            href={createGoogleCalendarUrl()}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 min-h-[48px] inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800"
+                          >
+                            <CalendarPlus className="h-5 w-5" />
+                            Add to calendar
+                          </a>
+                        ) : null}
                       </div>
+                    </div>
+                  ) : ended ? (
+                    <div className="w-full min-h-[52px] rounded-xl bg-gray-100 text-gray-600 text-lg font-bold flex items-center justify-center border border-gray-200">
+                      Event Ended
                     </div>
                   ) : (
                     <button
                       type="button"
                       onClick={handleRegister}
-                      disabled={!statusInfo.canRegister || registering}
-                      className={`w-full min-h-[52px] rounded-xl text-lg font-bold text-white shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${statusInfo.buttonClass}`}
+                      disabled={!canRegister || registering}
+                      className={`w-full min-h-[56px] rounded-xl text-lg font-bold text-white shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${statusInfo.buttonClass}`}
                     >
                       {registering ? (
                         <span className="inline-flex items-center justify-center gap-2">
@@ -562,28 +592,13 @@ const EventDetailPage: React.FC = () => {
                       )}
                     </button>
                   )}
-                  {!statusInfo.canRegister && user && (
+                  {!canRegister && user && !ended && registration?.status !== 'approved' && (
                     <p className="text-sm text-gray-600 mt-2">{statusInfo.message}</p>
                   )}
                 </div>
               </div>
 
-              <div className="flex justify-center sm:block shrink-0 mx-auto sm:mx-0">
-                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-gray-200 shadow-inner bg-gray-100">
-                  <CropImage
-                    src={event.imageUrl}
-                    crop={event.imageCrop ?? null}
-                    alt=""
-                    mode="block"
-                    className="w-full h-full"
-                    onError={e => {
-                      const target = e.target as HTMLImageElement;
-                      target.src =
-                        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIGZpbGw9IiNGM0Y0RjYiLz48L3N2Zz4=';
-                    }}
-                  />
-                </div>
-              </div>
+            </div>
             </div>
           </div>
         </div>
@@ -604,41 +619,35 @@ const EventDetailPage: React.FC = () => {
               attendeePhone={registration.phone}
               attendeeWork={registration.work}
               ticketId={(registration.userId || 'TEMP').slice(-8).toUpperCase()}
-              isExpired={event?.status === 'completed'}
+              isExpired={ended}
             />
-            <a
-              href={createGoogleCalendarUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 text-sm font-semibold text-brand-blue-dark hover:underline inline-flex items-center gap-1"
-            >
-              <CalendarPlus className="h-4 w-4" />
-              Add to Google Calendar
-            </a>
           </div>
         </section>
       )}
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
-          <div className="lg:col-span-2">
+        <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 sm:items-start">
+          <div className="flex-1 min-w-0">
             <h2 className="text-lg font-bold text-gray-900 mb-3">About</h2>
             <div className="text-gray-700 text-sm sm:text-base leading-relaxed whitespace-pre-wrap border border-gray-100 rounded-xl p-4 sm:p-5 bg-white">
               {event.description}
             </div>
           </div>
-          <div className="lg:col-span-1 space-y-4">
-            {registration?.status === 'approved' && (
-              <a
-                href={createGoogleCalendarUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-900 hover:bg-gray-50"
-              >
-                <CalendarPlus className="h-4 w-4" />
-                Add to calendar
-              </a>
-            )}
+          <div className="shrink-0 flex flex-col items-center sm:items-end gap-4 w-full sm:w-auto">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-gray-200 shadow-sm bg-gray-100">
+              <CropImage
+                src={event.imageUrl}
+                crop={event.imageCrop ?? null}
+                alt=""
+                mode="block"
+                className="w-full h-full object-cover"
+                onError={e => {
+                  const target = e.target as HTMLImageElement;
+                  target.src =
+                    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIGZpbGw9IiNGM0Y0RjYiLz48L3N2Zz4=';
+                }}
+              />
+            </div>
             {registration?.status === 'approved' && privateDetails?.resourceLinkUrl && (
               <div className="rounded-xl border border-gray-200 p-4 bg-white">
                 <h3 className="text-sm font-bold text-gray-900 mb-2">Resources</h3>
@@ -661,7 +670,7 @@ const EventDetailPage: React.FC = () => {
         />
       )}
 
-      <Footer />
+      <Footer compact />
     </div>
   );
 };

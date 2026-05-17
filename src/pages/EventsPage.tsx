@@ -174,24 +174,23 @@ const EventsPage: React.FC = () => {
                     <Link
                       key={event.id}
                       to={`/events/${event.slug}`}
-                      className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all flex flex-col h-full min-h-[11rem]"
+                      className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all flex flex-col h-full overflow-hidden"
                     >
-                      <div className="flex gap-3 p-3 flex-1">
-                        <div className="w-16 h-16 sm:w-14 sm:h-14 rounded-lg bg-gray-100 overflow-hidden shrink-0 border border-gray-100">
-                          <CropImage
-                            src={event.imageUrl}
-                            crop={event.imageCrop ?? null}
-                            alt=""
-                            mode="block"
-                            className="w-full h-full"
-                            onError={e => {
-                              const target = e.target as HTMLImageElement;
-                              target.src =
-                                'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbGw9IiNGM0Y0RjYiLz48L3N2Zz4=';
-                            }}
-                          />
-                        </div>
-                        <div className="min-w-0 flex-1 flex flex-col">
+                      <div className="aspect-[16/9] max-h-32 bg-gray-100 border-b border-gray-100">
+                        <CropImage
+                          src={event.imageUrl}
+                          crop={event.imageCrop ?? null}
+                          alt=""
+                          mode="block"
+                          className="w-full h-full object-cover"
+                          onError={e => {
+                            const target = e.target as HTMLImageElement;
+                            target.src =
+                              'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDMyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMyMCIgaGVpZ2h0PSIxODAiIGZpbGw9IiNGM0Y0RjYiLz48L3N2Zz4=';
+                          }}
+                        />
+                      </div>
+                      <div className="p-3 flex-1 flex flex-col min-w-0">
                           <div className="flex items-start justify-between gap-2 mb-1">
                             <h2 className="text-sm sm:text-base font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-brand-blue-dark">
                               {event.name}
@@ -201,8 +200,9 @@ const EventsPage: React.FC = () => {
                           <div className="mt-auto space-y-1 text-xs text-gray-600">
                             <EventTimeDisplay
                               event={event}
-                              textClassName="text-gray-600"
-                              iconClassName="h-3.5 w-3.5 text-red-700 shrink-0 mt-0.5"
+                              layout="split"
+                              showLabels={false}
+                              textClassName="text-gray-600 text-xs"
                             />
                             {event.location ? (
                               <div className="flex items-center gap-1.5 min-w-0">
@@ -221,7 +221,6 @@ const EventsPage: React.FC = () => {
                               ) : null}
                             </div>
                           </div>
-                        </div>
                       </div>
                       <div className="px-3 pb-3 flex justify-end border-t border-gray-50 pt-2">
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue-dark">

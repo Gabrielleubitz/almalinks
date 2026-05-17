@@ -8,7 +8,7 @@ interface FooterProps {
   compact?: boolean;
 }
 
-const Footer: React.FC<FooterProps> = ({ compact = false }) => {
+const Footer: React.FC<FooterProps> = ({ compact = true }) => {
   if (compact) {
     return (
       <footer className="flex-shrink-0 bg-gray-900 text-white py-4 sm:py-5 mt-auto pb-[max(1rem,env(safe-area-inset-bottom))]">

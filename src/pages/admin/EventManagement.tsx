@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { getIdToken } from 'firebase/auth';
 import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, ArrowLeft, UserCheck, CheckCircle, Search, List, LayoutGrid, UserPlus, RefreshCw } from 'lucide-react';
 import { EventService, EventData } from '../../services/eventService';
-import EventPositionChart from '../../components/analytics/EventPositionChart';
 import { UserService } from '../../services/userService';
 import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../firebase/config';
@@ -842,11 +841,6 @@ const EventManagement: React.FC = () => {
                     </button>
                   </div>
                 </div>
-                
-                {/* Event Analytics */}
-                <div className="p-6 pt-0">
-                  <EventPositionChart eventId={event.id} className="mt-4" />
-                </div>
               </div>
             ))}
           </div>
@@ -1078,11 +1072,6 @@ const EventManagement: React.FC = () => {
                         <span>{registrations.length} total</span>
                         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-green-500 rounded-full" /> {checkedIn.length} checked in</span>
                         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-yellow-500 rounded-full" /> {awaitingCheckIn.length} awaiting</span>
-                      </div>
-                      <div className="mb-4 overflow-x-auto -mx-3 sm:mx-0">
-                        <div className="min-w-[300px] px-3 sm:px-0">
-                          <EventPositionChart eventId={selectedEvent.id} />
-                        </div>
                       </div>
                       <div className="overflow-x-auto -mx-3 sm:mx-0">
                     <table className="min-w-full divide-y divide-gray-200">
