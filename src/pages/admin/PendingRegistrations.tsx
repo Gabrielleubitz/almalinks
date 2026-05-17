@@ -536,27 +536,8 @@ const PendingRegistrations: React.FC = () => {
       const { JoinRequestService } = await import('../../services/joinRequestService');
       await JoinRequestService.rejectRequest(userId, user.uid, trimmedReason);
 
-      // Send rejection email (applicant)
-      if (userToReject?.email) {
-        try {
-          const res = await fetch('/api/email-service', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: 'rejection',
-              email: userToReject.email,
-              name: userToReject.name || userToReject.displayName || 'there',
-            }),
-          });
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            console.warn('Rejection email failed (non-blocking):', err?.error || res.status);
-          }
-        } catch (e) {
-          console.warn('Rejection email error (non-blocking):', e);
-        }
-      }
-
+      // No email is sent to the applicant on rejection (per client requirements).
+      // Only the internal comms log is sent.
       if (userToReject) {
         await sendRejectionLogToComms(userToReject, trimmedReason);
       }
@@ -566,8 +547,8 @@ const PendingRegistrations: React.FC = () => {
 
       showToast(
         trimmedReason
-          ? 'Applicant rejected. Reason logged and emails sent.'
-          : 'Applicant rejected and emails sent.',
+          ? 'Applicant rejected. Reason logged and internal notification sent.'
+          : 'Applicant rejected. Internal notification sent.',
         'success',
       );
 
@@ -1042,7 +1023,7 @@ const PendingRegistrations: React.FC = () => {
             <ul className="text-sm text-gray-600 space-y-1">
               <li><strong>Send intro email</strong> — Optional. Sends the introductory message from AlmaLinks; the server CC list is configured in <code>APPLICATION_FOLLOW_UP_CC</code>.</li>
               <li><strong>Approve</strong> — Creates the member account and sends the welcome email from <code>communications@almalinks.org</code>. HubSpot contact is upserted at this point (and not earlier).</li>
-              <li><strong>Reject</strong> — Marks the application as rejected with your internal reason note. The applicant receives a polite rejection email; a copy of the reason is logged to <code>communications@almalinks.org</code>. Rejected applications show up under the Rejected tab.</li>
+              <li><strong>Reject</strong> — Marks the application as rejected with your internal reason note. <strong>No email is sent to the applicant.</strong> The reason is logged internally and a copy is sent to <code>communications@almalinks.org</code>. Rejected applications show up under the Rejected tab.</li>
             </ul>
           </div>
         </div>
@@ -1065,7 +1046,7 @@ const PendingRegistrations: React.FC = () => {
                 <div>
                   <h3 id="reject-modal-title" className="text-lg font-bold text-gray-900">Reject application</h3>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Internal note logged with the rejection and sent to communications@almalinks.org. The applicant is not shown your reason.
+                    Internal note logged with the rejection and sent to communications@almalinks.org. No email is sent to the applicant.
                   </p>
                 </div>
                 <button
@@ -1118,7 +1099,7 @@ const PendingRegistrations: React.FC = () => {
                   ) : (
                     <>
                       <X className="h-4 w-4" />
-                      Reject and email
+                      Confirm rejection
                     </>
                   )}
                 </button>
