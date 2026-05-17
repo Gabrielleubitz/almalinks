@@ -27,7 +27,6 @@ import eventCompletedThankYouEmailHandler from '../lib/server/api/event-complete
 import welcomeEmailHandler from '../lib/server/api/welcome-email.js';
 import applicationFollowUpEmailHandler from '../lib/server/api/application-follow-up-email.js';
 import generateSetupLinkHandler from '../lib/server/api/generate-setup-link.js';
-import memberProfileRemindersHandler from '../lib/server/api/member-profile-reminders.js';
 import testMandrillHandler from '../lib/server/api/test-mandrill.js';
 import adminTestMailjetHandler from '../lib/server/api/admin-test-mailjet.js';
 import adminTestMailchimpHandler from '../lib/server/api/admin-test-mailchimp.js';
@@ -89,7 +88,6 @@ const routeTable = new Map([
   ['/api/welcome-email', welcomeEmailHandler],
   ['/api/application-follow-up-email', applicationFollowUpEmailHandler],
   ['/api/generate-setup-link', generateSetupLinkHandler],
-  ['/api/member-profile-reminders', memberProfileRemindersHandler],
   ['/api/test-mandrill', testMandrillHandler],
   ['/api/sync-hubspot-contacts', syncHubspotContactsHandler],
   ['/api/remove-hubspot-users', removeHubspotUsersHandler],

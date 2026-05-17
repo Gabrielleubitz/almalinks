@@ -7,10 +7,6 @@
     {
       "path": "/api/automation-hub",
       "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/member-profile-reminders",
-      "schedule": "0 10 * * *"
     }
   ],
   "headers": [
