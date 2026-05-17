@@ -581,18 +581,41 @@ const PendingRegistrations: React.FC = () => {
         console.error('❌ User not found or no email address');
         return;
       }
-      
-      // Send email via Vercel Function
+
+      // Generate a Firebase password-setup link so the welcome email includes
+      // a one-click "Set your password" button (valid 1 hour).
+      let setupLink: string | null = null;
+      try {
+        const idToken = await auth.currentUser?.getIdToken();
+        if (idToken) {
+          const setupRes = await fetch('/api/generate-setup-link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+            body: JSON.stringify({ targetEmail: userToApprove.email }),
+          });
+          const setupData = await setupRes.json().catch(() => ({}));
+          if (setupRes.ok && setupData.setupLink) {
+            setupLink = setupData.setupLink;
+            console.log('✅ Password setup link generated for welcome email');
+          } else {
+            console.warn('⚠️ Setup link generation skipped:', setupData.warn || setupData.error || setupRes.status);
+          }
+        }
+      } catch (setupErr) {
+        // Non-blocking — welcome email still sends without the setup button
+        console.warn('⚠️ Could not generate setup link (non-blocking):', setupErr);
+      }
+
+      // Send welcome / acceptance email
       const response = await fetch('/api/email-service', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'acceptance',
           email: userToApprove.email,
-          name: userToApprove.name
-        })
+          name: userToApprove.name,
+          setupLink,
+        }),
       });
       
       if (!response.ok) {
@@ -604,8 +627,7 @@ const PendingRegistrations: React.FC = () => {
       console.log('✅ Approval email sent successfully');
     } catch (error) {
       console.error('❌ Error sending approval email:', error);
-      // Don't throw error here, we still want to mark the user as approved
-      // even if email fails
+      // Don't throw — we still want the user marked as approved even if email fails
     }
   };
 

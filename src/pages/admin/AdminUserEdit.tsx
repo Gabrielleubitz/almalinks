@@ -14,8 +14,10 @@ import {
   AlertCircle,
   X,
   Camera,
-  Trash2
+  Trash2,
+  Link,
 } from 'lucide-react';
+import { auth } from '../../firebase/config';
 import { useAuth } from '../../hooks/useAuth';
 import { useActivityTracking } from '../../hooks/useActivityTracking';
 import { UserService } from '../../services/userService';
@@ -45,6 +47,10 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [tempPasswordBusy, setTempPasswordBusy] = useState(false);
   const [tempPasswordError, setTempPasswordError] = useState<string | null>(null);
+
+  const [setupLinkBusy, setSetupLinkBusy] = useState(false);
+  const [setupLinkSent, setSetupLinkSent] = useState(false);
+  const [setupLinkError, setSetupLinkError] = useState<string | null>(null);
   const [formData, setFormData] = useState<UserProfileForm>({
     firstName: '',
     lastName: '',
@@ -130,6 +136,59 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       showToast('Temporary password copied to clipboard.', 'success');
     } catch (_) {
       showToast('Could not copy automatically. Select and copy manually.', 'error');
+    }
+  };
+
+  const handleSendSetupLink = async () => {
+    if (!userId || !profile?.email || !auth.currentUser) return;
+    setSetupLinkBusy(true);
+    setSetupLinkError(null);
+    setSetupLinkSent(false);
+    try {
+      const idToken = await auth.currentUser.getIdToken();
+
+      // 1. Generate Firebase password-setup link
+      const linkRes = await fetch('/api/generate-setup-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ targetEmail: profile.email }),
+      });
+      const linkData = await linkRes.json().catch(() => ({}));
+      if (!linkRes.ok || !linkData.ok) {
+        throw new Error(linkData.error || 'Failed to generate setup link');
+      }
+      if (!linkData.setupLink) {
+        throw new Error(linkData.warn || 'No Firebase Auth account found for this email. Ask the member to sign up first.');
+      }
+
+      // 2. Email the link using the existing reset-password email template
+      const emailRes = await fetch('/api/email-service', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'reset',
+          email: profile.email,
+          name: profile.displayName || profile.firstName || 'there',
+          resetLink: linkData.setupLink,
+        }),
+      });
+      const emailData = await emailRes.json().catch(() => ({}));
+      if (!emailRes.ok || (!emailData.success && !emailData.ok)) {
+        throw new Error(emailData.error || 'Failed to send email');
+      }
+
+      setSetupLinkSent(true);
+      logAdminAction('Sent password setup link to member', {
+        targetUserId: userId,
+        targetEmail: profile.email,
+        targetName: profile.displayName || profile.firstName,
+      });
+      showToast('Password setup link emailed to the member.', 'success');
+    } catch (err: any) {
+      console.error('Failed to send setup link', err);
+      setSetupLinkError(err?.message || 'Failed to send setup link');
+    } finally {
+      setSetupLinkBusy(false);
     }
   };
 
@@ -730,6 +789,48 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
                   <span>{tempPassword ? 'Regenerate temporary password' : 'Generate temporary password'}</span>
                 )}
               </button>
+
+              {/* Send password setup link by email */}
+              <div className="mt-6 pt-5 border-t border-amber-200">
+                <h4 className="text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                  <Link className="h-4 w-4 text-brand-dark" />
+                  Send password setup link by email
+                </h4>
+                <p className="text-sm text-gray-600 mb-3">
+                  Generates a secure Firebase one-time link (valid&nbsp;<strong>1&nbsp;hour</strong>) and emails it directly to the member.
+                  They click it to set their own password — no temporary password to share.
+                </p>
+
+                {setupLinkError && (
+                  <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                    {setupLinkError}
+                  </div>
+                )}
+                {setupLinkSent && (
+                  <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+                    Setup link sent to <strong>{profile?.email}</strong>.
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleSendSetupLink}
+                  disabled={setupLinkBusy || !profile?.email}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-dark text-white text-sm font-semibold hover:bg-brand-mid disabled:opacity-50"
+                >
+                  {setupLinkBusy ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Sending…</span>
+                    </>
+                  ) : (
+                    <>
+                      <Link className="h-4 w-4" />
+                      <span>Email setup link to member</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
           </div>
