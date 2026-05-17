@@ -381,7 +381,9 @@ const PendingRegistrations: React.FC = () => {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(typeof data.error === 'string' ? data.error : 'Failed to send intro email');
+        const msg = typeof data.error === 'string' ? data.error : 'Failed to send intro email';
+        const detail = typeof data.detail === 'string' ? ` (${data.detail})` : '';
+        throw new Error(`${msg}${detail}`);
       }
       showToast('Intro email sent to the applicant (CC per server config).', 'success');
       logAdminAction('Sent application intro follow-up email', {
@@ -685,7 +687,7 @@ const PendingRegistrations: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-brand-blue-dark/20 border-t-brand-blue-dark rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-600">Loading pending registrations...</p>
+            <p className="text-gray-600">Loading membership applicants...</p>
           </div>
         </div>
       </div>

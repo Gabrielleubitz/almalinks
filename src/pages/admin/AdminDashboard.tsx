@@ -223,8 +223,8 @@ const AdminDashboard: React.FC = () => {
             <DashboardCard
               to="/admin/pending-registrations"
               icon={UserPlus}
-              title="Registrations"
-              description="Approve or reject signups"
+              title="Membership Applicants"
+              description="Review and approve website applicants"
               stat={loadingPending ? undefined : pendingCount}
               statLoading={loadingPending}
             />
