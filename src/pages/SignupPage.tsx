@@ -7,6 +7,16 @@ import { extractLinkedInVanity } from '../utils/linkedInUrl';
 import logoSvg from '../assets/alma-links-logo.svg';
 import RichTextBioEditor from '../components/profile/RichTextBioEditor';
 import AlmaAuthCard from '../components/ui/AlmaAuthCard';
+import MultiSelectField from '../components/form/MultiSelectField';
+import {
+  SPECIALTY_OPTIONS,
+  INDUSTRY_OPTIONS,
+  POSITION_OPTIONS,
+  LOOKING_TO_GAIN_OPTIONS,
+  ASSIST_MEMBERS_PLACEHOLDER,
+  parseMultiSelectValue,
+  formatMultiSelectValue,
+} from '../constants/memberFieldOptions';
 
 // Country codes data
 const COUNTRY_CODES = [
@@ -60,10 +70,12 @@ const SignupPage: React.FC = () => {
     email: '',
     phoneNumber: '',
     address: '',
+    company: '',
     industry: '',
+    specialty: '',
+    position: '',
     linkedinProfile: '',
     bioTitle: '',
-    expertiseAreas: '',
     lookingToGain: '',
     offerToMembers: '',
     bio: '',
@@ -215,7 +227,19 @@ const SignupPage: React.FC = () => {
       return false;
     }
     if (!formData.industry.trim()) {
-      setValidationError('Please enter your industry');
+      setValidationError('Please select at least one industry');
+      return false;
+    }
+    if (!formData.specialty.trim()) {
+      setValidationError('Please select at least one specialty');
+      return false;
+    }
+    if (!formData.position.trim()) {
+      setValidationError('Please select at least one position');
+      return false;
+    }
+    if (!formData.company.trim()) {
+      setValidationError('Please enter your company');
       return false;
     }
     if (!formData.linkedinProfile.trim()) {
@@ -227,19 +251,15 @@ const SignupPage: React.FC = () => {
       return false;
     }
     if (!formData.bioTitle.trim()) {
-      setValidationError('Please enter your current role and company');
-      return false;
-    }
-    if (!formData.expertiseAreas.trim()) {
-      setValidationError('Please describe your key areas of expertise');
+      setValidationError('Please enter your bio one-liner');
       return false;
     }
     if (!formData.lookingToGain.trim()) {
-      setValidationError('Please tell us what you are looking to gain from AlmaLinks');
+      setValidationError('Please select what you are looking to gain from AlmaLinks this year');
       return false;
     }
     if (!formData.offerToMembers.trim()) {
-      setValidationError('Please tell us what you can offer to other members');
+      setValidationError('Please tell us how you would like to assist other members');
       return false;
     }
     if (!stripHtmlToText(formData.bio)) {
@@ -295,14 +315,15 @@ const SignupPage: React.FC = () => {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         phone: formattedPhone,
-        company: formData.bioTitle.trim(),
+        company: formData.company.trim(),
         linkedinUsername,
-        position: 'other',
+        position: formData.position.trim(),
+        specialty: formData.specialty.trim(),
+        expertiseAreas: formData.specialty.trim(),
         bioTitle: formData.bioTitle.trim(),
         bio: formData.bio || undefined,
         address: formData.address.trim(),
         industry: formData.industry.trim(),
-        expertiseAreas: formData.expertiseAreas.trim(),
         lookingToGain: formData.lookingToGain.trim(),
         offerToMembers: formData.offerToMembers.trim(),
         heardAboutAlma: formData.heardAboutAlma.trim(),
@@ -345,9 +366,11 @@ const SignupPage: React.FC = () => {
     formData.phoneNumber.trim() &&
     formData.address.trim() &&
     formData.industry.trim() &&
+    formData.specialty.trim() &&
+    formData.position.trim() &&
+    formData.company.trim() &&
     formData.linkedinProfile.trim() &&
     formData.bioTitle.trim() &&
-    formData.expertiseAreas.trim() &&
     formData.lookingToGain.trim() &&
     formData.offerToMembers.trim() &&
     stripHtmlToText(formData.bio) &&
@@ -583,26 +606,56 @@ const SignupPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Industry */}
+            {/* Company */}
             <div>
-              <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-2">
-                Industry *
+              <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
+                Company *
               </label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
-                  id="industry"
-                  name="industry"
+                  id="company"
+                  name="company"
                   type="text"
                   required
-                  value={formData.industry}
+                  value={formData.company}
                   onChange={handleInputChange}
                   className="w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
-                  placeholder="e.g., venture capital, fintech, consulting"
+                  placeholder="Organization or firm name"
                   disabled={isSubmitting}
                 />
               </div>
             </div>
+
+            <MultiSelectField
+              id="signup-specialty"
+              label="Specialty"
+              options={SPECIALTY_OPTIONS}
+              value={parseMultiSelectValue(formData.specialty)}
+              onChange={(vals) => setFormData((prev) => ({ ...prev, specialty: formatMultiSelectValue(vals) }))}
+              required
+              disabled={isSubmitting}
+            />
+
+            <MultiSelectField
+              id="signup-industry"
+              label="Industry"
+              options={INDUSTRY_OPTIONS}
+              value={parseMultiSelectValue(formData.industry)}
+              onChange={(vals) => setFormData((prev) => ({ ...prev, industry: formatMultiSelectValue(vals) }))}
+              required
+              disabled={isSubmitting}
+            />
+
+            <MultiSelectField
+              id="signup-position"
+              label="Position"
+              options={POSITION_OPTIONS}
+              value={parseMultiSelectValue(formData.position)}
+              onChange={(vals) => setFormData((prev) => ({ ...prev, position: formatMultiSelectValue(vals) }))}
+              required
+              disabled={isSubmitting}
+            />
 
             {/* LinkedIn Profile */}
             <div>
@@ -628,7 +681,7 @@ const SignupPage: React.FC = () => {
             {/* Current role and company (short) */}
             <div>
               <label htmlFor="bioTitle" className="block text-sm font-medium text-gray-700 mb-2">
-                Current role and company (bio short) *
+                Bio one-liner (short professional headline) *
               </label>
               <input
                 id="bioTitle"
@@ -644,55 +697,30 @@ const SignupPage: React.FC = () => {
               />
             </div>
 
-            {/* Key areas of expertise */}
-            <div>
-              <label htmlFor="expertiseAreas" className="block text-sm font-medium text-gray-700 mb-2">
-                Key areas of expertise *
-              </label>
-              <textarea
-                id="expertiseAreas"
-                name="expertiseAreas"
-                required
-                rows={3}
-                value={formData.expertiseAreas}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 resize-y"
-                placeholder="Topics, sectors, or skills where you can add value"
-                disabled={isSubmitting}
-              />
-            </div>
-
-            {/* What are you looking to gain */}
-            <div>
-              <label htmlFor="lookingToGain" className="block text-sm font-medium text-gray-700 mb-2">
-                What are you looking to gain from AlmaLinks? *
-              </label>
-              <textarea
-                id="lookingToGain"
-                name="lookingToGain"
-                required
-                rows={3}
-                value={formData.lookingToGain}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 resize-y"
-                placeholder="Goals, introductions, learning, community — whatever matters to you"
-                disabled={isSubmitting}
-              />
-            </div>
+            <MultiSelectField
+              id="signup-lookingToGain"
+              label="What are you looking to gain from AlmaLinks this year?"
+              options={LOOKING_TO_GAIN_OPTIONS}
+              value={parseMultiSelectValue(formData.lookingToGain)}
+              onChange={(vals) => setFormData((prev) => ({ ...prev, lookingToGain: formatMultiSelectValue(vals) }))}
+              required
+              disabled={isSubmitting}
+            />
 
             {/* What can you offer */}
             <div>
               <label htmlFor="offerToMembers" className="block text-sm font-medium text-gray-700 mb-2">
-                What can you offer to other members (locally and globally)? *
+                How would you like to assist other members (in your city and globally)? *
               </label>
               <textarea
                 id="offerToMembers"
                 name="offerToMembers"
                 required
-                rows={3}
+                rows={4}
                 value={formData.offerToMembers}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 resize-y"
+                placeholder={ASSIST_MEMBERS_PLACEHOLDER}
                 disabled={isSubmitting}
               />
             </div>

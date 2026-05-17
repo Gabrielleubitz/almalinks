@@ -5,6 +5,8 @@ import { useAuth } from '../hooks/useAuth';
 import { apiRequest } from '../utils/apiClient';
 import { extractLinkedInVanity } from '../utils/linkedInUrl';
 import logoSvg from '../assets/alma-links-logo.svg';
+import MultiSelectField from '../components/form/MultiSelectField';
+import { POSITION_OPTIONS, parseMultiSelectValue, formatMultiSelectValue } from '../constants/memberFieldOptions';
 
 // Country codes data
 const COUNTRY_CODES = [
@@ -42,23 +44,6 @@ const COUNTRY_CODES = [
   { code: '+54', name: 'Argentina', flag: '🇦🇷' },
   { code: '+56', name: 'Chile', flag: '🇨🇱' },
   { code: '+57', name: 'Colombia', flag: '🇨🇴' },
-];
-
-// Position options
-const POSITION_OPTIONS = [
-  { value: 'investor', label: 'Investor' },
-  { value: 'c_level', label: 'C-Level Executive (CEO, CTO, etc.)' },
-  { value: 'vp_level', label: 'VP Level' },
-  { value: 'director', label: 'Director' },
-  { value: 'senior_manager', label: 'Senior Manager' },
-  { value: 'manager', label: 'Manager' },
-  { value: 'senior_contributor', label: 'Senior Contributor' },
-  { value: 'individual_contributor', label: 'Individual Contributor' },
-  { value: 'junior_level', label: 'Junior Level' },
-  { value: 'founder', label: 'Founder' },
-  { value: 'consultant', label: 'Consultant' },
-  { value: 'student', label: 'Student' },
-  { value: 'other', label: 'Other' }
 ];
 
 const CompleteProfilePage: React.FC = () => {
@@ -261,7 +246,7 @@ const CompleteProfilePage: React.FC = () => {
       case 'company': return company.trim();
       case 'work': return work.trim();
       case 'linkedinUsername': return linkedinUsername.trim();
-      case 'position': return position;
+      case 'position': return Boolean(position.trim());
       default: return true;
     }
   });
@@ -521,36 +506,15 @@ const CompleteProfilePage: React.FC = () => {
               )}
             </div>
 
-            {/* Position */}
-            <div>
-              <label htmlFor="position" className="block text-sm font-medium text-gray-700 mb-2">
-                Position {missingFields.includes('position') && <span className="text-red-500">*</span>}
-              </label>
-              <div className="relative">
-                <select
-                  id="position"
-                  name="position"
-                  required={missingFields.includes('position')}
-                  value={position}
-                  onChange={(e) => setPosition(e.target.value)}
-                  disabled={!missingFields.includes('position') || isSubmitting}
-                  className={`w-full pl-4 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200 appearance-none ${
-                    !missingFields.includes('position') ? 'bg-gray-50 text-gray-500' : ''
-                  }`}
-                >
-                  <option value="" disabled>Select your position...</option>
-                  {POSITION_OPTIONS.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
-                {!missingFields.includes('position') && (
-                  <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-500" />
-                )}
-              </div>
-            </div>
+            <MultiSelectField
+              id="complete-profile-position"
+              label={`Position${missingFields.includes('position') ? ' *' : ''}`}
+              options={POSITION_OPTIONS}
+              value={parseMultiSelectValue(position)}
+              onChange={(vals) => setPosition(formatMultiSelectValue(vals))}
+              required={missingFields.includes('position')}
+              disabled={!missingFields.includes('position') || isSubmitting}
+            />
 
             <button
               type="submit"

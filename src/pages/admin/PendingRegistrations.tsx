@@ -917,10 +917,13 @@ const PendingRegistrations: React.FC = () => {
                               </ApplicationField>
                             </div>
                             <div className="break-inside-avoid">
-                              <ApplicationField label="Key areas of expertise">
-                                <span className="whitespace-pre-wrap">{applicationText(userData.expertiseAreas)}</span>
+                              <ApplicationField label="Specialty">
+                                <span className="whitespace-pre-wrap">{applicationText(userData.specialty || userData.expertiseAreas)}</span>
                               </ApplicationField>
-                              <ApplicationField label="What are you looking to gain from AlmaLinks?">
+                              <ApplicationField label="Position">
+                                <span className="whitespace-pre-wrap">{applicationText(userData.position)}</span>
+                              </ApplicationField>
+                              <ApplicationField label="What are you looking to gain from AlmaLinks this year?">
                                 <span className="whitespace-pre-wrap">{applicationText(userData.lookingToGain)}</span>
                               </ApplicationField>
                               <ApplicationField label="What can you offer to other members (locally and globally)?">

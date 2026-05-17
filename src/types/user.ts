@@ -92,6 +92,14 @@ export interface UserProfileForm {
   bioTitle: string;
   bio: string;
   skills: string[];
+  /** Semicolon-separated (HubSpot multi-select) */
+  specialty?: string;
+  industry?: string;
+  position?: string;
+  lookingToGain?: string;
+  offerToMembers?: string;
+  heardAboutAlma?: string;
+  address?: string;
   
   // Step 3: Contact & Location
   phone: string;

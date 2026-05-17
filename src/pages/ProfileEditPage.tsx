@@ -56,7 +56,10 @@ const ProfileEditPage: React.FC = () => {
     showPhone: false,
     // User-facing privacy chooser was removed: members are public by default.
     // Admins can still change visibility from AdminUserEdit if needed.
-    profileVisibility: 'public'
+    profileVisibility: 'public',
+    specialty: '',
+    industry: '',
+    position: '',
   });
   
   const [loading, setLoading] = useState(true);
@@ -193,7 +196,10 @@ const ProfileEditPage: React.FC = () => {
           country: userProfile.country || '',
           timezone: userProfile.timezone || '',
           showPhone: userProfile.showPhone || false,
-          profileVisibility: userProfile.profileVisibility || 'public'
+          profileVisibility: userProfile.profileVisibility || 'public',
+          specialty: (userProfile as any).specialty || (userProfile as any).expertiseAreas || '',
+          industry: userProfile.industry || '',
+          position: (userProfile as any).position || userProfile.title || '',
         };
         
         setFormData(profileFormData);
@@ -242,7 +248,11 @@ const ProfileEditPage: React.FC = () => {
         country: formData.country,
         timezone: formData.timezone,
         showPhone: formData.showPhone,
-        profileVisibility: formData.profileVisibility
+        profileVisibility: formData.profileVisibility,
+        specialty: formData.specialty || undefined,
+        industry: formData.industry || undefined,
+        position: formData.position || undefined,
+        expertiseAreas: formData.specialty || undefined,
       };
       const res = await apiRequest('/api/profile', {
         method: 'PATCH',

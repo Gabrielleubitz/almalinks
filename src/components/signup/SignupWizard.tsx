@@ -66,6 +66,9 @@ const SignupWizard: React.FC<SignupWizardProps> = ({
     // All members are publicly visible by default; the user-facing privacy chooser
     // has been removed (admins can still adjust visibility on AdminUserEdit).
     profileVisibility: 'public',
+    specialty: '',
+    industry: '',
+    position: '',
     ...initialData
   });
   const [errors, setErrors] = useState<Record<string, string>>({});

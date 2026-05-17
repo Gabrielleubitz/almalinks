@@ -4,6 +4,7 @@ import { UserProfileForm } from '../../../types/user';
 import FormField from '../FormField';
 import RichTextBioEditor from '../../profile/RichTextBioEditor';
 import BioHtml from '../../profile/BioHtml';
+import MemberProfessionalFieldPickers from '../../profile/MemberProfessionalFieldPickers';
 
 interface AboutYouStepProps {
   formData: UserProfileForm;
@@ -130,6 +131,20 @@ const AboutYouStep: React.FC<AboutYouStepProps> = ({
           </div>
         </FormField>
       </div>
+
+      <MemberProfessionalFieldPickers
+        values={{
+          specialty: formData.specialty || '',
+          industry: formData.industry || '',
+          position: formData.position || '',
+        }}
+        onChange={(field, value) => onUpdate(field, value)}
+        errors={{
+          specialty: touchedFields.has('specialty') ? errors.specialty : undefined,
+          industry: touchedFields.has('industry') ? errors.industry : undefined,
+          position: touchedFields.has('position') ? errors.position : undefined,
+        }}
+      />
 
       {/* Bio Title */}
       <FormField

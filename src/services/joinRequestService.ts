@@ -55,6 +55,8 @@ export interface JoinRequest {
   /** Full mailing / street address (application question) */
   address?: string;
   industry?: string;
+  /** Semicolon-separated specialty values (HubSpot multi-select). Legacy: expertiseAreas. */
+  specialty?: string;
   expertiseAreas?: string;
   lookingToGain?: string;
   offerToMembers?: string;
@@ -83,6 +85,8 @@ export interface JoinRequestFormData {
   skills?: string[];
   address?: string;
   industry?: string;
+  /** Semicolon-separated specialty values (HubSpot multi-select). Legacy: expertiseAreas. */
+  specialty?: string;
   expertiseAreas?: string;
   lookingToGain?: string;
   offerToMembers?: string;
@@ -165,6 +169,7 @@ export class JoinRequestService {
       const textApplicationFields = [
         'address',
         'industry',
+        'specialty',
         'expertiseAreas',
         'lookingToGain',
         'offerToMembers',
@@ -663,8 +668,16 @@ export class JoinRequestService {
       if (request.skills && Array.isArray(request.skills) && request.skills.length > 0) {
         userProfilePayload.skills = request.skills;
       }
-      // Application-only answers (address, industry, expertise, motivation, referral, etc.)
-      // stay on joinRequests only — they are not copied to users/{uid} (member profile).
+      if (request.address) userProfilePayload.address = request.address;
+      if (request.industry) userProfilePayload.industry = request.industry;
+      const specialtyVal = request.specialty || request.expertiseAreas;
+      if (specialtyVal) {
+        userProfilePayload.specialty = specialtyVal;
+        userProfilePayload.expertiseAreas = specialtyVal;
+      }
+      if (request.lookingToGain) userProfilePayload.lookingToGain = request.lookingToGain;
+      if (request.offerToMembers) userProfilePayload.offerToMembers = request.offerToMembers;
+      if (request.heardAboutAlma) userProfilePayload.heardAboutAlma = request.heardAboutAlma;
 
       // Sanitize the payload to remove any undefined values
       const sanitizedUserProfile = sanitizeForFirestore(userProfilePayload);

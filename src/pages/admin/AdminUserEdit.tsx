@@ -251,7 +251,10 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
           country: userProfile.country || '',
           timezone: userProfile.timezone || '',
           showPhone: userProfile.showPhone || false,
-          profileVisibility: userProfile.profileVisibility || 'event_only'
+          profileVisibility: userProfile.profileVisibility || 'public',
+          specialty: (userProfile as any).specialty || (userProfile as any).expertiseAreas || '',
+          industry: userProfile.industry || '',
+          position: (userProfile as any).position || userProfile.title || '',
         };
         
         console.log('📝 Loaded profile data:', userProfile);
@@ -318,11 +321,15 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
         name: `${formData.firstName} ${formData.lastName}`.trim() || formData.displayName,
         displayName: formData.displayName,
         email: formData.email,
-        position: formData.title,
+        title: formData.title,
+        position: formData.position || formData.title,
         company: formData.company,
         work: formData.bioTitle,
         bio: formData.bio,
         skills: formData.skills,
+        specialty: formData.specialty || undefined,
+        expertiseAreas: formData.specialty || undefined,
+        industry: formData.industry || undefined,
         phone: formData.phone,
         linkedin: linkedinCanonical || formData.linkedin,
         linkedinUsername: linkedinUsername,
