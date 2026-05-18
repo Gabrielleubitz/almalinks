@@ -8,7 +8,20 @@ import AlmaAuthCard from '../components/ui/AlmaAuthCard';
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, login, error, loading, checkProfileComplete, isPending, isRejected, isNeedsSignup, resetPassword, signInWithGoogle } = useAuth();
+  const {
+    user,
+    login,
+    error,
+    loading,
+    roleLoading,
+    checkProfileComplete,
+    isPending,
+    isRejected,
+    isNeedsSignup,
+    isAdmin,
+    resetPassword,
+    signInWithGoogle,
+  } = useAuth();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -26,23 +39,32 @@ const LoginPage: React.FC = () => {
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
-  // Redirect if already logged in
+  // Redirect if already logged in (wait for profile/role load so landing is correct)
   useEffect(() => {
-    if (user && !loading) {
-      if (isNeedsSignup) {
-        // Google OAuth completed but signup form not yet submitted
-        navigate('/signup');
-      } else if (isPending) {
-        navigate('/pending');
-      } else if (isRejected) {
-        navigate('/re-request-access');
-      } else if (checkProfileComplete()) {
-        navigate('/members');
-      } else {
-        navigate('/complete-profile');
-      }
+    if (!user || loading || roleLoading) return;
+
+    if (isNeedsSignup) {
+      navigate('/signup', { replace: true });
+      return;
     }
-  }, [user, loading, navigate, checkProfileComplete, isPending, isRejected, isNeedsSignup]);
+    if (isPending) {
+      navigate('/pending', { replace: true });
+      return;
+    }
+    if (isRejected) {
+      navigate('/re-request-access', { replace: true });
+      return;
+    }
+    if (isAdmin) {
+      navigate('/admin', { replace: true });
+      return;
+    }
+    if (checkProfileComplete()) {
+      navigate('/members', { replace: true });
+    } else {
+      navigate('/complete-profile', { replace: true });
+    }
+  }, [user, loading, roleLoading, navigate, checkProfileComplete, isPending, isRejected, isNeedsSignup, isAdmin]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

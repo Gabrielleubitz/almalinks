@@ -4,6 +4,7 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firest
 import { auth, db, retryOnNetworkFailure } from '../firebase/config';
 import type { CropValue } from '../types/crop';
 import { ActivityService } from '../services/activityService';
+import { isMemberProfileSetupComplete } from '../utils/memberLanding';
 
 export interface AuthUser {
   uid: string;
@@ -311,11 +312,8 @@ export const useAuth = () => {
     }
   };
 
-  // Function to check if profile is complete
-  const checkProfileComplete = (): boolean => {
-    if (!user) return false;
-    return !!(user.displayName && user.phone && user.company && user.work && user.linkedinUsername && user.position);
-  };
+  // Function to check if profile is complete (required for member home access)
+  const checkProfileComplete = (): boolean => isMemberProfileSetupComplete(user);
 
   // Function to update user profile
   const updateUserProfile = async (profileData: ProfileData) => {

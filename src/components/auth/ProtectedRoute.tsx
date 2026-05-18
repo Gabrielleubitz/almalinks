@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import {
+  isMemberProfileSetupComplete,
+  isProfileSetupAllowlistedPath,
+  MEMBER_HOME_PATH,
+  PROFILE_SETUP_PATH,
+} from '../../utils/memberLanding';
 import { AlertCircle, Wifi, WifiOff } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -9,6 +15,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
+  const location = useLocation();
   const { user, loading, isAdmin, isMember, isPending, isApproved, isRejected, isNeedsSignup, networkError, roleLoading } = useAuth();
   const [retryCount, setRetryCount] = useState(0);
   const [showRetryButton, setShowRetryButton] = useState(false);
@@ -97,8 +104,18 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
     return <Navigate to="/change-password" replace />;
   }
 
-  // First-time users: do NOT redirect; they see the OnboardingTour overlay on top of the app.
-  // (OnboardingTour is mounted in App and shows when hasSeenOnboarding !== true.)
+  // Approved members must finish profile setup before using the app (except allowlisted routes).
+  const profileSetupComplete = isMemberProfileSetupComplete(user);
+  const pathname = location.pathname;
+
+  if (isApproved && !isAdmin && !profileSetupComplete && !isProfileSetupAllowlistedPath(pathname)) {
+    console.log('📝 ProtectedRoute - Profile incomplete, redirecting to profile setup');
+    return <Navigate to={PROFILE_SETUP_PATH} replace state={{ from: pathname }} />;
+  }
+
+  if (isApproved && !isAdmin && profileSetupComplete && pathname === PROFILE_SETUP_PATH) {
+    return <Navigate to={MEMBER_HOME_PATH} replace />;
+  }
 
   // Check role-based access
   if (requiredRole) {

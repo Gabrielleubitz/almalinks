@@ -9,7 +9,7 @@ export default function CommunityProtectedRoute({ children }: { children: React.
 
   if (!enabled) {
     // Requirement allows 404 or redirect; we choose redirect to main app.
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/members" replace />;
   }
 
   if (authLoading || communityLoading) {
