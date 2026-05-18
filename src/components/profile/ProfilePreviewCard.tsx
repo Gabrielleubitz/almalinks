@@ -4,6 +4,7 @@ import { UserProfile } from '../../types/user';
 import { getVisibilityDescription } from '../../utils/privacy';
 import Favicon from '../ui/Favicon';
 import BioHtml from './BioHtml';
+import { formatBioTitleForDisplay } from '../../utils/bioDisplay';
 import { formatMemberMonthYear } from '../../utils/firestoreDate';
 
 interface ProfilePreviewCardProps {
@@ -117,13 +118,13 @@ const ProfilePreviewCard: React.FC<ProfilePreviewCardProps> = ({
         </div>
 
         {/* Bio Title */}
-        {profile.bioTitle && (
+        {formatBioTitleForDisplay(profile.bioTitle, profile.bio) ? (
           <div className="bg-blue-50 rounded-lg p-3">
-            <p className="text-blue-800 font-medium text-sm text-center">
-              {profile.bioTitle}
+            <p className="text-blue-800 font-medium text-sm text-center line-clamp-2">
+              {formatBioTitleForDisplay(profile.bioTitle, profile.bio)}
             </p>
           </div>
-        )}
+        ) : null}
 
         {/* Bio */}
         {profile.bio && (

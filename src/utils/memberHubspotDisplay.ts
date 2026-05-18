@@ -1,4 +1,5 @@
 import type { UserProfile } from '../types/user';
+import { formatBioTitleForDisplay } from './bioDisplay';
 import { isSafeImageUrl } from './imageUrl';
 
 function firstHubspotString(
@@ -37,10 +38,11 @@ export function resolveDirectoryAvatarUrl(user: UserProfile): string {
   return '';
 }
 
-const HUBSPOT_BIO_TITLE_KEYS = ['bio_short', 'bio_one_liner', 'bio_25'];
+/** Short HubSpot fields only — not bio_25 / bio_paragraph (those belong in full bio). */
+const HUBSPOT_BIO_TITLE_KEYS = ['bio_short', 'bio_one_liner'];
 
 /**
- * Short professional line for cards: bio title fields first, then HubSpot custom props, then title/company.
+ * Raw short line for cards: bio title fields first, then HubSpot one-liners, then title/company.
  */
 export function resolveDirectoryBioTitle(user: UserProfile): string | undefined {
   const direct = (user.bioTitle || '').trim();
@@ -53,6 +55,12 @@ export function resolveDirectoryBioTitle(user: UserProfile): string | undefined 
   if (title) return title;
   if (company) return company;
   return undefined;
+}
+
+/** Display-safe tagline (truncated, not duplicated in full bio). */
+export function resolveProfileBioTitleLine(user: UserProfile): string | undefined {
+  const raw = resolveDirectoryBioTitle(user);
+  return formatBioTitleForDisplay(raw, user.bio);
 }
 
 export function resolveStoredChapter(user: UserProfile): string | null {

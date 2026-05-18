@@ -28,7 +28,7 @@ import { getTrusteeMentorFromHubspot } from '../utils/hubspotMemberRoles';
 import { formatChapterDisplayLabel } from '../utils/memberDirectoryChapters';
 import {
   resolveDirectoryAvatarUrl,
-  resolveDirectoryBioTitle,
+  resolveProfileBioTitleLine,
 } from '../utils/memberHubspotDisplay';
 
 interface Connection {
@@ -239,7 +239,7 @@ const UserProfilePage: React.FC = () => {
   const userCompany = profile.company || '';
   const userLinkedin = profile.linkedin || (profile as any).linkedinUsername || '';
   const fullProfile = profile as UserProfile;
-  const bioTitleLine = resolveDirectoryBioTitle(fullProfile);
+  const bioTitleLine = resolveProfileBioTitleLine(fullProfile);
   const profileImageUrl =
     resolveDirectoryAvatarUrl(fullProfile) ||
     profile.profileImage ||
@@ -362,9 +362,9 @@ const UserProfilePage: React.FC = () => {
                   />
                 </div>
 
-                <div className="text-center md:text-left space-y-2">
+                <div className="text-center md:text-left">
                   <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">{displayName}</h1>
-                  <div className="flex flex-wrap justify-center md:justify-start gap-1.5">
+                  <div className="flex flex-wrap justify-center md:justify-start gap-1.5 mt-2">
                     <TrusteeMentorStar isTrustee={isTrustee} isMentor={isMentor} />
                     {profile.role === 'admin' && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
@@ -380,10 +380,12 @@ const UserProfilePage: React.FC = () => {
                     )}
                   </div>
                   {bioTitleLine ? (
-                    <p className="text-sm font-medium text-brand-dark leading-snug">{bioTitleLine}</p>
+                    <p className="mt-3 text-sm font-medium text-brand-dark leading-snug line-clamp-2">
+                      {bioTitleLine}
+                    </p>
                   ) : null}
                   {(userTitle || userCompany) && (
-                    <p className="text-xs text-gray-500">
+                    <p className={`text-xs text-gray-500 ${bioTitleLine ? 'mt-2' : 'mt-3'}`}>
                       {[userTitle, userCompany].filter(Boolean).join(' · ')}
                     </p>
                   )}
@@ -469,9 +471,7 @@ const UserProfilePage: React.FC = () => {
                 </div>
 
                 {profile.bio ? (
-                  <div className="prose prose-sm max-w-none text-gray-700">
-                    <BioHtml html={profile.bio} />
-                  </div>
+                  <BioHtml html={profile.bio} className="text-sm sm:text-base" />
                 ) : (
                   <p className="text-sm text-gray-500">No bio yet.</p>
                 )}

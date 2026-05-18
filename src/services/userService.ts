@@ -22,6 +22,7 @@ import { compareMembersByDisplayName } from '../utils/memberSort';
 import {
   resolveDirectoryAvatarUrl,
   resolveDirectoryBioTitle,
+  resolveProfileBioTitleLine,
   resolveStoredChapter,
 } from '../utils/memberHubspotDisplay';
 import { ConnectionService } from './connectionService';
@@ -302,7 +303,7 @@ export class UserService {
 
         // Create user card
         const avatarResolved = resolveDirectoryAvatarUrl(user);
-        const bioTitleResolved = resolveDirectoryBioTitle(user);
+        const bioTitleResolved = resolveProfileBioTitleLine(user);
         const chapterStored = resolveStoredChapter(user);
 
         const userCard: UserCard = {
@@ -460,7 +461,7 @@ export class UserService {
         const { isTrustee, isMentor } = getTrusteeMentorFromHubspot(user);
 
         const avatarResolved = resolveDirectoryAvatarUrl(user);
-        const bioTitleResolved = resolveDirectoryBioTitle(user);
+        const bioTitleResolved = resolveProfileBioTitleLine(user);
         const chapterStored = resolveStoredChapter(user);
 
         const userCard: UserCard = {
@@ -581,7 +582,7 @@ export class UserService {
         if (searchableText.includes(searchQuery)) {
           const { isTrustee, isMentor } = getTrusteeMentorFromHubspot(user);
           const avatarResolved = resolveDirectoryAvatarUrl(user);
-          const bioTitleResolved = resolveDirectoryBioTitle(user);
+          const bioTitleResolved = resolveProfileBioTitleLine(user);
           const chapterStored = resolveStoredChapter(user);
 
           const userCard: UserCard = {
