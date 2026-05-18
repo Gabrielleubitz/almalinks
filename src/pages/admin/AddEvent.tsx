@@ -222,10 +222,18 @@ const AddEvent: React.FC = () => {
               credentials: 'include',
             });
             const data = await res.json().catch(() => ({}));
-            announcementSent = res.ok && data.ok && !data.skipped;
+            announcementSent = res.ok && data.ok && !data.skipped && (data.sent ?? 0) > 0;
             if (!res.ok || data.error) {
-              announcementError = data.error || `HTTP ${res.status}`;
+              const detail = typeof data.detail === 'string' ? ` (${data.detail})` : '';
+              announcementError = (data.error || `HTTP ${res.status}`) + detail;
               console.warn('[AddEvent] Announcement not sent:', announcementError);
+            } else if (data.skipped) {
+              announcementError =
+                data.reason ||
+                'Announcement was skipped (no eligible recipients — members must be approved with a valid email).';
+              console.warn('[AddEvent] Announcement skipped:', announcementError);
+            } else if (res.ok && data.ok && (data.sent ?? 0) === 0) {
+              announcementError = 'No announcement emails were delivered. Check Mailjet/Mandrill env vars and recipient list.';
             }
           } catch (announceErr: unknown) {
             announcementError = announceErr instanceof Error ? announceErr.message : String(announceErr);
@@ -245,9 +253,9 @@ const AddEvent: React.FC = () => {
         : ' HubSpot sync did not complete — use the panel below to retry.';
       setSuccess(
         announcementSent
-          ? `Event "${eventName}" created (${previewSlug}).${hubspotNote} Announcement email sent.`
+          ? `Event "${eventName}" created (${previewSlug}).${hubspotNote} Announcement email sent to members.`
           : announcementError
-            ? `Event "${eventName}" created (${previewSlug}).${hubspotNote} Announcement failed: ${announcementError}`
+            ? `Event "${eventName}" created (${previewSlug}).${hubspotNote} Announcement not sent: ${announcementError}`
             : `Event "${eventName}" created successfully (${previewSlug}).${hubspotNote}`
       );
       setFormData({

@@ -386,7 +386,7 @@ const MembersPage: React.FC = () => {
       <Header />
       
       <section className="pt-[var(--content-offset-top)] sm:pt-20 pb-4 border-b border-gray-100 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Members</h1>
             <p className="text-xs text-gray-500 mt-0.5 mb-3">
@@ -473,7 +473,7 @@ const MembersPage: React.FC = () => {
 
       {/* Members Grid */}
       <section className="py-6">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {(searchQuery.trim() || chapterFilter !== CHAPTER_FILTER_ALL) ? (
             <div className="mb-4 text-xs text-gray-600">
               {filteredMembers.length} member{filteredMembers.length === 1 ? '' : 's'}
@@ -485,7 +485,7 @@ const MembersPage: React.FC = () => {
           ) : null}
 
           {filteredMembers.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-1.5 sm:gap-2">
               {filteredMembers.map(renderMemberCard)}
             </div>
           ) : (

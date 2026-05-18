@@ -188,7 +188,8 @@ const AdminEmail: React.FC = () => {
         setSuccess(`${label} sent to ${data.sentTo}`);
         fetchEmailLog();
       } else {
-        setError(data.error || 'Send failed');
+        const detail = typeof data.detail === 'string' ? ` ${data.detail}` : '';
+        setError((data.error || 'Send failed') + detail);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Request failed');
@@ -783,7 +784,7 @@ const AdminEmail: React.FC = () => {
           <div className="mt-8 bg-gray-50 rounded-2xl p-6">
             <h3 className="font-semibold text-gray-900 mb-3">📧 Email Information:</h3>
             <ul className="text-sm text-gray-600 space-y-2">
-              <li>• <strong>Current Status:</strong> Email workflow is stubbed (Mailchimp integration pending)</li>
+              <li>• <strong>Current Status:</strong> Sends via Mailjet or Mandrill when env keys are set in Vercel</li>
               <li>• <strong>Recipients:</strong> Supports single email or comma-separated list</li>
               <li>• <strong>Validation:</strong> Email format is validated before sending</li>
               <li>• <strong>Future Integration:</strong> Will connect to Mailchimp API when ready</li>
