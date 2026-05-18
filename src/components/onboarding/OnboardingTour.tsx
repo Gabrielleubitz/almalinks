@@ -9,6 +9,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import logoSvg from '../../assets/alma-links-logo.svg';
+import { CHATS_REDESIGN_PAUSED } from '../../config/chatsFeature';
 
 const TOUR_DEBUG = typeof window !== 'undefined' && (
   window.location.search.includes('tourDebug=1') ||
@@ -36,7 +37,7 @@ interface OnboardingStep {
   fallbackNavigateHint?: string;
 }
 
-const ONBOARDING_STEPS: OnboardingStep[] = [
+const ONBOARDING_STEPS_ALL: OnboardingStep[] = [
   {
     id: 'welcome',
     title: 'Welcome to AlmaLinks',
@@ -102,6 +103,10 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     route: null,
   },
 ];
+
+const ONBOARDING_STEPS = CHATS_REDESIGN_PAUSED
+  ? ONBOARDING_STEPS_ALL.filter((s) => s.id !== 'chats')
+  : ONBOARDING_STEPS_ALL;
 
 const RESOLVE_MAX_MS = 2500;
 const RESOLVE_POLL_MS = 100;

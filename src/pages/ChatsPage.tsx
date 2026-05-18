@@ -7,6 +7,8 @@ import { ChatListItem } from '../types/chat';
 import Header from '../components/Header';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import CropImage from '../components/profile/CropImage';
+import ChatsRedesignPausedNotice from '../components/chat/ChatsRedesignPausedNotice';
+import { CHATS_REDESIGN_PAUSED } from '../config/chatsFeature';
 
 const ChatsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -112,11 +114,12 @@ const ChatsPage: React.FC = () => {
                   : `${chats.length} chat${chats.length === 1 ? '' : 's'}`
                 }
               </p>
-              <p className="text-xs text-amber-900 bg-amber-50 border border-amber-100 rounded-md px-2 py-1.5 mt-2 max-w-xl leading-snug">
-                Chat layout and flows are on hold while we redesign for a simpler experience. You can still use your existing chats below.
-              </p>
+              {CHATS_REDESIGN_PAUSED ? (
+                <ChatsRedesignPausedNotice className="mt-2 max-w-xl" />
+              ) : null}
             </div>
-            
+
+            {!CHATS_REDESIGN_PAUSED ? (
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate('/discover-chats')}
@@ -135,6 +138,15 @@ const ChatsPage: React.FC = () => {
                 </button>
               )}
             </div>
+            ) : user.role === 'admin' ? (
+              <button
+                type="button"
+                onClick={() => navigate('/admin/chats')}
+                className="text-xs font-medium text-brand-blue hover:text-brand-blue-hover"
+              >
+                Admin: manage chats →
+              </button>
+            ) : null}
           </div>
 
           {/* Search Bar */}
@@ -188,20 +200,26 @@ const ChatsPage: React.FC = () => {
           {/* Empty State */}
           {!loading && !error && chats.length === 0 && (
             <div className="text-center py-20">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MessageCircle className="h-8 w-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No chats yet</h3>
-              <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
-                You haven't joined any chats yet. Discover public chats or ask an admin to add you.
-              </p>
-              <button
-                onClick={() => navigate('/discover-chats')}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#0B2B6B] hover:bg-[#1E56B3] rounded-lg transition-colors"
-              >
-                <Compass className="h-4 w-4" />
-                <span>Discover Chats</span>
-              </button>
+              {CHATS_REDESIGN_PAUSED ? (
+                <ChatsRedesignPausedNotice variant="page" />
+              ) : (
+                <>
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <MessageCircle className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No chats yet</h3>
+                  <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
+                    You haven&apos;t joined any chats yet. Discover public chats or ask an admin to add you.
+                  </p>
+                  <button
+                    onClick={() => navigate('/discover-chats')}
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#0B2B6B] hover:bg-[#1E56B3] rounded-lg transition-colors"
+                  >
+                    <Compass className="h-4 w-4" />
+                    <span>Discover Chats</span>
+                  </button>
+                </>
+              )}
             </div>
           )}
 

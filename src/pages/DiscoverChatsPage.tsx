@@ -9,6 +9,8 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import CropImage from '../components/profile/CropImage';
+import ChatsRedesignPausedNotice from '../components/chat/ChatsRedesignPausedNotice';
+import { CHATS_REDESIGN_PAUSED } from '../config/chatsFeature';
 
 interface DiscoverableChatGroup {
   id: string;
@@ -151,6 +153,25 @@ const DiscoverChatsPage: React.FC = () => {
             <p className="text-gray-600">Please sign in to discover and join chats.</p>
           </div>
         </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (CHATS_REDESIGN_PAUSED) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full flex flex-col">
+        <Header />
+        <main className="flex-1 pt-[var(--content-offset-top)] pb-8 flex items-center justify-center px-4">
+          <div className="w-full max-w-md">
+            <BackButton
+              fallbackTo="/chats"
+              className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium text-sm mb-8"
+              iconClassName="h-4 w-4"
+            />
+            <ChatsRedesignPausedNotice variant="page" />
+          </div>
+        </main>
         <Footer />
       </div>
     );

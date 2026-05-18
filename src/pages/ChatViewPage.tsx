@@ -27,6 +27,8 @@ import {
   ImagePlus
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import ChatsRedesignPausedNotice from '../components/chat/ChatsRedesignPausedNotice';
+import { CHATS_REDESIGN_PAUSED } from '../config/chatsFeature';
 import { useActivityTracking } from '../hooks/useActivityTracking';
 import { toggleChatMute, getChatMuteStatus } from '../hooks/useNotifications';
 import { ChatService } from '../services/chatService';
@@ -977,7 +979,12 @@ const ChatViewPage: React.FC = () => {
   return (
     <div className="h-screen max-h-dvh bg-white flex flex-col overflow-hidden">
       <Header />
-      <div className="flex-1 flex min-h-0 pt-[var(--content-offset-top)] overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 pt-[var(--content-offset-top)] overflow-hidden">
+        {CHATS_REDESIGN_PAUSED ? (
+        <div className="flex-shrink-0 px-3 py-2 border-b border-amber-100 bg-amber-50/80">
+          <ChatsRedesignPausedNotice className="max-w-5xl mx-auto" />
+        </div>
+      ) : null}
         {/* Chat Layout - Sidebar on desktop, hidden on mobile */}
         <div className="flex-1 flex min-h-0 w-full overflow-hidden">
           
