@@ -1,11 +1,10 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Shield, AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import BackButton from '../components/ui/BackButton';
+import { Shield, AlertTriangle } from 'lucide-react';
 import logoSvg from '../assets/alma-links-logo.svg';
 
 const UnauthorizedPage: React.FC = () => {
-  const navigate = useNavigate();
-  
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-3 sm:px-4 overflow-x-hidden w-full max-w-full">
       {/* Logo in top left corner */}
@@ -36,13 +35,7 @@ const UnauthorizedPage: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="space-y-4">
-            <button
-              onClick={() => navigate(-1)}
-              className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white py-3 px-6 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2"
-            >
-              <ArrowLeft className="h-5 w-5" />
-              <span>Back to Previous Page</span>
-            </button>
+            <BackButton fallbackTo="/dashboard" className="w-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white py-3 px-6 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold justify-center" iconClassName="h-5 w-5" />
             
             <Link
               to="/dashboard"

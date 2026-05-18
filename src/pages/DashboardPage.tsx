@@ -16,6 +16,7 @@ import type { CropValue } from '../types/crop';
 import Favicon from '../components/ui/Favicon';
 import { linkedInProfileHref } from '../utils/linkedInUrl';
 import SavedIndicator from '../components/ui/SavedIndicator';
+import BackButton from '../components/ui/BackButton';
 
 // Country codes data for phone editing
 const COUNTRY_CODES = [
@@ -1572,13 +1573,11 @@ const EventsPage: React.FC = () => {
               <p className="text-gray-600 mb-8 max-w-md mx-auto">
                 We're working on exciting new events. Check back soon for amazing networking opportunities!
               </p>
-              <button
-                onClick={() => navigate(-1)}
-                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-xl hover:shadow-lg active:shadow-md transition-all duration-300 font-medium inline-flex items-center justify-center space-x-2 min-h-[44px] sm:min-h-0 touch-manipulation"
-              >
-                <span>Back to Previous Page</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
+              <BackButton
+                fallbackTo="/events"
+                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-xl hover:shadow-lg active:shadow-md transition-all duration-300 font-medium inline-flex items-center justify-center min-h-[44px] sm:min-h-0 touch-manipulation"
+                iconClassName="h-4 w-4"
+              />
             </div>
           </div>
         </section>

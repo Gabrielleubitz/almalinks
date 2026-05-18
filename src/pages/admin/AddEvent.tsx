@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getIdToken } from 'firebase/auth';
-import { Calendar, MapPin, Image, FileText, ArrowLeft, AlertCircle, ImagePlus, Save } from 'lucide-react';
+import { Calendar, MapPin, Image, FileText, AlertCircle, ImagePlus, Save } from 'lucide-react';
+import BackButton from '../../components/ui/BackButton';
 import SaveButtonWithFeedback from '../../components/ui/SaveButtonWithFeedback';
 import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../firebase/config';
@@ -322,13 +323,7 @@ const AddEvent: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Back Button */}
         <div className="mb-8">
-          <button
-            onClick={() => navigate('/admin')}
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>Back to Admin Tools</span>
-          </button>
+          <BackButton fallbackTo="/admin" />
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">

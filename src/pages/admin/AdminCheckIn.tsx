@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import BackButton from '../../components/ui/BackButton';
 import {
   CheckCircle,
   Clock,
@@ -183,13 +183,7 @@ const AdminCheckIn: React.FC = () => {
   return (
     <div className="min-h-full overflow-x-hidden w-full max-w-full">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
-        <Link
-          to="/admin"
-          className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 mb-6 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Dashboard
-        </Link>
+        <div className="mb-6"><BackButton fallbackTo="/admin" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors" iconClassName="h-4 w-4" /></div>
 
         {/* Hero */}
         <div className="text-center mb-10">

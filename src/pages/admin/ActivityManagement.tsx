@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import BackButton from '../../components/ui/BackButton';
 import {
   Activity,
   Filter,
@@ -527,13 +527,7 @@ const ActivityManagement: React.FC = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 overflow-x-hidden w-full max-w-full box-border">
         {/* Back */}
         <div className="mb-6">
-          <Link
-            to="/admin"
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-brand-dark transition-colors font-medium"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            Back to Admin
-          </Link>
+          <BackButton fallbackTo="/admin" />
         </div>
 
         {/* Page title & intro */}

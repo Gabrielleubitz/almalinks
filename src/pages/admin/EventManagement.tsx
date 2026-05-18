@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { getIdToken } from 'firebase/auth';
-import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, ArrowLeft, UserCheck, CheckCircle, Search, List, LayoutGrid, UserPlus, RefreshCw } from 'lucide-react';
+import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, UserCheck, CheckCircle, Search, List, LayoutGrid, UserPlus, RefreshCw } from 'lucide-react';
+import BackButton from '../../components/ui/BackButton';
 import { EventService, EventData } from '../../services/eventService';
 import { UserService } from '../../services/userService';
 import { useAuth } from '../../hooks/useAuth';
@@ -554,13 +555,7 @@ const EventManagement: React.FC = () => {
       <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8 py-4 overflow-x-hidden w-full max-w-full box-border">
         {/* Back Button */}
         <div className="mb-4 sm:mb-6 lg:mb-8">
-          <Link
-            to="/admin"
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium text-sm sm:text-base"
-          >
-            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span>Back to Admin Tools</span>
-          </Link>
+          <BackButton fallbackTo="/admin" className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium text-sm sm:text-base" iconClassName="h-4 w-4 sm:h-5 sm:w-5" />
         </div>
 
         {/* Header with Create Button and HubSpot Sync */}

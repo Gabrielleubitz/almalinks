@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BackButton from '../../components/ui/BackButton';
 import {
   ArrowLeft,
   RefreshCw,
@@ -617,13 +618,9 @@ const HubSpotImportPage: React.FC = () => {
   return (
     <div className="min-h-full overflow-x-hidden w-full max-w-full">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <button
-          onClick={() => navigate('/admin')}
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors font-medium mb-8"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          Back to Admin
-        </button>
+        <div className="mb-8">
+          <BackButton fallbackTo="/admin" />
+        </div>
 
         {/* Hero */}
         <div className="bg-gradient-to-r from-brand-light to-blue-50 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8 mb-8">

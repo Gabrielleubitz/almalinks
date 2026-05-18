@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { CheckCircle, AlertCircle, ArrowLeft, UserPlus, Loader } from 'lucide-react';
+import { CheckCircle, AlertCircle, UserPlus, Loader } from 'lucide-react';
+import BackButton from '../components/ui/BackButton';
 import { useAuth } from '../hooks/useAuth';
 import { useActivityTracking } from '../hooks/useActivityTracking';
 import { ConnectionService } from '../services/connectionService';
@@ -205,13 +206,7 @@ const ConnectPage: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back Button */}
           <div className="mb-8">
-            <button
-              onClick={() => navigate('/events')}
-              className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
-            >
-              <ArrowLeft className="h-5 w-5" />
-              <span>Back to Events</span>
-            </button>
+            <BackButton fallbackTo="/events" />
           </div>
           
           <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">

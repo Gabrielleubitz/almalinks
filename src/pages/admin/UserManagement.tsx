@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BackButton from '../../components/ui/BackButton';
 import { 
   Users, 
   Search, 
-  ArrowLeft, 
   AlertCircle, 
   CheckCircle, 
   X, 
@@ -373,13 +373,7 @@ const UserManagement: React.FC = () => {
       <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8 py-4 overflow-x-hidden w-full max-w-full box-border">
         {/* Back Button */}
         <div className="mb-4 sm:mb-6 lg:mb-8">
-          <button
-            onClick={() => navigate('/admin')}
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium text-sm sm:text-base"
-          >
-            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span>Back to Admin Tools</span>
-          </button>
+          <BackButton fallbackTo="/admin" className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium text-sm sm:text-base" iconClassName="h-4 w-4 sm:h-5 sm:w-5" />
         </div>
 
         {/* Error Message */}

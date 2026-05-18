@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import BackButton from '../components/ui/BackButton';
 import { Mail, ArrowRight, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
 import { PasswordResetService } from '../services/passwordResetService';
 import logoSvg from '../assets/alma-links-logo.svg';
@@ -65,13 +66,11 @@ const ForgotPasswordPage: React.FC = () => {
       <div className="max-w-md w-full">
         {/* Back button */}
         <div className="mb-6">
-          <Link 
-            to="/login"
+          <BackButton
+            fallbackTo="/login"
             className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm font-medium"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back to Login</span>
-          </Link>
+            iconClassName="h-4 w-4"
+          />
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">

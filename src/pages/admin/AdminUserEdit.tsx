@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import BackButton from '../../components/ui/BackButton';
 import { 
   ArrowLeft, 
   Save, 
@@ -497,13 +498,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">User Not Found</h2>
             <p className="text-gray-600 mb-8">The user you're looking for doesn't exist or has been deleted.</p>
-            <button
-              onClick={() => navigate('/admin/users')}
-              className="inline-flex items-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid transition-colors duration-200"
-            >
-              <ArrowLeft className="h-5 w-5" />
-              <span>Back to User Management</span>
-            </button>
+            <BackButton fallbackTo="/admin/users" className="inline-flex items-center space-x-2 px-6 py-3 bg-brand-dark text-white rounded-xl hover:bg-brand-mid transition-colors duration-200" iconClassName="h-5 w-5" />
           </div>
         </div>
       </div>
@@ -551,13 +546,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Back Button */}
         <div className="mb-8">
-          <button
-            onClick={() => navigate('/admin/users')}
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>Back to User Management</span>
-          </button>
+          <BackButton fallbackTo="/admin/users" />
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">

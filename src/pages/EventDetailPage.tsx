@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { MapPin, ArrowLeft, CheckCircle, AlertCircle, Ticket, CalendarPlus, ExternalLink, Link as LinkIcon } from 'lucide-react';
+import BackButton from '../components/ui/BackButton';
+import { MapPin, CheckCircle, AlertCircle, Ticket, CalendarPlus, ExternalLink, Link as LinkIcon } from 'lucide-react';
 import { EventService, EventData } from '../services/eventService';
 import { getMyRegistration, createPending } from '../services/registrationService';
 import type { EventRegistrationWithStatus, EventPrivateDetails } from '../types/event';
@@ -356,13 +357,7 @@ const EventDetailPage: React.FC = () => {
               }
             </p>
             <div className="space-y-4">
-              <button
-                onClick={() => navigate('/events')}
-                className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold inline-flex items-center space-x-2"
-              >
-                <ArrowLeft className="h-5 w-5" />
-                <span>Back to Events</span>
-              </button>
+              <BackButton fallbackTo="/events" className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold" iconClassName="h-5 w-5" />
               <div className="text-sm text-gray-500">
                 <p>Looking for a specific event? Try browsing our events page or contact us for assistance.</p>
               </div>
@@ -389,14 +384,7 @@ const EventDetailPage: React.FC = () => {
 
       <section className="pt-[var(--content-offset-top)] pb-6 sm:pb-8 bg-white border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button
-            type="button"
-            onClick={() => navigate('/events')}
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm font-medium mb-4"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to events
-          </button>
+          <div className="mb-4"><BackButton fallbackTo="/events" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm font-medium" iconClassName="h-4 w-4" /></div>
 
           <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div className="w-full aspect-[21/9] sm:aspect-[3/1] max-h-52 sm:max-h-56 bg-gray-100">

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getIdToken } from 'firebase/auth';
-import { Calendar, MapPin, Image, FileText, ArrowLeft, AlertCircle, CheckCircle, Loader2, ImagePlus } from 'lucide-react';
+import { Calendar, MapPin, Image, FileText, AlertCircle, CheckCircle, Loader2, ImagePlus } from 'lucide-react';
+import BackButton from '../../components/ui/BackButton';
 import SaveButtonWithFeedback from '../../components/ui/SaveButtonWithFeedback';
 import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../firebase/config';
@@ -485,12 +486,10 @@ const EditEvent: React.FC = () => {
             </div>
             <h1 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Event</h1>
             <p className="text-red-600 mb-4">{error}</p>
-            <button
-              onClick={() => navigate('/admin')}
+            <BackButton
+              fallbackTo="/admin/events"
               className="bg-gray-100 text-gray-700 px-6 py-2 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium"
-            >
-              Back to Events
-            </button>
+            />
           </div>
         </div>
       </div>
@@ -502,13 +501,7 @@ const EditEvent: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Back Button */}
         <div className="mb-8">
-          <button
-            onClick={() => navigate('/admin')}
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>Back to Event Management</span>
-          </button>
+          <BackButton fallbackTo="/admin/events" />
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">

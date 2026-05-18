@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import BackButton from '../components/ui/BackButton';
 import {
   ArrowLeft,
   Send,
@@ -963,13 +964,11 @@ const ChatViewPage: React.FC = () => {
         <div className="text-center max-w-md px-4">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Chat Not Found</h2>
           <p className="text-gray-600 mb-8">{error || 'The chat you\'re looking for doesn\'t exist or you don\'t have access.'}</p>
-          <button
-            onClick={() => navigate('/chats')}
+          <BackButton
+            fallbackTo="/chats"
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#0B2B6B] hover:bg-[#1E56B3]"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Chats
-          </button>
+            iconClassName="h-4 w-4"
+          />
         </div>
       </div>
     );
@@ -1097,13 +1096,12 @@ const ChatViewPage: React.FC = () => {
             <div className="flex items-center justify-between h-12">
               <div className="flex items-center space-x-2.5 flex-1 min-w-0">
                   {/* Back button - visible on mobile, hidden on desktop when sidebar is visible */}
-                  <button
-                    onClick={() => navigate('/chats')}
+                  <BackButton
+                    fallbackTo="/chats"
+                    iconOnly
                     className="lg:hidden p-2.5 -ml-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] touch-manipulation"
-                    title="Back to Chats"
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                  </button>
+                    iconClassName="h-5 w-5"
+                  />
                 
                 <button
                   onClick={() => setShowChatInfo(!showChatInfo)}

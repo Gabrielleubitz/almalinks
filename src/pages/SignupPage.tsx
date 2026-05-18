@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BackButton from '../components/ui/BackButton';
 import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowRight, ArrowLeft, AlertCircle, ChevronDown, Linkedin, CheckCircle, MapPin, Building2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { auth } from '../firebase/config';
@@ -411,14 +412,11 @@ const SignupPage: React.FC = () => {
           logoUrl={logoSvg}
         >
           <div className="mb-6">
-            <button
-              type="button"
-              onClick={() => navigate('/login')}
+            <BackButton
+              fallbackTo="/login"
               className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm font-medium bg-transparent border-0 cursor-pointer p-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back to sign in</span>
-            </button>
+              iconClassName="h-4 w-4"
+            />
           </div>
 
           <div className="text-center mb-6">

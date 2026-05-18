@@ -1,22 +1,17 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AlertCircle, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import BackButton from '../components/ui/BackButton';
+import { AlertCircle } from 'lucide-react';
 import logoSvg from '../assets/alma-links-logo.svg';
 
 const RejectedPage: React.FC = () => {
-  const navigate = useNavigate();
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-100 flex items-center justify-center px-3 sm:px-4 overflow-x-hidden w-full max-w-full relative">
       {/* Logo in top left corner */}
       <div className="absolute top-[max(1.5rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))] z-10">
-        <button
-          type="button"
-          onClick={() => navigate('/login')}
-          className="hover:opacity-80 transition-opacity duration-200"
-        >
+        <Link to="/login" className="hover:opacity-80 transition-opacity duration-200">
           <img src={logoSvg} alt="AlmaLinks Logo" className="h-8 md:h-10 w-auto" />
-        </button>
+        </Link>
       </div>
 
       <div className="max-w-md w-full">
@@ -35,14 +30,11 @@ const RejectedPage: React.FC = () => {
           </div>
 
           <div className="mt-6 flex justify-center">
-            <button
-              type="button"
-              onClick={() => navigate('/signup')}
+            <BackButton
+              fallbackTo="/signup"
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white text-sm font-semibold hover:shadow-lg transition-all duration-200"
-            >
-              <span>Back to sign up</span>
-              <ArrowRight className="h-4 w-4" />
-            </button>
+              iconClassName="h-4 w-4"
+            />
           </div>
         </div>
       </div>

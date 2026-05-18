@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BackButton from '../components/ui/BackButton';
 import { ArrowLeft, Clock, CheckCircle, MessageSquare } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../hooks/useAuth';
@@ -59,14 +60,11 @@ const PendingPage: React.FC = () => {
         >
           {/* Back to sign in */}
           <div className="mb-6">
-            <button
-              type="button"
-              onClick={() => navigate('/login')}
+            <BackButton
+              fallbackTo="/login"
               className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm font-medium bg-transparent border-0 cursor-pointer p-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back to sign in</span>
-            </button>
+              iconClassName="h-4 w-4"
+            />
           </div>
 
           <div className="text-center mb-6 sm:mb-8">

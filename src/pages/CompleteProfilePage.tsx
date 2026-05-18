@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import BackButton from '../components/ui/BackButton';
 import { User, Phone, Briefcase, ArrowRight, ArrowLeft, CheckCircle, ChevronDown, Building2, Linkedin } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { apiRequest } from '../utils/apiClient';
@@ -284,13 +285,7 @@ const CompleteProfilePage: React.FC = () => {
       <div className="max-w-md w-full">
         {/* Back button */}
         <div className="mb-6">
-          <Link 
-            to="/events"
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm font-medium"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back to events</span>
-          </Link>
+          <BackButton fallbackTo="/events" className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm font-medium" iconClassName="h-4 w-4" />
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">

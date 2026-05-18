@@ -1,5 +1,5 @@
 import React, { useState, useLayoutEffect, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import BackButton from '../../components/ui/BackButton';
 import { ArrowLeft, Download } from 'lucide-react';
 import AdminConnectionManager from '../../components/admin/AdminConnectionManager';
 import AdminConnectionWidget from '../../components/admin/AdminConnectionWidget';
@@ -84,13 +84,7 @@ const ConnectionManagement: React.FC = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 overflow-x-hidden w-full max-w-full box-border">
         {/* Page header */}
         <div className="mb-6 sm:mb-8">
-          <Link
-            to="/admin"
-            className="inline-flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors font-medium text-sm mb-3"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back to Admin Dashboard</span>
-          </Link>
+          <div className="mb-3"><BackButton fallbackTo="/admin" className="inline-flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors font-medium text-sm" iconClassName="h-4 w-4" /></div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
             Connection Management
           </h1>

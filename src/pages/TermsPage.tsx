@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import BackButton from '../components/ui/BackButton';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import {
@@ -46,12 +46,10 @@ const TermsPage: React.FC = () => {
       <Header />
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 pt-[var(--content-offset-top)] sm:pt-24 pb-12 sm:pb-16">
         <div className="mb-6">
-          <Link
-            to="/"
+          <BackButton
+            fallbackTo="/"
             className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            ← Back to home
-          </Link>
+          />
         </div>
 
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
@@ -93,12 +91,10 @@ const TermsPage: React.FC = () => {
         </div>
 
         <div className="mt-12 pt-8 border-t border-gray-200">
-          <Link
-            to="/"
+          <BackButton
+            fallbackTo="/"
             className="text-brand-blue hover:text-brand-blue-hover font-medium text-sm"
-          >
-            ← Back to home
-          </Link>
+          />
         </div>
       </main>
       <Footer />

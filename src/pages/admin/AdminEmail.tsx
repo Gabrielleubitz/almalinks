@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BackButton from '../../components/ui/BackButton';
 import { Mail, Send, ArrowLeft, AlertCircle, CheckCircle, Inbox, RefreshCw, Trash2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { sendAdminEmail } from '../../services/emailService';
@@ -338,13 +339,7 @@ const AdminEmail: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Back Button */}
         <div className="mb-8">
-          <button
-            onClick={() => navigate('/admin')}
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>Back to Admin Tools</span>
-          </button>
+          <BackButton fallbackTo="/admin" />
         </div>
 
         {/* Email log: sent count and recent list (last 8, view more, filter) */}

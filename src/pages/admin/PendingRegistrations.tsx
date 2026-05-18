@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BackButton from '../../components/ui/BackButton';
 import {
   Users,
   Search,
@@ -701,13 +702,7 @@ const PendingRegistrations: React.FC = () => {
     <div className="min-h-full overflow-x-hidden w-full max-w-full">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="mb-6">
-          <button
-            onClick={() => navigate('/admin')}
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors font-medium"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>Back to Admin Tools</span>
-          </button>
+          <BackButton fallbackTo="/admin" />
         </div>
 
         {toast.visible && (

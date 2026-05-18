@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { User, Mail, Phone, Briefcase, ArrowRight, ArrowLeft, ChevronDown } from 'lucide-react';
+import { User, Mail, Phone, Briefcase, ArrowRight, ChevronDown } from 'lucide-react';
+import BackButton from '../ui/BackButton';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import logoSvg from '../../assets/alma-links-logo.svg';
@@ -144,13 +145,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
       <div className="max-w-md w-full">
         {/* Back button */}
         <div className="mb-6">
-          <Link 
-            to="/"
+          <BackButton
+            fallbackTo="/"
             className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm font-medium"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back to site</span>
-          </Link>
+            iconClassName="h-4 w-4"
+          />
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">

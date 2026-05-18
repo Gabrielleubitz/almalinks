@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BackButton from '../../components/ui/BackButton';
 import { 
   ArrowLeft, 
   Mail, 
@@ -430,13 +431,7 @@ const SystemTestPage: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Back Button */}
         <div className="mb-8">
-          <button
-            onClick={() => navigate('/admin')}
-            className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>Back to Admin Tools</span>
-          </button>
+          <BackButton fallbackTo="/admin" />
         </div>
 
         {/* Error Message */}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import BackButton from '../../components/ui/BackButton';
 import { ArrowLeft, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -33,13 +34,7 @@ const CreateChatGroup: React.FC = () => {
         <div className="max-w-4xl mx-auto px-3 sm:px-4 lg:px-8 overflow-x-hidden w-full max-w-full box-border">
           <div className="mb-6 sm:mb-8">
             <div className="flex items-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
-              <button
-                type="button"
-                onClick={() => navigate('/admin/chats')}
-                className="text-gray-600 hover:text-gray-900 transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
+              <BackButton fallbackTo="/admin/chats" iconOnly className="text-gray-600 hover:text-gray-900 transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center" iconClassName="h-5 w-5" />
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
                 <MessageCircle className="h-4 w-4 sm:h-5 sm:h-5" />
               </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, Search, Users, UserPlus, Clock, Shield, ArrowLeft } from 'lucide-react';
+import { MessageCircle, Search, Users, UserPlus, Clock, Shield } from 'lucide-react';
+import BackButton from '../components/ui/BackButton';
 import { useAuth } from '../hooks/useAuth';
 import { ChatService } from '../services/chatService';
 import JoinRequestModal from '../components/chat/JoinRequestModal';
@@ -163,14 +164,11 @@ const DiscoverChatsPage: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back button */}
           <div className="mb-4">
-            <button
-              type="button"
-              onClick={() => navigate('/chats')}
+            <BackButton
+              fallbackTo="/chats"
               className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium text-sm min-h-[44px] sm:min-h-0 touch-manipulation"
-            >
-              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              Back to Chats
-            </button>
+              iconClassName="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0"
+            />
           </div>
           {/* Page Header */}
           <div className="mb-6">

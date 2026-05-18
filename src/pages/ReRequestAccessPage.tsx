@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BackButton from '../components/ui/BackButton';
 import { User, Phone, Briefcase, Linkedin, ChevronDown, AlertCircle, CheckCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { JoinRequestService } from '../services/joinRequestService';
@@ -261,13 +262,11 @@ const ReRequestAccessPage: React.FC = () => {
 
       <div className="max-w-md w-full">
         <div className="mb-6">
-          <button
-            onClick={() => navigate(-1)}
+          <BackButton
+            fallbackTo="/login"
             className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 text-sm font-medium"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back</span>
-          </button>
+            iconClassName="h-4 w-4"
+          />
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">

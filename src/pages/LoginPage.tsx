@@ -257,7 +257,7 @@ const LoginPage: React.FC = () => {
                     onClick={() => setShowForgotPassword(false)}
                     className="text-gray-600 hover:text-gray-800 font-medium text-xs sm:text-sm min-h-[44px] sm:min-h-0 inline-flex items-center justify-center"
                   >
-                    Back to Login
+                    Back
                   </button>
                 </div>
               </form>
