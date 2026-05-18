@@ -36,21 +36,31 @@ import BulkUserImport from '../../components/admin/BulkUserImport';
 import AuditLogViewer from '../../components/admin/AuditLogViewer';
 import { TempPasswordService } from '../../services/tempPasswordService';
 import { extractLinkedInVanity, linkedInProfileHref } from '../../utils/linkedInUrl';
+import { TrusteeMentorStar } from '../../components/common/TrusteeMentorStar';
+import { getTrusteeMentorFromHubspot } from '../../utils/hubspotMemberRoles';
+import { AdminUserAvatar } from '../../components/admin/AdminUserAvatar';
+import type { CropValue } from '../../types/crop';
 
 interface UserData {
   uid: string;
   email: string;
   name: string;
+  displayName?: string;
   role: 'member' | 'admin';
   createdAt?: any;
   joinedAt?: any; // when approved (use for "join date" / "Member since")
   profileImage?: string | null;
+  avatarUrl?: string | null;
+  profileImageCrop?: CropValue | null;
   phone?: string;
   company?: string;
   work?: string;
   linkedinUsername?: string;
   position?: string;
   status?: string;
+  hubspotContactProperties?: Record<string, string | number | boolean | null> | null;
+  isTrustee?: boolean;
+  isMentor?: boolean;
 }
 
 interface ToastState {
@@ -513,26 +523,16 @@ const UserManagement: React.FC = () => {
                       <td className="px-3 sm:px-6 py-3 sm:py-4">
                         <div className="flex items-center">
                           <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 mr-2 sm:mr-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                          <div className="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full overflow-hidden">
-                            {userData.profileImage ? (
-                              <img 
-                                src={userData.profileImage} 
-                                alt={userData.name || 'User'} 
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSIzMCIgZmlsbD0iIzlDQTNBRiIvPgo8ZWxsaXBzZSBjeD0iMTAwIiBjeT0iMTQwIiByeD0iNDAiIHJ5PSIyMCIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4=';
-                                }}
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-brand-dark flex items-center justify-center text-white font-bold text-xs sm:text-sm">
-                                {userData.name?.charAt(0) || userData.email?.charAt(0) || '?'}
-                              </div>
-                            )}
-                          </div>
+                          <AdminUserAvatar user={userData} />
                           <div className="ml-2 sm:ml-4 min-w-0 flex-1">
-                            <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                              {userData.name || 'No Name'}
+                            <div className="flex flex-wrap items-center gap-1 min-w-0">
+                              <span className="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                                {userData.displayName || userData.name || 'No Name'}
+                              </span>
+                              <TrusteeMentorStar
+                                compact
+                                {...getTrusteeMentorFromHubspot(userData)}
+                              />
                             </div>
                             <div className="text-xs sm:text-sm text-gray-500 flex items-center">
                               <Calendar className="h-3 w-3 inline mr-1 flex-shrink-0" />
@@ -840,28 +840,16 @@ const UserManagement: React.FC = () => {
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0 h-16 w-16 rounded-full overflow-hidden">
-                  {selectedUser.profileImage ? (
-                    <img 
-                      src={selectedUser.profileImage} 
-                      alt={selectedUser.name || 'User'} 
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSIzMCIgZmlsbD0iIzlDQTNBRiIvPgo8ZWxsaXBzZSBjeD0iMTAwIiBjeT0iMTQwIiByeD0iNDAiIHJ5PSIyMCIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4=';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-brand-dark flex items-center justify-center text-white font-bold text-xl">
-                      {selectedUser.name?.charAt(0) || selectedUser.email?.charAt(0) || '?'}
-                    </div>
-                  )}
-                </div>
+                <AdminUserAvatar
+                  user={selectedUser}
+                  sizeClass="h-16 w-16"
+                  textClassName="font-bold text-xl"
+                />
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900">
-                    {selectedUser.name || 'No Name'}
+                    {selectedUser.displayName || selectedUser.name || 'No Name'}
                   </h3>
-                  <div className="flex items-center space-x-2 mt-1">
+                  <div className="flex items-center flex-wrap gap-2 mt-1">
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeClass(selectedUser.role)}`}>
                       {getRoleIcon(selectedUser.role)}
                       <span className="ml-1 capitalize">{selectedUser.role}</span>
@@ -875,6 +863,10 @@ const UserManagement: React.FC = () => {
                         {selectedUser.status}
                       </span>
                     )}
+                    <TrusteeMentorStar
+                      compact
+                      {...getTrusteeMentorFromHubspot(selectedUser)}
+                    />
                   </div>
                 </div>
               </div>

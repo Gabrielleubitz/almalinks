@@ -87,6 +87,11 @@ const EventManagement: React.FC = () => {
     return list;
   }, [events, eventFilter]);
 
+  const eventsNeedingHubSpotSync = useMemo(
+    () => events.filter((e) => !isHubSpotLinked(e)),
+    [events]
+  );
+
   const handleStatusUpdate = async (eventId: string, newStatus: EventData['status']) => {
     setUpdatingStatus(eventId);
     try {
@@ -571,21 +576,23 @@ const EventManagement: React.FC = () => {
             Event Management
           </h1>
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={handleSyncAllToHubspot}
-              disabled={syncingToHubspot || events.length === 0}
-              className="border border-gray-300 text-gray-700 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-all font-medium flex items-center justify-center space-x-2 text-sm min-h-[44px] sm:min-h-0 disabled:opacity-50"
-            >
-              {syncingToHubspot ? (
-                <span className="animate-pulse">Syncing…</span>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4" />
-                  <span>Sync to HubSpot</span>
-                </>
-              )}
-            </button>
+            {eventsNeedingHubSpotSync.length > 0 ? (
+              <button
+                type="button"
+                onClick={handleSyncAllToHubspot}
+                disabled={syncingToHubspot}
+                className="border border-gray-300 text-gray-700 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-all font-medium flex items-center justify-center space-x-2 text-sm min-h-[44px] sm:min-h-0 disabled:opacity-50"
+              >
+                {syncingToHubspot ? (
+                  <span className="animate-pulse">Syncing…</span>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4" />
+                    <span>Sync to HubSpot</span>
+                  </>
+                )}
+              </button>
+            ) : null}
             <Link
               to="/admin/events/create"
               className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center space-x-2 text-sm sm:text-base min-h-[44px] sm:min-h-0 flex-1 sm:flex-initial"
