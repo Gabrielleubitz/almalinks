@@ -42,7 +42,7 @@ const UnauthorizedPage: React.FC = () => {
               className="w-full bg-white text-gray-700 py-3 px-6 rounded-xl hover:bg-gray-50 transition-all duration-300 font-semibold border border-gray-200 flex items-center justify-center space-x-2"
             >
               <Shield className="h-5 w-5" />
-              <span>Go to Dashboard</span>
+              <span>Go to My Profile</span>
             </Link>
           </div>
 

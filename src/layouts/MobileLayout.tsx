@@ -10,7 +10,6 @@ import {
   Shield,
   LogOut,
   Heart,
-  Home,
   Settings
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -88,7 +87,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
     {
       label: 'My Profile',
       path: '/dashboard',
-      icon: Home,
+      icon: User,
       show: user && !isPending,
       highlight: true as const
     },
@@ -245,7 +244,17 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
                         style={{ minHeight: '48px' }} // Larger tap target for mobile
                       >
                         <div className="flex items-center space-x-3">
-                          <Icon className={`h-5 w-5 ${isActive ? 'text-brand-blue' : 'text-gray-500'}`} />
+                          <Icon
+                            className={`h-5 w-5 ${
+                              isActive && isMyProfile
+                                ? 'text-white'
+                                : isActive
+                                  ? 'text-brand-blue'
+                                  : isMyProfile
+                                    ? 'text-brand-dark'
+                                    : 'text-gray-500'
+                            }`}
+                          />
                           <span className="font-medium">{item.label}</span>
                         </div>
                         {item.badge && (

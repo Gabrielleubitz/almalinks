@@ -95,7 +95,7 @@ const ONBOARDING_STEPS_ALL: OnboardingStep[] = [
   {
     id: 'wrapup',
     title: "You're all set",
-    body: 'You can always open your Dashboard or use the menu to explore events, members, and chats.',
+    body: 'You can always open My Profile or use the menu to explore events, members, and chats.',
     primaryLabel: 'Start exploring',
     primaryAction: 'finish',
     secondaryLabel: null,

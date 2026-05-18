@@ -171,7 +171,7 @@ const SpeakerAwareHeader: React.FC = () => {
               src={logoSvg}
               alt="Logo"
               className="h-8 w-auto"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/members')}
               style={{ cursor: 'pointer' }}
             />
           </div>

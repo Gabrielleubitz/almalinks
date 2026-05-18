@@ -222,7 +222,7 @@ const ConnectPage: React.FC = () => {
                   onClick={() => navigate('/events')}
                   className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
                 >
-                  Return to Dashboard
+                  Return to My Profile
                 </button>
               </div>
             ) : success && targetUser ? (
@@ -288,7 +288,7 @@ const ConnectPage: React.FC = () => {
                     onClick={() => navigate('/events')}
                     className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
                   >
-                    Go to Dashboard
+                    Go to My Profile
                   </button>
                 </div>
               </div>
@@ -309,7 +309,7 @@ const ConnectPage: React.FC = () => {
                     onClick={() => navigate('/events')}
                     className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 font-semibold"
                   >
-                    Go to Dashboard
+                    Go to My Profile
                   </button>
                 </div>
               </div>
