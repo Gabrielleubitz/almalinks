@@ -108,6 +108,7 @@ const EventDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showTicket, setShowTicket] = useState(false);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   
   // Ref for scrolling to top
   const topRef = useRef<HTMLDivElement>(null);
@@ -415,144 +416,160 @@ const EventDetailPage: React.FC = () => {
       <div ref={topRef} />
 
       <section
-        className={`pt-[var(--content-offset-top)] bg-white border-b border-gray-100 ${showStickyRegister ? 'pb-28 sm:pb-32 md:pb-8' : 'pb-6 sm:pb-8'}`}
+        className={`pt-[var(--content-offset-top)] bg-white border-b border-gray-100 ${showStickyRegister ? 'pb-28 sm:pb-32 lg:pb-6' : 'pb-4 sm:pb-6'}`}
       >
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-4"><BackButton fallbackTo="/events" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm font-medium" iconClassName="h-4 w-4" /></div>
-
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight mb-3">{event.name}</h1>
-
-          {ended ? (
-            <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-semibold bg-gray-100 text-gray-700 border border-gray-200 mb-4">
-              Event Ended
-            </span>
-          ) : null}
-
-          <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-4 sm:p-5 space-y-3 text-sm sm:text-base text-gray-800">
-                  <EventTimeDisplay event={event} layout="split" textClassName="text-gray-800" />
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-5 w-5 text-red-700 shrink-0 mt-0.5" />
-                    <div className="min-w-0">
-                      <span className="font-semibold text-gray-800">Location: </span>
-                      {registration?.status === 'approved' && privateDetails ? (
-                        <>
-                          <span className="font-medium">
-                            {approvedEventPrimaryLocation(event.location, privateDetails)}
-                          </span>
-                          {approvedEventVenueAddress(privateDetails) ? (
-                            <span className="block text-gray-600 text-sm mt-1 whitespace-pre-wrap">
-                              {approvedEventVenueAddress(privateDetails)}
-                            </span>
-                          ) : null}
-                        </>
-                      ) : registration?.status === 'pending' ||
-                        (registration && registration.status !== 'rejected') ? (
-                        <span className="text-gray-600">Full address after approval.</span>
-                      ) : (
-                        <span className="font-medium">{event.location}</span>
-                      )}
-                    </div>
-                  </div>
-                  {registration?.status === 'approved' && privateDetails?.meetingUrl && !ended && (
-                    <div className="flex items-center gap-2">
-                      <LinkIcon className="h-5 w-5 text-brand-blue shrink-0" />
-                      <a
-                        href={privateDetails.meetingUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-brand-blue font-medium hover:underline break-all"
-                      >
-                        Join online
-                      </a>
-                    </div>
-                  )}
-            <div className="flex flex-wrap items-center gap-2 pt-0.5">
-              <span className="text-xs font-semibold uppercase tracking-wide text-gray-600 bg-white border border-gray-200 px-2 py-1 rounded-md">
-                {eventFormatLabel(event.eventFormat ?? null)}
-              </span>
-              {event.chapter ? (
-                <span className="text-xs font-medium text-gray-700 bg-white border border-gray-200 px-2 py-1 rounded-md">
-                  {event.chapter}
-                </span>
-              ) : null}
-              {accessLabel ? (
-                <span className="text-xs font-semibold text-amber-900 bg-amber-50 border border-amber-100 px-2 py-1 rounded-md">
-                  {accessLabel}
-                </span>
-              ) : null}
-            </div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-2">
+            <BackButton fallbackTo="/events" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm font-medium" iconClassName="h-4 w-4" />
           </div>
 
-          <EventRegistrationPanel variant="card" {...registrationPanelProps} />
-
-          <div className="mt-4 rounded-xl border border-gray-200 bg-white px-4 py-3 sm:px-5 sm:py-4 text-sm sm:text-base text-gray-800">
-            <span className="font-semibold text-gray-900">Cost: </span>
-            {event.costNote?.trim()
-              ? event.costNote.trim()
-              : 'Included with membership unless noted later.'}
-          </div>
-
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 md:gap-8 items-start">
+          <div className="lg:grid lg:grid-cols-[1fr_min(100%,20rem)] lg:gap-6 xl:gap-8 lg:items-start">
             <div className="min-w-0">
-              <h2 className="text-lg font-bold text-gray-900 mb-3">About this event</h2>
-              <div className="text-gray-700 text-sm sm:text-base leading-relaxed whitespace-pre-wrap">
-                {event.description}
-              </div>
-            </div>
-            {(event.speakerName?.trim() || event.speakerImageUrl?.trim()) ? (
-              <aside className="flex flex-col items-center gap-2 md:pt-8 shrink-0 mx-auto md:mx-0">
-                <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full overflow-hidden border-2 border-gray-200 shadow-sm bg-gray-100 flex items-center justify-center">
-                  {event.speakerImageUrl?.trim() ? (
-                    <img
-                      src={event.speakerImageUrl.trim()}
-                      alt={event.speakerName?.trim() ? `${event.speakerName.trim()} headshot` : 'Speaker'}
-                      className="h-full w-full object-cover"
-                      onError={e => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  ) : event.speakerName?.trim() ? (
-                    <span className="text-lg font-bold text-gray-600" aria-hidden>
-                      {speakerInitials(event.speakerName)}
-                    </span>
-                  ) : (
-                    <User className="h-10 w-10 text-gray-400" aria-hidden />
-                  )}
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight mb-2">{event.name}</h1>
+
+              {ended ? (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200 mb-2">
+                  Event Ended
+                </span>
+              ) : null}
+
+              <div className="rounded-lg border border-gray-200 bg-gray-50/60 p-3 sm:p-4 space-y-2 text-sm text-gray-800">
+                <EventTimeDisplay event={event} layout="split" dense textClassName="text-gray-800" />
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-4 w-4 text-red-700 shrink-0 mt-0.5" aria-hidden />
+                  <div className="min-w-0">
+                    <span className="font-semibold text-gray-800">Location: </span>
+                    {registration?.status === 'approved' && privateDetails ? (
+                      <>
+                        <span className="font-medium">
+                          {approvedEventPrimaryLocation(event.location, privateDetails)}
+                        </span>
+                        {approvedEventVenueAddress(privateDetails) ? (
+                          <span className="block text-gray-600 text-xs mt-0.5 whitespace-pre-wrap">
+                            {approvedEventVenueAddress(privateDetails)}
+                          </span>
+                        ) : null}
+                      </>
+                    ) : registration?.status === 'pending' ||
+                      (registration && registration.status !== 'rejected') ? (
+                      <span className="text-gray-600">Full address after approval.</span>
+                    ) : (
+                      <span className="font-medium">{event.location}</span>
+                    )}
+                  </div>
                 </div>
-                {event.speakerName?.trim() ? (
-                  <p className="text-sm font-semibold text-gray-900 text-center max-w-[9rem] leading-snug">
-                    {event.speakerName.trim()}
-                  </p>
-                ) : (
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Speaker</p>
-                )}
-                {registration?.status === 'approved' && privateDetails?.resourceLinkUrl ? (
-                  <div className="mt-4 w-full max-w-[220px] rounded-xl border border-gray-200 p-3 bg-white">
-                    <h3 className="text-xs font-bold text-gray-900 mb-2">Resources</h3>
-                    <ResourceLinkCard
-                      url={privateDetails.resourceLinkUrl}
-                      label={privateDetails.resourceLinkLabel}
-                    />
+                {registration?.status === 'approved' && privateDetails?.meetingUrl && !ended ? (
+                  <div className="flex items-center gap-2">
+                    <LinkIcon className="h-4 w-4 text-brand-blue shrink-0" aria-hidden />
+                    <a
+                      href={privateDetails.meetingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-brand-blue font-medium hover:underline break-all text-sm"
+                    >
+                      Join online
+                    </a>
                   </div>
                 ) : null}
-              </aside>
-            ) : registration?.status === 'approved' && privateDetails?.resourceLinkUrl ? (
-              <aside className="md:pt-8 shrink-0 w-full max-w-sm mx-auto md:mx-0">
-                <div className="rounded-xl border border-gray-200 p-4 bg-white">
-                  <h3 className="text-sm font-bold text-gray-900 mb-2">Resources</h3>
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-600 bg-white border border-gray-200 px-1.5 py-0.5 rounded">
+                    {eventFormatLabel(event.eventFormat ?? null)}
+                  </span>
+                  {event.chapter ? (
+                    <span className="text-[10px] font-medium text-gray-700 bg-white border border-gray-200 px-1.5 py-0.5 rounded">
+                      {event.chapter}
+                    </span>
+                  ) : null}
+                  {accessLabel ? (
+                    <span className="text-[10px] font-semibold text-amber-900 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded">
+                      {accessLabel}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="mt-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800">
+                <span className="font-semibold text-gray-900">Cost: </span>
+                {event.costNote?.trim()
+                  ? event.costNote.trim()
+                  : 'Included with membership unless noted later.'}
+              </div>
+
+              <div className="lg:hidden">
+                <EventRegistrationPanel variant="card" {...registrationPanelProps} />
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 md:gap-6 items-start">
+                <div className="min-w-0">
+                  <h2 className="text-base font-bold text-gray-900 mb-2">About this event</h2>
+                  <div
+                    className={`text-gray-700 text-sm leading-relaxed whitespace-pre-wrap ${
+                      !descriptionExpanded && (event.description?.length ?? 0) > 280 ? 'line-clamp-4' : ''
+                    }`}
+                  >
+                    {event.description}
+                  </div>
+                  {(event.description?.length ?? 0) > 280 ? (
+                    <button
+                      type="button"
+                      onClick={() => setDescriptionExpanded(v => !v)}
+                      className="mt-2 text-sm font-semibold text-brand-blue-dark hover:underline"
+                    >
+                      {descriptionExpanded ? 'Show less' : 'Read more'}
+                    </button>
+                  ) : null}
+                </div>
+                {(event.speakerName?.trim() || event.speakerImageUrl?.trim()) ? (
+                  <aside className="flex flex-col items-center gap-1.5 shrink-0 mx-auto md:mx-0 md:pt-1">
+                    <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full overflow-hidden border-2 border-gray-200 shadow-sm bg-gray-100 flex items-center justify-center">
+                      {event.speakerImageUrl?.trim() ? (
+                        <img
+                          src={event.speakerImageUrl.trim()}
+                          alt={event.speakerName?.trim() ? `${event.speakerName.trim()} headshot` : 'Speaker'}
+                          className="h-full w-full object-cover"
+                          onError={e => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      ) : event.speakerName?.trim() ? (
+                        <span className="text-base font-bold text-gray-600" aria-hidden>
+                          {speakerInitials(event.speakerName)}
+                        </span>
+                      ) : (
+                        <User className="h-8 w-8 text-gray-400" aria-hidden />
+                      )}
+                    </div>
+                    {event.speakerName?.trim() ? (
+                      <p className="text-xs font-semibold text-gray-900 text-center max-w-[8rem] leading-snug">
+                        {event.speakerName.trim()}
+                      </p>
+                    ) : (
+                      <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Speaker</p>
+                    )}
+                  </aside>
+                ) : null}
+              </div>
+
+              {registration?.status === 'approved' && privateDetails?.resourceLinkUrl ? (
+                <div className="mt-4 max-w-md rounded-lg border border-gray-200 p-3 bg-white">
+                  <h3 className="text-xs font-bold text-gray-900 mb-2">Resources</h3>
                   <ResourceLinkCard
                     url={privateDetails.resourceLinkUrl}
                     label={privateDetails.resourceLinkLabel}
                   />
                 </div>
-              </aside>
-            ) : null}
+              ) : null}
+            </div>
+
+            <aside className="hidden lg:block lg:sticky lg:top-[calc(var(--content-offset-top)+0.5rem)] self-start">
+              <EventRegistrationPanel variant="card" {...registrationPanelProps} />
+            </aside>
           </div>
         </div>
       </section>
 
       {showTicket && !ended && registration?.status === 'approved' && registration && event && (
-        <section className="py-8 bg-gray-50 border-b border-gray-100" aria-label="Your ticket">
+        <section className="py-4 sm:py-5 bg-gray-50 border-b border-gray-100" aria-label="Your ticket">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
             <EventTicketCard
               eventName={event.name}

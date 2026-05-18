@@ -12,6 +12,8 @@ interface EventTimeDisplayProps {
   textClassName?: string;
   iconClassName?: string;
   showLabels?: boolean;
+  /** Tighter spacing for event detail above-the-fold layout */
+  dense?: boolean;
 }
 
 export const EventTimeDisplay: React.FC<EventTimeDisplayProps> = ({
@@ -20,6 +22,7 @@ export const EventTimeDisplay: React.FC<EventTimeDisplayProps> = ({
   textClassName = 'text-gray-700',
   iconClassName = 'h-4 w-4 sm:h-5 sm:w-5 text-red-700 flex-shrink-0 mt-0.5',
   showLabels = true,
+  dense = false,
 }) => {
   const { dateLine, timeLine, timeSecondaryLine, timeHubLine, timezoneBanner } =
     formatEventDateAndTime(event.date, {
@@ -29,13 +32,15 @@ export const EventTimeDisplay: React.FC<EventTimeDisplayProps> = ({
     });
 
   const lines = (
-    <div className="space-y-1.5">
+    <div className={dense ? 'space-y-1' : 'space-y-1.5'}>
       {timezoneBanner ? (
         <div
-          className="flex items-start gap-2 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-2 text-xs text-sky-900"
+          className={`flex items-start gap-1.5 rounded-lg border border-sky-200 bg-sky-50 text-sky-900 ${
+            dense ? 'px-2 py-1.5 text-[11px] leading-snug' : 'px-2.5 py-2 text-xs'
+          }`}
           role="note"
         >
-          <Info className="h-4 w-4 shrink-0 mt-0.5 text-sky-700" aria-hidden />
+          <Info className={`shrink-0 text-sky-700 ${dense ? 'h-3.5 w-3.5' : 'h-4 w-4 mt-0.5'}`} aria-hidden />
           <span>{timezoneBanner}</span>
         </div>
       ) : null}
@@ -61,7 +66,7 @@ export const EventTimeDisplay: React.FC<EventTimeDisplayProps> = ({
           )}
         </p>
         {timeSecondaryLine ? (
-          <p className="text-xs text-gray-600 leading-snug">
+          <p className={dense ? 'text-[11px] text-gray-600 leading-snug' : 'text-xs text-gray-600 leading-snug'}>
             {showLabels ? (
               <>
                 <span className="font-medium text-gray-700">Also: </span>
@@ -73,7 +78,7 @@ export const EventTimeDisplay: React.FC<EventTimeDisplayProps> = ({
           </p>
         ) : null}
         {timeHubLine ? (
-          <p className="text-xs text-gray-600 leading-snug">
+          <p className={dense ? 'text-[11px] text-gray-600 leading-snug' : 'text-xs text-gray-600 leading-snug'}>
             {showLabels ? (
               <>
                 <span className="font-medium text-gray-700">Hub times: </span>

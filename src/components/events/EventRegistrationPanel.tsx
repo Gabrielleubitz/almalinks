@@ -54,7 +54,7 @@ export const EventRegistrationPanel: React.FC<EventRegistrationPanelProps> = ({
 
   const wrapperClass = isSticky
     ? 'p-0'
-    : 'mt-4 rounded-2xl border-2 border-red-200/70 bg-gradient-to-br from-white via-red-50/50 to-sky-50/40 p-4 sm:p-6 shadow-lg ring-1 ring-gray-200/60';
+    : 'mt-3 rounded-2xl border-2 border-red-200/70 bg-gradient-to-br from-white via-red-50/50 to-sky-50/40 p-3 sm:p-4 shadow-lg ring-1 ring-gray-200/60';
 
   const registerButton = (
     <button

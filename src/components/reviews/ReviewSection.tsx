@@ -54,15 +54,11 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({ eventId, isCompleted, use
   };
 
   return (
-    <section id="event-reviews" className="py-12 bg-gradient-to-br from-gray-50 to-white">
+    <section id="event-reviews" className="py-6 sm:py-8 bg-gray-50 border-t border-gray-100">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Event <span className="gradient-text">Reviews</span>
-          </h2>
-          <p className="text-lg text-gray-600">
-            See what attendees thought about this event
-          </p>
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-gray-900">Event reviews</h2>
+          <p className="text-sm text-gray-600 mt-1">Feedback from attendees</p>
         </div>
 
         {error && (
@@ -71,17 +67,17 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({ eventId, isCompleted, use
           </div>
         )}
 
-        <div className="space-y-8">
+        <div className="space-y-4">
           {/* Review Form - Only show for completed events if user attended and hasn't reviewed yet */}
           {isCompleted && userEligible && !userHasReviewed && (
             <ReviewForm eventId={eventId} onReviewSubmitted={handleReviewSubmitted} />
           )}
 
           {/* Reviews List */}
-          <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-            <div className="flex items-center space-x-3 mb-6">
-              <MessageSquare className="h-6 w-6 text-red-700" />
-              <h3 className="text-xl font-bold text-gray-900">Attendee Reviews</h3>
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 border border-gray-100">
+            <div className="flex items-center space-x-2 mb-4">
+              <MessageSquare className="h-5 w-5 text-red-700" />
+              <h3 className="text-base font-bold text-gray-900">Reviews</h3>
             </div>
             
             <ReviewList reviews={reviews} loading={loading} />

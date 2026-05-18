@@ -4,40 +4,37 @@ import { Linkedin } from 'lucide-react';
 import logoSvg from '../assets/alma-links-logo.svg';
 
 interface FooterProps {
-  /** Use a compact footer for in-app pages (e.g. Discover Chats) so content gets more space */
+  /** Minimal single-row footer for in-app pages (events, chats, etc.) */
   compact?: boolean;
 }
 
 const Footer: React.FC<FooterProps> = ({ compact = true }) => {
   if (compact) {
     return (
-      <footer className="flex-shrink-0 bg-gray-900 text-white py-4 sm:py-5 mt-auto pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-center">
+      <footer className="flex-shrink-0 bg-gray-900 text-white py-2 sm:py-2.5 mt-auto pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-4 gap-y-1 text-center text-[11px] sm:text-xs">
             <img
               src={logoSvg}
               alt="AlmaLinks"
-              className="h-6 w-auto filter brightness-0 invert inline-block"
+              className="h-5 w-auto filter brightness-0 invert inline-block"
             />
-            <Link to="/help" className="text-gray-400 hover:text-white text-xs sm:text-sm">
-              Need help? Report a bug
+            <Link to="/help" className="text-gray-400 hover:text-white whitespace-nowrap">
+              Help
             </Link>
-            <Link to="/terms" className="text-gray-400 hover:text-white text-xs sm:text-sm">
-              Terms &amp; Conditions
+            <Link to="/terms" className="text-gray-400 hover:text-white whitespace-nowrap">
+              Terms
             </Link>
-            <p className="text-gray-400 text-xs sm:text-sm">
-              A community of impact-driven leaders. Connect with us anytime!
-            </p>
             <a
               href="https://www.linkedin.com/company/almalinks/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-gray-400 hover:text-white inline-flex items-center"
               aria-label="LinkedIn"
             >
-              <Linkedin className="h-4 w-4 sm:h-5 sm:w-5" />
+              <Linkedin className="h-3.5 w-3.5" />
             </a>
-            <span className="text-gray-500 text-xs">&copy; 2025 AlmaLinks</span>
+            <span className="text-gray-500 whitespace-nowrap">&copy; {new Date().getFullYear()} AlmaLinks</span>
           </div>
         </div>
       </footer>
@@ -45,46 +42,40 @@ const Footer: React.FC<FooterProps> = ({ compact = true }) => {
   }
 
   return (
-    <footer className="bg-gray-900 text-white py-5 sm:py-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
+    <footer className="bg-gray-900 text-white py-4 sm:py-5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
         <div className="text-center">
-          <div className="flex items-center justify-center mb-3">
+          <div className="flex items-center justify-center mb-2">
             <img
               src={logoSvg}
               alt="AlmaLinks Logo"
-              className="h-8 sm:h-9 w-auto filter brightness-0 invert"
+              className="h-7 sm:h-8 w-auto filter brightness-0 invert"
             />
           </div>
 
-          <p className="text-gray-400 text-xs sm:text-sm mb-3 max-w-xl mx-auto px-2 leading-relaxed">
-            Impact-driven leaders building meaningful connections. Questions? We&apos;re here.
+          <p className="text-gray-400 text-xs sm:text-sm mb-2 max-w-xl mx-auto px-2 leading-relaxed">
+            Impact-driven leaders building meaningful connections.
           </p>
 
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mb-3 px-2">
-            <Link
-              to="/help"
-              className="text-gray-400 hover:text-white text-xs sm:text-sm font-medium"
-            >
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mb-2 px-2">
+            <Link to="/help" className="text-gray-400 hover:text-white text-xs sm:text-sm font-medium">
               Help
             </Link>
-            <Link
-              to="/terms"
-              className="text-gray-400 hover:text-white text-xs sm:text-sm font-medium"
-            >
+            <Link to="/terms" className="text-gray-400 hover:text-white text-xs sm:text-sm font-medium">
               Terms
             </Link>
             <a
               href="https://www.linkedin.com/company/almalinks/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white min-h-[40px] min-w-[40px] inline-flex items-center justify-center sm:min-h-0 sm:min-w-0"
+              className="text-gray-400 hover:text-white inline-flex items-center justify-center"
               aria-label="LinkedIn"
             >
-              <Linkedin className="h-4 w-4 sm:h-5 sm:w-5" />
+              <Linkedin className="h-4 w-4" />
             </a>
           </div>
 
-          <div className="pt-3 border-t border-gray-800 text-gray-500 text-xs">
+          <div className="pt-2 border-t border-gray-800 text-gray-500 text-[11px] sm:text-xs">
             <p>&copy; {new Date().getFullYear()} AlmaLinks</p>
           </div>
         </div>
