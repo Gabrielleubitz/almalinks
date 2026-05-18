@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MapPin, User, Check, X, Clock, UserPlus } from 'lucide-react';
+import { Search, User, Check, X, Clock, UserPlus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { UserService } from '../services/userService';
 import { ConnectionService } from '../services/connectionService';
@@ -301,14 +301,14 @@ const MembersPage: React.FC = () => {
     return (
       <div
         key={member.uid}
-        className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col min-h-[140px] hover:border-brand-blue/30 hover:shadow transition-all ${cardOutlineClass}`}
+        className={`bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:border-brand-blue/30 hover:shadow transition-all ${cardOutlineClass}`}
       >
         <Link
           to={`/profile/${member.uid}`}
-          className="block p-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-inset"
+          className="block p-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-inset"
         >
-          <div className="flex gap-3">
-            <div className="w-14 h-14 rounded-full overflow-hidden border border-gray-100 flex-shrink-0 relative bg-gray-50">
+          <div className="flex gap-2">
+            <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 flex-shrink-0 relative bg-gray-50">
               <ImageWithCrop
                 src={String(member.avatarUrl || '')}
                 crop={member.profileImageCrop ?? null}
@@ -319,31 +319,23 @@ const MembersPage: React.FC = () => {
                 fallback={avatarFallback}
               />
             </div>
-            <div className="min-w-0 flex-1 space-y-1">
+            <div className="min-w-0 flex-1 space-y-0.5">
               <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                <span className="font-semibold text-gray-900 text-sm leading-snug line-clamp-2">{displayName}</span>
+                <span className="font-semibold text-gray-900 text-xs leading-snug line-clamp-2">{displayName}</span>
                 <TrusteeMentorStar compact isTrustee={member.isTrustee} isMentor={member.isMentor} />
               </div>
               {member.bioTitle ? (
-                <p className="text-xs text-brand-dark font-medium line-clamp-2 leading-snug">{member.bioTitle}</p>
+                <p className="text-[11px] text-brand-dark font-medium line-clamp-1 leading-snug">{member.bioTitle}</p>
               ) : null}
               {chapterLabel ? (
-                <p className="text-xs text-gray-500">
-                  <span className="text-gray-400">Chapter</span> · {chapterLabel}
-                </p>
-              ) : null}
-              {(member.city || member.country) ? (
-                <p className="text-xs text-gray-500 flex items-start gap-1">
-                  <MapPin className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-gray-400" aria-hidden />
-                  <span className="line-clamp-2">{[member.city, member.country].filter(Boolean).join(', ')}</span>
-                </p>
+                <p className="text-[11px] text-gray-500 line-clamp-1">{chapterLabel}</p>
               ) : null}
             </div>
           </div>
         </Link>
 
         {showCardFooter ? (
-        <div className="mt-auto px-3 pb-3 pt-0 space-y-2 border-t border-gray-50 bg-gray-50/60">
+        <div className="mt-auto px-2 pb-2 pt-0 space-y-2 border-t border-gray-50 bg-gray-50/60">
           {hasIncomingRequest && incomingReq && (
             <div className="flex flex-wrap items-center gap-2 pt-2">
               <button
@@ -410,39 +402,39 @@ const MembersPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full">
       <Header />
       
-      {/* Hero Section - content below fixed header + safe area */}
-      <section className="pt-[var(--content-offset-top)] sm:pt-24 pb-8 bg-gradient-to-br from-blue-50/80 to-indigo-50/60">
+      <section className="pt-[var(--content-offset-top)] sm:pt-20 pb-4 border-b border-gray-100 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-              Members
-            </h1>
-            <p className="text-sm sm:text-base text-gray-600 mb-6">
-              Browse by chapter or search the directory. Photos sync from HubSpot when available; otherwise upload yours in your profile.
-            </p>
+          <div className="max-w-2xl">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Members</h1>
+            <p className="text-xs text-gray-500 mt-0.5 mb-3">Search or filter by chapter.</p>
 
-            <div className="w-full max-w-xl mx-auto space-y-2">
+            <form role="search" className="w-full max-w-xl" onSubmit={(e) => e.preventDefault()}>
+              <label htmlFor="members-search" className="block text-xs font-medium text-gray-700 mb-1">
+                Search members
+              </label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" aria-hidden />
                 <input
+                  id="members-search"
                   type="search"
-                  placeholder="Name, title, bio, city, chapter…"
+                  placeholder="Name, company, title, city, chapter…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue focus:border-brand-blue bg-white shadow-sm"
+                  className="w-full pl-10 pr-3 py-3 text-sm border border-gray-300 rounded-lg bg-white shadow-sm ring-1 ring-gray-200/80 placeholder:text-gray-400 focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
                   aria-describedby="members-search-hint"
+                  autoComplete="off"
                 />
               </div>
-              <p id="members-search-hint" className="text-left text-xs text-gray-500 px-0.5">
-                Free text: matches if your words appear anywhere in those fields (case-insensitive), not fuzzy spelling.
+              <p id="members-search-hint" className="mt-1.5 text-[11px] text-gray-500 leading-snug">
+                Free-text search: your words must appear in the profile (name, title, bio, city, country, or chapter). Case-insensitive; not spell-check or fuzzy match.
               </p>
-            </div>
+            </form>
 
-            <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <div className="mt-4 flex flex-wrap gap-1.5">
               <button
                 type="button"
                 onClick={() => setChapterFilter(CHAPTER_FILTER_ALL)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
                   chapterFilter === CHAPTER_FILTER_ALL
                     ? 'bg-brand-dark text-white border-brand-dark'
                     : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
@@ -455,7 +447,7 @@ const MembersPage: React.FC = () => {
                   key={id}
                   type="button"
                   onClick={() => setChapterFilter(id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
                     chapterFilter === id
                       ? 'bg-brand-dark text-white border-brand-dark'
                       : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
@@ -467,14 +459,14 @@ const MembersPage: React.FC = () => {
             </div>
 
             {currentUser?.uid ? (
-              <div className="mt-5 flex justify-center">
+              <div className="mt-4">
                 <button
                   type="button"
                   onClick={() => {
                     setShowConnectionRequestsPanel(true);
                     void loadIncomingRequests();
                   }}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-gray-200 bg-white text-sm font-semibold text-gray-900 shadow-sm hover:border-brand-blue hover:bg-blue-50/40 transition-colors"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-900 shadow-sm hover:border-brand-blue hover:bg-blue-50/40 transition-colors"
                 >
                   <UserPlus className="h-4 w-4 text-brand-dark shrink-0" aria-hidden />
                   <span>Connection requests</span>
@@ -491,10 +483,10 @@ const MembersPage: React.FC = () => {
       </section>
 
       {/* Members Grid */}
-      <section className="py-10">
+      <section className="py-6">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {(searchQuery.trim() || chapterFilter !== CHAPTER_FILTER_ALL) ? (
-            <div className="mb-6 text-sm text-gray-600">
+            <div className="mb-4 text-xs text-gray-600">
               {filteredMembers.length} member{filteredMembers.length === 1 ? '' : 's'}
               {chapterFilter !== CHAPTER_FILTER_ALL ? (
                 <> · Chapter: {DIRECTORY_CHAPTER_FILTER_ORDER.find((c) => c.id === chapterFilter)?.label ?? chapterFilter}</>
@@ -504,7 +496,7 @@ const MembersPage: React.FC = () => {
           ) : null}
 
           {filteredMembers.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
               {filteredMembers.map(renderMemberCard)}
             </div>
           ) : (
