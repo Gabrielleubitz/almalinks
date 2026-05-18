@@ -17,6 +17,8 @@ import Favicon from '../components/ui/Favicon';
 import { linkedInProfileHref } from '../utils/linkedInUrl';
 import SavedIndicator from '../components/ui/SavedIndicator';
 import BackButton from '../components/ui/BackButton';
+import { resolveDirectoryAvatarUrl } from '../utils/memberHubspotDisplay';
+import type { UserProfile } from '../types/user';
 
 // Country codes data for phone editing
 const COUNTRY_CODES = [
@@ -107,8 +109,6 @@ const DashboardPage: React.FC = () => {
   const [profileUpdateSuccess, setProfileUpdateSuccess] = useState<string | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [profileImageCrop, setProfileImageCrop] = useState<CropValue | null>(null);
-  const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(null);
-  const [coverCrop, setCoverCrop] = useState<CropValue | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -217,10 +217,9 @@ const DashboardPage: React.FC = () => {
       });
       setSkillsInputValue((user.skills || []).join(', '));
       setSelectedCountryCode(countryCode);
-      setProfileImageUrl(user.profileImage || null);
+      const profile = user as UserProfile;
+      setProfileImageUrl(resolveDirectoryAvatarUrl(profile) || user.profileImage || null);
       setProfileImageCrop((user as { profileImageCrop?: CropValue | null }).profileImageCrop || null);
-      setCoverPhotoUrl((user as { coverPhotoUrl?: string | null }).coverPhotoUrl || null);
-      setCoverCrop((user as { coverCrop?: CropValue | null }).coverCrop || null);
     }
   }, [user, isEditingProfile]);
 
@@ -349,8 +348,6 @@ const DashboardPage: React.FC = () => {
         position: editFormData.position,
         profileImage: profileImageUrl,
         profileImageCrop: profileImageCrop ?? undefined,
-        coverPhotoUrl: coverPhotoUrl,
-        coverCrop: coverCrop ?? undefined,
         bioTitle: editFormData.bioTitle.trim(),
         bio: editFormData.bio.trim(),
         city: editFormData.city.trim(),
@@ -430,10 +427,9 @@ const DashboardPage: React.FC = () => {
       });
       setSkillsInputValue((user.skills || []).join(', '));
       setSelectedCountryCode(countryCode);
-      setProfileImageUrl(user.profileImage || null);
+      const profile = user as UserProfile;
+      setProfileImageUrl(resolveDirectoryAvatarUrl(profile) || user.profileImage || null);
       setProfileImageCrop((user as { profileImageCrop?: CropValue | null }).profileImageCrop || null);
-      setCoverPhotoUrl((user as { coverPhotoUrl?: string | null }).coverPhotoUrl || null);
-      setCoverCrop((user as { coverCrop?: CropValue | null }).coverCrop || null);
     }
   };
 
@@ -562,33 +558,32 @@ const DashboardPage: React.FC = () => {
           }
         >
           <div className="max-w-3xl mx-auto px-3 sm:px-4 md:px-6 w-full max-w-full box-border">
-            <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Profile</h1>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {profileCompletion.percentage}% complete · {connectionsCount} connection{connectionsCount === 1 ? '' : 's'} · {upcomingRsvpRegistrations.length} upcoming RSVP{upcomingRsvpRegistrations.length === 1 ? '' : 's'}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsEditingProfile(true);
-                  setProfileUpdateError(null);
-                  setProfileUpdateSuccess(null);
-                  setTimeout(() => profileSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-dark text-white text-sm font-medium hover:bg-brand-dark-hover shrink-0"
-              >
-                <Edit className="h-4 w-4" />
-                Edit profile
-              </button>
+            <div className="mb-4">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Profile</h1>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {profileCompletion.percentage}% complete · {connectionsCount} connection{connectionsCount === 1 ? '' : 's'} · {upcomingRsvpRegistrations.length} upcoming RSVP{upcomingRsvpRegistrations.length === 1 ? '' : 's'}
+              </p>
             </div>
 
             <div className="space-y-4 w-full max-w-full">
               <div ref={profileSectionRef} className="w-full max-w-full min-w-0" data-onboarding="chapter">
                 <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 border border-gray-100 w-full max-w-full min-w-0 overflow-hidden">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between gap-3 mb-3">
                     <h2 className="text-base font-semibold text-gray-900">Your Profile</h2>
+                    {!isEditingProfile && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingProfile(true);
+                          setProfileUpdateError(null);
+                          setProfileUpdateSuccess(null);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-dark text-white text-sm font-medium hover:bg-brand-dark-hover shrink-0"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Edit profile
+                      </button>
+                    )}
                   </div>
 
                   {/* Success Message */}
@@ -1162,18 +1157,6 @@ const DashboardPage: React.FC = () => {
                     </div>
                     <span className="text-xs font-medium text-gray-700">{profileCompletion.percentage}%</span>
                   </div>
-                  {profileCompletion.percentage < 100 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsEditingProfile(true);
-                        setTimeout(() => profileSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-                      }}
-                      className="w-full text-xs font-medium text-white bg-brand-blue hover:bg-brand-blue-hover py-2 px-3 rounded-lg"
-                    >
-                      Complete profile
-                    </button>
-                  )}
                 </div>
               </div>
 

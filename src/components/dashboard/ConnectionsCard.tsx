@@ -7,6 +7,8 @@ import { EventService } from '../../services/eventService';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { linkedInProfileHref } from '../../utils/linkedInUrl';
+import ImageWithCrop from '../profile/ImageWithCrop';
+import ProfileAvatarPlaceholder from '../profile/ProfileAvatarPlaceholder';
 
 interface EnrichedConnection extends LegacyConnection {
   partnerData?: {
@@ -608,28 +610,20 @@ const ConnectionsCard: React.FC<ConnectionsCardProps> = ({ compact = false }) =>
                     {/* Header Section - Avatar and Name */}
                     <div className={compact ? 'flex items-start space-x-2 mb-2' : 'flex items-start space-x-3 mb-4'}>
                       <div className={compact ? 'w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-brand-dark' : 'w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-brand-dark'}>
-                        {partner.profileImage ? (
-                          <img
-                            src={partner.profileImage}
-                            alt={partner.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              console.error('❌ Image load error for:', partner.name, partner.profileImage);
-                              // Hide the broken image and show fallback
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const fallback = target.nextElementSibling as HTMLElement;
-                              if (fallback) {
-                                fallback.style.display = 'flex';
-                              }
-                            }}
-                          />
-                        ) : null}
-                        <div
-                          className={`w-full h-full bg-brand-dark flex items-center justify-center text-white font-semibold ${compact ? 'text-sm' : 'text-lg'} ${partner.profileImage ? 'hidden' : 'flex'}`}
-                        >
-                          {partner.name.charAt(0).toUpperCase()}
-                        </div>
+                        <ImageWithCrop
+                          src={String(partner.profileImage || '')}
+                          crop={null}
+                          shape="circle"
+                          alt=""
+                          className="rounded-full w-full h-full"
+                          urlIsCropped={true}
+                          fallback={
+                            <ProfileAvatarPlaceholder
+                              name={partner.name}
+                              textClassName={compact ? 'font-semibold text-sm' : 'font-semibold text-lg'}
+                            />
+                          }
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className={compact ? 'text-sm font-semibold text-gray-900 line-clamp-1 mb-0.5' : 'font-semibold text-gray-900 line-clamp-1 mb-1'}>{partner.name}</h4>

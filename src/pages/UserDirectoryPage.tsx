@@ -506,7 +506,7 @@ const UserDirectoryPage: React.FC = () => {
                       <div className="flex items-center space-x-4 mb-4">
                         <Link
                           to={`/profile/${userCard.uid}`}
-                          className="block w-16 h-16 rounded-full overflow-hidden flex-shrink-0 relative"
+                          className="block w-16 h-16 rounded-full overflow-hidden flex-shrink-0 relative bg-brand-dark"
                         >
                           <ImageWithCrop
                             src={String(userCard.avatarUrl || '')}
@@ -582,7 +582,7 @@ const UserDirectoryPage: React.FC = () => {
                       <div className="flex items-center space-x-6 flex-1">
                         <Link
                           to={`/profile/${userCard.uid}`}
-                          className="block w-16 h-16 rounded-full overflow-hidden flex-shrink-0 relative"
+                          className="block w-16 h-16 rounded-full overflow-hidden flex-shrink-0 relative bg-brand-dark"
                         >
                           <ImageWithCrop
                             src={String(userCard.avatarUrl || '')}

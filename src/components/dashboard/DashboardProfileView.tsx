@@ -15,7 +15,9 @@ import {
 import { EventData } from '../../services/eventService';
 import { ConnectionService } from '../../services/connectionService';
 import ImageWithCrop from '../profile/ImageWithCrop';
+import ProfileAvatarPlaceholder from '../profile/ProfileAvatarPlaceholder';
 import BioHtml from '../profile/BioHtml';
+import { resolveDirectoryAvatarUrl } from '../../utils/memberHubspotDisplay';
 import Favicon from '../ui/Favicon';
 import AnnouncementsSidebar from '../announcements/AnnouncementsSidebar';
 import { linkedInProfileHref } from '../../utils/linkedInUrl';
@@ -62,6 +64,12 @@ const DashboardProfileView: React.FC<DashboardProfileViewProps> = ({
   const [bioExpanded, setBioExpanded] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
+  const avatarSrc =
+    profileImageUrl ||
+    resolveDirectoryAvatarUrl(user) ||
+    user.profileImage ||
+    user.avatarUrl ||
+    '';
   const industryTags = splitMultiValue(user.industry);
   const specialtyTags = splitMultiValue(user.specialty);
   const hasDetails =
@@ -82,29 +90,25 @@ const DashboardProfileView: React.FC<DashboardProfileViewProps> = ({
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-3 border-b border-gray-100">
         <div className="relative mx-auto sm:mx-0 h-16 w-16 flex-shrink-0 rounded-full overflow-hidden ring-2 ring-gray-100 bg-brand-dark text-white">
-          {user.profileImage || profileImageUrl ? (
-            <ImageWithCrop
-              src={(profileImageUrl || user.profileImage) as string}
-              crop={
-                profileImageCrop ??
-                (user as { profileImageCrop?: CropValue | null }).profileImageCrop ??
-                null
-              }
-              shape="circle"
-              alt=""
-              className="absolute inset-0 h-full w-full"
-              urlIsCropped={true}
-              fallback={
-                <span className="flex h-full w-full items-center justify-center text-base font-semibold bg-brand-dark">
-                  {(user.displayName?.trim()?.charAt(0) || user.email?.trim()?.charAt(0) || '?').toUpperCase()}
-                </span>
-              }
-            />
-          ) : (
-            <span className="flex h-full w-full items-center justify-center text-lg font-semibold">
-              {(user.displayName?.trim()?.charAt(0) || user.email?.trim()?.charAt(0) || '?').toUpperCase()}
-            </span>
-          )}
+          <ImageWithCrop
+            src={String(avatarSrc)}
+            crop={
+              profileImageCrop ??
+              (user as { profileImageCrop?: CropValue | null }).profileImageCrop ??
+              null
+            }
+            shape="circle"
+            alt=""
+            className="absolute inset-0 h-full w-full"
+            urlIsCropped={true}
+            fallback={
+              <ProfileAvatarPlaceholder
+                name={user.displayName}
+                email={user.email}
+                textClassName="font-semibold text-base"
+              />
+            }
+          />
         </div>
         <div className="flex-1 min-w-0 text-center sm:text-left">
           <h3 className="text-lg font-bold text-gray-900">{user.displayName || 'Your Name'}</h3>

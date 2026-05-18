@@ -1,4 +1,5 @@
 import React from 'react';
+import { profileAvatarPlaceholderClassName } from '../../utils/profileAvatarPlaceholder';
 
 export interface ReactionUser {
   id: string;
@@ -45,7 +46,7 @@ const AvatarStack: React.FC<AvatarStackProps> = ({
         return (
           <div
             key={uid}
-            className="rounded-full flex-shrink-0 overflow-hidden border-2 border-white bg-gray-200 flex items-center justify-center text-gray-600 font-medium"
+            className={`rounded-full flex-shrink-0 overflow-hidden border-2 border-white ${profileAvatarPlaceholderClassName('font-medium')}`}
             style={{
               width: size,
               height: size,
@@ -64,7 +65,7 @@ const AvatarStack: React.FC<AvatarStackProps> = ({
       })}
       {remaining > 0 && (
         <div
-          className="rounded-full flex-shrink-0 flex items-center justify-center bg-gray-200 border-2 border-white text-gray-600 font-medium"
+          className={`rounded-full flex-shrink-0 border-2 border-white ${profileAvatarPlaceholderClassName('font-medium')}`}
           style={{
             width: size,
             height: size,

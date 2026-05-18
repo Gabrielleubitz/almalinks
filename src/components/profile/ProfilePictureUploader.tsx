@@ -158,7 +158,7 @@ const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
 
       <div className="relative mb-4" ref={menuRef}>
         <div
-          className={`${sizeClasses[size]} rounded-full overflow-hidden border-2 border-gray-200 relative group cursor-pointer`}
+          className={`${sizeClasses[size]} rounded-full overflow-hidden border-2 border-gray-200 relative group cursor-pointer bg-brand-dark`}
           onClick={handleOpenSourceMenu}
         >
           {hasImage ? (
