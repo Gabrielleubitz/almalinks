@@ -6,8 +6,8 @@ import { ConnectionService } from '../services/connectionService';
 import { useAuth } from '../hooks/useAuth';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import AnnouncementsSidebar from '../components/announcements/AnnouncementsSidebar';
 import ConnectionsCard from '../components/dashboard/ConnectionsCard';
+import DashboardProfileView from '../components/dashboard/DashboardProfileView';
 import ProfilePictureUploader from '../components/profile/ProfilePictureUploader';
 import ImageWithCrop from '../components/profile/ImageWithCrop';
 import RichTextBioEditor from '../components/profile/RichTextBioEditor';
@@ -73,7 +73,7 @@ const POSITION_OPTIONS = [
   { value: 'other', label: 'Other' }
 ];
 
-const EventsPage: React.FC = () => {
+const DashboardPage: React.FC = () => {
   const [events, setEvents] = useState<EventData[]>([]);
   const [userRegistrations, setUserRegistrations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -561,7 +561,7 @@ const EventsPage: React.FC = () => {
               : 'pt-[var(--content-offset-top)] sm:pt-20 pb-4 sm:pb-6 bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full box-border max-h-[calc(100dvh-4.5rem)] lg:max-h-[calc(100dvh-5rem)] overflow-y-auto'
           }
         >
-          <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 w-full max-w-full box-border">
+          <div className="max-w-3xl mx-auto px-3 sm:px-4 md:px-6 w-full max-w-full box-border">
             <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Profile</h1>
@@ -584,10 +584,8 @@ const EventsPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Main + sidebar */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 w-full max-w-full">
-
-              <div ref={profileSectionRef} className="lg:col-span-8 space-y-4 w-full max-w-full min-w-0" data-onboarding="chapter">
+            <div className="space-y-4 w-full max-w-full">
+              <div ref={profileSectionRef} className="w-full max-w-full min-w-0" data-onboarding="chapter">
                 <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 border border-gray-100 w-full max-w-full min-w-0 overflow-hidden">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-base font-semibold text-gray-900">Your Profile</h2>
@@ -1113,446 +1111,113 @@ const EventsPage: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-5">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-4 pb-4 border-b border-gray-100">
-                        <div className="relative mx-auto sm:mx-0 h-20 w-20 flex-shrink-0 rounded-full overflow-hidden ring-2 ring-gray-100 bg-brand-dark text-white">
-                          {user?.profileImage || profileImageUrl ? (
-                            <ImageWithCrop
-                              src={(profileImageUrl || user?.profileImage) as string}
-                              crop={profileImageCrop ?? (user as { profileImageCrop?: CropValue | null })?.profileImageCrop ?? null}
-                              shape="circle"
-                              alt=""
-                              className="absolute inset-0 h-full w-full"
-                              urlIsCropped={true}
-                              fallback={
-                                <span className="flex h-full w-full items-center justify-center text-lg font-semibold bg-brand-dark">
-                                  {(user?.displayName?.trim()?.charAt(0) || user?.email?.trim()?.charAt(0) || '?').toUpperCase()}
-                                </span>
-                              }
-                            />
-                          ) : (
-                            <span className="flex h-full w-full items-center justify-center text-xl font-semibold">
-                              {(user?.displayName?.trim()?.charAt(0) || user?.email?.trim()?.charAt(0) || '?').toUpperCase()}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0 text-center sm:text-left">
-                          <h3 className="text-xl font-bold text-gray-900">
-                            {user?.displayName || 'Your Name'}
-                          </h3>
-                          {user?.bioTitle && (
-                            <p className="text-sm text-brand-dark font-medium mt-1">{user.bioTitle}</p>
-                          )}
-                          <div className="text-gray-600 text-sm space-y-0.5 mt-2">
-                            {user?.email && (
-                              <div className="flex items-center justify-center sm:justify-start gap-2">
-                                <Mail className="h-3.5 w-3.5 flex-shrink-0" />
-                                <span className="truncate">{user.email}</span>
-                              </div>
-                            )}
-                            {user?.phone && (
-                              <div className="flex items-center justify-center sm:justify-start gap-2">
-                                <Phone className="h-3.5 w-3.5 flex-shrink-0" />
-                                <span>{user.phone}</span>
-                              </div>
-                            )}
-                          </div>
-                          {imageUploadError && (
-                            <p className="text-red-600 text-xs mt-2">{imageUploadError}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Basic Information Section */}
-                      <div className="bg-white border border-gray-200 rounded-2xl p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-                          <User className="h-5 w-5 mr-2 text-gray-500" />
-                          Basic Information
-                        </h3>
-
-                        <div className="grid md:grid-cols-3 gap-4">
-                          <div className="flex items-center space-x-3">
-                            <Linkedin className="h-5 w-5 text-gray-400" />
-                            <div>
-                              <div className="text-sm text-gray-500">LinkedIn</div>
-                              <div className="font-medium">
-                                {user?.linkedinUsername ? (
-                                  <a
-                                    href={linkedInProfileHref(user.linkedinUsername)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-brand-blue hover:text-brand-blue-hover hover:underline"
-                                  >
-                                    {ConnectionService.formatLinkedinUrl(user.linkedinUsername)}
-                                  </a>
-                                ) : (
-                                  'Not provided'
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Professional Information Section */}
-                      <div className="bg-white border border-gray-200 rounded-2xl p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-                          <Briefcase className="h-5 w-5 mr-2 text-gray-500" />
-                          Professional Information
-                        </h3>
-                        <div className="grid md:grid-cols-2 gap-6">
-                          <div className="flex items-center space-x-3">
-                            <Briefcase className="h-5 w-5 text-gray-400" />
-                            <div>
-                              <div className="text-sm text-gray-500">Job Title</div>
-                              <div className="font-medium">{user?.work || 'Not provided'}</div>
-                            </div>
-                          </div>
-                          
-                          {user?.company && (
-                            <div className="flex items-center space-x-3">
-                              <Briefcase className="h-5 w-5 text-gray-400" />
-                              <div>
-                                <div className="text-sm text-gray-500">Company</div>
-                                <div className="font-medium">{user.company}</div>
-                              </div>
-                            </div>
-                          )}
-                          
-                          <div className="flex items-center space-x-3">
-                            <User className="h-5 w-5 text-gray-400" />
-                            <div>
-                              <div className="text-sm text-gray-500">Position</div>
-                              <div className="font-medium">{formatPosition(user?.position) || 'Not provided'}</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Location & Contact Section */}
-                      {((user?.city || user?.country) || user?.timezone) && (
-                        <div className="bg-white border border-gray-200 rounded-2xl p-6">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-                            <MapPin className="h-5 w-5 mr-2 text-gray-500" />
-                            Location & Contact
-                          </h3>
-                          <div className="grid md:grid-cols-2 gap-6">
-                            {(user?.city || user?.country) && (
-                              <div className="flex items-center space-x-3">
-                                <MapPin className="h-5 w-5 text-gray-400" />
-                                <div>
-                                  <div className="text-sm text-gray-500">Location</div>
-                                  <div className="font-medium">
-                                    {[user?.city, user?.country].filter(Boolean).join(', ')}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {user?.timezone && (
-                              <div className="flex items-center space-x-3">
-                                <Clock className="h-5 w-5 text-gray-400" />
-                                <div>
-                                  <div className="text-sm text-gray-500">Timezone</div>
-                                  <div className="font-medium">{user.timezone}</div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Social Media & Online Presence Section */}
-                      {(user?.website || user?.twitter) && (
-                        <div className="bg-white border border-gray-200 rounded-2xl p-6">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-                            <Globe className="h-5 w-5 mr-2 text-gray-500" />
-                            Social Media & Online Presence
-                          </h3>
-                          <div className="grid md:grid-cols-2 gap-6">
-                            {user?.website && (
-                              <div className="flex items-center space-x-3">
-                                <Favicon url={user.website} size={20} iconClassName="text-gray-400" />
-                                <div>
-                                  <div className="text-sm text-gray-500">Website</div>
-                                  <div className="font-medium">
-                                    <a
-                                      href={user.website}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-brand-blue hover:text-brand-blue-hover hover:underline"
-                                    >
-                                      {user.website.replace(/^https?:\/\//, '')}
-                                    </a>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {user?.twitter && (
-                              <div className="flex items-center space-x-3">
-                                <Twitter className="h-5 w-5 text-gray-400" />
-                                <div>
-                                  <div className="text-sm text-gray-500">Twitter/X</div>
-                                  <div className="font-medium">
-                                    <a
-                                      href={`https://twitter.com/${user.twitter}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-brand-blue hover:text-brand-blue-hover hover:underline"
-                                    >
-                                      @{user.twitter}
-                                    </a>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* About You Section */}
-                      {(user?.bio || (user?.skills && user.skills.length > 0)) && (
-                        <div className="bg-white border border-gray-200 rounded-2xl p-6">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-6">About You</h3>
-                          <div className="space-y-6">
-                            {/* Bio */}
-                            {user?.bio && (
-                              <div>
-                                <h4 className="text-sm font-medium text-gray-700 mb-3">Personal Bio</h4>
-                                <div className="bg-gray-50 rounded-xl p-4">
-                                  <BioHtml html={user.bio} />
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Skills */}
-                            {user?.skills && user.skills.length > 0 && (
-                              <div>
-                                <h4 className="text-sm font-medium text-gray-700 mb-3">Skills & Expertise</h4>
-                                <div className="flex flex-wrap gap-2">
-                                  {user.skills.map((skill, index) => (
-                                    <span
-                                      key={index}
-                                      className="px-3 py-1 bg-blue-50 text-blue-800 rounded-full text-sm font-medium"
-                                    >
-                                      {skill}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <DashboardProfileView
+                      user={user as import('../types/user').UserProfile}
+                      profileImageUrl={profileImageUrl}
+                      profileImageCrop={profileImageCrop}
+                      imageUploadError={imageUploadError}
+                      events={events}
+                      upcomingRsvpRegistrations={upcomingRsvpRegistrations}
+                      registrationsLoading={registrationsLoading}
+                      formatPosition={formatPosition}
+                    />
                   )}
-                </div>
 
-                {/* Connections Section */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 w-full max-w-full min-w-0 overflow-hidden">
-                  <div className="p-4 sm:p-6 border-b border-gray-100">
-                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Your Network</h2>
-                  </div>
-                  <div className="p-3 sm:p-4 w-full max-w-full min-w-0 overflow-x-auto max-h-[220px] overflow-y-auto">
-                    <ConnectionsCard compact />
-                  </div>
                 </div>
               </div>
 
-              <div className="lg:col-span-4 space-y-3 w-full max-w-full min-w-0">
-                <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4 border border-gray-100 w-full max-w-full min-w-0 overflow-hidden">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Your Upcoming AlmaLinks Events</h3>
-                  {registrationsLoading ? (
-                    <p className="text-xs text-gray-500 py-2">Loading…</p>
-                  ) : upcomingRsvpRegistrations.length === 0 ? (
-                    <p className="text-xs text-gray-600 mb-3">No new upcoming events at the moment</p>
-                  ) : (
-                    <ul className="space-y-2 mb-3 max-h-[11rem] overflow-y-auto">
-                      {upcomingRsvpRegistrations.map((reg: { eventId: string; eventName?: string; registrationStatus?: string; eventSlug?: string }) => {
-                        const ev = events.find((e) => e.id === reg.eventId);
-                        const slug = reg.eventSlug || ev?.slug;
-                        if (!slug) return null;
-                        return (
-                          <li key={reg.eventId}>
-                            <Link
-                              to={`/events/${slug}`}
-                              className="flex items-start justify-between gap-2 rounded-lg border border-gray-100 px-2 py-1.5 hover:bg-gray-50 text-left"
-                            >
-                              <span className="text-xs font-medium text-gray-900 line-clamp-2">{reg.eventName || ev?.name}</span>
-                              <span className={`text-[10px] uppercase shrink-0 px-1.5 py-0.5 rounded ${reg.registrationStatus === 'approved' ? 'bg-green-100 text-green-800' : 'bg-amber-50 text-amber-800'}`}>
-                                {reg.registrationStatus === 'approved' ? 'RSVP' : 'Pending'}
-                              </span>
-                            </Link>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                  <Link
-                    to="/events"
-                    className="block w-full text-center text-xs font-semibold text-white bg-brand-dark hover:bg-brand-dark-hover rounded-lg py-2 px-3 transition-colors"
-                  >
-                    Explore events
-                  </Link>
-                </div>
-
-                {pastEventsAttended.length > 0 && (
-                  <div className="bg-white rounded-xl shadow-sm p-3 border border-gray-100">
-                    <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Past events you joined</h3>
-                    <ul className="space-y-1">
-                      {pastAttendedDisplay.map((event) => (
-                        <li key={event.id}>
-                          <button
-                            type="button"
-                            onClick={(e) => handleEventClick(e, event.slug)}
-                            className="w-full text-left text-[11px] text-gray-600 hover:text-brand-dark truncate py-0.5"
-                          >
-                            {event.name}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                    {hasMorePastAttended && !showAllPast && (
-                      <button
-                        type="button"
-                        onClick={() => setShowAllPast(true)}
-                        className="text-[10px] text-brand-blue font-medium mt-1"
-                      >
-                        Show all ({pastEventsAttended.length})
-                      </button>
-                    )}
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="px-3 py-2 border-b border-gray-100">
+                    <h3 className="text-sm font-semibold text-gray-900">Your network</h3>
                   </div>
-                )}
-
-                {/* Announcements Card */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden w-full max-w-full min-w-0">
-                  <div className="p-4 border-b border-gray-100">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">Announcements</h3>
-                  </div>
-                  <div className="p-0 w-full max-w-full min-w-0 overflow-hidden">
-                    <AnnouncementsSidebar />
+                  <div className="p-2 max-h-[9rem] overflow-y-auto">
+                    <ConnectionsCard compact />
                   </div>
                 </div>
 
-                {/* Support AlmaLinks Card */}
-                <div className="bg-gradient-to-br from-brand-gold to-amber-500 rounded-2xl shadow-lg p-4 sm:p-6 border border-amber-200 w-full max-w-full min-w-0 overflow-hidden">
-                  <div className="flex items-center space-x-2 sm:space-x-3 mb-2 sm:mb-3">
-                    <div className="bg-white/20 backdrop-blur-sm p-1.5 sm:p-2 rounded-full flex-shrink-0">
-                      <Heart className="h-5 w-5 sm:h-6 sm:w-6 text-white fill-current" />
-                    </div>
-                    <h3 className="text-base sm:text-lg font-semibold text-white min-w-0">Support Our Mission</h3>
-                  </div>
-                  <p className="text-white/90 text-xs sm:text-sm mb-3 sm:mb-4 break-words">
-                    Help us build stronger connections and empower communities worldwide
-                  </p>
-                  <a
-                    href="https://almalinks.org/donate.html"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full text-center bg-white text-brand-gold font-semibold py-2.5 px-4 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors duration-200 shadow-sm min-h-[44px] sm:min-h-0 touch-manipulation"
-                  >
-                    Make a Donation
-                  </a>
-                </div>
-                
-                {/* Profile Completion Card */}
-                <div className={`rounded-2xl p-4 sm:p-6 border transition-all duration-300 w-full max-w-full min-w-0 overflow-hidden ${
+                <div className={`rounded-xl p-3 border ${
                   profileCompletion.percentage === 100
-                    ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-100'
+                    ? 'bg-green-50 border-green-100'
                     : 'bg-gradient-to-br from-brand-light to-blue-50 border-blue-100'
                 }`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">Profile Strength</h3>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <h3 className="text-sm font-semibold text-gray-900">Profile strength</h3>
                     {profileCompletion.percentage === 100 ? (
-                      <CheckCircle className="h-6 w-6 text-green-600" />
+                      <CheckCircle className="h-4 w-4 text-green-600" />
                     ) : (
-                      <TrendingUp className="h-6 w-6 text-brand-blue" />
+                      <TrendingUp className="h-4 w-4 text-brand-blue" />
                     )}
                   </div>
-
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex-1 bg-gray-200 rounded-full h-1.5">
                       <div
-                        className={`h-2 rounded-full transition-all duration-300 ${
+                        className={`h-1.5 rounded-full ${
                           profileCompletion.percentage === 100
-                            ? 'bg-gradient-to-r from-green-500 to-emerald-600'
-                            : 'bg-gradient-to-r from-brand-blue to-brand-blue-hover'
+                            ? 'bg-green-500'
+                            : 'bg-brand-blue'
                         }`}
                         style={{ width: `${profileCompletion.percentage}%` }}
-                      ></div>
+                      />
                     </div>
-                    <span className="text-sm font-medium text-gray-700">{profileCompletion.percentage}%</span>
+                    <span className="text-xs font-medium text-gray-700">{profileCompletion.percentage}%</span>
                   </div>
-
-                  {profileCompletion.percentage === 100 ? (
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-green-800">
-                        Excellent! Your profile is complete.
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        Your comprehensive profile helps you make meaningful connections with other members.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-gray-800">
-                        {profileCompletion.missingRequired && profileCompletion.missingRequired.length > 0
-                          ? 'Complete your profile to maximize networking opportunities'
-                          : 'Enhance your profile for stronger connections'}
-                      </p>
-
-                      {profileCompletion.missingRequired && profileCompletion.missingRequired.length > 0 && (
-                        <div className="bg-white rounded-lg p-3 mt-2">
-                          <p className="text-xs font-medium text-gray-700 mb-1">Required Information:</p>
-                          <ul className="text-xs text-gray-600 space-y-0.5">
-                            {profileCompletion.missingRequired.slice(0, 3).map((field, index) => (
-                              <li key={index} className="flex items-start">
-                                <span className="text-brand-blue mr-1">•</span>
-                                {field}
-                              </li>
-                            ))}
-                            {profileCompletion.missingRequired.length > 3 && (
-                              <li className="text-gray-500 italic">
-                                +{profileCompletion.missingRequired.length - 3} more required field{profileCompletion.missingRequired.length - 3 > 1 ? 's' : ''}
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
-
-                      {profileCompletion.missingOptional && profileCompletion.missingOptional.length > 0 && (
-                        <div className="bg-white rounded-lg p-3 mt-2">
-                          <p className="text-xs font-medium text-gray-700 mb-1">Optional Details:</p>
-                          <ul className="text-xs text-gray-600 space-y-0.5">
-                            {profileCompletion.missingOptional.slice(0, 3).map((field, index) => (
-                              <li key={index} className="flex items-start">
-                                <span className="text-gray-400 mr-1">•</span>
-                                {field}
-                              </li>
-                            ))}
-                            {profileCompletion.missingOptional.length > 3 && (
-                              <li className="text-gray-500 italic">
-                                +{profileCompletion.missingOptional.length - 3} more optional field{profileCompletion.missingOptional.length - 3 > 1 ? 's' : ''}
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsEditingProfile(true);
-                          setTimeout(() => profileSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-                        }}
-                        className="w-full mt-3 text-xs font-medium text-white bg-brand-blue hover:bg-brand-blue-hover active:bg-brand-blue-hover py-2.5 px-3 rounded-lg transition-colors duration-200 min-h-[44px] sm:min-h-0 touch-manipulation"
-                      >
-                        Complete Profile
-                      </button>
-                    </div>
+                  {profileCompletion.percentage < 100 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingProfile(true);
+                        setTimeout(() => profileSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                      }}
+                      className="w-full text-xs font-medium text-white bg-brand-blue hover:bg-brand-blue-hover py-2 px-3 rounded-lg"
+                    >
+                      Complete profile
+                    </button>
                   )}
                 </div>
+              </div>
+
+              {pastEventsAttended.length > 0 && (
+                <div className="bg-white rounded-xl shadow-sm p-3 border border-gray-100">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Past events</h3>
+                  <ul className="space-y-1 max-h-24 overflow-y-auto">
+                    {pastAttendedDisplay.map((event) => (
+                      <li key={event.id}>
+                        <button
+                          type="button"
+                          onClick={(e) => handleEventClick(e, event.slug)}
+                          className="w-full text-left text-xs text-gray-600 hover:text-brand-dark truncate py-0.5"
+                        >
+                          {event.name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  {hasMorePastAttended && !showAllPast && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllPast(true)}
+                      className="text-[10px] text-brand-blue font-medium mt-1"
+                    >
+                      Show all ({pastEventsAttended.length})
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-brand-gold/15 to-amber-50 border border-amber-100 px-3 py-2.5">
+                <p className="text-xs text-gray-700 flex items-center gap-1.5">
+                  <Heart className="h-3.5 w-3.5 text-brand-gold fill-current" />
+                  Support AlmaLinks
+                </p>
+                <a
+                  href="https://almalinks.org/donate.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-semibold text-brand-gold hover:text-amber-700"
+                >
+                  Donate →
+                </a>
               </div>
             </div>
           </div>
@@ -1589,4 +1254,4 @@ const EventsPage: React.FC = () => {
   );
 };
 
-export default EventsPage;
+export default DashboardPage;
