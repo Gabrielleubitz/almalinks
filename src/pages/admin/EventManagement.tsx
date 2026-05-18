@@ -16,6 +16,10 @@ import { syncEventToHubSpot } from '../../utils/hubspotEventSync';
 type EventFilter = 'all' | 'upcoming' | 'past';
 type ViewMode = 'cards' | 'list';
 
+function isHubSpotLinked(event: Pick<EventData, 'hubspotDealId'>): boolean {
+  return Boolean(event.hubspotDealId?.trim());
+}
+
 const EventManagement: React.FC = () => {
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -189,6 +193,9 @@ const EventManagement: React.FC = () => {
   };
 
   const handleRetryHubspotSync = async (eventId: string) => {
+    const event = events.find((e) => e.id === eventId);
+    if (event && isHubSpotLinked(event)) return;
+
     setSyncingEventId(eventId);
     setEventSyncStatus((prev) => ({ ...prev, [eventId]: { ok: false, message: 'Syncing…' } }));
     const result = await syncEventToHubSpot(eventId);
@@ -669,14 +676,6 @@ const EventManagement: React.FC = () => {
                   <tr key={event.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-900">{event.name}</div>
-                      {event.hubspotDealId ? (
-                        <span
-                          className="mt-1 inline-block text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded"
-                          title={`HubSpot deal ${event.hubspotDealId}`}
-                        >
-                          HS {event.hubspotDealId}
-                        </span>
-                      ) : null}
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell text-sm text-gray-600">
                       <div className="space-y-1">
@@ -687,35 +686,46 @@ const EventManagement: React.FC = () => {
                     <td className="px-4 py-3">{getStatusBadge(event.status)}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex flex-wrap items-center justify-end gap-1 sm:gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleRetryHubspotSync(event.id)}
-                          disabled={syncingEventId === event.id}
-                          className="text-orange-600 hover:text-orange-800 p-1.5 rounded disabled:opacity-50 flex items-center gap-1 min-w-[100px]"
-                          title={
-                            eventSyncStatus[event.id]?.hint
-                              ? `${eventSyncStatus[event.id]?.message} — ${eventSyncStatus[event.id]?.hint}`
-                              : eventSyncStatus[event.id]?.message || 'Retry HubSpot sync'
-                          }
-                        >
-                          {syncingEventId === event.id ? (
-                            <span className="text-xs">Syncing…</span>
-                          ) : eventSyncStatus[event.id]?.ok ? (
-                            <span className="text-green-600 flex items-center gap-1 text-xs"><CheckCircle className="h-4 w-4 flex-shrink-0" /> Linked</span>
-                          ) : eventSyncStatus[event.id]?.message && eventSyncStatus[event.id].message !== 'Syncing…' ? (
-                            <span
-                              className="text-red-600 text-xs truncate max-w-[140px]"
-                              title={[eventSyncStatus[event.id].message, eventSyncStatus[event.id].hint].filter(Boolean).join(' — ')}
-                            >
-                              {eventSyncStatus[event.id].message}
-                            </span>
-                          ) : (
-                            <span className="text-xs flex items-center gap-1">
-                              <RefreshCw className="h-3.5 w-3.5" />
-                              {event.hubspotDealId ? 'Retry' : 'HubSpot'}
-                            </span>
-                          )}
-                        </button>
+                        {isHubSpotLinked(event) ? (
+                          <span
+                            className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg"
+                            title={`HubSpot deal ${event.hubspotDealId}`}
+                          >
+                            <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                            Linked
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleRetryHubspotSync(event.id)}
+                            disabled={syncingEventId === event.id}
+                            className="text-orange-600 hover:text-orange-800 p-1.5 rounded disabled:opacity-50 flex items-center gap-1 min-w-[100px]"
+                            title={
+                              eventSyncStatus[event.id]?.hint
+                                ? `${eventSyncStatus[event.id]?.message} — ${eventSyncStatus[event.id]?.hint}`
+                                : eventSyncStatus[event.id]?.message || 'Sync to HubSpot'
+                            }
+                          >
+                            {syncingEventId === event.id ? (
+                              <span className="text-xs">Syncing…</span>
+                            ) : eventSyncStatus[event.id]?.message &&
+                              eventSyncStatus[event.id].message !== 'Syncing…' ? (
+                              <span
+                                className="text-red-600 text-xs truncate max-w-[140px]"
+                                title={[eventSyncStatus[event.id].message, eventSyncStatus[event.id].hint]
+                                  .filter(Boolean)
+                                  .join(' — ')}
+                              >
+                                {eventSyncStatus[event.id].message}
+                              </span>
+                            ) : (
+                              <span className="text-xs flex items-center gap-1">
+                                <RefreshCw className="h-3.5 w-3.5" />
+                                HubSpot
+                              </span>
+                            )}
+                          </button>
+                        )}
                         <Link to={`/events/${event.slug}`} className="text-gray-500 hover:text-gray-700 p-1.5 rounded" title="View"><Eye className="h-4 w-4" /></Link>
                         <Link to={`/admin/events/${event.id}/edit`} className="text-gray-500 hover:text-gray-700 p-1.5 rounded" title="Edit"><Edit className="h-4 w-4" /></Link>
                         <button type="button" onClick={() => handleShowRegistrations(event)} className="text-blue-600 hover:text-blue-800 p-1.5 rounded font-medium flex items-center gap-1" title="Registrations & check-in">
@@ -797,34 +807,37 @@ const EventManagement: React.FC = () => {
 
                   {/* HubSpot sync */}
                   <div className="mb-4">
-                    {event.hubspotDealId ? (
-                      <p className="text-xs font-mono text-emerald-700 mb-2 truncate" title={event.hubspotDealId}>
-                        HubSpot deal: {event.hubspotDealId}
-                      </p>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => handleRetryHubspotSync(event.id)}
-                      disabled={syncingEventId === event.id}
-                      className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100 disabled:opacity-50 text-sm font-medium"
-                    >
-                      <RefreshCw className={`h-4 w-4 ${syncingEventId === event.id ? 'animate-spin' : ''}`} />
-                      {syncingEventId === event.id
-                        ? 'Syncing…'
-                        : eventSyncStatus[event.id]?.ok
-                          ? 'Linked to HubSpot'
-                          : event.hubspotDealId
-                            ? 'Retry HubSpot sync'
-                            : 'Sync to HubSpot'}
-                    </button>
-                    {eventSyncStatus[event.id]?.message && !eventSyncStatus[event.id]?.ok && eventSyncStatus[event.id].message !== 'Syncing…' ? (
-                      <div className="mt-1 text-xs text-red-600">
-                        <p>{eventSyncStatus[event.id].message}</p>
-                        {eventSyncStatus[event.id].hint ? (
-                          <p className="mt-0.5 text-red-500">{eventSyncStatus[event.id].hint}</p>
-                        ) : null}
+                    {isHubSpotLinked(event) ? (
+                      <div
+                        className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 text-sm font-medium"
+                        title={event.hubspotDealId || undefined}
+                      >
+                        <CheckCircle className="h-4 w-4 flex-shrink-0" />
+                        Linked to HubSpot
                       </div>
-                    ) : null}
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleRetryHubspotSync(event.id)}
+                          disabled={syncingEventId === event.id}
+                          className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100 disabled:opacity-50 text-sm font-medium"
+                        >
+                          <RefreshCw className={`h-4 w-4 ${syncingEventId === event.id ? 'animate-spin' : ''}`} />
+                          {syncingEventId === event.id ? 'Syncing…' : 'Sync to HubSpot'}
+                        </button>
+                        {eventSyncStatus[event.id]?.message &&
+                        !eventSyncStatus[event.id]?.ok &&
+                        eventSyncStatus[event.id].message !== 'Syncing…' ? (
+                          <div className="mt-1 text-xs text-red-600">
+                            <p>{eventSyncStatus[event.id].message}</p>
+                            {eventSyncStatus[event.id].hint ? (
+                              <p className="mt-0.5 text-red-500">{eventSyncStatus[event.id].hint}</p>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </>
+                    )}
                   </div>
 
                   {/* Action Buttons */}
