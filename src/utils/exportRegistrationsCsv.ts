@@ -1,4 +1,4 @@
-import { formatEventDateAndTime } from './eventDisplayTime';
+import { shortEventRegistrationLabel } from './eventRegistrationDisplay';
 
 export type CsvRegistrationRow = {
   name?: string;
@@ -26,17 +26,11 @@ function formatRegisteredAt(value: unknown): string {
   return date.toISOString();
 }
 
-function formatEventDateShort(iso: string | undefined): string {
-  if (!iso?.trim()) return '';
-  const { dateLine } = formatEventDateAndTime(iso, {});
-  return dateLine;
-}
-
 export function buildRegistrationsCsv(rows: CsvRegistrationRow[], options?: { includeEvent?: boolean }): string {
   const includeEvent = options?.includeEvent !== false;
   const headers = includeEvent
-    ? ['Member Name', 'Email', 'Phone', 'Work', 'Event', 'Event Date', 'Status', 'Registered At']
-  : ['Member Name', 'Email', 'Phone', 'Work', 'Status', 'Registered At'];
+    ? ['Member Name', 'Email', 'Phone', 'Work', 'Event', 'Status', 'Registered At']
+    : ['Member Name', 'Email', 'Phone', 'Work', 'Status', 'Registered At'];
 
   const lines = [headers.map(escapeCsvCell).join(',')];
 
@@ -48,7 +42,7 @@ export function buildRegistrationsCsv(rows: CsvRegistrationRow[], options?: { in
       row.work ?? '',
     ];
     if (includeEvent) {
-      cells.push(row.eventName ?? '', formatEventDateShort(row.eventDate));
+      cells.push(shortEventRegistrationLabel(row.eventName, row.eventDate));
     }
     cells.push(row.status ?? '', formatRegisteredAt(row.registeredAt));
     lines.push(cells.map(escapeCsvCell).join(','));

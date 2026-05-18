@@ -22,7 +22,7 @@ import { listPendingRegistrations, listEventRegistrations, approve, reject } fro
 import type { EventRegistrationWithStatus, EventPrivateDetails } from '../../types/event';
 import { useAuth } from '../../hooks/useAuth';
 import { approvedEventPrimaryLocation, approvedEventVenueAddress } from '../../utils/eventPrivateLocation';
-import { formatEventDateAndTime } from '../../utils/eventDisplayTime';
+import { shortEventRegistrationLabel } from '../../utils/eventRegistrationDisplay';
 import { buildRegistrationsCsv, downloadCsv } from '../../utils/exportRegistrationsCsv';
 
 type RegistrationRow = EventRegistrationWithStatus & {
@@ -59,7 +59,6 @@ const EventRegistrationsPage: React.FC = () => {
   const [bulkActing, setBulkActing] = useState(false);
   const [rejectModal, setRejectModal] = useState<{ reg: RegistrationRow; reason: string } | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const [viewMode, setViewMode] = useState<'table' | 'byMember'>('byMember');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   /** When filtering by one event, show public + approved-only venue info for admins. */
   const [eventVenueBanner, setEventVenueBanner] = useState<{
@@ -175,17 +174,6 @@ const EventRegistrationsPage: React.FC = () => {
     }));
   }, [sortedRows]);
 
-  function shortEventLabel(reg: RegistrationRow): string {
-    if (eventFilter && reg.eventDate) {
-      return formatEventDateAndTime(reg.eventDate, {}).dateLine;
-    }
-    if (reg.eventDate) {
-      const { dateLine } = formatEventDateAndTime(reg.eventDate, {});
-      return dateLine;
-    }
-    return reg.eventName?.trim() || reg.eventId;
-  }
-
   const handleExportCsv = () => {
     const csv = buildRegistrationsCsv(sortedRows, { includeEvent: !eventFilter });
     const slug =
@@ -299,6 +287,10 @@ const EventRegistrationsPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto">
+      <p className="text-sm text-gray-600 mb-4">
+        Grouped by member, then event (event date only — not the full title). Use{' '}
+        <strong>Download CSV</strong> to export the filtered list.
+      </p>
       {/* Filters */}
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <select
@@ -333,22 +325,6 @@ const EventRegistrationsPage: React.FC = () => {
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 text-sm"
             />
-          </div>
-          <div className="flex rounded-lg border border-gray-300 overflow-hidden text-sm">
-            <button
-              type="button"
-              onClick={() => setViewMode('byMember')}
-              className={`px-3 py-2 font-medium ${viewMode === 'byMember' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-            >
-              By member
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('table')}
-              className={`px-3 py-2 font-medium border-l border-gray-300 ${viewMode === 'table' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-            >
-              Table
-            </button>
           </div>
           <button
             type="button"
@@ -442,7 +418,7 @@ const EventRegistrationsPage: React.FC = () => {
                 <p className="mt-1 text-sm">Use &quot;Approved&quot; or &quot;All&quot; to see existing registrations.</p>
               )}
             </div>
-          ) : viewMode === 'byMember' ? (
+          ) : (
             <div className="divide-y divide-gray-200">
               {memberGroups.map((group) => (
                 <div key={group.memberKey} className="p-4 sm:p-5">
@@ -479,7 +455,18 @@ const EventRegistrationsPage: React.FC = () => {
                         key={`${reg.eventId}_${reg.userId}`}
                         className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5 text-sm"
                       >
-                        <span className="font-medium text-gray-900 min-w-[8rem]">{shortEventLabel(reg)}</span>
+                        <span className="font-medium text-gray-900 min-w-[8rem]">
+                          {shortEventRegistrationLabel(reg.eventName, reg.eventDate)}
+                        </span>
+                        {reg.eventSlug ? (
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/events/${reg.eventSlug}`)}
+                            className="text-xs text-brand-blue hover:underline flex items-center gap-1"
+                          >
+                            View event <ExternalLink className="h-3 w-3" />
+                          </button>
+                        ) : null}
                         <span
                           className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
                             reg.status === 'approved'
@@ -496,139 +483,40 @@ const EventRegistrationsPage: React.FC = () => {
                           {formatDate(reg.registeredAt)}
                         </span>
                         {reg.status === 'pending' && (
-                          <div className="ml-auto flex gap-2">
-                            <button
-                              onClick={() => handleApprove(reg)}
-                              disabled={!!acting}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-600 text-white rounded-lg text-xs font-medium disabled:opacity-50"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => setRejectModal({ reg, reason: '' })}
-                              disabled={!!acting}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-medium"
-                            >
-                              Reject
-                            </button>
-                          </div>
+                          <>
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(`${reg.eventId}_${reg.userId}`)}
+                              onChange={() => toggleSelect(reg.eventId, reg.userId)}
+                              className="rounded border-gray-300"
+                              aria-label={`Select ${reg.name}`}
+                            />
+                            <div className="ml-auto flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleApprove(reg)}
+                                disabled={!!acting}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-600 text-white rounded-lg text-xs font-medium disabled:opacity-50"
+                              >
+                                Approve & send details
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setRejectModal({ reg, reason: '' })}
+                                disabled={!!acting}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-medium"
+                              >
+                                <XCircle className="h-3.5 w-3.5" />
+                                Reject
+                              </button>
+                            </div>
+                          </>
                         )}
                       </li>
                     ))}
                   </ul>
                 </div>
               ))}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    {statusFilter === 'pending' && (
-                      <th className="px-4 py-3 text-left">
-                        <input
-                          type="checkbox"
-                          checked={sortedRows.filter((r) => r.status === 'pending').length > 0 && selectedIds.size === sortedRows.filter((r) => r.status === 'pending').length}
-                          onChange={selectAllPending}
-                          className="rounded border-gray-300"
-                        />
-                      </th>
-                    )}
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Member</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Event</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Registered at</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {sortedRows.map((reg) => (
-                    <tr key={`${reg.eventId}_${reg.userId}`} className="hover:bg-gray-50">
-                      {statusFilter === 'pending' && (
-                        <td className="px-4 py-3">
-                          {reg.status === 'pending' && (
-                            <input
-                              type="checkbox"
-                              checked={selectedIds.has(`${reg.eventId}_${reg.userId}`)}
-                              onChange={() => toggleSelect(reg.eventId, reg.userId)}
-                              className="rounded border-gray-300"
-                            />
-                          )}
-                        </td>
-                      )}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          {reg.profileImage ? (
-                            <img src={reg.profileImage} alt="" className="w-8 h-8 rounded-full object-cover" />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                              <User className="h-4 w-4 text-gray-500" />
-                            </div>
-                          )}
-                          <div>
-                            <div className="font-medium text-gray-900">{reg.name}</div>
-                            <div className="text-xs text-gray-500">{reg.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900">{shortEventLabel(reg)}</div>
-                        {reg.eventSlug && (
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/events/${reg.eventSlug}`)}
-                            className="text-xs text-brand-blue hover:underline flex items-center gap-1 mt-1"
-                          >
-                            View event <ExternalLink className="h-3 w-3" />
-                          </button>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex px-2 py-1 rounded text-xs font-medium ${
-                            reg.status === 'approved'
-                              ? 'bg-green-100 text-green-800'
-                              : reg.status === 'rejected'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-amber-100 text-amber-800'
-                          }`}
-                        >
-                          {reg.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {formatDate(reg.registeredAt)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        {reg.status === 'pending' && (
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleApprove(reg)}
-                              disabled={!!acting}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm font-medium"
-                            >
-                              {acting === reg.userId ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <CheckCircle className="h-4 w-4" />
-                              )}
-                              Approve & send details
-                            </button>
-                            <button
-                              onClick={() => setRejectModal({ reg, reason: '' })}
-                              disabled={!!acting}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 disabled:opacity-50 text-sm font-medium"
-                            >
-                              <XCircle className="h-4 w-4" />
-                              Reject
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
           )}
         </div>
