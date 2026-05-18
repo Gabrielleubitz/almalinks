@@ -119,23 +119,6 @@ const UserConnectionModal: React.FC<UserConnectionModalProps> = ({
     }
   };
 
-  const getAvatarColor = (name: string) => {
-    const colors = [
-      'from-red-500 to-red-600',
-      'from-blue-500 to-blue-600',
-      'from-green-500 to-green-600',
-      'from-purple-500 to-purple-600',
-      'from-yellow-500 to-yellow-600',
-      'from-pink-500 to-pink-600'
-    ];
-    
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    return colors[Math.abs(hash) % colors.length];
-  };
 
   if (!isOpen || !selectedUser) return null;
 
@@ -235,7 +218,7 @@ const UserConnectionModal: React.FC<UserConnectionModalProps> = ({
               {!loading && searchResults.length > 0 && (
                 <div className="mt-2 bg-white border border-gray-200 rounded-lg max-h-60 overflow-y-auto">
                   {searchResults.map((userResult) => {
-                    const avatarColor = getAvatarColor(userResult.name);
+                    
                     
                     return (
                       <button
@@ -263,7 +246,7 @@ const UserConnectionModal: React.FC<UserConnectionModalProps> = ({
                               />
                             ) : null}
                             <div
-                              className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-sm ${
+                              className={`w-full h-full bg-brand-dark flex items-center justify-center text-white font-bold text-sm ${
                                 userResult.profileImage ? 'hidden' : 'flex'
                               }`}
                             >
@@ -311,7 +294,7 @@ const UserConnectionModal: React.FC<UserConnectionModalProps> = ({
                 <h4 className="font-medium text-blue-900 mb-2">Connection Preview</h4>
                 <div className="flex items-center justify-center space-x-4">
                   <div className="text-center">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold mx-auto mb-2">
+                    <div className="w-12 h-12 rounded-full bg-brand-dark flex items-center justify-center text-white font-bold mx-auto mb-2">
                       {selectedUser.name.charAt(0)}
                     </div>
                     <p className="text-sm font-medium text-gray-900">{selectedUser.name}</p>
@@ -325,7 +308,7 @@ const UserConnectionModal: React.FC<UserConnectionModalProps> = ({
                   </div>
                   
                   <div className="text-center">
-                    <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getAvatarColor(selectedTargetUser.name)} flex items-center justify-center text-white font-bold mx-auto mb-2`}>
+                    <div className={`w-12 h-12 rounded-full bg-brand-dark flex items-center justify-center text-white font-bold mx-auto mb-2`}>
                       {selectedTargetUser.name.charAt(0)}
                     </div>
                     <p className="text-sm font-medium text-gray-900">{selectedTargetUser.name}</p>

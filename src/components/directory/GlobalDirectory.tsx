@@ -6,6 +6,7 @@ import { ConnectionService } from '../../services/connectionService';
 import { ConnectionRequestService } from '../../services/connectionRequestService';
 import { EventService } from '../../services/eventService';
 import { UserDirectoryEntry } from '../../types/connection';
+import ProfileAvatarPlaceholder from '../profile/ProfileAvatarPlaceholder';
 import { useAuth } from '../../hooks/useAuth';
 
 interface GlobalDirectoryProps {
@@ -164,23 +165,6 @@ const GlobalDirectory: React.FC<GlobalDirectoryProps> = ({ eventId, className = 
     return ConnectionService.formatPosition(position);
   };
 
-  const getAvatarColor = (name: string) => {
-    const colors = [
-      'from-red-500 to-red-600',
-      'from-blue-500 to-blue-600',
-      'from-green-500 to-green-600',
-      'from-purple-500 to-purple-600',
-      'from-yellow-500 to-yellow-600',
-      'from-pink-500 to-pink-600'
-    ];
-    
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    return colors[Math.abs(hash) % colors.length];
-  };
 
   const getEventName = (eventId: string) => {
     const event = events.find(e => e.id === eventId);
@@ -268,8 +252,6 @@ const GlobalDirectory: React.FC<GlobalDirectoryProps> = ({ eventId, className = 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {users.map((userEntry) => {
             const isConnecting = connectingUsers.has(userEntry.uid);
-            const avatarColor = getAvatarColor(userEntry.name);
-
             return (
               <div
                 key={userEntry.uid}
@@ -277,7 +259,7 @@ const GlobalDirectory: React.FC<GlobalDirectoryProps> = ({ eventId, className = 
               >
                 {/* User Info */}
                 <div className="flex items-center space-x-3 mb-3">
-                  <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-brand-dark">
                     {userEntry.profileImage ? (
                       <img
                         src={userEntry.profileImage}
@@ -291,13 +273,11 @@ const GlobalDirectory: React.FC<GlobalDirectoryProps> = ({ eventId, className = 
                         }}
                       />
                     ) : null}
-                    <div
-                      className={`w-full h-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-lg ${
-                        userEntry.profileImage ? 'hidden' : 'flex'
-                      }`}
-                    >
-                      {userEntry.name.charAt(0)}
-                    </div>
+                    <ProfileAvatarPlaceholder
+                      name={userEntry.name}
+                      textClassName="font-bold text-lg"
+                      className={userEntry.profileImage ? 'hidden' : 'flex'}
+                    />
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900 truncate">{userEntry.name}</h4>

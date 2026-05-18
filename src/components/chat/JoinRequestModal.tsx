@@ -1,3 +1,4 @@
+import ProfileAvatarPlaceholder from '../profile/ProfileAvatarPlaceholder';
 import React, { useState } from 'react';
 import { X, MessageCircle, Send } from 'lucide-react';
 import { ChatService } from '../../services/chatService';
@@ -74,7 +75,7 @@ const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white">
+            <div className="w-8 h-8 bg-brand-dark rounded-full flex items-center justify-center text-white">
               <MessageCircle className="h-4 w-4" />
             </div>
             <div>

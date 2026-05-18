@@ -1,3 +1,4 @@
+import ProfileAvatarPlaceholder from '../../profile/ProfileAvatarPlaceholder';
 import React from 'react';
 import { User, Mail, AtSign } from 'lucide-react';
 import { UserProfileForm } from '../../../types/user';
@@ -155,9 +156,8 @@ const ProfileBasicsStep: React.FC<ProfileBasicsStepProps> = ({
       <div className="bg-gray-50 rounded-xl p-6 border-2 border-dashed border-gray-300">
         <h3 className="font-semibold text-gray-900 mb-3">Preview</h3>
         <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-xl">
-            {formData.displayName ? formData.displayName.charAt(0).toUpperCase() : '?'}
-          </div>
+          <ProfileAvatarPlaceholder name={formData.displayName} className="w-16 h-16 rounded-full" textClassName="font-bold text-xl">
+            </ProfileAvatarPlaceholder>
           <div>
             <h4 className="font-semibold text-gray-900">
               {formData.displayName || 'Your Name'}

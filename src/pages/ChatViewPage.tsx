@@ -848,7 +848,7 @@ const ChatViewPage: React.FC = () => {
               }
             }}
           />
-          <div className="chat-icon-fallback hidden absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+          <div className="chat-icon-fallback hidden absolute inset-0 bg-brand-dark rounded-full flex items-center justify-center text-white font-semibold">
             {chat?.name.charAt(0).toUpperCase()}
           </div>
         </div>
@@ -856,7 +856,7 @@ const ChatViewPage: React.FC = () => {
     }
 
     return (
-      <div className={`${sizeClasses[size]} bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold`}>
+      <div className={`${sizeClasses[size]} bg-brand-dark rounded-full flex items-center justify-center text-white font-semibold`}>
         {chat?.name.charAt(0).toUpperCase()}
       </div>
     );
@@ -1038,11 +1038,11 @@ const ChatViewPage: React.FC = () => {
                               }}
                             />
                           ) : (
-                            <div className="w-10 h-10 bg-gradient-to-br from-[#0B2B6B] to-[#2E7FEF] rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+                            <div className="w-10 h-10 bg-brand-dark rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
                               {chatItem.name.charAt(0).toUpperCase()}
                             </div>
                           )}
-                          <div className="w-10 h-10 bg-gradient-to-br from-[#0B2B6B] to-[#2E7FEF] rounded-full flex items-center justify-center text-white font-semibold text-xs hidden">
+                          <div className="w-10 h-10 bg-brand-dark rounded-full flex items-center justify-center text-white font-semibold text-xs hidden">
                             {chatItem.name.charAt(0).toUpperCase()}
                           </div>
 

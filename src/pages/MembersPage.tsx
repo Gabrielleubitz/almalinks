@@ -11,6 +11,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ImageWithCrop from '../components/profile/ImageWithCrop';
+import ProfileAvatarPlaceholder from '../components/profile/ProfileAvatarPlaceholder';
 import { TrusteeMentorStar } from '../components/common/TrusteeMentorStar';
 import { compareMembersByDisplayName } from '../utils/memberSort';
 import {
@@ -293,9 +294,7 @@ const MembersPage: React.FC = () => {
     const cardOutlineClass = hasIncomingRequest ? 'ring-2 ring-blue-500 border-blue-500' : '';
 
     const avatarFallback = (
-      <div className="w-full h-full bg-brand-dark flex items-center justify-center text-white/90 font-semibold text-sm">
-        {displayName.charAt(0).toUpperCase()}
-      </div>
+      <ProfileAvatarPlaceholder name={displayName} textClassName="font-semibold text-sm" />
     );
 
     return (
@@ -308,7 +307,7 @@ const MembersPage: React.FC = () => {
           className="block p-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-inset"
         >
           <div className="flex gap-2">
-            <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 flex-shrink-0 relative bg-gray-50">
+            <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 flex-shrink-0 relative bg-brand-dark">
               <ImageWithCrop
                 src={String(member.avatarUrl || '')}
                 crop={member.profileImageCrop ?? null}
@@ -580,9 +579,7 @@ const MembersPage: React.FC = () => {
                             {img ? (
                               <img src={img} alt="" className="h-full w-full object-cover" />
                             ) : (
-                              <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-white">
-                                {name.charAt(0).toUpperCase()}
-                              </div>
+                              <ProfileAvatarPlaceholder name={name} textClassName="text-sm font-semibold" />
                             )}
                           </div>
                           <div className="min-w-0 flex-1">

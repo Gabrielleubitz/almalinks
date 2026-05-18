@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ProfileAvatarPlaceholder from '../profile/ProfileAvatarPlaceholder';
 import { Check, Calendar, MapPin, Clock, User, Mail, Phone, Briefcase, X, AlertTriangle, CalendarPlus } from 'lucide-react';
 import { useRegistration } from '../../hooks/useRegistration';
 import { useAuth } from '../../hooks/useAuth';
@@ -233,9 +234,11 @@ const RegistrationStatus: React.FC = () => {
                       }}
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-red-500 to-blue-500 flex items-center justify-center text-white font-bold text-lg">
-                      {registration.name.charAt(0)}
-                    </div>
+                    <ProfileAvatarPlaceholder
+                      name={registration.name}
+                      className="w-full h-full"
+                      textClassName="font-bold text-lg"
+                    />
                   )}
                 </div>
                 <div>

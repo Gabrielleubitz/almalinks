@@ -63,7 +63,7 @@ const RegistrationDetails: React.FC<RegistrationDetailsProps> = ({
                     }}
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-white font-bold text-2xl">
+                  <div className="w-full h-full bg-brand-dark flex items-center justify-center text-white font-bold text-2xl">
                     {registration.name.charAt(0)}
                   </div>
                 )}

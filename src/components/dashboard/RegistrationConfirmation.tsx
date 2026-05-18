@@ -1,3 +1,4 @@
+import ProfileAvatarPlaceholder from '../profile/ProfileAvatarPlaceholder';
 import React from 'react';
 import { Check, User, Mail, Phone, Briefcase, Calendar, MapPin, Clock, CalendarPlus, Users } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
@@ -86,9 +87,11 @@ const RegistrationConfirmation: React.FC<RegistrationConfirmationProps> = ({ dat
                     }}
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center text-white font-bold text-lg">
-                    {data.name.charAt(0)}
-                  </div>
+                  <ProfileAvatarPlaceholder
+                    name={data.name}
+                    className="w-full h-full"
+                    textClassName="font-bold text-lg"
+                  />
                 )}
               </div>
               <div>

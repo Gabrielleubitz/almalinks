@@ -1161,7 +1161,7 @@ const EventManagement: React.FC = () => {
                                       }}
                                     />
                                   ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-white font-bold text-xs sm:text-sm">
+                                    <div className="w-full h-full bg-brand-dark flex items-center justify-center text-white font-bold text-xs sm:text-sm">
                                       {registration.name.charAt(0)}
                                     </div>
                                   )}

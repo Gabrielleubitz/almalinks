@@ -1,3 +1,4 @@
+import ProfileAvatarPlaceholder from '../profile/ProfileAvatarPlaceholder';
 import React, { useState, useEffect } from 'react';
 import { 
   X, 
@@ -394,7 +395,7 @@ const ConnectionManagementModal: React.FC<ConnectionManagementModalProps> = ({
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-brand-dark rounded-full flex items-center justify-center">
                 <Users className="h-6 w-6 text-white" />
               </div>
             </div>
@@ -495,7 +496,7 @@ const ConnectionManagementModal: React.FC<ConnectionManagementModalProps> = ({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4 flex-1">
                         <div className="flex-shrink-0">
-                          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                          <div className="w-10 h-10 bg-brand-dark rounded-full flex items-center justify-center text-white font-bold">
                             {otherUser.name?.charAt(0) || '?'}
                           </div>
                         </div>

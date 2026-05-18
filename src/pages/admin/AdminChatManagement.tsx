@@ -378,7 +378,7 @@ export default function AdminChatManagement() {
                   className="bg-white rounded-xl border border-gray-200 p-4 flex flex-wrap items-center gap-4"
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-brand-dark flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                       {chat.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">

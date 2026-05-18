@@ -5,6 +5,7 @@ import { saveProfileImageWithCrop } from '../../services/profileService';
 import type { NormalizedCrop, CropValue } from '../../types/crop';
 import CropModal from './CropModal';
 import ImageWithCrop from './ImageWithCrop';
+import ProfileAvatarPlaceholder from './ProfileAvatarPlaceholder';
 
 interface ProfilePictureUploaderProps {
   currentImageUrl?: string | null;
@@ -169,16 +170,23 @@ const ProfilePictureUploader: React.FC<ProfilePictureUploaderProps> = ({
                 alt="Profile"
                 className="rounded-full"
                 urlIsCropped={true}
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSIzMCIgZmlsbD0iIzlDQTNBRiIvPgo8ZWxsaXBzZSBjeD0iMTAwIiBjeT0iMTQwIiByeD0iNDAiIHJ5PSIyMCIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4=';
-                }}
+                fallback={
+                  <ProfileAvatarPlaceholder
+                    name={user?.displayName}
+                    email={user?.email}
+                    className="absolute inset-0"
+                    textClassName="font-bold text-3xl"
+                  />
+                }
               />
             </div>
           ) : (
-            <div className={`${sizeClasses[size]} bg-gradient-to-br from-red-500 to-blue-500 flex items-center justify-center text-white font-bold text-3xl`}>
-              {getInitials()}
-            </div>
+            <ProfileAvatarPlaceholder
+              name={user?.displayName}
+              email={user?.email}
+              className={sizeClasses[size]}
+              textClassName="font-bold text-3xl"
+            />
           )}
 
           <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">

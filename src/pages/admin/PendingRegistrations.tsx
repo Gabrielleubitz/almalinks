@@ -1,3 +1,4 @@
+import ProfileAvatarPlaceholder from '../../components/profile/ProfileAvatarPlaceholder';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BackButton from '../../components/ui/BackButton';
@@ -803,7 +804,7 @@ const PendingRegistrations: React.FC = () => {
                       <div className="flex flex-col gap-6">
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                           <div className="flex gap-4 min-w-0">
-                            <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-brand-blue-dark to-brand-blue-light">
+                            <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 bg-brand-dark">
                               {userData.profileImage ? (
                                 <img
                                   src={userData.profileImage}

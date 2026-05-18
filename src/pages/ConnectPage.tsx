@@ -9,6 +9,7 @@ import { ConnectionRequestService } from '../services/connectionRequestService';
 import { getDailyRequestCount, isOverDailyLimit, DAILY_LIMIT_MESSAGE } from '../services/connectionRequestLimitService';
 import { EventService } from '../services/eventService';
 import Header from '../components/Header';
+import ProfileAvatarPlaceholder from '../components/profile/ProfileAvatarPlaceholder';
 import Footer from '../components/Footer';
 import logoSvg from '../assets/alma-links-logo.svg';
 import { linkedInProfileHref } from '../utils/linkedInUrl';
@@ -252,7 +253,7 @@ const ConnectPage: React.FC = () => {
                           }}
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-red-500 to-blue-500 flex items-center justify-center text-white text-2xl font-bold">
+                        <div className="w-full h-full bg-brand-dark text-white flex items-center justify-center text-2xl font-bold">
                           {targetUser.name.charAt(0)}
                         </div>
                       )}

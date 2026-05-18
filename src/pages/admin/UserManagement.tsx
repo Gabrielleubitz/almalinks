@@ -525,7 +525,7 @@ const UserManagement: React.FC = () => {
                                 }}
                               />
                             ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm">
+                              <div className="w-full h-full bg-brand-dark flex items-center justify-center text-white font-bold text-xs sm:text-sm">
                                 {userData.name?.charAt(0) || userData.email?.charAt(0) || '?'}
                               </div>
                             )}
@@ -852,7 +852,7 @@ const UserManagement: React.FC = () => {
                       }}
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-xl">
+                    <div className="w-full h-full bg-brand-dark flex items-center justify-center text-white font-bold text-xl">
                       {selectedUser.name?.charAt(0) || selectedUser.email?.charAt(0) || '?'}
                     </div>
                   )}

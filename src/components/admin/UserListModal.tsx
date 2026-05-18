@@ -1,3 +1,4 @@
+import ProfileAvatarPlaceholder from '../profile/ProfileAvatarPlaceholder';
 import React, { useState, useMemo } from 'react';
 import { X, User, Mail, Phone, CheckCircle, Clock, Calendar, Search, ChevronDown, UserCheck } from 'lucide-react';
 import { EventService } from '../../services/eventService';
@@ -193,7 +194,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
                                     }}
                                   />
                                 ) : (
-                                  <div className="w-full h-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-white font-bold">
+                                  <div className="w-full h-full bg-brand-dark flex items-center justify-center text-white font-bold">
                                     {user.name.charAt(0)}
                                   </div>
                                 )}

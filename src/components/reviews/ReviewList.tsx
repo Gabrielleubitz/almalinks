@@ -1,3 +1,4 @@
+import ProfileAvatarPlaceholder from '../profile/ProfileAvatarPlaceholder';
 import React from 'react';
 import { Star, User } from 'lucide-react';
 import { ReviewData, ReviewService } from '../../services/reviewService';
@@ -51,9 +52,11 @@ const ReviewList: React.FC<ReviewListProps> = ({ reviews, loading }) => {
                     }}
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-white font-bold">
-                    {review.userName.charAt(0)}
-                  </div>
+                  <ProfileAvatarPlaceholder
+                    name={review.userName}
+                    className="w-full h-full"
+                    textClassName="font-bold"
+                  />
                 )}
               </div>
             </div>
