@@ -436,7 +436,7 @@ const EventDetailPage: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  {registration?.status === 'approved' && privateDetails?.meetingUrl && (
+                  {registration?.status === 'approved' && privateDetails?.meetingUrl && !ended && (
                     <div className="flex items-center gap-2">
                       <LinkIcon className="h-5 w-5 text-brand-blue shrink-0" />
                       <a
@@ -517,10 +517,23 @@ const EventDetailPage: React.FC = () => {
                         </button>
                       </p>
                     </div>
+                  ) : registration?.status === 'pending' && ended ? (
+                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 text-sm text-gray-700">
+                      <p className="font-semibold text-gray-900">This event has ended.</p>
+                      <p className="mt-1">Your registration was still pending approval.</p>
+                    </div>
                   ) : registration?.status === 'pending' ? (
                     <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-sm text-amber-900">
                       <p className="font-semibold">Registration pending approval.</p>
                       <p className="mt-1 text-amber-800">We&apos;ll email details once confirmed.</p>
+                    </div>
+                  ) : registration?.status === 'rejected' && ended ? (
+                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 text-sm text-gray-700">
+                      <p className="font-semibold text-gray-900">This event has ended.</p>
+                      <p className="mt-1">Your registration was not approved.</p>
+                      {registration.rejectionReason ? (
+                        <p className="mt-1 text-gray-600">{registration.rejectionReason}</p>
+                      ) : null}
                     </div>
                   ) : registration?.status === 'rejected' ? (
                     <div className="p-4 bg-red-50 rounded-xl border border-red-200 text-sm">
@@ -528,6 +541,14 @@ const EventDetailPage: React.FC = () => {
                       {registration.rejectionReason && (
                         <p className="mt-1 text-red-800">{registration.rejectionReason}</p>
                       )}
+                    </div>
+                  ) : registration?.status === 'approved' && ended ? (
+                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 text-sm text-gray-700">
+                      <p className="font-semibold text-gray-900">This event has ended.</p>
+                      <p className="mt-1">You were registered for this event.</p>
+                      {event.status === 'completed' && registration.checkedIn ? (
+                        <p className="mt-2 text-gray-600">You can share feedback in the reviews section below.</p>
+                      ) : null}
                     </div>
                   ) : registration?.status === 'approved' ? (
                     <div className="space-y-3">
@@ -546,17 +567,15 @@ const EventDetailPage: React.FC = () => {
                         >
                           {showTicket ? 'Hide ticket' : 'View ticket'}
                         </button>
-                        {!ended ? (
-                          <a
-                            href={createGoogleCalendarUrl()}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 min-h-[48px] inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800"
-                          >
-                            <CalendarPlus className="h-5 w-5" />
-                            Add to calendar
-                          </a>
-                        ) : null}
+                        <a
+                          href={createGoogleCalendarUrl()}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 min-h-[48px] inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800"
+                        >
+                          <CalendarPlus className="h-5 w-5" />
+                          Add to calendar
+                        </a>
                       </div>
                     </div>
                   ) : ended ? (
@@ -592,7 +611,7 @@ const EventDetailPage: React.FC = () => {
         </div>
       </section>
 
-      {showTicket && registration?.status === 'approved' && registration && event && (
+      {showTicket && !ended && registration?.status === 'approved' && registration && event && (
         <section className="py-8 bg-gray-50 border-b border-gray-100" aria-label="Your ticket">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
             <EventTicketCard
@@ -650,10 +669,10 @@ const EventDetailPage: React.FC = () => {
       </div>
 
       {/* Reviews Section - Only show for completed events */}
-      {isEventCompleted && (
+      {(isEventCompleted || ended) && (
         <ReviewSection
           eventId={event.id}
-          isCompleted={isEventCompleted}
+          isCompleted={isEventCompleted || ended}
           userCheckedIn={registration?.checkedIn === true}
         />
       )}
