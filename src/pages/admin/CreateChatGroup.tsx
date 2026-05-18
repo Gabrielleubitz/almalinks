@@ -35,7 +35,7 @@ const CreateChatGroup: React.FC = () => {
           <div className="mb-6 sm:mb-8">
             <div className="flex items-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
               <BackButton fallbackTo="/admin/chats" iconOnly className="text-gray-600 hover:text-gray-900 transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center" iconClassName="h-5 w-5" />
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-brand-dark rounded-full flex items-center justify-center text-white flex-shrink-0">
                 <MessageCircle className="h-4 w-4 sm:h-5 sm:h-5" />
               </div>
               <div className="min-w-0 flex-1">
