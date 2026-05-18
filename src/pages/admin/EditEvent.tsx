@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getIdToken } from 'firebase/auth';
-import { Calendar, MapPin, Image, FileText, ArrowLeft, AlertCircle, Loader2, ImagePlus } from 'lucide-react';
+import { Calendar, MapPin, Image, FileText, ArrowLeft, AlertCircle, CheckCircle, Loader2, ImagePlus } from 'lucide-react';
 import SaveButtonWithFeedback from '../../components/ui/SaveButtonWithFeedback';
 import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../firebase/config';
@@ -16,6 +16,8 @@ import RecipientPreview from '../../components/admin/RecipientPreview';
 import { EventDatetimeLocalDualPreview } from '../../components/EventDualTimezoneDisplay';
 import { ALMA_CHAPTER_SELECT_VALUES } from '../../utils/eventChapterTimezones';
 import { triggerEventCompletedThankYouEmail } from '../../utils/triggerEventCompletedThankYouEmail';
+import HubSpotEventSyncPanel from '../../components/admin/HubSpotEventSyncPanel';
+import { syncEventToHubSpot } from '../../utils/hubspotEventSync';
 
 const EditEvent: React.FC = () => {
   const navigate = useNavigate();
@@ -321,6 +323,8 @@ const EditEvent: React.FC = () => {
 
       // Private details + HubSpot sync: use server APIs (bypasses client Firestore rules)
       let hubspotStatus = '';
+      let hubspotSyncAttempted = false;
+      let hubspotSynced = false;
       let announcementStatus = '';
       const firebaseUser = auth.currentUser;
       if (firebaseUser) {
@@ -347,23 +351,18 @@ const EditEvent: React.FC = () => {
         } catch (privErr) {
           console.warn('[EditEvent] update-event-private-details request failed:', (privErr as Error)?.message || privErr);
         }
-        try {
-          const syncRes = await fetch('/api/sync-event-to-hubspot', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-            body: JSON.stringify({ eventId }),
-            credentials: 'include',
-          });
-          const syncData = await syncRes.json().catch(() => ({}));
-          if (syncRes.ok && syncData.synced) {
-            hubspotStatus = ' Synced to HubSpot.';
-          } else {
-            hubspotStatus = ` HubSpot sync failed: ${syncData.error || syncRes.status}`;
-            console.warn('[EditEvent] HubSpot deal sync failed:', syncData.error || syncRes.status);
+        hubspotSyncAttempted = true;
+        const syncResult = await syncEventToHubSpot(eventId);
+        hubspotSynced = syncResult.synced;
+        if (syncResult.synced) {
+          hubspotStatus = ' Synced to HubSpot.';
+          if (syncResult.hubspotDealId) {
+            setOriginalEvent((prev) =>
+              prev ? { ...prev, hubspotDealId: syncResult.hubspotDealId } : prev
+            );
           }
-        } catch (hubErr) {
-          hubspotStatus = ` HubSpot sync failed: ${hubErr instanceof Error ? hubErr.message : 'Network error'}`;
-          console.warn('[EditEvent] HubSpot deal sync request failed:', hubErr);
+        } else {
+          console.warn('[EditEvent] HubSpot deal sync failed:', syncResult.error);
         }
 
         // Send announcement only when event transitions into active.
@@ -427,13 +426,21 @@ const EditEvent: React.FC = () => {
         zoomPassword: formData.zoomPassword,
       });
 
-      setSuccess(`Event "${formData.name}" updated successfully!${hubspotStatus}${announcementStatus}`);
+      const syncFailed = hubspotSyncAttempted && !hubspotSynced;
+      if (syncFailed) {
+        setSuccess(
+          `Event "${formData.name}" saved.${announcementStatus} Use HubSpot sync below to retry — the event is not linked to a Deal yet.`
+        );
+      } else {
+        setSuccess(`Event "${formData.name}" updated successfully!${hubspotStatus}${announcementStatus}`);
+      }
       setSavedAt(Date.now());
 
-      // Redirect after 2 seconds
-      setTimeout(() => {
-        navigate('/admin');
-      }, 2000);
+      if (!syncFailed) {
+        setTimeout(() => {
+          navigate('/admin');
+        }, 2000);
+      }
 
     } catch (err: any) {
       console.error('❌ Error updating event:', err);
@@ -522,6 +529,18 @@ const EditEvent: React.FC = () => {
             )}
           </div>
 
+          {eventId && originalEvent ? (
+            <HubSpotEventSyncPanel
+              className="mb-6"
+              eventId={eventId}
+              eventName={originalEvent.name}
+              hubspotDealId={originalEvent.hubspotDealId}
+              onHubspotDealIdChange={(dealId) =>
+                setOriginalEvent((prev) => (prev ? { ...prev, hubspotDealId: dealId } : prev))
+              }
+            />
+          ) : null}
+
           {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-3">
@@ -533,7 +552,7 @@ const EditEvent: React.FC = () => {
           {/* Success Message */}
           {success && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center space-x-3">
-              <Save className="h-5 w-5 text-green-600 flex-shrink-0" />
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
               <p className="text-green-600 text-sm">{success}</p>
             </div>
           )}

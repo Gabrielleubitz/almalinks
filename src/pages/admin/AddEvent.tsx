@@ -15,6 +15,8 @@ import RecipientPreview from '../../components/admin/RecipientPreview';
 import { hasAudiencePickForMode } from '../../utils/eventAudienceUtils';
 import { EventDatetimeLocalDualPreview } from '../../components/EventDualTimezoneDisplay';
 import { ALMA_CHAPTER_SELECT_VALUES } from '../../utils/eventChapterTimezones';
+import HubSpotEventSyncPanel from '../../components/admin/HubSpotEventSyncPanel';
+import { syncEventToHubSpot } from '../../utils/hubspotEventSync';
 
 const AddEvent: React.FC = () => {
   const navigate = useNavigate();
@@ -42,6 +44,11 @@ const AddEvent: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [announcementFailedReason, setAnnouncementFailedReason] = useState<string | null>(null);
+  const [lastCreatedEvent, setLastCreatedEvent] = useState<{
+    id: string;
+    name: string;
+    hubspotDealId?: string;
+  } | null>(null);
   const [previewSlug, setPreviewSlug] = useState('');
   const [imageUploading, setImageUploading] = useState(false);
   const [showImageCropModal, setShowImageCropModal] = useState(false);
@@ -182,31 +189,17 @@ const AddEvent: React.FC = () => {
         );
       }
 
-      // Await HubSpot sync and announcement so we can show their status in the success message
-      let hubspotStatus = '';
+      let hubspotSynced = false;
+      let hubspotDealId: string | undefined;
       let announcementSent = false;
       let announcementError: string | null = null;
       const firebaseUser = auth.currentUser;
       if (firebaseUser) {
-        try {
-          const idToken = await getIdToken(firebaseUser);
-          const syncRes = await fetch('/api/sync-event-to-hubspot', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-            body: JSON.stringify({ eventId }),
-            credentials: 'include',
-          });
-          const syncData = await syncRes.json().catch(() => ({}));
-          if (syncRes.ok && syncData.synced) {
-            hubspotStatus = ' Synced to HubSpot Deals.';
-          } else {
-            const err = syncData.error || (syncRes.status === 503 ? 'HUBSPOT_ACCESS_TOKEN not set' : `HTTP ${syncRes.status}`);
-            hubspotStatus = ` HubSpot sync failed: ${err}`;
-            console.warn('[AddEvent] HubSpot deal sync failed:', err);
-          }
-        } catch (hubErr) {
-          hubspotStatus = ` HubSpot sync failed: ${hubErr instanceof Error ? hubErr.message : 'Network error'}`;
-          console.warn('[AddEvent] HubSpot deal sync request failed:', hubErr);
+        const syncResult = await syncEventToHubSpot(eventId);
+        hubspotSynced = syncResult.synced;
+        hubspotDealId = syncResult.hubspotDealId;
+        if (!syncResult.synced) {
+          console.warn('[AddEvent] HubSpot deal sync failed:', syncResult.error);
         }
 
         // Only active events should trigger a new-event announcement.
@@ -236,13 +229,17 @@ const AddEvent: React.FC = () => {
       }
 
       if (announcementError) setAnnouncementFailedReason(announcementError);
+      setLastCreatedEvent({ id: eventId, name: eventName, hubspotDealId });
       setSavedAt(Date.now());
+      const hubspotNote = hubspotSynced
+        ? ' Linked to HubSpot.'
+        : ' HubSpot sync did not complete — use the panel below to retry.';
       setSuccess(
         announcementSent
-          ? `Event "${eventName}" created with slug: ${previewSlug}.${hubspotStatus} Announcement sent to Mailchimp.`
+          ? `Event "${eventName}" created (${previewSlug}).${hubspotNote} Announcement email sent.`
           : announcementError
-            ? `Event "${eventName}" created with slug: ${previewSlug}.${hubspotStatus} Mailchimp failed: ${announcementError}`
-            : `Event "${eventName}" created successfully with slug: ${previewSlug}.${hubspotStatus}`
+            ? `Event "${eventName}" created (${previewSlug}).${hubspotNote} Announcement failed: ${announcementError}`
+            : `Event "${eventName}" created successfully (${previewSlug}).${hubspotNote}`
       );
       setFormData({
         name: '',
@@ -267,10 +264,11 @@ const AddEvent: React.FC = () => {
       setIndividualRecipientObjects([]);
       setPreviewSlug('');
 
-      // Redirect after 2 seconds
-      setTimeout(() => {
-        navigate('/admin');
-      }, 2000);
+      if (hubspotSynced) {
+        setTimeout(() => {
+          navigate('/admin');
+        }, 2500);
+      }
 
     } catch (err: any) {
       if (!eventCreateSucceeded) {
@@ -375,6 +373,18 @@ const AddEvent: React.FC = () => {
               )}
             </div>
           )}
+
+          {lastCreatedEvent ? (
+            <HubSpotEventSyncPanel
+              className="mb-6"
+              eventId={lastCreatedEvent.id}
+              eventName={lastCreatedEvent.name}
+              hubspotDealId={lastCreatedEvent.hubspotDealId}
+              onHubspotDealIdChange={(dealId) =>
+                setLastCreatedEvent((prev) => (prev ? { ...prev, hubspotDealId: dealId } : prev))
+              }
+            />
+          ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Event Name */}
