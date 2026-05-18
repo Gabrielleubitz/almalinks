@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { User, ChevronLeft, Edit3, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { UserService } from '../services/userService';
@@ -44,6 +44,7 @@ const UserProfilePage: React.FC = () => {
   const [connecting, setConnecting] = useState(false);
   const [outgoingPending, setOutgoingPending] = useState(false);
   const [dailyRequestCount, setDailyRequestCount] = useState<number | null>(null);
+  const [connectError, setConnectError] = useState<string | null>(null);
 
   const refreshConnectionUi = useCallback(async () => {
     if (!userId || !currentUser?.uid || userId === currentUser.uid) return;
@@ -124,6 +125,7 @@ const UserProfilePage: React.FC = () => {
 
     try {
       setConnecting(true);
+      setConnectError(null);
 
       if (currentUser.role === 'admin') {
         const { AdminConnectionService } = await import('../services/adminConnectionService');
@@ -150,7 +152,7 @@ const UserProfilePage: React.FC = () => {
         setOutgoingPending(true);
         return;
       }
-      alert(msg || 'Could not send connection request. Please try again.');
+      setConnectError(msg || 'Could not send connection request. Please try again.');
     } finally {
       setConnecting(false);
     }
@@ -226,15 +228,12 @@ const UserProfilePage: React.FC = () => {
   const storedChapter = (profile.chapter ?? '').trim() || null;
 
   const isOwner = currentUser?.uid === userId;
-  const showConnect =
-    !!currentUser?.uid &&
-    !isOwner &&
-    userId &&
-    connections.length === 0 &&
-    profile.canConnect !== false;
+  const isConnected = connections.length > 0;
+  const canConnectHere = !isOwner && !!userId && !isConnected;
+  const showConnect = !!currentUser?.uid && canConnectHere;
+  const showLoginToConnect = !currentUser?.uid && canConnectHere;
   const atDailyLimit = dailyRequestCount !== null && isOverDailyLimit(dailyRequestCount);
-  const connectDisabled =
-    connecting || outgoingPending || atDailyLimit || !showConnect;
+  const connectDisabled = connecting || outgoingPending || atDailyLimit;
 
   let connectLabel = 'Connect';
   if (connecting) connectLabel = 'Sending…';
@@ -272,7 +271,7 @@ const UserProfilePage: React.FC = () => {
       )}
 
       <div className="pt-[var(--content-offset-top)] pb-6">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <button
               type="button"
@@ -326,10 +325,23 @@ const UserProfilePage: React.FC = () => {
             atDailyLimit={atDailyLimit}
             outgoingPending={outgoingPending}
             connections={connections}
+            connectError={connectError}
             onConnect={() => void handleConnect()}
             onOpenAvatar={() => setShowAvatarModal(true)}
             canOpenAvatarLightbox={canOpenAvatarLightbox}
           />
+
+          {showLoginToConnect ? (
+            <p className="mt-4 text-sm text-gray-600 text-center">
+              <Link
+                to={`/login?redirect=${encodeURIComponent(`/profile/${userId}`)}`}
+                className="font-medium text-brand-blue hover:text-brand-blue-hover"
+              >
+                Sign in
+              </Link>{' '}
+              to send a connection request.
+            </p>
+          ) : null}
         </div>
       </div>
 

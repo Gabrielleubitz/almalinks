@@ -310,105 +310,59 @@ const MembersPage: React.FC = () => {
     const isSelf = member.uid === currentUser?.uid;
     const incomingReq = incomingRequests.find(r => (r.requesterId || r.fromUid) === member.uid);
     const hasIncomingRequest = !!incomingReq;
-    const isRespondingToRequest = hasIncomingRequest && respondingRequestId === incomingReq!.id;
-
     const hasPendingRequest = member.connectionPending || sentRequestIds.has(member.uid);
     const chapterLabel = formatChapterDisplayLabel(member.chapter ?? null);
 
-    const showCardFooter =
-      hasIncomingRequest ||
-      isSelf ||
-      (member.isConnected && !isSelf) ||
-      (hasPendingRequest && !member.isConnected && !isSelf);
-
     const cardOutlineClass = hasIncomingRequest ? 'ring-2 ring-blue-500 border-blue-500' : '';
+    const statusLabel = isSelf
+      ? 'Your profile'
+      : hasIncomingRequest
+        ? 'Wants to connect'
+        : member.isConnected
+          ? 'Connected'
+          : hasPendingRequest
+            ? 'Request pending'
+            : null;
 
     const avatarFallback = (
       <ProfileAvatarPlaceholder name={displayName} textClassName="font-semibold text-sm" />
     );
 
     return (
-      <div
+      <Link
         key={member.uid}
-        className={`bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:border-brand-blue/30 hover:shadow transition-all ${cardOutlineClass}`}
+        to={`/profile/${member.uid}`}
+        className={`bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden block p-2.5 text-left hover:border-brand-blue/40 hover:shadow transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue ${cardOutlineClass}`}
       >
-        <Link
-          to={`/profile/${member.uid}`}
-          className="block p-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-inset"
-        >
-          <div className="flex gap-2">
-            <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 flex-shrink-0 relative bg-brand-dark">
-              <ImageWithCrop
-                src={String(member.avatarUrl || '')}
-                crop={member.profileImageCrop ?? null}
-                shape="circle"
-                alt=""
-                className="rounded-full"
-                urlIsCropped={true}
-                fallback={avatarFallback}
-              />
-            </div>
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                <span className="font-semibold text-gray-900 text-xs leading-snug line-clamp-2">{displayName}</span>
-                <TrusteeMentorStar compact isTrustee={member.isTrustee} isMentor={member.isMentor} />
-              </div>
-              {member.bioTitle ? (
-                <p className="text-[11px] text-brand-dark font-medium line-clamp-1 leading-snug">{member.bioTitle}</p>
-              ) : null}
-              {chapterLabel ? (
-                <p className="text-[11px] text-gray-500 line-clamp-1">{chapterLabel}</p>
-              ) : null}
-            </div>
+        <div className="flex gap-2">
+          <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 flex-shrink-0 relative bg-brand-dark">
+            <ImageWithCrop
+              src={String(member.avatarUrl || '')}
+              crop={member.profileImageCrop ?? null}
+              shape="circle"
+              alt=""
+              className="rounded-full"
+              urlIsCropped={true}
+              fallback={avatarFallback}
+            />
           </div>
-        </Link>
-
-        {showCardFooter ? (
-        <div className="mt-auto px-2 pb-2 pt-0 space-y-2 border-t border-gray-50 bg-gray-50/60">
-          {hasIncomingRequest && incomingReq && (
-            <div className="flex flex-wrap items-center gap-2 pt-2">
-              <button
-                type="button"
-                disabled={isRespondingToRequest}
-                onClick={() => handleRespondToRequest(incomingReq.id, 'accepted')}
-                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-white bg-brand-dark hover:bg-brand-dark-hover rounded-lg transition-colors disabled:opacity-50"
-              >
-                {isRespondingToRequest ? '…' : <><Check className="h-3.5 w-3.5" /> Accept</>}
-              </button>
-              <button
-                type="button"
-                disabled={isRespondingToRequest}
-                onClick={() => handleRespondToRequest(incomingReq.id, 'rejected')}
-                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-              >
-                {!isRespondingToRequest && <><X className="h-3.5 w-3.5" /> Reject</>}
-              </button>
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+              <span className="font-semibold text-gray-900 text-xs leading-snug line-clamp-2">{displayName}</span>
+              <TrusteeMentorStar compact isTrustee={member.isTrustee} isMentor={member.isMentor} />
             </div>
-          )}
-
-          {!hasIncomingRequest && hasPendingRequest && !member.isConnected && !isSelf && (
-            <div className="flex items-center gap-1.5 text-xs font-medium text-amber-800 bg-amber-50 rounded-md px-2 py-1.5 mt-2">
-              <Clock className="h-3.5 w-3.5 flex-shrink-0" />
-              Request pending
-            </div>
-          )}
-
-          {!hasIncomingRequest && member.isConnected && !isSelf && (
-            <div className="flex items-center gap-1.5 text-xs font-medium text-green-800 bg-green-50 rounded-md px-2 py-1.5 mt-2">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
-              Connected
-            </div>
-          )}
-
-          {isSelf && (
-            <div className="flex items-center gap-1.5 text-xs font-medium text-brand-dark bg-brand-light/80 rounded-md px-2 py-1.5 mt-2">
-              <User className="h-3.5 w-3.5 flex-shrink-0" />
-              Your profile
-            </div>
-          )}
+            {member.bioTitle ? (
+              <p className="text-[11px] text-brand-dark font-medium line-clamp-1 leading-snug">{member.bioTitle}</p>
+            ) : null}
+            {chapterLabel ? (
+              <p className="text-[11px] text-gray-500 line-clamp-1">{chapterLabel}</p>
+            ) : null}
+            {statusLabel ? (
+              <p className="text-[10px] font-medium text-gray-500 pt-0.5">{statusLabel}</p>
+            ) : null}
+          </div>
         </div>
-        ) : null}
-      </div>
+      </Link>
     );
   };
 

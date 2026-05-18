@@ -570,23 +570,6 @@ const UserDirectoryPage: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Action Buttons */}
-                      <div className="flex items-center space-x-2">
-                        {userCard.canConnect && (
-                          <button className="flex-1 inline-flex items-center justify-center space-x-1 px-3 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors duration-200 text-sm font-medium">
-                            <UserPlus className="h-4 w-4" />
-                            <span>Connect</span>
-                          </button>
-                        )}
-                        
-                        <Link
-                          to={`/profile/${userCard.uid}`}
-                          className="flex-1 inline-flex items-center justify-center space-x-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 text-sm font-medium"
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span>View</span>
-                        </Link>
-                      </div>
                     </div>
                   </div>
                 ) : (
@@ -661,23 +644,6 @@ const UserDirectoryPage: React.FC = () => {
                         )}
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex items-center space-x-3">
-                        {userCard.canConnect && (
-                          <button className="inline-flex items-center space-x-2 px-4 py-2 bg-brand-dark text-white rounded-lg hover:bg-brand-mid transition-colors duration-200 font-medium">
-                            <UserPlus className="h-4 w-4" />
-                            <span>Connect</span>
-                          </button>
-                        )}
-                        
-                        <Link
-                          to={`/profile/${userCard.uid}`}
-                          className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 font-medium"
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span>View Profile</span>
-                        </Link>
-                      </div>
                     </div>
                   </div>
                 );

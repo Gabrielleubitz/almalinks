@@ -1,12 +1,11 @@
 import React from 'react';
-import { MapPin, Mail, Phone, Linkedin, Globe, Twitter, Clock, Calendar, Shield, Eye, Users, EyeOff } from 'lucide-react';
+import { MapPin, Mail, Linkedin, Globe, Twitter, Clock, Shield, Eye, Users, EyeOff } from 'lucide-react';
 import { UserProfile } from '../../types/user';
 import { getVisibilityDescription } from '../../utils/privacy';
 import Favicon from '../ui/Favicon';
 import BioHtml from './BioHtml';
 import { formatBioTitleForDisplay } from '../../utils/bioDisplay';
 import ProfileAvatarPlaceholder from './ProfileAvatarPlaceholder';
-import { formatMemberMonthYear } from '../../utils/firestoreDate';
 
 interface ProfilePreviewCardProps {
   profile: UserProfile;
@@ -19,8 +18,6 @@ const ProfilePreviewCard: React.FC<ProfilePreviewCardProps> = ({
 }) => {
   const displayName = profile.displayName || 'Your Name';
 const hasProfileImage = profile.avatarUrl || profile.profileImage;
-  const memberSinceLabel = formatMemberMonthYear(profile.joinedAt, profile.createdAt);
-
   const getVisibilityIcon = (visibility: string) => {
     switch (visibility) {
       case 'public': return <Eye className="h-4 w-4" />;
@@ -121,13 +118,6 @@ const hasProfileImage = profile.avatarUrl || profile.profileImage;
               </div>
             )}
             
-            {profile.phone && profile.showPhone && (
-              <div className="flex items-center text-gray-600 text-sm">
-                <Phone className="h-4 w-4 mr-3 text-gray-400 flex-shrink-0" />
-                <span>{profile.phone}</span>
-              </div>
-            )}
-            
             {profile.timezone && (
               <div className="flex items-center text-gray-600 text-sm">
                 <Clock className="h-4 w-4 mr-3 text-gray-400 flex-shrink-0" />
@@ -208,14 +198,6 @@ const hasProfileImage = profile.avatarUrl || profile.profileImage;
             {getVisibilityDescription(profile.profileVisibility)}
           </p>
         </div>
-
-        {/* Member Since */}
-        {memberSinceLabel && (
-          <div className="flex items-center text-gray-500 text-xs">
-            <Calendar className="h-3 w-3 mr-2" />
-            <span>Member since {memberSinceLabel}</span>
-          </div>
-        )}
 
         {/* Completion Percentage */}
         {showEditMode && profile.profileCompletionPercentage !== undefined && (

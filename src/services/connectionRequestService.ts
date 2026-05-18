@@ -72,15 +72,20 @@ export class ConnectionRequestService {
               message: options.message
             })
           });
-          const data = await response.json();
+          let data: { ok?: boolean; requestId?: string; error?: string } = {};
+          try {
+            data = await response.json();
+          } catch {
+            data = {};
+          }
           if (response.ok && data.ok) {
             console.log('✅ Connection request sent via API:', data.requestId);
-            requestId = data.requestId;
+            requestId = data.requestId!;
           } else {
             throw new Error(data.error || `HTTP ${response.status}: Failed to create connection request`);
           }
         } catch (apiError: any) {
-          const msg = String(apiError?.message || '');
+          const msg = String(apiError?.message || apiError || '');
           // Expected client errors: do not duplicate via Firestore fallback
           if (
             /401|403|409|Cannot send connection|yourself|already exists|already sent|not yet responded|Connection request already|today's connection limit|daily limit/i.test(

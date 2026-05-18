@@ -82,7 +82,8 @@ export const filterProfileForViewer = (
   
   // All users can view all profile information for better networking
   let canViewContact = true; // Everyone can see contact info
-  let canViewPhone = showPhone; // Respect user's phone sharing preference
+  // Phone is never shown on public member profiles (owner/admin only)
+  let canViewPhone = (isOwner || isAdmin) && showPhone;
   let canConnect = true; // Everyone can connect
   let canMessage = true; // Everyone can message
   
