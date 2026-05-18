@@ -38,9 +38,11 @@ function timestampToMs(t: unknown): number {
 export interface ConnectionsCardProps {
   /** Denser layout and brand-colored avatars for dashboard sidebar. */
   compact?: boolean;
+  /** Vertical list for profile page sidebar — minimal rows, one screen. */
+  sidebar?: boolean;
 }
 
-const ConnectionsCard: React.FC<ConnectionsCardProps> = ({ compact = false }) => {
+const ConnectionsCard: React.FC<ConnectionsCardProps> = ({ compact = false, sidebar = false }) => {
   const { user } = useAuth();
   const [connections, setConnections] = useState<EnrichedConnection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -437,7 +439,79 @@ const ConnectionsCard: React.FC<ConnectionsCardProps> = ({ compact = false }) =>
 
     return basePartner;
   };
-  
+
+  if (sidebar) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5 text-brand-blue shrink-0" />
+            Connections
+          </h3>
+          <Link
+            to="/members"
+            className="text-[10px] font-medium text-brand-blue hover:text-brand-blue-hover whitespace-nowrap"
+          >
+            View all
+          </Link>
+        </div>
+        <div className="p-2">
+          {loading || loadingEvents ? (
+            <p className="text-xs text-gray-500 py-2 text-center">Loading…</p>
+          ) : connections.length === 0 ? (
+            <p className="text-xs text-gray-600 text-center py-2 leading-snug">
+              No connections yet.{' '}
+              <Link to="/members" className="text-brand-blue font-medium hover:underline">
+                Browse members
+              </Link>
+            </p>
+          ) : (
+            <ul className="space-y-1 max-h-[12rem] overflow-y-auto">
+              {connections.map((connection) => {
+                const partner = getFinalPartnerData(connection);
+                if (!partner) return null;
+                return (
+                  <li key={connection.id}>
+                    <Link
+                      to={`/profile/${partner.uid}`}
+                      className="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-gray-50 transition-colors group"
+                    >
+                      <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-brand-dark">
+                        <ImageWithCrop
+                          src={String(partner.profileImage || '')}
+                          crop={null}
+                          shape="circle"
+                          alt=""
+                          className="rounded-full w-full h-full"
+                          urlIsCropped={true}
+                          fallback={
+                            <ProfileAvatarPlaceholder
+                              name={partner.name}
+                              textClassName="font-semibold text-[10px]"
+                            />
+                          }
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-900 group-hover:text-brand-dark truncate">
+                          {partner.name}
+                        </p>
+                        {partner.work && (
+                          <p className="text-[10px] text-gray-500 truncate">{partner.work}</p>
+                        )}
+                      </div>
+                      <ChevronRight className="h-3 w-3 text-gray-400 group-hover:text-brand-dark shrink-0" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={

@@ -8,6 +8,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ConnectionsCard from '../components/dashboard/ConnectionsCard';
 import DashboardProfileView from '../components/dashboard/DashboardProfileView';
+import DashboardUpcomingEvents from '../components/dashboard/DashboardUpcomingEvents';
 import ProfilePictureUploader from '../components/profile/ProfilePictureUploader';
 import ImageWithCrop from '../components/profile/ImageWithCrop';
 import RichTextBioEditor from '../components/profile/RichTextBioEditor';
@@ -557,16 +558,16 @@ const DashboardPage: React.FC = () => {
               : 'pt-[var(--content-offset-top)] sm:pt-20 pb-4 sm:pb-6 bg-gradient-to-br from-gray-50 to-white overflow-x-hidden w-full max-w-full box-border max-h-[calc(100dvh-4.5rem)] lg:max-h-[calc(100dvh-5rem)] overflow-y-auto'
           }
         >
-          <div className="max-w-3xl mx-auto px-3 sm:px-4 md:px-6 w-full max-w-full box-border">
-            <div className="mb-4">
+          <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 w-full box-border">
+            <div className="mb-3">
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Profile</h1>
               <p className="text-xs text-gray-500 mt-0.5">
                 {profileCompletion.percentage}% complete · {connectionsCount} connection{connectionsCount === 1 ? '' : 's'} · {upcomingRsvpRegistrations.length} upcoming RSVP{upcomingRsvpRegistrations.length === 1 ? '' : 's'}
               </p>
             </div>
 
-            <div className="space-y-4 w-full max-w-full">
-              <div ref={profileSectionRef} className="w-full max-w-full min-w-0" data-onboarding="chapter">
+            <div className={`grid gap-4 w-full ${isEditingProfile ? '' : 'lg:grid-cols-[1fr_minmax(15rem,17.5rem)]'}`}>
+              <div ref={profileSectionRef} className="w-full min-w-0 space-y-3" data-onboarding="chapter">
                 <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 border border-gray-100 w-full max-w-full min-w-0 overflow-hidden">
                   <div className="flex items-center justify-between gap-3 mb-3">
                     <h2 className="text-base font-semibold text-gray-900">Your Profile</h2>
@@ -1111,9 +1112,6 @@ const DashboardPage: React.FC = () => {
                       profileImageUrl={profileImageUrl}
                       profileImageCrop={profileImageCrop}
                       imageUploadError={imageUploadError}
-                      events={events}
-                      upcomingRsvpRegistrations={upcomingRsvpRegistrations}
-                      registrationsLoading={registrationsLoading}
                       formatPosition={formatPosition}
                     />
                   )}
@@ -1121,74 +1119,75 @@ const DashboardPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="px-3 py-2 border-b border-gray-100">
-                    <h3 className="text-sm font-semibold text-gray-900">Your network</h3>
-                  </div>
-                  <div className="p-2 max-h-[9rem] overflow-y-auto">
-                    <ConnectionsCard compact />
-                  </div>
-                </div>
-
-                <div className={`rounded-xl p-3 border ${
-                  profileCompletion.percentage === 100
-                    ? 'bg-green-50 border-green-100'
-                    : 'bg-gradient-to-br from-brand-light to-blue-50 border-blue-100'
-                }`}>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <h3 className="text-sm font-semibold text-gray-900">Profile strength</h3>
-                    {profileCompletion.percentage === 100 ? (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <TrendingUp className="h-4 w-4 text-brand-blue" />
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="flex-1 bg-gray-200 rounded-full h-1.5">
-                      <div
-                        className={`h-1.5 rounded-full ${
-                          profileCompletion.percentage === 100
-                            ? 'bg-green-500'
-                            : 'bg-brand-blue'
-                        }`}
-                        style={{ width: `${profileCompletion.percentage}%` }}
-                      />
+              {!isEditingProfile && (
+                <aside className="space-y-3 min-w-0 lg:sticky lg:top-[calc(var(--content-offset-top)+0.5rem)] lg:self-start">
+                  <DashboardUpcomingEvents
+                    events={events}
+                    upcomingRsvpRegistrations={upcomingRsvpRegistrations}
+                    registrationsLoading={registrationsLoading}
+                  />
+                  <ConnectionsCard sidebar />
+                  <div
+                    className={`rounded-xl p-3 border ${
+                      profileCompletion.percentage === 100
+                        ? 'bg-green-50 border-green-100'
+                        : 'bg-gradient-to-br from-brand-light to-blue-50 border-blue-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <h3 className="text-sm font-semibold text-gray-900">Profile strength</h3>
+                      {profileCompletion.percentage === 100 ? (
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <TrendingUp className="h-4 w-4 text-brand-blue" />
+                      )}
                     </div>
-                    <span className="text-xs font-medium text-gray-700">{profileCompletion.percentage}%</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-gray-200 rounded-full h-1.5">
+                        <div
+                          className={`h-1.5 rounded-full ${
+                            profileCompletion.percentage === 100
+                              ? 'bg-green-500'
+                              : 'bg-brand-blue'
+                          }`}
+                          style={{ width: `${profileCompletion.percentage}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-gray-700">{profileCompletion.percentage}%</span>
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              {pastEventsAttended.length > 0 && (
-                <div className="bg-white rounded-xl shadow-sm p-3 border border-gray-100">
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Past events</h3>
-                  <ul className="space-y-1 max-h-24 overflow-y-auto">
-                    {pastAttendedDisplay.map((event) => (
-                      <li key={event.id}>
-                        <button
-                          type="button"
-                          onClick={(e) => handleEventClick(e, event.slug)}
-                          className="w-full text-left text-xs text-gray-600 hover:text-brand-dark truncate py-0.5"
-                        >
-                          {event.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                  {hasMorePastAttended && !showAllPast && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllPast(true)}
-                      className="text-[10px] text-brand-blue font-medium mt-1"
-                    >
-                      Show all ({pastEventsAttended.length})
-                    </button>
+                  {pastEventsAttended.length > 0 && (
+                    <div className="bg-white rounded-xl shadow-sm p-3 border border-gray-100">
+                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Past events</h3>
+                      <ul className="space-y-1 max-h-20 overflow-y-auto">
+                                      {pastAttendedDisplay.map((event) => (
+                                        <li key={event.id}>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => handleEventClick(e, event.slug)}
+                                            className="w-full text-left text-xs text-gray-600 hover:text-brand-dark truncate py-0.5"
+                                          >
+                                            {event.name}
+                                          </button>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                    {hasMorePastAttended && !showAllPast && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setShowAllPast(true)}
+                                        className="text-[10px] text-brand-blue font-medium mt-1"
+                                      >
+                                        Show all ({pastEventsAttended.length})
+                                      </button>
+                                    )}
+                    </div>
                   )}
-                </div>
+                </aside>
               )}
+            </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-brand-gold/15 to-amber-50 border border-amber-100 px-3 py-2.5">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-brand-gold/15 to-amber-50 border border-amber-100 px-3 py-2.5">
                 <p className="text-xs text-gray-700 flex items-center gap-1.5">
                   <Heart className="h-3.5 w-3.5 text-brand-gold fill-current" />
                   Support AlmaLinks
@@ -1201,7 +1200,6 @@ const DashboardPage: React.FC = () => {
                 >
                   Donate →
                 </a>
-              </div>
             </div>
           </div>
         </section>

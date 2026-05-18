@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
   Mail,
   Phone,
@@ -9,10 +8,7 @@ import {
   Linkedin,
   ChevronDown,
   ChevronUp,
-  Calendar,
-  ArrowRight,
 } from 'lucide-react';
-import { EventData } from '../../services/eventService';
 import { ConnectionService } from '../../services/connectionService';
 import ImageWithCrop from '../profile/ImageWithCrop';
 import ProfileAvatarPlaceholder from '../profile/ProfileAvatarPlaceholder';
@@ -21,16 +17,8 @@ import { resolveDirectoryAvatarUrl } from '../../utils/memberHubspotDisplay';
 import Favicon from '../ui/Favicon';
 import AnnouncementsSidebar from '../announcements/AnnouncementsSidebar';
 import { linkedInProfileHref } from '../../utils/linkedInUrl';
-import { formatEventDateAndTime } from '../../utils/eventDisplayTime';
 import type { CropValue } from '../../types/crop';
 import type { UserProfile } from '../../types/user';
-
-type RegistrationRow = {
-  eventId: string;
-  eventName?: string;
-  registrationStatus?: string;
-  eventSlug?: string;
-};
 
 function splitMultiValue(value?: string | null): string[] {
   if (!value?.trim()) return [];
@@ -45,9 +33,6 @@ export interface DashboardProfileViewProps {
   profileImageUrl?: string | null;
   profileImageCrop?: CropValue | null;
   imageUploadError?: string | null;
-  events: EventData[];
-  upcomingRsvpRegistrations: RegistrationRow[];
-  registrationsLoading: boolean;
   formatPosition: (value?: string) => string;
 }
 
@@ -56,9 +41,6 @@ const DashboardProfileView: React.FC<DashboardProfileViewProps> = ({
   profileImageUrl,
   profileImageCrop,
   imageUploadError,
-  events,
-  upcomingRsvpRegistrations,
-  registrationsLoading,
   formatPosition,
 }) => {
   const [bioExpanded, setBioExpanded] = useState(false);
@@ -87,7 +69,7 @@ const DashboardProfileView: React.FC<DashboardProfileViewProps> = ({
     (user.skills && user.skills.length > 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-3 border-b border-gray-100">
         <div className="relative mx-auto sm:mx-0 h-16 w-16 flex-shrink-0 rounded-full overflow-hidden ring-2 ring-gray-100 bg-brand-dark text-white">
           <ImageWithCrop
@@ -148,7 +130,7 @@ const DashboardProfileView: React.FC<DashboardProfileViewProps> = ({
         <div>
           <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">About</h4>
           <div
-            className={`text-sm text-gray-700 leading-relaxed ${bioExpanded ? '' : 'line-clamp-4'}`}
+            className={`text-sm text-gray-700 leading-relaxed ${bioExpanded ? '' : 'line-clamp-3'}`}
           >
             <BioHtml html={user.bio} />
           </div>
@@ -164,80 +146,8 @@ const DashboardProfileView: React.FC<DashboardProfileViewProps> = ({
         </div>
       )}
 
-      <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-3">
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-            <Calendar className="h-4 w-4 text-brand-dark" />
-            Your upcoming events
-          </h4>
-          <Link
-            to="/events"
-            className="text-xs font-medium text-brand-blue hover:text-brand-blue-hover whitespace-nowrap"
-          >
-            Browse all
-          </Link>
-        </div>
-        {registrationsLoading ? (
-          <p className="text-xs text-gray-500 py-2">Loading events…</p>
-        ) : upcomingRsvpRegistrations.length === 0 ? (
-          <p className="text-xs text-gray-600 py-1">
-            No upcoming RSVPs.{' '}
-            <Link to="/events" className="text-brand-blue font-medium hover:underline">
-              Explore events
-            </Link>
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {upcomingRsvpRegistrations.map((reg) => {
-              const ev = events.find((e) => e.id === reg.eventId);
-              const slug = reg.eventSlug || ev?.slug;
-              if (!slug) return null;
-              const dt =
-                ev?.date &&
-                formatEventDateAndTime(ev.date, {
-                  eventFormat: ev.eventFormat ?? null,
-                  chapter: ev.chapter ?? null,
-                  displayTimezone: ev.displayTimezone ?? null,
-                });
-              return (
-                <li key={reg.eventId}>
-                  <Link
-                    to={`/events/${slug}`}
-                    className="flex items-start gap-3 rounded-lg bg-white border border-gray-100 px-3 py-2 hover:border-brand-dark/20 hover:shadow-sm transition-all group"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 group-hover:text-brand-dark line-clamp-2">
-                        {reg.eventName || ev?.name}
-                      </p>
-                      {dt && (
-                        <p className="text-xs text-gray-600 mt-0.5">
-                          {dt.dateLine}
-                          {dt.timeLine ? ` · ${dt.timeLine}` : ''}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      <span
-                        className={`text-[10px] uppercase font-medium px-1.5 py-0.5 rounded ${
-                          reg.registrationStatus === 'approved'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-amber-50 text-amber-800'
-                        }`}
-                      >
-                        {reg.registrationStatus === 'approved' ? 'RSVP' : 'Pending'}
-                      </span>
-                      <ArrowRight className="h-3.5 w-3.5 text-gray-400 group-hover:text-brand-dark" />
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-
       <div>
-        <h4 className="text-sm font-semibold text-gray-900 mb-2">Announcements</h4>
+        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Announcements</h4>
         <AnnouncementsSidebar compact />
       </div>
 
