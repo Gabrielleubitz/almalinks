@@ -49,3 +49,29 @@ export function memberChapterMatchesFilter(
   }
   return n === normChapter(filterId);
 }
+
+const CHAPTER_ID_BY_NORM = new Map(
+  DIRECTORY_CHAPTER_FILTER_ORDER.map((c) => [normChapter(c.id), c.id])
+);
+
+/** Resolve `?chapter=` query value to a filter chip id, or null if unknown. */
+export function chapterFilterFromQueryParam(raw: string | null | undefined): string | null {
+  const q = (raw || '').trim();
+  if (!q || q.toLowerCase() === 'all') return null;
+  const byNorm = CHAPTER_ID_BY_NORM.get(normChapter(q));
+  if (byNorm) return byNorm;
+  const byLabel = DIRECTORY_CHAPTER_FILTER_ORDER.find(
+    (c) => normChapter(c.label) === normChapter(q)
+  );
+  return byLabel?.id ?? null;
+}
+
+export function chapterQueryParamForFilter(filterId: ChapterFilterValue): string | null {
+  if (filterId === CHAPTER_FILTER_ALL) return null;
+  return filterId;
+}
+
+export function chapterFilterLabel(filterId: ChapterFilterValue): string {
+  if (filterId === CHAPTER_FILTER_ALL) return 'All chapters';
+  return DIRECTORY_CHAPTER_FILTER_ORDER.find((c) => c.id === filterId)?.label ?? filterId;
+}

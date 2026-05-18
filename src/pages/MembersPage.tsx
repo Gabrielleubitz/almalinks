@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Search, User, Check, X, Clock, UserPlus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { UserService } from '../services/userService';
@@ -19,6 +19,9 @@ import {
   DIRECTORY_CHAPTER_FILTER_ORDER,
   memberChapterMatchesFilter,
   formatChapterDisplayLabel,
+  chapterFilterFromQueryParam,
+  chapterFilterLabel,
+  chapterQueryParamForFilter,
   type ChapterFilterValue,
 } from '../utils/memberDirectoryChapters';
 
@@ -33,10 +36,37 @@ interface MemberCard extends UserCardType {
 
 const MembersPage: React.FC = () => {
   const { user: currentUser } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [members, setMembers] = useState<MemberCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [chapterFilter, setChapterFilter] = useState<ChapterFilterValue>(CHAPTER_FILTER_ALL);
+
+  const chapterFilter: ChapterFilterValue = useMemo(
+    () => chapterFilterFromQueryParam(searchParams.get('chapter')) ?? CHAPTER_FILTER_ALL,
+    [searchParams]
+  );
+
+  const applyChapterFilter = useCallback(
+    (id: ChapterFilterValue) => {
+      const next = new URLSearchParams(searchParams);
+      const q = chapterQueryParamForFilter(id);
+      if (q) next.set('chapter', q);
+      else next.delete('chapter');
+      setSearchParams(next, { replace: true });
+    },
+    [searchParams, setSearchParams]
+  );
+
+  const chapterCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const { id } of DIRECTORY_CHAPTER_FILTER_ORDER) {
+      counts.set(
+        id,
+        members.filter((m) => memberChapterMatchesFilter(m.chapter ?? null, id)).length
+      );
+    }
+    return counts;
+  }, [members]);
 
   const [sentRequestIds, setSentRequestIds] = useState<Set<string>>(new Set()); // Track which users we've sent requests to
   const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
@@ -405,7 +435,9 @@ const MembersPage: React.FC = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Members</h1>
-            <p className="text-xs text-gray-500 mt-0.5 mb-3">Search or filter by chapter.</p>
+            <p className="text-xs text-gray-500 mt-0.5 mb-3">
+              Browse members by global chapter, or search across the directory.
+            </p>
 
             <form role="search" className="w-full max-w-xl" onSubmit={(e) => e.preventDefault()}>
               <label htmlFor="members-search" className="block text-xs font-medium text-gray-700 mb-1">
@@ -429,23 +461,25 @@ const MembersPage: React.FC = () => {
               </p>
             </form>
 
-            <div className="mt-4 flex flex-wrap gap-1.5">
+            <div className="mt-4">
+              <p className="text-xs font-semibold text-gray-700 mb-2">Chapters</p>
+              <div className="flex flex-wrap gap-1.5">
               <button
                 type="button"
-                onClick={() => setChapterFilter(CHAPTER_FILTER_ALL)}
+                onClick={() => applyChapterFilter(CHAPTER_FILTER_ALL)}
                 className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
                   chapterFilter === CHAPTER_FILTER_ALL
                     ? 'bg-brand-dark text-white border-brand-dark'
                     : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
                 }`}
               >
-                All chapters
+                All ({members.length})
               </button>
               {DIRECTORY_CHAPTER_FILTER_ORDER.map(({ id, label }) => (
                 <button
                   key={id}
                   type="button"
-                  onClick={() => setChapterFilter(id)}
+                  onClick={() => applyChapterFilter(id)}
                   className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
                     chapterFilter === id
                       ? 'bg-brand-dark text-white border-brand-dark'
@@ -453,8 +487,10 @@ const MembersPage: React.FC = () => {
                   }`}
                 >
                   {label}
+                  <span className="opacity-80"> ({chapterCounts.get(id) ?? 0})</span>
                 </button>
               ))}
+              </div>
             </div>
 
             {currentUser?.uid ? (
@@ -488,7 +524,7 @@ const MembersPage: React.FC = () => {
             <div className="mb-4 text-xs text-gray-600">
               {filteredMembers.length} member{filteredMembers.length === 1 ? '' : 's'}
               {chapterFilter !== CHAPTER_FILTER_ALL ? (
-                <> · Chapter: {DIRECTORY_CHAPTER_FILTER_ORDER.find((c) => c.id === chapterFilter)?.label ?? chapterFilter}</>
+                <> · Chapter: {chapterFilterLabel(chapterFilter)}</>
               ) : null}
               {searchQuery.trim() ? <> · Search: &quot;{searchQuery}&quot;</> : null}
             </div>
@@ -517,7 +553,7 @@ const MembersPage: React.FC = () => {
                   type="button"
                   onClick={() => {
                     setSearchQuery('');
-                    setChapterFilter(CHAPTER_FILTER_ALL);
+                    applyChapterFilter(CHAPTER_FILTER_ALL);
                   }}
                   className="bg-brand-dark text-white px-5 py-2.5 rounded-xl text-sm hover:bg-brand-dark-hover transition-colors"
                 >

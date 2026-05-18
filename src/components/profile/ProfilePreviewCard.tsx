@@ -42,18 +42,18 @@ const hasProfileImage = profile.avatarUrl || profile.profileImage;
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 text-white">
-        <h3 className="font-semibold flex items-center">
-          <Eye className="h-5 w-5 mr-2" />
+      <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
+        <h3 className="font-semibold text-gray-900 flex items-center text-sm">
+          <Eye className="h-4 w-4 mr-2 text-gray-500" />
           {showEditMode ? 'Live Preview' : 'Profile Preview'}
         </h3>
-        <p className="text-blue-100 text-sm mt-1">
+        <p className="text-gray-500 text-xs mt-1">
           How others will see your profile
         </p>
       </div>
 
       {/* Profile Content */}
-      <div className="p-6 space-y-6">
+      <div className="p-5 space-y-4">
         {/* Avatar & Basic Info */}
         <div className="flex items-start space-x-4">
           <div className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0">
