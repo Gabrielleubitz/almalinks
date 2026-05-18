@@ -489,12 +489,12 @@ const DashboardPage: React.FC = () => {
 
   const pastEventsAttended = pastEvents.filter((event) => {
     const reg = userRegistrations.find(
-      (r: { eventId?: string; registrationStatus?: string }) => r.eventId === event.id
+      (r: { eventId?: string; checkedIn?: boolean }) => r.eventId === event.id
     );
-    return reg?.registrationStatus === 'approved';
+    return reg?.checkedIn === true;
   });
-  const pastAttendedDisplay = showAllPast ? pastEventsAttended : pastEventsAttended.slice(0, 4);
-  const hasMorePastAttended = pastEventsAttended.length > 4;
+  const pastAttendedDisplay = showAllPast ? pastEventsAttended : pastEventsAttended.slice(0, 3);
+  const hasMorePastAttended = pastEventsAttended.length > 3;
 
   const selectedCountry = COUNTRY_CODES.find(country => country.code === selectedCountryCode);
 
@@ -1157,30 +1157,32 @@ const DashboardPage: React.FC = () => {
                     </div>
                   </div>
                   {pastEventsAttended.length > 0 && (
-                    <div className="bg-white rounded-xl shadow-sm p-3 border border-gray-100">
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Past events</h3>
-                      <ul className="space-y-1 max-h-20 overflow-y-auto">
-                                      {pastAttendedDisplay.map((event) => (
-                                        <li key={event.id}>
-                                          <button
-                                            type="button"
-                                            onClick={(e) => handleEventClick(e, event.slug)}
-                                            className="w-full text-left text-xs text-gray-600 hover:text-brand-dark truncate py-0.5"
-                                          >
-                                            {event.name}
-                                          </button>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                    {hasMorePastAttended && !showAllPast && (
-                                      <button
-                                        type="button"
-                                        onClick={() => setShowAllPast(true)}
-                                        className="text-[10px] text-brand-blue font-medium mt-1"
-                                      >
-                                        Show all ({pastEventsAttended.length})
-                                      </button>
-                                    )}
+                    <div className="px-1 pt-0.5">
+                      <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-1">
+                        Attended
+                      </p>
+                      <ul className="space-y-0 max-h-9 overflow-y-auto leading-tight">
+                        {pastAttendedDisplay.map((event) => (
+                          <li key={event.id} className="leading-none">
+                            <button
+                              type="button"
+                              onClick={(e) => handleEventClick(e, event.slug)}
+                              className="text-[10px] text-gray-500 hover:text-brand-dark truncate max-w-full text-left py-px"
+                            >
+                              {event.name}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                      {hasMorePastAttended && !showAllPast && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAllPast(true)}
+                          className="text-[9px] text-brand-blue font-medium mt-0.5"
+                        >
+                          +{pastEventsAttended.length - 3} more
+                        </button>
+                      )}
                     </div>
                   )}
                 </aside>
