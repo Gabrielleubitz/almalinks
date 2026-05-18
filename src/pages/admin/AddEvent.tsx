@@ -96,6 +96,10 @@ const AddEvent: React.FC = () => {
       setError('Event image is required (paste a URL or upload a photo)');
       return false;
     }
+    if (formData.eventFormat === 'in_person' && !formData.chapter?.trim()) {
+      setError('Chapter is required for in-person events (sets local time for members).');
+      return false;
+    }
     if (formData.status === 'active') {
       const uidCount = individualRecipientObjects.filter((r) => !!r.uid).length;
       if (!hasAudiencePickForMode(audienceMode, { ...audienceSelection, mode: audienceMode }, uidCount)) {
@@ -450,14 +454,17 @@ const AddEvent: React.FC = () => {
                 <option value="hybrid">Hybrid</option>
               </select>
               <p className="text-xs text-gray-500 mt-1">
-                In person shows local chapter time; online/hybrid shows US Eastern and Israel on one line for members.
+                In person uses the chapter’s local time plus Israel and New York for members. Online/hybrid lead with US Eastern.
               </p>
             </div>
 
             {/* Chapter (HubSpot + local time for in-person) */}
             <div>
               <label htmlFor="chapter" className="block text-sm font-medium text-gray-700 mb-2">
-                Chapter {formData.eventFormat === 'in_person' ? '(sets local event time)' : '(optional)'}
+                Chapter {formData.eventFormat === 'in_person' ? '*' : '(optional)'}
+                {formData.eventFormat === 'in_person' ? (
+                  <span className="font-normal text-gray-500"> — local time for this city</span>
+                ) : null}
               </label>
               <select
                 id="chapter"

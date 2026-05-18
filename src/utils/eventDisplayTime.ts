@@ -10,14 +10,27 @@ export type EventFormat = 'in_person' | 'virtual' | 'hybrid';
 export interface EventDateTimeLines {
   dateLine: string;
   timeLine: string;
-  /** Second timezone line for virtual / hybrid (e.g. Israel). */
+  /** Second timezone for virtual / hybrid (Israel when primary is US Eastern). */
   timeSecondaryLine?: string;
+  /** In-person: Israel and New York hub times. */
+  timeHubLine?: string;
+  /** When the viewer’s timezone differs from the event’s primary zone. */
+  timezoneBanner?: string;
+  primaryTimezoneId?: string;
 }
 
 function toInstant(iso: string): Date | null {
   if (!iso?.trim()) return null;
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function viewerTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return '';
+  }
 }
 
 function dayWithOrdinal(day: number): string {
@@ -56,6 +69,29 @@ function formatTimeLineInZone(iso: string, timeZone: string): string {
   }).format(d);
 }
 
+/** Short time without timezone name (for parenthetical / hub lines). */
+export function formatShortTimeInZone(iso: string, timeZone: string): string {
+  const d = toInstant(iso);
+  if (!d) return '—';
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone,
+  }).format(d);
+}
+
+function buildInPersonHubLine(iso: string): string {
+  const israel = formatShortTimeInZone(iso, EVENT_TZ_ISRAEL);
+  const ny = formatShortTimeInZone(iso, EVENT_TZ_US_EASTERN);
+  return `Israel: ${israel} · New York: ${ny}`;
+}
+
+function timezoneBannerFor(primaryTz: string): string | undefined {
+  const viewer = viewerTimezone();
+  if (!viewer || viewer === primaryTz) return undefined;
+  return `This event is in another timezone: ${primaryTz}.`;
+}
+
 function primaryZoneForEvent(opts: {
   eventFormat?: EventFormat | null;
   chapter?: string | null;
@@ -83,16 +119,40 @@ export function formatEventDateAndTime(
   const primaryTz = primaryZoneForEvent(opts);
   const mode = opts.eventFormat ?? null;
   const dateLine = formatDateLineInZone(iso, primaryTz);
-  const timeLine = formatTimeLineInZone(iso, primaryTz);
+  const timeFull = formatTimeLineInZone(iso, primaryTz);
 
-  if (mode === 'virtual' || mode === 'hybrid') {
-    const israelTime = formatTimeLineInZone(iso, EVENT_TZ_ISRAEL);
-    if (israelTime !== timeLine) {
-      return { dateLine, timeLine, timeSecondaryLine: israelTime };
-    }
+  if (mode === 'in_person') {
+    const nyShort = formatShortTimeInZone(iso, EVENT_TZ_US_EASTERN);
+    const primaryShort = formatShortTimeInZone(iso, primaryTz);
+    const timeLine =
+      primaryTz === EVENT_TZ_US_EASTERN
+        ? timeFull
+        : `${primaryShort} (${nyShort})`;
+
+    return {
+      dateLine,
+      timeLine,
+      timeHubLine: buildInPersonHubLine(iso),
+      timezoneBanner: timezoneBannerFor(primaryTz),
+      primaryTimezoneId: primaryTz,
+    };
   }
 
-  return { dateLine, timeLine };
+  if (mode === 'virtual' || mode === 'hybrid') {
+    const timeLine = formatTimeLineInZone(iso, EVENT_TZ_US_EASTERN);
+    const israelTime = formatTimeLineInZone(iso, EVENT_TZ_ISRAEL);
+    if (israelTime !== timeLine) {
+      return {
+        dateLine,
+        timeLine,
+        timeSecondaryLine: israelTime,
+        primaryTimezoneId: EVENT_TZ_US_EASTERN,
+      };
+    }
+    return { dateLine, timeLine, primaryTimezoneId: EVENT_TZ_US_EASTERN };
+  }
+
+  return { dateLine, timeLine: timeFull, primaryTimezoneId: primaryTz };
 }
 
 /** @deprecated Prefer formatEventDateAndTime — kept for any legacy single-line usage. */
@@ -104,11 +164,11 @@ export function formatEventStartForMembers(
     displayTimezone?: string | null;
   }
 ): string {
-  const { dateLine, timeLine, timeSecondaryLine } = formatEventDateAndTime(iso, opts);
-  if (timeSecondaryLine) {
-    return `${dateLine} · ${timeLine} · ${timeSecondaryLine}`;
-  }
-  return `${dateLine} · ${timeLine}`;
+  const { dateLine, timeLine, timeSecondaryLine, timeHubLine } = formatEventDateAndTime(iso, opts);
+  const parts = [dateLine, timeLine];
+  if (timeSecondaryLine) parts.push(timeSecondaryLine);
+  if (timeHubLine) parts.push(timeHubLine);
+  return parts.join(' · ');
 }
 
 /** Single-line fallback using chapter-local formatting for admin previews. */
@@ -129,7 +189,9 @@ export function formatEventStartCompactLegacy(
     return formatEventInstantInZone(iso, tz);
   }
 
-  const { dateLine, timeLine, timeSecondaryLine } = formatEventDateAndTime(iso, opts);
-  if (timeSecondaryLine) return `${dateLine} · ${timeLine} · ${timeSecondaryLine}`;
-  return `${dateLine} · ${timeLine}`;
+  const { dateLine, timeLine, timeSecondaryLine, timeHubLine } = formatEventDateAndTime(iso, opts);
+  const parts = [dateLine, timeLine];
+  if (timeSecondaryLine) parts.push(timeSecondaryLine);
+  if (timeHubLine) parts.push(timeHubLine);
+  return parts.join(' · ');
 }
