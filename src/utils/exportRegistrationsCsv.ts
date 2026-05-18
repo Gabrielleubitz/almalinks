@@ -1,5 +1,3 @@
-import { shortEventRegistrationLabel } from './eventRegistrationDisplay';
-
 export type CsvRegistrationRow = {
   name?: string;
   email?: string;
@@ -42,7 +40,7 @@ export function buildRegistrationsCsv(rows: CsvRegistrationRow[], options?: { in
       row.work ?? '',
     ];
     if (includeEvent) {
-      cells.push(shortEventRegistrationLabel(row.eventName, row.eventDate));
+      cells.push(row.eventName?.trim() || 'Event');
     }
     cells.push(row.status ?? '', formatRegisteredAt(row.registeredAt));
     lines.push(cells.map(escapeCsvCell).join(','));

@@ -288,7 +288,7 @@ const EventRegistrationsPage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <p className="text-sm text-gray-600 mb-4">
-        Grouped by member, then event (event date only — not the full title). Use{' '}
+        Grouped by member, then event name. Use{' '}
         <strong>Download CSV</strong> to export the filtered list.
       </p>
       {/* Filters */}
@@ -455,8 +455,11 @@ const EventRegistrationsPage: React.FC = () => {
                         key={`${reg.eventId}_${reg.userId}`}
                         className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5 text-sm"
                       >
-                        <span className="font-medium text-gray-900 min-w-[8rem]">
-                          {shortEventRegistrationLabel(reg.eventName, reg.eventDate)}
+                        <span
+                          className="font-medium text-gray-900 max-w-[26ch] truncate"
+                          title={reg.eventName?.trim() || undefined}
+                        >
+                          {shortEventRegistrationLabel(reg.eventName)}
                         </span>
                         {reg.eventSlug ? (
                           <button

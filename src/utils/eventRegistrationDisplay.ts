@@ -1,18 +1,10 @@
-import { formatEventDateAndTime } from './eventDisplayTime';
+/** ~width of a typical date line, e.g. "Tuesday, April 21st". */
+export const EVENT_REGISTRATION_LABEL_MAX_CHARS = 26;
 
-const MAX_EVENT_TITLE_CHARS = 48;
-
-/** Compact event label for registration lists (date-first; never the full long title). */
-export function shortEventRegistrationLabel(
-  eventName?: string,
-  eventDateIso?: string
-): string {
-  if (eventDateIso?.trim()) {
-    const { dateLine } = formatEventDateAndTime(eventDateIso, {});
-    if (dateLine && dateLine !== '—') return dateLine;
-  }
+/** Truncated event name for registration lists (matches compact date-line width). */
+export function shortEventRegistrationLabel(eventName?: string): string {
   const name = eventName?.trim();
   if (!name) return 'Event';
-  if (name.length <= MAX_EVENT_TITLE_CHARS) return name;
-  return `${name.slice(0, MAX_EVENT_TITLE_CHARS).trimEnd()}…`;
+  if (name.length <= EVENT_REGISTRATION_LABEL_MAX_CHARS) return name;
+  return `${name.slice(0, EVENT_REGISTRATION_LABEL_MAX_CHARS).trimEnd()}…`;
 }
