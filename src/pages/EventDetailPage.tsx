@@ -12,6 +12,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ReviewSection from '../components/reviews/ReviewSection';
 import { EventTimeDisplay, eventFormatLabel } from '../components/EventTimeDisplay';
+import { EventRegistrationPanel } from '../components/events/EventRegistrationPanel';
 import { getRestrictedEventAccessLabel } from '../utils/eventAccessLabel';
 import {
   approvedEventCalendarLocation,
@@ -387,6 +388,25 @@ const EventDetailPage: React.FC = () => {
   const ended = isEventEnded(event);
   const canRegister = statusInfo.canRegister && !ended;
   const accessLabel = getRestrictedEventAccessLabel(event.eventAudience ?? null);
+  const showStickyRegister = !ended && canRegister && !registration;
+
+  const registrationPanelProps = {
+    ended,
+    canRegister,
+    registering,
+    user,
+    registration,
+    statusInfo,
+    event,
+    error,
+    success,
+    showTicket,
+    onRegister: handleRegister,
+    onToggleTicket: () => setShowTicket(prev => !prev),
+    onSignup: () => navigate('/signup'),
+    onLogin: () => navigate('/login'),
+    calendarUrl: createGoogleCalendarUrl(),
+  };
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden w-full max-w-full">
@@ -394,7 +414,9 @@ const EventDetailPage: React.FC = () => {
 
       <div ref={topRef} />
 
-      <section className="pt-[var(--content-offset-top)] pb-6 sm:pb-8 bg-white border-b border-gray-100">
+      <section
+        className={`pt-[var(--content-offset-top)] bg-white border-b border-gray-100 ${showStickyRegister ? 'pb-28 sm:pb-32 md:pb-8' : 'pb-6 sm:pb-8'}`}
+      >
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-4"><BackButton fallbackTo="/events" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm font-medium" iconClassName="h-4 w-4" /></div>
 
@@ -461,144 +483,13 @@ const EventDetailPage: React.FC = () => {
             </div>
           </div>
 
+          <EventRegistrationPanel variant="card" {...registrationPanelProps} />
+
           <div className="mt-4 rounded-xl border border-gray-200 bg-white px-4 py-3 sm:px-5 sm:py-4 text-sm sm:text-base text-gray-800">
             <span className="font-semibold text-gray-900">Cost: </span>
             {event.costNote?.trim()
               ? event.costNote.trim()
               : 'Included with membership unless noted later.'}
-          </div>
-
-          <div className="mt-6 space-y-4">
-            {error && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex gap-2 text-sm text-red-800">
-                    <AlertCircle className="h-5 w-5 shrink-0" />
-                    {error}
-                  </div>
-                )}
-                {success && (
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-xl flex gap-2 text-sm text-green-800">
-                    <CheckCircle className="h-5 w-5 shrink-0" />
-                    {success}
-                  </div>
-                )}
-
-                <div className="pt-2">
-                  {ended && !registration ? (
-                    <div className="w-full min-h-[52px] rounded-xl bg-gray-100 text-gray-600 text-lg font-bold flex items-center justify-center border border-gray-200">
-                      Event Ended
-                    </div>
-                  ) : !user && !ended ? (
-                    <div className="space-y-2">
-                      <button
-                        type="button"
-                        onClick={e => {
-                          e.preventDefault();
-                          navigate('/signup');
-                        }}
-                        className="w-full min-h-[56px] rounded-xl bg-gray-900 text-white text-lg font-bold shadow-md hover:bg-gray-800 transition-colors"
-                      >
-                        Join AlmaLinks to register
-                      </button>
-                      <p className="text-center text-sm text-gray-600">
-                        Already a member?{' '}
-                        <button
-                          type="button"
-                          className="text-brand-blue-dark font-semibold hover:underline"
-                          onClick={e => {
-                            e.preventDefault();
-                            navigate('/login');
-                          }}
-                        >
-                          Sign in
-                        </button>
-                      </p>
-                    </div>
-                  ) : registration?.status === 'pending' && ended ? (
-                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 text-sm text-gray-700">
-                      <p className="font-semibold text-gray-900">This event has ended.</p>
-                      <p className="mt-1">Your registration was still pending approval.</p>
-                    </div>
-                  ) : registration?.status === 'pending' ? (
-                    <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-sm text-amber-900">
-                      <p className="font-semibold">Registration pending approval.</p>
-                      <p className="mt-1 text-amber-800">We&apos;ll email details once confirmed.</p>
-                    </div>
-                  ) : registration?.status === 'rejected' && ended ? (
-                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 text-sm text-gray-700">
-                      <p className="font-semibold text-gray-900">This event has ended.</p>
-                      <p className="mt-1">Your registration was not approved.</p>
-                      {registration.rejectionReason ? (
-                        <p className="mt-1 text-gray-600">{registration.rejectionReason}</p>
-                      ) : null}
-                    </div>
-                  ) : registration?.status === 'rejected' ? (
-                    <div className="p-4 bg-red-50 rounded-xl border border-red-200 text-sm">
-                      <p className="font-semibold text-red-900">Registration not approved.</p>
-                      {registration.rejectionReason && (
-                        <p className="mt-1 text-red-800">{registration.rejectionReason}</p>
-                      )}
-                    </div>
-                  ) : registration?.status === 'approved' && ended ? (
-                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 text-sm text-gray-700">
-                      <p className="font-semibold text-gray-900">This event has ended.</p>
-                      <p className="mt-1">You were registered for this event.</p>
-                      {event.status === 'completed' && registration.checkedIn ? (
-                        <p className="mt-2 text-gray-600">You can share feedback in the reviews section below.</p>
-                      ) : null}
-                    </div>
-                  ) : registration?.status === 'approved' ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 p-3 bg-green-50 rounded-xl border border-green-200 text-green-900 font-semibold text-sm">
-                        <CheckCircle className="h-5 w-5 shrink-0" />
-                        You&apos;re registered
-                      </div>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <button
-                          type="button"
-                          onClick={e => {
-                            e.preventDefault();
-                            setShowTicket(!showTicket);
-                          }}
-                          className="flex-1 min-h-[48px] rounded-xl border-2 border-gray-900 text-gray-900 font-semibold hover:bg-gray-50"
-                        >
-                          {showTicket ? 'Hide ticket' : 'View ticket'}
-                        </button>
-                        <a
-                          href={createGoogleCalendarUrl()}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 min-h-[48px] inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800"
-                        >
-                          <CalendarPlus className="h-5 w-5" />
-                          Add to calendar
-                        </a>
-                      </div>
-                    </div>
-                  ) : ended ? (
-                    <div className="w-full min-h-[52px] rounded-xl bg-gray-100 text-gray-600 text-lg font-bold flex items-center justify-center border border-gray-200">
-                      Event Ended
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleRegister}
-                      disabled={!canRegister || registering}
-                      className={`w-full min-h-[56px] rounded-xl text-lg font-bold text-white shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${statusInfo.buttonClass}`}
-                    >
-                      {registering ? (
-                        <span className="inline-flex items-center justify-center gap-2">
-                          <span className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Submitting…
-                        </span>
-                      ) : (
-                        statusInfo.buttonText
-                      )}
-                    </button>
-                  )}
-                  {!canRegister && user && !ended && registration?.status !== 'approved' && (
-                    <p className="text-sm text-gray-600 mt-2">{statusInfo.message}</p>
-                  )}
-                </div>
           </div>
 
           <div className="mt-8 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 md:gap-8 items-start">
@@ -690,6 +581,16 @@ const EventDetailPage: React.FC = () => {
           userCheckedIn={registration?.checkedIn === true}
         />
       )}
+
+      {showStickyRegister ? (
+        <div
+          className="fixed bottom-0 inset-x-0 z-50 md:hidden border-t border-gray-200 bg-white/95 backdrop-blur-md px-4 py-3 shadow-[0_-8px_30px_rgba(0,0,0,0.12)]"
+          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+          aria-label="Register for event"
+        >
+          <EventRegistrationPanel variant="sticky" {...registrationPanelProps} />
+        </div>
+      ) : null}
 
       <Footer compact />
     </div>
