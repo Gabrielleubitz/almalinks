@@ -69,6 +69,9 @@ export interface EventData {
   displayTimezone?: string | null;
   /** Optional note shown on event page (e.g. pricing later). */
   costNote?: string | null;
+  /** Optional speaker shown on event detail (circular photo, right column). */
+  speakerName?: string | null;
+  speakerImageUrl?: string | null;
   /** Optional audience targeting for who can see the event when public statuses are used. */
   eventAudience?: AudienceSelection | null;
   /** Set when post-completion thank-you emails were sent to checked-in attendees. */

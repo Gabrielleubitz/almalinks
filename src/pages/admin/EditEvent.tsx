@@ -49,6 +49,8 @@ const EditEvent: React.FC = () => {
     chapter: '',
     eventFormat: 'in_person' as 'in_person' | 'virtual' | 'hybrid',
     costNote: '',
+    speakerName: '',
+    speakerImageUrl: '',
     zoomRecordingUrl: '',
     zoomPassword: '',
   });
@@ -134,6 +136,8 @@ const EditEvent: React.FC = () => {
         chapter: (event as { chapter?: string }).chapter ?? '',
         eventFormat: (event as EventData).eventFormat ?? 'in_person',
         costNote: (event as EventData).costNote ?? '',
+        speakerName: (event as EventData).speakerName ?? '',
+        speakerImageUrl: (event as EventData).speakerImageUrl ?? '',
         zoomRecordingUrl: privateDetails?.zoomRecordingUrl ?? privateDetails?.zoom_recording_url ?? '',
         zoomPassword: privateDetails?.zoomPassword ?? privateDetails?.zoom_password ?? '',
       });
@@ -260,6 +264,8 @@ const EditEvent: React.FC = () => {
       s(formData.chapter) !== s((originalEvent as { chapter?: string }).chapter) ||
       formData.eventFormat !== ((originalEvent as EventData).eventFormat ?? 'in_person') ||
       s(formData.costNote) !== s((originalEvent as EventData).costNote) ||
+      s(formData.speakerName) !== s((originalEvent as EventData).speakerName) ||
+      s(formData.speakerImageUrl) !== s((originalEvent as EventData).speakerImageUrl) ||
       s(formData.meetingUrl) !== s(orig.meetingUrl) ||
       s(formData.venueAddress) !== s(orig.venueAddress) ||
       s(formData.resourceLinkUrl) !== s(orig.resourceLinkUrl) ||
@@ -307,6 +313,8 @@ const EditEvent: React.FC = () => {
         chapter: formData.chapter?.trim() || null,
         eventFormat: formData.eventFormat,
         costNote: formData.costNote?.trim() || null,
+        speakerName: formData.speakerName?.trim() || null,
+        speakerImageUrl: formData.speakerImageUrl?.trim() || null,
         eventAudience:
           formData.status === 'active'
             ? {
@@ -417,6 +425,8 @@ const EditEvent: React.FC = () => {
               chapter: formData.chapter?.trim() || null,
               eventFormat: formData.eventFormat,
               costNote: formData.costNote?.trim() || null,
+              speakerName: formData.speakerName?.trim() || null,
+              speakerImageUrl: formData.speakerImageUrl?.trim() || null,
               eventAudience: savedEventAudience as EventData['eventAudience'],
             }
           : null
@@ -663,6 +673,42 @@ const EditEvent: React.FC = () => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                 placeholder="Shown on the public event page"
               />
+            </div>
+
+            <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/80 space-y-4">
+              <p className="text-sm font-medium text-gray-800">Speaker (optional)</p>
+              <p className="text-xs text-gray-500 -mt-2">Small circular photo on the event detail page.</p>
+              <div>
+                <label htmlFor="speakerName" className="block text-sm text-gray-600 mb-1">Speaker name</label>
+                <input
+                  id="speakerName"
+                  name="speakerName"
+                  type="text"
+                  value={formData.speakerName}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  placeholder="e.g. Jane Cohen"
+                />
+              </div>
+              <div>
+                <label htmlFor="speakerImageUrl" className="block text-sm text-gray-600 mb-1">Speaker photo URL</label>
+                <input
+                  id="speakerImageUrl"
+                  name="speakerImageUrl"
+                  type="url"
+                  value={formData.speakerImageUrl}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  placeholder="https://… (headshot; square works best)"
+                />
+                {formData.speakerImageUrl ? (
+                  <img
+                    src={formData.speakerImageUrl}
+                    alt=""
+                    className="mt-2 h-16 w-16 rounded-full object-cover border border-gray-200"
+                  />
+                ) : null}
+              </div>
             </div>
 
             {/* Private details (approved registrants only) */}

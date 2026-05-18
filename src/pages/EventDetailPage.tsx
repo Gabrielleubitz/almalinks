@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import BackButton from '../components/ui/BackButton';
-import { MapPin, CheckCircle, AlertCircle, Ticket, CalendarPlus, ExternalLink, Link as LinkIcon } from 'lucide-react';
+import { MapPin, CheckCircle, AlertCircle, CalendarPlus, ExternalLink, Link as LinkIcon, User } from 'lucide-react';
 import { EventService, EventData } from '../services/eventService';
 import { getMyRegistration, createPending } from '../services/registrationService';
 import type { EventRegistrationWithStatus, EventPrivateDetails } from '../types/event';
@@ -11,7 +11,6 @@ import { useActivityTracking } from '../hooks/useActivityTracking';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ReviewSection from '../components/reviews/ReviewSection';
-import CropImage from '../components/profile/CropImage';
 import { EventTimeDisplay, eventFormatLabel } from '../components/EventTimeDisplay';
 import { getRestrictedEventAccessLabel } from '../utils/eventAccessLabel';
 import {
@@ -29,6 +28,19 @@ const HOSTNAME_LABELS: Record<string, string> = {
   'notion.so': 'Notion',
   'notion.tech': 'Notion',
 };
+
+function speakerInitials(name: string): string {
+  return (
+    name
+      .trim()
+      .split(/\s+/)
+      .map(w => w[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || '?'
+  );
+}
 
 function getResourceLabel(url: string, customLabel?: string | null): string {
   if (customLabel?.trim()) return customLabel.trim();
@@ -386,40 +398,23 @@ const EventDetailPage: React.FC = () => {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-4"><BackButton fallbackTo="/events" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm font-medium" iconClassName="h-4 w-4" /></div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            <div className="w-full aspect-[21/9] sm:aspect-[3/1] max-h-52 sm:max-h-56 bg-gray-100">
-              <CropImage
-                src={event.imageUrl}
-                crop={event.imageCrop ?? null}
-                alt=""
-                mode="block"
-                className="w-full h-full object-cover"
-                onError={e => {
-                  const target = e.target as HTMLImageElement;
-                  target.src =
-                    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDgwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNGM0Y0RjYiLz48L3N2Zz4=';
-                }}
-              />
-            </div>
-            <div className="p-4 sm:p-6">
-            <div className="flex flex-col gap-5 sm:gap-6">
-              <div className="flex-1 min-w-0 space-y-3">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">{event.name}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight mb-3">{event.name}</h1>
 
-                {ended ? (
-                  <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-semibold bg-gray-100 text-gray-700 border border-gray-200">
-                    Event Ended
-                  </span>
-                ) : null}
+          {ended ? (
+            <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-semibold bg-gray-100 text-gray-700 border border-gray-200 mb-4">
+              Event Ended
+            </span>
+          ) : null}
 
-                <div className="space-y-2 text-sm sm:text-base text-gray-800">
+          <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-4 sm:p-5 space-y-3 text-sm sm:text-base text-gray-800">
                   <EventTimeDisplay event={event} layout="split" textClassName="text-gray-800" />
                   <div className="flex items-start gap-2">
                     <MapPin className="h-5 w-5 text-red-700 shrink-0 mt-0.5" />
                     <div className="min-w-0">
+                      <span className="font-semibold text-gray-800">Location: </span>
                       {registration?.status === 'approved' && privateDetails ? (
                         <>
-                          <span className="block font-medium">
+                          <span className="font-medium">
                             {approvedEventPrimaryLocation(event.location, privateDetails)}
                           </span>
                           {approvedEventVenueAddress(privateDetails) ? (
@@ -449,31 +444,32 @@ const EventDetailPage: React.FC = () => {
                       </a>
                     </div>
                   )}
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
-                      {eventFormatLabel(event.eventFormat ?? null)}
-                    </span>
-                    {event.chapter ? (
-                      <span className="text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 px-2 py-1 rounded-md">
-                        {event.chapter}
-                      </span>
-                    ) : null}
-                    {accessLabel ? (
-                      <span className="text-xs font-semibold text-amber-900 bg-amber-50 border border-amber-100 px-2 py-1 rounded-md">
-                        {accessLabel}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-600 bg-white border border-gray-200 px-2 py-1 rounded-md">
+                {eventFormatLabel(event.eventFormat ?? null)}
+              </span>
+              {event.chapter ? (
+                <span className="text-xs font-medium text-gray-700 bg-white border border-gray-200 px-2 py-1 rounded-md">
+                  {event.chapter}
+                </span>
+              ) : null}
+              {accessLabel ? (
+                <span className="text-xs font-semibold text-amber-900 bg-amber-50 border border-amber-100 px-2 py-1 rounded-md">
+                  {accessLabel}
+                </span>
+              ) : null}
+            </div>
+          </div>
 
-                <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/80 px-3 py-2.5 text-sm text-gray-700">
-                  <span className="font-semibold text-gray-800">Cost: </span>
-                  {event.costNote?.trim()
-                    ? event.costNote.trim()
-                    : 'Included with membership unless noted later.'}
-                </div>
+          <div className="mt-4 rounded-xl border border-gray-200 bg-white px-4 py-3 sm:px-5 sm:py-4 text-sm sm:text-base text-gray-800">
+            <span className="font-semibold text-gray-900">Cost: </span>
+            {event.costNote?.trim()
+              ? event.costNote.trim()
+              : 'Included with membership unless noted later.'}
+          </div>
 
-                {error && (
+          <div className="mt-6 space-y-4">
+            {error && (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex gap-2 text-sm text-red-800">
                     <AlertCircle className="h-5 w-5 shrink-0" />
                     {error}
@@ -603,10 +599,63 @@ const EventDetailPage: React.FC = () => {
                     <p className="text-sm text-gray-600 mt-2">{statusInfo.message}</p>
                   )}
                 </div>
-              </div>
+          </div>
 
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 md:gap-8 items-start">
+            <div className="min-w-0">
+              <h2 className="text-lg font-bold text-gray-900 mb-3">About this event</h2>
+              <div className="text-gray-700 text-sm sm:text-base leading-relaxed whitespace-pre-wrap">
+                {event.description}
+              </div>
             </div>
-            </div>
+            {(event.speakerName?.trim() || event.speakerImageUrl?.trim()) ? (
+              <aside className="flex flex-col items-center gap-2 md:pt-8 shrink-0 mx-auto md:mx-0">
+                <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full overflow-hidden border-2 border-gray-200 shadow-sm bg-gray-100 flex items-center justify-center">
+                  {event.speakerImageUrl?.trim() ? (
+                    <img
+                      src={event.speakerImageUrl.trim()}
+                      alt={event.speakerName?.trim() ? `${event.speakerName.trim()} headshot` : 'Speaker'}
+                      className="h-full w-full object-cover"
+                      onError={e => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  ) : event.speakerName?.trim() ? (
+                    <span className="text-lg font-bold text-gray-600" aria-hidden>
+                      {speakerInitials(event.speakerName)}
+                    </span>
+                  ) : (
+                    <User className="h-10 w-10 text-gray-400" aria-hidden />
+                  )}
+                </div>
+                {event.speakerName?.trim() ? (
+                  <p className="text-sm font-semibold text-gray-900 text-center max-w-[9rem] leading-snug">
+                    {event.speakerName.trim()}
+                  </p>
+                ) : (
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Speaker</p>
+                )}
+                {registration?.status === 'approved' && privateDetails?.resourceLinkUrl ? (
+                  <div className="mt-4 w-full max-w-[220px] rounded-xl border border-gray-200 p-3 bg-white">
+                    <h3 className="text-xs font-bold text-gray-900 mb-2">Resources</h3>
+                    <ResourceLinkCard
+                      url={privateDetails.resourceLinkUrl}
+                      label={privateDetails.resourceLinkLabel}
+                    />
+                  </div>
+                ) : null}
+              </aside>
+            ) : registration?.status === 'approved' && privateDetails?.resourceLinkUrl ? (
+              <aside className="md:pt-8 shrink-0 w-full max-w-sm mx-auto md:mx-0">
+                <div className="rounded-xl border border-gray-200 p-4 bg-white">
+                  <h3 className="text-sm font-bold text-gray-900 mb-2">Resources</h3>
+                  <ResourceLinkCard
+                    url={privateDetails.resourceLinkUrl}
+                    label={privateDetails.resourceLinkLabel}
+                  />
+                </div>
+              </aside>
+            ) : null}
           </div>
         </div>
       </section>
@@ -632,41 +681,6 @@ const EventDetailPage: React.FC = () => {
         </section>
       )}
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 sm:items-start">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-bold text-gray-900 mb-3">About</h2>
-            <div className="text-gray-700 text-sm sm:text-base leading-relaxed whitespace-pre-wrap border border-gray-100 rounded-xl p-4 sm:p-5 bg-white">
-              {event.description}
-            </div>
-          </div>
-          <div className="shrink-0 flex flex-col items-center sm:items-end gap-4 w-full sm:w-auto">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-gray-200 shadow-sm bg-gray-100">
-              <CropImage
-                src={event.imageUrl}
-                crop={event.imageCrop ?? null}
-                alt=""
-                mode="block"
-                className="w-full h-full object-cover"
-                onError={e => {
-                  const target = e.target as HTMLImageElement;
-                  target.src =
-                    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIGZpbGw9IiNGM0Y0RjYiLz48L3N2Zz4=';
-                }}
-              />
-            </div>
-            {registration?.status === 'approved' && privateDetails?.resourceLinkUrl && (
-              <div className="rounded-xl border border-gray-200 p-4 bg-white">
-                <h3 className="text-sm font-bold text-gray-900 mb-2">Resources</h3>
-                <ResourceLinkCard
-                  url={privateDetails.resourceLinkUrl}
-                  label={privateDetails.resourceLinkLabel}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
 
       {/* Reviews Section - Only show for completed events */}
       {(isEventCompleted || ended) && (

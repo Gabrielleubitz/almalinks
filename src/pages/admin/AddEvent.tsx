@@ -34,6 +34,8 @@ const AddEvent: React.FC = () => {
     chapter: '',
     eventFormat: 'in_person' as 'in_person' | 'virtual' | 'hybrid',
     costNote: '',
+    speakerName: '',
+    speakerImageUrl: '',
     meetingUrl: '',
     venueAddress: '',
     resourceLinkUrl: '',
@@ -148,6 +150,8 @@ const AddEvent: React.FC = () => {
           chapter: formData.chapter?.trim() || null,
           eventFormat: formData.eventFormat,
           costNote: formData.costNote?.trim() || null,
+          speakerName: formData.speakerName?.trim() || null,
+          speakerImageUrl: formData.speakerImageUrl?.trim() || null,
           eventAudience:
             formData.status === 'active'
               ? {
@@ -257,6 +261,8 @@ const AddEvent: React.FC = () => {
         chapter: '',
         eventFormat: 'in_person',
         costNote: '',
+        speakerName: '',
+        speakerImageUrl: '',
         meetingUrl: '',
         venueAddress: '',
         resourceLinkUrl: '',
@@ -302,6 +308,8 @@ const AddEvent: React.FC = () => {
           chapter: '',
           eventFormat: 'in_person',
           costNote: '',
+          speakerName: '',
+          speakerImageUrl: '',
           meetingUrl: '',
           venueAddress: '',
           resourceLinkUrl: '',
@@ -494,6 +502,42 @@ const AddEvent: React.FC = () => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                 placeholder="e.g. Complimentary for members, or ticket link later"
               />
+            </div>
+
+            <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/80 space-y-4">
+              <p className="text-sm font-medium text-gray-800">Speaker (optional)</p>
+              <p className="text-xs text-gray-500 -mt-2">Small circular photo on the event detail page.</p>
+              <div>
+                <label htmlFor="speakerName" className="block text-sm text-gray-600 mb-1">Speaker name</label>
+                <input
+                  id="speakerName"
+                  name="speakerName"
+                  type="text"
+                  value={formData.speakerName}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  placeholder="e.g. Jane Cohen"
+                />
+              </div>
+              <div>
+                <label htmlFor="speakerImageUrl" className="block text-sm text-gray-600 mb-1">Speaker photo URL</label>
+                <input
+                  id="speakerImageUrl"
+                  name="speakerImageUrl"
+                  type="url"
+                  value={formData.speakerImageUrl}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  placeholder="https://… (headshot; square works best)"
+                />
+                {formData.speakerImageUrl ? (
+                  <img
+                    src={formData.speakerImageUrl}
+                    alt=""
+                    className="mt-2 h-16 w-16 rounded-full object-cover border border-gray-200"
+                  />
+                ) : null}
+              </div>
             </div>
 
             {/* Private details (only visible to approved registrants) */}
