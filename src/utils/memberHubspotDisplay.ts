@@ -38,22 +38,17 @@ export function resolveDirectoryAvatarUrl(user: UserProfile): string {
   return '';
 }
 
-/** Short HubSpot fields only — not bio_25 / bio_paragraph (those belong in full bio). */
-const HUBSPOT_BIO_TITLE_KEYS = ['bio_short', 'bio_one_liner'];
+/** HubSpot "Bio Title" field (internal name bionew) + legacy short bio properties. */
+const HUBSPOT_BIO_TITLE_KEYS = ['bionew', 'bio_short', 'bio_one_liner'];
 
 /**
- * Raw short line for cards: bio title fields first, then HubSpot one-liners, then title/company.
+ * Short tagline for cards: Firestore bioTitle, then HubSpot bionew (not job title / company alone).
  */
 export function resolveDirectoryBioTitle(user: UserProfile): string | undefined {
   const direct = (user.bioTitle || '').trim();
   if (direct) return direct;
   const fromHub = firstHubspotString(user.hubspotContactProperties || null, HUBSPOT_BIO_TITLE_KEYS);
   if (fromHub) return fromHub;
-  const title = (user.title || (user as { work?: string }).work || '').trim();
-  const company = (user.company || '').trim();
-  if (title && company) return `${title}, ${company}`;
-  if (title) return title;
-  if (company) return company;
   return undefined;
 }
 
@@ -65,7 +60,10 @@ export function resolveProfileBioTitleLine(user: UserProfile): string | undefine
 
 export function resolveStoredChapter(user: UserProfile): string | null {
   const c = user.chapter;
-  if (c == null) return null;
-  const s = String(c).trim();
-  return s || null;
+  if (c != null) {
+    const s = String(c).trim();
+    if (s) return s;
+  }
+  const fromHub = firstHubspotString(user.hubspotContactProperties || null, ['chapter']);
+  return fromHub || null;
 }
