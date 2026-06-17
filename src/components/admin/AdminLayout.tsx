@@ -20,6 +20,7 @@ import {
   ChevronDown,
   HelpCircle,
   Heart,
+  Star,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
@@ -37,6 +38,7 @@ const navSections = [
     label: 'Management',
     items: [
       { to: '/admin/events', label: 'Events', icon: Calendar },
+      { to: '/admin/reviews', label: 'Event reviews', icon: Star },
       { to: '/admin/event-registrations', label: 'Event Registrations', icon: ClipboardCheck },
       { to: '/admin/users', label: 'Users', icon: Users },
       { to: '/admin/pending-registrations', label: 'Membership Applicants', icon: UserPlus },
@@ -69,6 +71,7 @@ const pathToTitle: Record<string, string> = {
   '/admin/chats': 'Chats',
   '/admin/chats/create': 'Create chat group',
   '/admin/events': 'Events',
+  '/admin/reviews': 'Event reviews',
   '/admin/events/create': 'Create event',
   '/admin/events/add': 'Add event',
   '/admin/check-in': 'Check-in',

@@ -40,6 +40,7 @@ import ChatViewPage from './pages/ChatViewPage';
 import DiscoverChatsPage from './pages/DiscoverChatsPage';
 import CreateChatGroup from './pages/admin/CreateChatGroup';
 import AdminChatManagement from './pages/admin/AdminChatManagement';
+import AdminEventReviews from './pages/admin/AdminEventReviews';
 import ThemePreview from './pages/ThemePreview';
 import HelpPage from './pages/HelpPage';
 import TermsPage from './pages/TermsPage';
@@ -182,6 +183,7 @@ function App() {
           <Route path="chats" element={<AdminChatManagement />} />
           <Route path="chats/create" element={<CreateChatGroup />} />
           <Route path="events" element={<EventManagement />} />
+          <Route path="reviews" element={<AdminEventReviews />} />
           <Route path="check-in" element={<AdminCheckIn />} />
           <Route path="events/create" element={<AddEvent />} />
           <Route path="events/add" element={<AddEvent />} />

@@ -24,6 +24,7 @@ export interface ReviewData {
   comment: string;
   profilePictureUrl: string | null;
   createdAt: any;
+  updatedAt?: any;
 }
 
 export class ReviewService {
@@ -182,6 +183,79 @@ export class ReviewService {
       console.error('❌ Error deleting review:', error);
       throw error;
     }
+  }
+
+  /** Admin: list recent reviews across all events (newest first). */
+  static async listAllReviewsForAdmin(max = 300): Promise<ReviewData[]> {
+    try {
+      const reviewsRef = collection(db, 'event_reviews');
+      const q = query(reviewsRef, orderBy('createdAt', 'desc'), limit(max));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      })) as ReviewData[];
+    } catch (error) {
+      console.error('❌ Error fetching admin reviews:', error);
+      return [];
+    }
+  }
+
+  /** Admin: update any review without ownership check. */
+  static async adminUpdateReview(reviewId: string, rating: number, comment: string): Promise<void> {
+    const reviewRef = doc(db, 'event_reviews', reviewId);
+    const reviewDoc = await getDoc(reviewRef);
+    if (!reviewDoc.exists()) {
+      throw new Error('Review not found');
+    }
+    await setDoc(
+      reviewRef,
+      {
+        rating: Math.min(Math.max(rating, 1), 5),
+        comment: comment.trim(),
+        updatedAt: serverTimestamp(),
+        updatedByAdmin: true,
+      },
+      { merge: true }
+    );
+  }
+
+  /** Admin: delete any review without ownership check. */
+  static async adminDeleteReview(reviewId: string): Promise<void> {
+    const reviewRef = doc(db, 'event_reviews', reviewId);
+    const reviewDoc = await getDoc(reviewRef);
+    if (!reviewDoc.exists()) {
+      throw new Error('Review not found');
+    }
+    await deleteDoc(reviewRef);
+  }
+
+  static reviewTimestampMs(value: unknown): number | null {
+    if (!value) return null;
+    if (typeof (value as { toDate?: () => Date }).toDate === 'function') {
+      return (value as { toDate: () => Date }).toDate().getTime();
+    }
+    if (value instanceof Date) return value.getTime();
+    const parsed = new Date(String(value)).getTime();
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  static formatReviewDate(value: unknown): string {
+    const ms = ReviewService.reviewTimestampMs(value);
+    if (!ms) return '—';
+    return new Date(ms).toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+
+  static isReviewNew(value: unknown, withinDays = 7): boolean {
+    const ms = ReviewService.reviewTimestampMs(value);
+    if (!ms) return false;
+    return Date.now() - ms <= withinDays * 24 * 60 * 60 * 1000;
   }
 
   // Format position for display

@@ -12,6 +12,7 @@ import {
   ClipboardCheck,
   Link2,
   Wrench,
+  Star,
 } from 'lucide-react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../firebase/config';
@@ -76,6 +77,8 @@ const AdminDashboard: React.FC = () => {
   const [loadingPending, setLoadingPending] = useState(true);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(true);
+  const [newReviewsCount, setNewReviewsCount] = useState<number>(0);
+  const [loadingReviews, setLoadingReviews] = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -119,6 +122,21 @@ const AdminDashboard: React.FC = () => {
       }
     };
     load();
+  }, []);
+
+  useEffect(() => {
+    const loadReviews = async () => {
+      try {
+        const { ReviewService } = await import('../../services/reviewService');
+        const list = await ReviewService.listAllReviewsForAdmin(100);
+        setNewReviewsCount(list.filter((r) => ReviewService.isReviewNew(r.createdAt)).length);
+      } catch {
+        setNewReviewsCount(0);
+      } finally {
+        setLoadingReviews(false);
+      }
+    };
+    loadReviews();
   }, []);
 
   useEffect(() => {
@@ -213,6 +231,14 @@ const AdminDashboard: React.FC = () => {
               description="View and manage events"
               stat={loadingEvents ? undefined : `${eventsCount} events`}
               statLoading={loadingEvents}
+            />
+            <DashboardCard
+              to="/admin/reviews"
+              icon={Star}
+              title="Event reviews"
+              description="Moderate attendee feedback"
+              stat={loadingReviews ? undefined : newReviewsCount > 0 ? `${newReviewsCount} new` : undefined}
+              statLoading={loadingReviews}
             />
             <DashboardCard
               to="/admin/users"
