@@ -544,6 +544,22 @@ const PendingRegistrations: React.FC = () => {
         await sendRejectionLogToComms(userToReject, trimmedReason);
       }
 
+      if (userToReject?.email) {
+        try {
+          const hubspotRes = await fetch('/api/delete-hubspot-applicant', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: userToReject.email }),
+          });
+          if (!hubspotRes.ok) {
+            const err = await hubspotRes.json().catch(() => ({}));
+            console.warn('HubSpot applicant removal failed (non-blocking):', err?.error || hubspotRes.status);
+          }
+        } catch (hubspotErr) {
+          console.warn('HubSpot applicant removal error (non-blocking):', hubspotErr);
+        }
+      }
+
       setPendingUsers(prev => prev.filter(u => u.uid !== userId));
       setFilteredUsers(prev => prev.filter(u => u.uid !== userId));
 

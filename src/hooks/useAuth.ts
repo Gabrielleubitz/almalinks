@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, setPersistence, browserLocalPersistence, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, linkWithPopup, getAdditionalUserInfo, fetchSignInMethodsForEmail, reauthenticateWithPopup, updatePassword } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, setPersistence, browserLocalPersistence, signInWithPopup, GoogleAuthProvider, linkWithPopup, getAdditionalUserInfo, fetchSignInMethodsForEmail, reauthenticateWithPopup, updatePassword } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, retryOnNetworkFailure } from '../firebase/config';
 import type { CropValue } from '../types/crop';
@@ -665,19 +665,20 @@ export const useAuth = () => {
     }
   };
 
-  const register = async (email: string, password: string, displayName: string, profileData?: ProfileData) => {
+  const register = async (email: string, password: string | undefined, displayName: string, profileData?: ProfileData) => {
     try {
       setError(null);
       setLoading(true);
       console.log('📝 Attempting to register user:', email);
       
-      // Ensure local persistence is set before registering
       await setPersistence(auth, browserLocalPersistence);
-      console.log('✅ Local persistence confirmed for registration');
+
+      const effectivePassword =
+        (password && password.trim()) ||
+        `${crypto.randomUUID?.() || Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}!A1`;
       
-      // Create Firebase Auth account with retry logic
       const result = await retryOnNetworkFailure(async () => {
-        return createUserWithEmailAndPassword(auth, email, password);
+        return createUserWithEmailAndPassword(auth, email, effectivePassword);
       });
       
       console.log('✅ Firebase Auth account created:', result.user.uid);
@@ -751,30 +752,29 @@ export const useAuth = () => {
     }
   };
 
-  // Function to send password reset email
   const resetPassword = async (email: string) => {
     try {
       setError(null);
       console.log('🔑 Sending password reset email to:', email);
-      
-      await sendPasswordResetEmail(auth, email);
+
+      const response = await fetch('/api/password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'request', email }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error || 'Failed to send password reset email.');
+        return false;
+      }
+
       console.log('✅ Password reset email sent successfully');
       return true;
     } catch (err: any) {
-      console.error('❌ Password reset failed:', err.code, err.message);
-      
-      // Handle specific Firebase Auth errors
-      if (err.code === 'auth/user-not-found') {
-        setError('No account found with this email address.');
-      } else if (err.code === 'auth/invalid-email') {
-        setError('Please enter a valid email address.');
-      } else if (err.code === 'auth/network-request-failed') {
-        setError('Network error. Please check your connection and try again.');
-        setNetworkError(true);
-      } else {
-        const friendlyMessage = getAuthErrorMessage(err.code);
-        setError(friendlyMessage);
-      }
+      console.error('❌ Password reset failed:', err?.message || err);
+      setError('Network error. Please check your connection and try again.');
+      setNetworkError(true);
       return false;
     }
   };
@@ -995,7 +995,7 @@ export const useAuth = () => {
   };
 
   // Computed values with explicit logging
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || (user as { admin?: boolean })?.admin === true;
   const isMember = user?.role === 'member';
   const isPending = user?.status === 'pending';
   const isApproved = user?.status === 'approved';

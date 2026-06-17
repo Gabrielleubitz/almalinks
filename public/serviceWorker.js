@@ -1,5 +1,5 @@
 // Cache name with version - increment when you need to bust cache
-const CACHE_NAME = 'almalinks-cache-v2';
+const CACHE_NAME = 'almalinks-cache-v3';
 
 // Assets to cache on install
 const STATIC_ASSETS = [
@@ -14,6 +14,30 @@ const STATIC_ASSETS = [
   '/android-chrome-512x512.png',
   '/site.webmanifest'
 ];
+
+function isNavigationRequest(request) {
+  return (
+    request.mode === 'navigate' ||
+    (request.method === 'GET' && request.headers.get('accept')?.includes('text/html'))
+  );
+}
+
+function offlineResponse() {
+  return new Response('Network error occurred', {
+    status: 408,
+    headers: { 'Content-Type': 'text/plain' },
+  });
+}
+
+function spaFallback() {
+  return caches.match('/index.html').then((response) => response || offlineResponse());
+}
+
+function ensureResponse(response, request) {
+  if (response) return response;
+  if (isNavigationRequest(request)) return spaFallback();
+  return offlineResponse();
+}
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
@@ -105,21 +129,16 @@ self.addEventListener('fetch', (event) => {
       }).catch(() => {
         // Fallback to cache if network fails
         return caches.match(event.request).then((response) => {
-          if (response) {
-            return response;
-          }
-          // Final fallback for HTML requests
-          if (event.request.headers.get('accept')?.includes('text/html')) {
-            return caches.match('/index.html');
-          }
-          return new Response('Network error occurred', { status: 408, headers: { 'Content-Type': 'text/plain' } });
+          return ensureResponse(response, event.request);
         });
       })
     );
   } else {
-    // Default network-first for everything else
+    // SPA routes (e.g. /admin/email) — network-first with index.html fallback
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
+      fetch(event.request)
+        .catch(() => caches.match(event.request))
+        .then((response) => ensureResponse(response, event.request))
     );
   }
 });

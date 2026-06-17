@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BackButton from '../../components/ui/BackButton';
-import { Mail, Send, ArrowLeft, AlertCircle, CheckCircle, Inbox, RefreshCw, Trash2 } from 'lucide-react';
+import { Mail, Send, ArrowLeft, AlertCircle, CheckCircle, Inbox, RefreshCw, Trash2, Download } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { sendAdminEmail } from '../../services/emailService';
 import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/admin/EmailRecipientAutocomplete';
@@ -44,6 +44,7 @@ const AdminEmail: React.FC = () => {
   const [emailLogFilter, setEmailLogFilter] = useState('');
   const [showAllSentEmails, setShowAllSentEmails] = useState(false);
   const [deletingEmailLogId, setDeletingEmailLogId] = useState<string | null>(null);
+  const [exportingEmailLog, setExportingEmailLog] = useState(false);
   const [quickEmailRecipient, setQuickEmailRecipient] = useState('');
   const [runningTemplate, setRunningTemplate] = useState<string | null>(null);
   const [emailConfig, setEmailConfig] = useState<{ mailjet: boolean; mailchimp: boolean } | null>(null);
@@ -134,6 +135,40 @@ const AdminEmail: React.FC = () => {
       setError(e instanceof Error ? e.message : 'Delete failed');
     } finally {
       setDeletingEmailLogId(null);
+    }
+  };
+
+  const exportEmailLogToGoogleSheets = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+    setExportingEmailLog(true);
+    setError(null);
+    try {
+      const token = await currentUser.getIdToken();
+      const res = await fetch('/api/admin/email-log?format=csv&limit=10000', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError((data as { error?: string }).error || 'Failed to export sent emails');
+        return;
+      }
+      const csv = await res.text();
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `alma-sent-emails-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setSuccess('Exported sent emails as CSV — import into Google Sheets via File → Import.');
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Export failed');
+    } finally {
+      setExportingEmailLog(false);
     }
   };
 
@@ -358,6 +393,20 @@ const AdminEmail: React.FC = () => {
                 onChange={(e) => setEmailLogFilter(e.target.value)}
                 className="flex-1 min-w-[180px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-light focus:border-transparent"
               />
+              <button
+                type="button"
+                onClick={exportEmailLogToGoogleSheets}
+                disabled={exportingEmailLog || emailLogLoading}
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-brand-blue-dark border border-brand-blue-dark/30 rounded-lg hover:bg-brand-blue-dark/5 disabled:opacity-50"
+                title="Download CSV for Google Sheets import"
+              >
+                {exportingEmailLog ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                <span>Export to Google Sheets</span>
+              </button>
               <button
                 type="button"
                 onClick={fetchEmailLog}

@@ -15,7 +15,6 @@ const ForgotPasswordPage: React.FC = () => {
     e.preventDefault();
     if (isSubmitting) return;
 
-    // Validate email
     if (!email.trim()) {
       setError('Please enter your email address');
       return;
@@ -31,16 +30,7 @@ const ForgotPasswordPage: React.FC = () => {
     setError(null);
 
     try {
-      // Create a reset token
-      const token = await PasswordResetService.createResetToken(email);
-      
-      // If token is null, user doesn't exist, but we don't reveal that
-      if (token) {
-        // Send reset email
-        await PasswordResetService.sendResetEmail(email, token);
-      }
-      
-      // Show success message regardless of whether user exists
+      await PasswordResetService.sendResetEmail(email);
       setSuccess(true);
     } catch (err: any) {
       console.error('❌ Error in password reset flow:', err);
@@ -52,7 +42,6 @@ const ForgotPasswordPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-3 sm:px-4 relative overflow-x-hidden w-full max-w-full">
-      {/* Logo in top left corner */}
       <div className="absolute top-[max(1.5rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))] z-10">
         <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
           <img 
@@ -64,7 +53,6 @@ const ForgotPasswordPage: React.FC = () => {
       </div>
 
       <div className="max-w-md w-full">
-        {/* Back button */}
         <div className="mb-6">
           <BackButton
             fallbackTo="/login"
@@ -104,7 +92,7 @@ const ForgotPasswordPage: React.FC = () => {
               </div>
               
               <p className="text-sm text-gray-500 mb-6">
-                Please check your inbox and spam folder. The reset link will expire in 24 hours.
+                Please check your inbox and spam folder. The link stays valid until you use it.
               </p>
               
               <Link
@@ -117,7 +105,6 @@ const ForgotPasswordPage: React.FC = () => {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Email Address */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address

@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import BackButton from '../components/ui/BackButton';
 import { Eye, EyeOff, Lock, ArrowRight, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
-import { auth } from '../firebase/config';
-import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
+import { PasswordResetService } from '../services/passwordResetService';
 import logoSvg from '../assets/alma-links-logo.svg';
 
 const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
+  const [token, setToken] = useState<string | null>(null);
   const [oobCode, setOobCode] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState('');
@@ -19,29 +19,57 @@ const ResetPasswordPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
+  const [useFirebaseFlow, setUseFirebaseFlow] = useState(false);
 
-  // Extract oobCode from URL on component mount
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
-    const code = searchParams.get('oobCode');
-    
-    if (code) {
-      setOobCode(code);
-      verifyCode(code);
-    } else {
-      setError('Invalid or missing reset code. Please try requesting a new password reset link.');
-      setIsVerifying(false);
+    const customToken = searchParams.get('token');
+    const firebaseCode = searchParams.get('oobCode');
+
+    if (customToken) {
+      setToken(customToken);
+      setUseFirebaseFlow(false);
+      verifyCustomToken(customToken);
+      return;
     }
+
+    if (firebaseCode) {
+      setOobCode(firebaseCode);
+      setUseFirebaseFlow(true);
+      verifyFirebaseCode(firebaseCode);
+      return;
+    }
+
+    setError('Invalid or missing reset link. Please try requesting a new password reset.');
+    setIsVerifying(false);
   }, [location]);
 
-  // Verify the reset code
-  const verifyCode = async (code: string) => {
+  const verifyCustomToken = async (code: string) => {
     try {
+      const result = await PasswordResetService.verifyToken(code);
+      if (!result.valid) {
+        setError('This password reset link is invalid or has already been used. Please request a new one.');
+        setIsVerifying(false);
+        return;
+      }
+      setEmail(result.email || null);
+      setIsVerifying(false);
+    } catch (err) {
+      console.error('❌ Error verifying reset token:', err);
+      setError('This password reset link is invalid. Please request a new one.');
+      setIsVerifying(false);
+    }
+  };
+
+  const verifyFirebaseCode = async (code: string) => {
+    try {
+      const { auth } = await import('../firebase/config');
+      const { verifyPasswordResetCode } = await import('firebase/auth');
       const emailAddress = await verifyPasswordResetCode(auth, code);
       setEmail(emailAddress);
       setIsVerifying(false);
-    } catch (err: any) {
-      console.error('❌ Error verifying reset code:', err);
+    } catch (err) {
+      console.error('❌ Error verifying Firebase reset code:', err);
       setError('This password reset link is invalid or has expired. Please request a new one.');
       setIsVerifying(false);
     }
@@ -49,9 +77,8 @@ const ResetPasswordPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting || !oobCode) return;
+    if (isSubmitting) return;
 
-    // Validate passwords
     if (newPassword.length < 6) {
       setError('Password must be at least 6 characters long');
       return;
@@ -66,16 +93,27 @@ const ResetPasswordPage: React.FC = () => {
     setError(null);
 
     try {
-      await confirmPasswordReset(auth, oobCode, newPassword);
+      if (useFirebaseFlow && oobCode) {
+        const { auth } = await import('../firebase/config');
+        const { confirmPasswordReset } = await import('firebase/auth');
+        await confirmPasswordReset(auth, oobCode, newPassword);
+      } else if (token) {
+        const ok = await PasswordResetService.resetPassword(token, newPassword);
+        if (!ok) {
+          setError('Failed to reset password. The link may have already been used.');
+          return;
+        }
+      } else {
+        setError('Invalid reset link. Please request a new one.');
+        return;
+      }
+
       setSuccess(true);
-      
-      // Redirect to login page after 3 seconds
       setTimeout(() => {
         navigate('/login');
       }, 3000);
     } catch (err: any) {
       console.error('❌ Error resetting password:', err);
-      
       if (err.code === 'auth/expired-action-code') {
         setError('This password reset link has expired. Please request a new one.');
       } else if (err.code === 'auth/invalid-action-code') {
@@ -137,7 +175,6 @@ const ResetPasswordPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-3 sm:px-4 relative overflow-x-hidden w-full max-w-full">
-      {/* Logo in top left corner */}
       <div className="absolute top-[max(1.5rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))] z-10">
         <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
           <img 
@@ -149,7 +186,6 @@ const ResetPasswordPage: React.FC = () => {
       </div>
 
       <div className="max-w-md w-full">
-        {/* Back button */}
         <div className="mb-6">
           <BackButton
             fallbackTo="/login"
@@ -181,7 +217,6 @@ const ResetPasswordPage: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* New Password */}
             <div>
               <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
                 New Password
@@ -211,7 +246,6 @@ const ResetPasswordPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
                 Confirm Password

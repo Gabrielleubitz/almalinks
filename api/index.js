@@ -51,7 +51,8 @@ import updateEventPrivateDetailsHandler from '../lib/server/api/update-event-pri
 import updateProfileHandler from '../lib/server/api/update-profile.js';
 import uploadProfileImageHandler from '../lib/server/api/upload-profile-image.js';
 import deleteProfileImageHandler from '../lib/server/api/delete-profile-image.js';
-import uploadImageHandler from '../lib/server/api/upload-image.js';
+import passwordResetHandler from '../lib/server/api/password-reset.js';
+import deleteHubspotApplicantHandler from '../lib/server/api/delete-hubspot-applicant.js';
 
 // Legacy connection/request endpoints (kept for compatibility with current frontend paths)
 import connectionsAdminCreateHandler from '../lib/server/api/legacy/api/connections/admin-create.js';
@@ -88,6 +89,8 @@ const routeTable = new Map([
   ['/api/welcome-email', welcomeEmailHandler],
   ['/api/application-follow-up-email', applicationFollowUpEmailHandler],
   ['/api/generate-setup-link', generateSetupLinkHandler],
+  ['/api/password-reset', passwordResetHandler],
+  ['/api/delete-hubspot-applicant', deleteHubspotApplicantHandler],
   ['/api/test-mandrill', testMandrillHandler],
   ['/api/sync-hubspot-contacts', syncHubspotContactsHandler],
   ['/api/remove-hubspot-users', removeHubspotUsersHandler],

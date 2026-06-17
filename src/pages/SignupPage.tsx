@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BackButton from '../components/ui/BackButton';
-import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowRight, ArrowLeft, AlertCircle, ChevronDown, Linkedin, CheckCircle, MapPin, Building2 } from 'lucide-react';
+import { Mail, User, Phone, ArrowRight, ArrowLeft, AlertCircle, ChevronDown, Linkedin, CheckCircle, MapPin, Building2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { auth } from '../firebase/config';
 import { extractLinkedInVanity } from '../utils/linkedInUrl';
 import logoSvg from '../assets/alma-links-logo.svg';
 import RichTextBioEditor from '../components/profile/RichTextBioEditor';
@@ -63,7 +62,7 @@ function stripHtmlToText(html: string): string {
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, register, error, loading, isPending, isNeedsSignup, signInWithGoogle } = useAuth();
+  const { user, register, error, loading, isPending } = useAuth();
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -80,15 +79,12 @@ const SignupPage: React.FC = () => {
     lookingToGain: '',
     offerToMembers: '',
     bio: '',
-    heardAboutAlma: '',
-    password: ''
+    heardAboutAlma: ''
   });
   const [selectedCountryCode, setSelectedCountryCode] = useState('+972'); // Default to Israel
-  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
-  const [signedInWithGoogle, setSignedInWithGoogle] = useState(false);
 
   // ── Guard: redirect users who shouldn't be on /signup ───────────────────
   useEffect(() => {
@@ -105,43 +101,21 @@ const SignupPage: React.FC = () => {
       navigate('/pending', { replace: true });
       return;
     }
-    if (user.status === 'needs_signup' && !signedInWithGoogle) {
-      // Returned after Google OAuth but before form submission — treat as Google signup
-      setSignedInWithGoogle(true);
+    if (user.status === 'needs_signup') {
+      navigate('/login', { replace: true });
     }
-  }, [user, loading, navigate, signedInWithGoogle]);
+  }, [user, loading, navigate]);
 
   // ── Post-registration navigation ─────────────────────────────────────────
   useEffect(() => {
     if (!registrationSuccess) return;
-
-    // Google path: status remains 'needs_signup' after createJoinRequest (auth state
-    // doesn't re-fire), so we navigate directly rather than relying on isPending.
-    if (signedInWithGoogle) {
-      navigate('/pending', { replace: true });
-      return;
-    }
 
     // Email path: onAuthStateChanged will update user.status to 'pending' once the
     // join request is created, so we wait for that to propagate.
     if (user && !loading) {
       navigate(isPending ? '/pending' : '/events', { replace: true });
     }
-  }, [user, loading, navigate, isPending, registrationSuccess, signedInWithGoogle]);
-
-  // ── Google pre-fill ───────────────────────────────────────────────────────
-  // When the user has connected Google on this page, prefill name/email once.
-  useEffect(() => {
-    if (!signedInWithGoogle || !user) return;
-    const full = (user.displayName || '').trim();
-    const parts = full ? full.split(/\s+/) : [];
-    setFormData(prev => ({
-      ...prev,
-      firstName: prev.firstName || (parts[0] || ''),
-      lastName: prev.lastName || (parts.slice(1).join(' ') || ''),
-      email: prev.email || user.email || ''
-    }));
-  }, [signedInWithGoogle, user]);
+  }, [user, loading, navigate, isPending, registrationSuccess]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -271,24 +245,6 @@ const SignupPage: React.FC = () => {
       setValidationError('Please tell us how you heard about AlmaLinks');
       return false;
     }
-    
-    // Password required only for email/password signups (not Google SSO)
-    if (!signedInWithGoogle) {
-      if (!formData.password.trim()) {
-        setValidationError('Please choose a portal password');
-        return false;
-      }
-      if (formData.password.length < 6) {
-        setValidationError('Password must be at least 6 characters long');
-        return false;
-      }
-    }
-
-    // Ensure the Google user is actually signed-in before allowing form submission
-    if (signedInWithGoogle && !auth.currentUser) {
-      setValidationError('Google sign-in session expired. Please click "Continue with Google" again.');
-      return false;
-    }
 
     return true;
   };
@@ -330,20 +286,10 @@ const SignupPage: React.FC = () => {
         heardAboutAlma: formData.heardAboutAlma.trim(),
       };
 
-      if (signedInWithGoogle && user) {
-        const { JoinRequestService } = await import('../services/joinRequestService');
-        await JoinRequestService.createJoinRequest(user.uid, {
-          email: formData.email,
-          name: fullName,
-          displayName: fullName,
-          ...joinPayload,
-        });
-      } else {
-        await register(formData.email, formData.password, fullName, {
-          ...joinPayload,
-          status: 'pending'
-        });
-      }
+      await register(formData.email, undefined, fullName, {
+        ...joinPayload,
+        status: 'pending'
+      });
       
       // Set success state to show message
       // The useEffect hook will handle navigation once user state updates
@@ -375,8 +321,7 @@ const SignupPage: React.FC = () => {
     formData.lookingToGain.trim() &&
     formData.offerToMembers.trim() &&
     stripHtmlToText(formData.bio) &&
-    formData.heardAboutAlma.trim() &&
-    (signedInWithGoogle || (formData.password.trim() && formData.password.length >= 6));
+    formData.heardAboutAlma.trim();
 
   const displayError = validationError || error;
   const selectedCountry = COUNTRY_CODES.find(country => country.code === selectedCountryCode);
@@ -755,54 +700,6 @@ const SignupPage: React.FC = () => {
               />
             </div>
 
-            {/* Password — only for email/password signup, hidden when using Google */}
-            {signedInWithGoogle ? (
-              <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800">
-                <svg className="w-5 h-5 flex-shrink-0" aria-hidden viewBox="0 0 24 24">
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                <span>
-                  <strong>Connected with Google</strong> — no password needed. Your account will use Google sign-in.
-                </span>
-              </div>
-            ) : (
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Choose a password for your AlmaLinks portal *
-                </label>
-                <p className="text-xs text-gray-500 mb-2">
-                  If your application is approved, you&rsquo;ll use this password to sign in at almalinks.org. (You can change it anytime.)
-                </p>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--brand-blue-dark)] focus:border-transparent transition-all duration-200 min-h-[44px] touch-manipulation"
-                    placeholder="At least 6 characters"
-                    minLength={6}
-                    disabled={isSubmitting}
-                    autoComplete="new-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation"
-                    disabled={isSubmitting}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
-                </div>
-              </div>
-            )}
-
             <button
               type="submit"
               disabled={isSubmitting || !isFormValid}
@@ -821,45 +718,6 @@ const SignupPage: React.FC = () => {
               )}
             </button>
           </form>
-
-          {/* Google button — hidden once the user is already connected */}
-          {!signedInWithGoogle && (
-            <>
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or continue with</span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    setIsSubmitting(true);
-                    await signInWithGoogle('signup');
-                    setSignedInWithGoogle(true);
-                  } catch (err) {
-                    // Error is handled by useAuth hook
-                  } finally {
-                    setIsSubmitting(false);
-                  }
-                }}
-                disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] touch-manipulation"
-              >
-                <svg className="w-5 h-5" aria-hidden viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                <span>Continue with Google</span>
-              </button>
-            </>
-          )}
 
           <div className="mt-8 text-center">
             <p className="text-gray-600">
