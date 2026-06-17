@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import BackButton from '../components/ui/BackButton';
-import { MapPin, CheckCircle, AlertCircle, CalendarPlus, ExternalLink, Link as LinkIcon, User } from 'lucide-react';
+import {
+  MapPin,
+  AlertCircle,
+  ExternalLink,
+  Link as LinkIcon,
+  User,
+  Calendar,
+  Tag,
+  Sparkles,
+} from 'lucide-react';
 import { EventService, EventData } from '../services/eventService';
 import { getMyRegistration, createPending } from '../services/registrationService';
 import type { EventRegistrationWithStatus, EventPrivateDetails } from '../types/event';
@@ -11,6 +20,7 @@ import { useActivityTracking } from '../hooks/useActivityTracking';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ReviewSection from '../components/reviews/ReviewSection';
+import CropImage from '../components/profile/CropImage';
 import { EventTimeDisplay, eventFormatLabel } from '../components/EventTimeDisplay';
 import { EventRegistrationPanel } from '../components/events/EventRegistrationPanel';
 import { getRestrictedEventAccessLabel } from '../utils/eventAccessLabel';
@@ -30,12 +40,15 @@ const HOSTNAME_LABELS: Record<string, string> = {
   'notion.tech': 'Notion',
 };
 
+const EVENT_IMAGE_PLACEHOLDER =
+  'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwMCIgaGVpZ2h0PSI2MDAiIHZpZXdCb3g9IjAgMCAxMjAwIDYwMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwQjJCNkIiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMyRTdGRUYiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTIwMCIgaGVpZ2h0PSI2MDAiIGZpbGw9InVybCgjZykiLz48L3N2Zz4=';
+
 function speakerInitials(name: string): string {
   return (
     name
       .trim()
       .split(/\s+/)
-      .map(w => w[0])
+      .map((w) => w[0])
       .filter(Boolean)
       .slice(0, 2)
       .join('')
@@ -70,26 +83,51 @@ function ResourceLinkCard({ url, label: customLabel }: { url: string; label?: st
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+      className="group flex items-center gap-3 p-4 rounded-xl border border-gray-200 bg-white hover:border-brand-blue-light/40 hover:shadow-md transition-all"
     >
       {faviconUrl ? (
         <img
           src={faviconUrl}
           alt=""
-          className="w-5 h-5 rounded flex-shrink-0 object-contain"
+          className="w-8 h-8 rounded-lg flex-shrink-0 object-contain bg-gray-50 p-1"
           onError={(e) => {
             (e.target as HTMLImageElement).style.display = 'none';
           }}
         />
       ) : (
-        <LinkIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-400">
+          <LinkIcon className="h-4 w-4" />
+        </span>
       )}
       <div className="min-w-0 flex-1">
-        <span className="font-medium text-gray-900 block truncate">{label}</span>
-        <span className="text-sm text-gray-500 truncate block">{url}</span>
+        <span className="font-semibold text-gray-900 block truncate group-hover:text-brand-blue-dark">
+          {label}
+        </span>
+        <span className="text-xs text-gray-500 truncate block">{url}</span>
       </div>
-      <ExternalLink className="h-4 w-4 text-gray-400 flex-shrink-0" />
+      <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-brand-blue-dark flex-shrink-0" />
     </a>
+  );
+}
+
+function MetaChip({
+  children,
+  tone = 'neutral',
+}: {
+  children: React.ReactNode;
+  tone?: 'neutral' | 'accent' | 'warning';
+}) {
+  const tones = {
+    neutral: 'bg-white/90 text-gray-800 border-white/60 backdrop-blur-sm',
+    accent: 'bg-brand-blue-dark/90 text-white border-white/20 backdrop-blur-sm',
+    warning: 'bg-amber-500/95 text-white border-amber-400/30 backdrop-blur-sm',
+  };
+  return (
+    <span
+      className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold border shadow-sm ${tones[tone]}`}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -99,7 +137,7 @@ const EventDetailPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { logEventRegistration } = useActivityTracking();
-  
+
   const [event, setEvent] = useState<EventData | null>(null);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
@@ -109,8 +147,7 @@ const EventDetailPage: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [showTicket, setShowTicket] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-  
-  // Ref for scrolling to top
+
   const topRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -119,14 +156,10 @@ const EventDetailPage: React.FC = () => {
     }
   }, [slug, user]);
 
-  // Scroll to top when component mounts
   useEffect(() => {
-    if (topRef.current) {
-      topRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    topRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  // Update document title when event loads
   useEffect(() => {
     if (event) {
       document.title = `${event.name} - AlmaLinks`;
@@ -135,8 +168,6 @@ const EventDetailPage: React.FC = () => {
     } else {
       document.title = 'Loading Event - AlmaLinks';
     }
-
-    // Cleanup: Reset title when component unmounts
     return () => {
       document.title = 'AlmaLinks - Where Bold Ideas Meet Real Conversations';
     };
@@ -155,29 +186,20 @@ const EventDetailPage: React.FC = () => {
 
   const loadEvent = async () => {
     if (!slug) return;
-    
+
     try {
-      console.log('🔍 Loading event by slug:', slug);
       setLoading(true);
       setError(null);
-      
-      // Try to get event by slug first, then by ID for backward compatibility
       const eventData = await EventService.getEventBySlugOrId(slug);
-      
       if (eventData) {
         setEvent(eventData);
-        console.log('✅ Event loaded:', eventData.name);
-        
-        // Check registration status if user is logged in
         if (user?.uid) {
           checkRegistrationStatus(eventData.id);
         }
       } else {
-        console.log('❌ Event not found for slug/ID:', slug);
         setError('Event not found');
       }
-    } catch (error) {
-      console.error('❌ Error loading event:', error);
+    } catch {
       setError('Failed to load event details');
     } finally {
       setLoading(false);
@@ -196,29 +218,23 @@ const EventDetailPage: React.FC = () => {
         setPrivateDetails(null);
       }
     } catch (err) {
-      console.error('❌ Error checking registration status:', err);
+      console.error('Error checking registration status:', err);
     }
   };
 
   const handleRegister = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    // Prevent any default behavior and page jumping
     e.preventDefault();
     e.stopPropagation();
 
     if (!event || !user?.uid) {
       setError('You must be logged in to register for events');
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+      setTimeout(() => navigate('/login'), 2000);
       return;
     }
 
-    // Check if user has complete profile
     if (!user.displayName || !user.phone || !user.work) {
       setError('Please complete your profile to register for events');
-      setTimeout(() => {
-        navigate('/signup');
-      }, 2000);
+      setTimeout(() => navigate('/signup'), 2000);
       return;
     }
 
@@ -237,7 +253,6 @@ const EventDetailPage: React.FC = () => {
     setSuccess(null);
 
     try {
-      console.log('🎯 Starting registration process (pending approval)...');
       await createPending(event.id, user.uid, {
         name: user.displayName || '',
         email: user.email || '',
@@ -246,46 +261,28 @@ const EventDetailPage: React.FC = () => {
         profileImage: user.profileImage || null,
         position: user.position || 'other',
       });
-      console.log('✅ Registration submitted (pending approval)');
       logEventRegistration(event.id, event.name);
       await checkRegistrationStatus(event.id);
-      setSuccess('Registration pending approval. We\'ll email you the event details once confirmed.');
+      setSuccess("Registration pending approval. We'll email you the event details once confirmed.");
       setTimeout(() => setSuccess(null), 8000);
-
-    } catch (err: any) {
-      console.error('❌ Registration failed:', err);
-      setError(err.message || 'Failed to register for event. Please try again.');
-      
-      // Clear error message after 5 seconds
-      setTimeout(() => {
-        setError(null);
-      }, 5000);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to register for event. Please try again.';
+      setError(message);
+      setTimeout(() => setError(null), 5000);
     } finally {
       setRegistering(false);
     }
   };
 
-  // Format event date and time for Google Calendar
   const formatGoogleCalendarDate = (dateString: string) => {
     const date = new Date(dateString);
-    
-    // Format to YYYYMMDDTHHmmssZ
-    const formatDate = (date: Date) => {
-      return date.toISOString().replace(/-|:|\.\d+/g, '');
-    };
-    
-    // Start time is the event time
+    const formatDate = (d: Date) => d.toISOString().replace(/-|:|\.\d+/g, '');
     const startTime = formatDate(date);
-    
-    // End time is 3 hours after start (default duration)
     const endDate = new Date(date);
     endDate.setHours(endDate.getHours() + 3);
-    const endTime = formatDate(endDate);
-    
-    return { startTime, endTime };
+    return { startTime, endTime: formatDate(endDate) };
   };
 
-  // Create Google Calendar URL (use private details when approved)
   const createGoogleCalendarUrl = () => {
     if (!event) return '';
     const { startTime, endTime } = formatGoogleCalendarDate(event.date);
@@ -310,44 +307,47 @@ const EventDetailPage: React.FC = () => {
 
   const getStatusInfo = (status: EventData['status']) => {
     const statusInfo = {
-      'active': {
+      active: {
         canRegister: true,
         message: 'Registration is open',
-        buttonText: 'Register Now',
-        buttonClass: 'bg-gradient-to-r from-brand-blue-dark to-brand-blue-light hover:shadow-lg'
+        buttonText: 'Register for this event',
+        buttonClass: 'bg-gradient-to-r from-brand-blue-dark to-brand-blue-light',
       },
       'sold-out': {
         canRegister: false,
         message: 'This event is sold out',
-        buttonText: 'Sold Out',
-        buttonClass: 'bg-yellow-500 cursor-not-allowed'
+        buttonText: 'Sold out',
+        buttonClass: 'bg-amber-600 cursor-not-allowed',
       },
-      'completed': {
+      completed: {
         canRegister: false,
         message: 'This event has been completed',
-        buttonText: 'Event Completed',
-        buttonClass: 'bg-blue-500 cursor-not-allowed'
+        buttonText: 'Event completed',
+        buttonClass: 'bg-gray-500 cursor-not-allowed',
       },
       'non-active': {
         canRegister: false,
         message: 'Registration is not available',
-        buttonText: 'Registration Closed',
-        buttonClass: 'bg-gray-500 cursor-not-allowed'
-      }
+        buttonText: 'Registration closed',
+        buttonClass: 'bg-gray-500 cursor-not-allowed',
+      },
     };
-
     return statusInfo[status];
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white overflow-x-hidden w-full max-w-full">
+      <div className="min-h-screen bg-[#f8fafc] overflow-x-hidden">
         <Header />
-        <div className="pt-[var(--content-offset-top)] pb-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <div className="w-12 h-12 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading event details...</p>
+        <div className="pt-[var(--content-offset-top)] pb-20">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6">
+            <div className="animate-pulse space-y-6">
+              <div className="aspect-[21/9] max-h-[380px] rounded-2xl bg-gray-200" />
+              <div className="h-8 w-2/3 rounded-lg bg-gray-200" />
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="h-24 rounded-xl bg-gray-100" />
+                <div className="h-24 rounded-xl bg-gray-100" />
+              </div>
             </div>
           </div>
         </div>
@@ -358,24 +358,22 @@ const EventDetailPage: React.FC = () => {
 
   if (error && !event) {
     return (
-      <div className="min-h-screen bg-white overflow-x-hidden w-full max-w-full">
+      <div className="min-h-screen bg-[#f8fafc] overflow-x-hidden">
         <Header />
-        <div className="pt-[var(--content-offset-top)] pb-16">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-6" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Event Not Found</h1>
-            <p className="text-xl text-gray-600 mb-8">
-              {error === 'Event not found' 
-                ? `We couldn't find an event with the identifier "${slug}". It may have been moved or deleted.`
-                : error
-              }
+        <div className="pt-[var(--content-offset-top)] pb-20">
+          <div className="max-w-lg mx-auto px-4 text-center">
+            <AlertCircle className="h-14 w-14 text-red-500 mx-auto mb-5" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">Event not found</h1>
+            <p className="text-gray-600 mb-8 leading-relaxed">
+              {error === 'Event not found'
+                ? `We couldn't find an event called "${slug}". It may have been moved or removed.`
+                : error}
             </p>
-            <div className="space-y-4">
-              <BackButton fallbackTo="/events" className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-8 py-4 rounded-full hover:shadow-lg transition-all duration-300 font-semibold" iconClassName="h-5 w-5" />
-              <div className="text-sm text-gray-500">
-                <p>Looking for a specific event? Try browsing our events page or contact us for assistance.</p>
-              </div>
-            </div>
+            <BackButton
+              fallbackTo="/events"
+              className="inline-flex items-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-full font-semibold hover:bg-gray-800"
+              iconClassName="h-4 w-4"
+            />
           </div>
         </div>
         <Footer compact />
@@ -390,6 +388,14 @@ const EventDetailPage: React.FC = () => {
   const canRegister = statusInfo.canRegister && !ended;
   const accessLabel = getRestrictedEventAccessLabel(event.eventAudience ?? null);
   const showStickyRegister = !ended && canRegister && !registration;
+  const costText = event.costNote?.trim() || 'Included with membership unless noted later.';
+  const formatLabel = eventFormatLabel(event.eventFormat ?? null);
+  const locationDisplay =
+    registration?.status === 'approved' && privateDetails
+      ? approvedEventPrimaryLocation(event.location, privateDetails)
+      : registration?.status === 'pending' || (registration && registration.status !== 'rejected')
+        ? 'Full address after approval'
+        : event.location;
 
   const registrationPanelProps = {
     ended,
@@ -403,174 +409,192 @@ const EventDetailPage: React.FC = () => {
     success,
     showTicket,
     onRegister: handleRegister,
-    onToggleTicket: () => setShowTicket(prev => !prev),
+    onToggleTicket: () => setShowTicket((prev) => !prev),
     onSignup: () => navigate('/signup'),
     onLogin: () => navigate('/login'),
     calendarUrl: createGoogleCalendarUrl(),
   };
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden w-full max-w-full">
+    <div className="min-h-screen bg-[#f8fafc] overflow-x-hidden">
       <Header />
-
       <div ref={topRef} />
 
-      <section
-        className={`pt-[var(--content-offset-top)] bg-white border-b border-gray-100 ${showStickyRegister ? 'pb-28 sm:pb-32 lg:pb-6' : 'pb-4 sm:pb-6'}`}
-      >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-2">
-            <BackButton fallbackTo="/events" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm font-medium" iconClassName="h-4 w-4" />
+      {/* Hero */}
+      <section className="pt-[var(--content-offset-top)]">
+        <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] max-h-[min(56vh,460px)] overflow-hidden bg-gradient-to-br from-[var(--brand-blue-dark)] to-[var(--brand-blue-light)]">
+          <CropImage
+            src={event.imageUrl || EVENT_IMAGE_PLACEHOLDER}
+            crop={event.imageCrop ?? null}
+            alt={event.name ? `${event.name} cover` : 'Event cover'}
+            mode="fill"
+            className="w-full h-full"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = EVENT_IMAGE_PLACEHOLDER;
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950/90 via-gray-950/35 to-gray-950/10" />
+
+          <div className="absolute inset-x-0 top-0 px-4 sm:px-6 lg:px-8 pt-4">
+            <div className="max-w-5xl mx-auto">
+              <BackButton
+                fallbackTo="/events"
+                className="inline-flex items-center gap-2 text-white/90 hover:text-white text-sm font-medium bg-black/25 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10"
+                iconClassName="h-4 w-4"
+              />
+            </div>
           </div>
 
-          <div className="lg:grid lg:grid-cols-[1fr_min(100%,20rem)] lg:gap-6 xl:gap-8 lg:items-start">
-            <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight mb-2">{event.name}</h1>
-
-              {ended ? (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200 mb-2">
-                  Event Ended
-                </span>
-              ) : null}
-
-              <div className="rounded-lg border border-gray-200 bg-gray-50/60 p-3 sm:p-4 space-y-2 text-sm text-gray-800">
-                <EventTimeDisplay event={event} layout="split" dense textClassName="text-gray-800" />
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 text-red-700 shrink-0 mt-0.5" aria-hidden />
-                  <div className="min-w-0">
-                    <span className="font-semibold text-gray-800">Location: </span>
-                    {registration?.status === 'approved' && privateDetails ? (
-                      <>
-                        <span className="font-medium">
-                          {approvedEventPrimaryLocation(event.location, privateDetails)}
-                        </span>
-                        {approvedEventVenueAddress(privateDetails) ? (
-                          <span className="block text-gray-600 text-xs mt-0.5 whitespace-pre-wrap">
-                            {approvedEventVenueAddress(privateDetails)}
-                          </span>
-                        ) : null}
-                      </>
-                    ) : registration?.status === 'pending' ||
-                      (registration && registration.status !== 'rejected') ? (
-                      <span className="text-gray-600">Full address after approval.</span>
-                    ) : (
-                      <span className="font-medium">{event.location}</span>
-                    )}
-                  </div>
-                </div>
-                {registration?.status === 'approved' && privateDetails?.meetingUrl && !ended ? (
-                  <div className="flex items-center gap-2">
-                    <LinkIcon className="h-4 w-4 text-brand-blue shrink-0" aria-hidden />
-                    <a
-                      href={privateDetails.meetingUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-brand-blue font-medium hover:underline break-all text-sm"
-                    >
-                      Join online
-                    </a>
-                  </div>
-                ) : null}
-                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-600 bg-white border border-gray-200 px-1.5 py-0.5 rounded">
-                    {eventFormatLabel(event.eventFormat ?? null)}
-                  </span>
-                  {event.chapter ? (
-                    <span className="text-[10px] font-medium text-gray-700 bg-white border border-gray-200 px-1.5 py-0.5 rounded">
-                      {event.chapter}
-                    </span>
-                  ) : null}
-                  {accessLabel ? (
-                    <span className="text-[10px] font-semibold text-amber-900 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded">
-                      {accessLabel}
-                    </span>
-                  ) : null}
-                </div>
+          <div className="absolute inset-x-0 bottom-0 px-4 sm:px-6 lg:px-8 pb-6 sm:pb-8">
+            <div className="max-w-5xl mx-auto">
+              <div className="flex flex-wrap gap-2 mb-3">
+                {ended ? <MetaChip tone="neutral">Event ended</MetaChip> : <MetaChip tone="accent">Upcoming</MetaChip>}
+                <MetaChip>{formatLabel}</MetaChip>
+                {event.chapter ? <MetaChip>{event.chapter}</MetaChip> : null}
+                {accessLabel ? <MetaChip tone="warning">{accessLabel}</MetaChip> : null}
               </div>
-
-              <div className="mt-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800">
-                <span className="font-semibold text-gray-900">Cost: </span>
-                {event.costNote?.trim()
-                  ? event.costNote.trim()
-                  : 'Included with membership unless noted later.'}
-              </div>
-
-              <div className="lg:hidden">
-                <EventRegistrationPanel variant="card" {...registrationPanelProps} />
-              </div>
-
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 md:gap-6 items-start">
-                <div className="min-w-0">
-                  <h2 className="text-base font-bold text-gray-900 mb-2">About this event</h2>
-                  <div
-                    className={`text-gray-700 text-sm leading-relaxed whitespace-pre-wrap ${
-                      !descriptionExpanded && (event.description?.length ?? 0) > 280 ? 'line-clamp-4' : ''
-                    }`}
-                  >
-                    {event.description}
-                  </div>
-                  {(event.description?.length ?? 0) > 280 ? (
-                    <button
-                      type="button"
-                      onClick={() => setDescriptionExpanded(v => !v)}
-                      className="mt-2 text-sm font-semibold text-brand-blue-dark hover:underline"
-                    >
-                      {descriptionExpanded ? 'Show less' : 'Read more'}
-                    </button>
-                  ) : null}
-                </div>
-                {(event.speakerName?.trim() || event.speakerImageUrl?.trim()) ? (
-                  <aside className="flex flex-col items-center gap-1.5 shrink-0 mx-auto md:mx-0 md:pt-1">
-                    <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full overflow-hidden border-2 border-gray-200 shadow-sm bg-gray-100 flex items-center justify-center">
-                      {event.speakerImageUrl?.trim() ? (
-                        <img
-                          src={event.speakerImageUrl.trim()}
-                          alt={event.speakerName?.trim() ? `${event.speakerName.trim()} headshot` : 'Speaker'}
-                          className="h-full w-full object-cover"
-                          onError={e => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      ) : event.speakerName?.trim() ? (
-                        <span className="text-base font-bold text-gray-600" aria-hidden>
-                          {speakerInitials(event.speakerName)}
-                        </span>
-                      ) : (
-                        <User className="h-8 w-8 text-gray-400" aria-hidden />
-                      )}
-                    </div>
-                    {event.speakerName?.trim() ? (
-                      <p className="text-xs font-semibold text-gray-900 text-center max-w-[8rem] leading-snug">
-                        {event.speakerName.trim()}
-                      </p>
-                    ) : (
-                      <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Speaker</p>
-                    )}
-                  </aside>
-                ) : null}
-              </div>
-
-              {registration?.status === 'approved' && privateDetails?.resourceLinkUrl ? (
-                <div className="mt-4 max-w-md rounded-lg border border-gray-200 p-3 bg-white">
-                  <h3 className="text-xs font-bold text-gray-900 mb-2">Resources</h3>
-                  <ResourceLinkCard
-                    url={privateDetails.resourceLinkUrl}
-                    label={privateDetails.resourceLinkLabel}
-                  />
-                </div>
-              ) : null}
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-[2.75rem] font-bold text-white leading-[1.15] tracking-tight max-w-4xl">
+                {event.name}
+              </h1>
             </div>
-
-            <aside className="hidden lg:block lg:sticky lg:top-[calc(var(--content-offset-top)+0.5rem)] self-start">
-              <EventRegistrationPanel variant="card" {...registrationPanelProps} />
-            </aside>
           </div>
         </div>
       </section>
 
+      {/* Body */}
+      <main
+        className={`max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 ${
+          showStickyRegister ? 'pb-28 sm:pb-32 lg:pb-10' : ''
+        }`}
+      >
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_min(100%,20rem)] gap-8 xl:gap-10 items-start">
+          <div className="min-w-0 space-y-8">
+            {/* Quick facts */}
+            <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="rounded-2xl border border-gray-200/80 bg-white p-4 sm:p-5 shadow-sm">
+                <div className="flex items-center gap-2 text-brand-blue-dark mb-3">
+                  <Calendar className="h-5 w-5 shrink-0" aria-hidden />
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-500">When</span>
+                </div>
+                <EventTimeDisplay event={event} layout="plain" showLabels={false} textClassName="text-gray-800" />
+              </div>
+
+              <div className="rounded-2xl border border-gray-200/80 bg-white p-4 sm:p-5 shadow-sm">
+                <div className="flex items-center gap-2 text-brand-blue-dark mb-3">
+                  <MapPin className="h-5 w-5 shrink-0" aria-hidden />
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Where</span>
+                </div>
+                <p className="text-sm sm:text-base font-medium text-gray-900 leading-snug">{locationDisplay}</p>
+                {registration?.status === 'approved' && privateDetails && approvedEventVenueAddress(privateDetails) ? (
+                  <p className="mt-1.5 text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
+                    {approvedEventVenueAddress(privateDetails)}
+                  </p>
+                ) : null}
+                {registration?.status === 'approved' && privateDetails?.meetingUrl && !ended ? (
+                  <a
+                    href={privateDetails.meetingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 mt-3 text-sm font-semibold text-brand-blue-dark hover:underline"
+                  >
+                    <LinkIcon className="h-4 w-4" />
+                    Join online
+                  </a>
+                ) : null}
+              </div>
+
+              <div className="rounded-2xl border border-gray-200/80 bg-white p-4 sm:p-5 shadow-sm sm:col-span-2">
+                <div className="flex items-center gap-2 text-brand-blue-dark mb-2">
+                  <Tag className="h-5 w-5 shrink-0" aria-hidden />
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Cost</span>
+                </div>
+                <p className="text-sm sm:text-base text-gray-800 leading-relaxed">{costText}</p>
+              </div>
+            </div>
+
+            {/* Mobile registration */}
+            <div className="lg:hidden">
+              <EventRegistrationPanel variant="card" {...registrationPanelProps} />
+            </div>
+
+            {/* About */}
+            <section className="rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-sm">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-brand-blue-light" aria-hidden />
+                About this event
+              </h2>
+              <div
+                className={`text-gray-700 text-base leading-relaxed whitespace-pre-wrap ${
+                  !descriptionExpanded && (event.description?.length ?? 0) > 360 ? 'line-clamp-6' : ''
+                }`}
+              >
+                {event.description}
+              </div>
+              {(event.description?.length ?? 0) > 360 ? (
+                <button
+                  type="button"
+                  onClick={() => setDescriptionExpanded((v) => !v)}
+                  className="mt-4 text-sm font-semibold text-brand-blue-dark hover:underline"
+                >
+                  {descriptionExpanded ? 'Show less' : 'Read more'}
+                </button>
+              ) : null}
+            </section>
+
+            {/* Speaker */}
+            {(event.speakerName?.trim() || event.speakerImageUrl?.trim()) ? (
+              <section className="rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-sm">
+                <h2 className="text-lg font-bold text-gray-900 mb-4">Featured speaker</h2>
+                <div className="flex items-center gap-4 sm:gap-5">
+                  <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center shrink-0 shadow-inner">
+                    {event.speakerImageUrl?.trim() ? (
+                      <img
+                        src={event.speakerImageUrl.trim()}
+                        alt={event.speakerName?.trim() ? `${event.speakerName.trim()}` : 'Speaker'}
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : event.speakerName?.trim() ? (
+                      <span className="text-xl font-bold text-gray-500">{speakerInitials(event.speakerName)}</span>
+                    ) : (
+                      <User className="h-10 w-10 text-gray-400" aria-hidden />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Speaker</p>
+                    <p className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
+                      {event.speakerName?.trim() || 'TBA'}
+                    </p>
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
+            {/* Resources */}
+            {registration?.status === 'approved' && privateDetails?.resourceLinkUrl ? (
+              <section className="rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-sm">
+                <h2 className="text-lg font-bold text-gray-900 mb-3">Resources</h2>
+                <ResourceLinkCard
+                  url={privateDetails.resourceLinkUrl}
+                  label={privateDetails.resourceLinkLabel}
+                />
+              </section>
+            ) : null}
+          </div>
+
+          {/* Desktop registration sidebar */}
+          <aside className="hidden lg:block lg:sticky lg:top-[calc(var(--content-offset-top)+1rem)] self-start">
+            <EventRegistrationPanel variant="card" {...registrationPanelProps} />
+          </aside>
+        </div>
+      </main>
+
       {showTicket && !ended && registration?.status === 'approved' && registration && event && (
-        <section className="py-4 sm:py-5 bg-gray-50 border-b border-gray-100" aria-label="Your ticket">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+        <section className="py-8 sm:py-10 bg-white border-y border-gray-200" aria-label="Your ticket">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col items-center">
+            <h2 className="text-lg font-bold text-gray-900 mb-5">Your ticket</h2>
             <EventTicketCard
               eventName={event.name}
               eventStartIso={event.date}
@@ -584,13 +608,14 @@ const EventDetailPage: React.FC = () => {
               attendeeWork={registration.work}
               ticketId={(registration.userId || 'TEMP').slice(-8).toUpperCase()}
               isExpired={ended}
+              eventImageUrl={event.imageUrl}
+              eventSlug={event.slug}
+              registrationStatus={registration.status}
             />
           </div>
         </section>
       )}
 
-
-      {/* Reviews Section - Only show for completed events */}
       {(isEventCompleted || ended) && (
         <ReviewSection
           eventId={event.id}
@@ -601,7 +626,7 @@ const EventDetailPage: React.FC = () => {
 
       {showStickyRegister ? (
         <div
-          className="fixed bottom-0 inset-x-0 z-50 md:hidden border-t border-gray-200 bg-white/95 backdrop-blur-md px-4 py-3 shadow-[0_-8px_30px_rgba(0,0,0,0.12)]"
+          className="fixed bottom-0 inset-x-0 z-50 lg:hidden border-t border-gray-200 bg-white/95 backdrop-blur-md px-4 py-3 shadow-[0_-8px_30px_rgba(0,0,0,0.1)]"
           style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
           aria-label="Register for event"
         >

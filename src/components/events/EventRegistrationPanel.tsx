@@ -3,8 +3,8 @@ import { CheckCircle, AlertCircle, CalendarPlus, Ticket } from 'lucide-react';
 import type { EventData } from '../../services/eventService';
 import type { EventRegistrationWithStatus } from '../../types/event';
 
-const PRIMARY_BTN =
-  'w-full min-h-[4.25rem] sm:min-h-[4.75rem] rounded-2xl text-xl sm:text-2xl font-extrabold tracking-tight text-white shadow-xl transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-blue-dark/40 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3';
+const PRIMARY_BTN_BASE =
+  'w-full rounded-xl font-bold text-white shadow-md transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-blue-dark/30 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5';
 
 export interface EventRegistrationPanelProps {
   variant?: 'card' | 'sticky';
@@ -54,24 +54,28 @@ export const EventRegistrationPanel: React.FC<EventRegistrationPanelProps> = ({
 
   const wrapperClass = isSticky
     ? 'p-0'
-    : 'mt-3 rounded-2xl border-2 border-red-200/70 bg-gradient-to-br from-white via-red-50/50 to-sky-50/40 p-3 sm:p-4 shadow-lg ring-1 ring-gray-200/60';
+    : 'rounded-2xl border border-gray-200/80 bg-white p-4 sm:p-5 shadow-[0_8px_30px_rgba(11,43,107,0.08)] ring-1 ring-gray-100';
+
+  const primaryBtnSize = isSticky
+    ? 'min-h-[3.25rem] text-base'
+    : 'min-h-[3rem] sm:min-h-[3.25rem] text-base sm:text-lg';
 
   const registerButton = (
     <button
       type="button"
       onClick={onRegister}
       disabled={!canRegister || registering}
-      className={`${PRIMARY_BTN} ${statusInfo.buttonClass} hover:shadow-2xl hover:brightness-105 active:scale-[0.99]`}
+      className={`${PRIMARY_BTN_BASE} ${primaryBtnSize} ${statusInfo.buttonClass} hover:shadow-lg hover:brightness-105 active:scale-[0.99]`}
     >
       {registering ? (
         <>
-          <span className="h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          <span className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
           Submitting…
         </>
       ) : (
         <>
-          <Ticket className="h-7 w-7 sm:h-8 sm:w-8 shrink-0" aria-hidden />
-          Register for this event
+          <Ticket className="h-5 w-5 shrink-0" aria-hidden />
+          {statusInfo.buttonText || 'Register for this event'}
         </>
       )}
     </button>
@@ -82,9 +86,9 @@ export const EventRegistrationPanel: React.FC<EventRegistrationPanelProps> = ({
   if (ended && !registration) {
     body = (
       <div
-        className={`w-full ${isSticky ? 'min-h-[3.25rem]' : 'min-h-[52px]'} rounded-2xl bg-gray-100 text-gray-600 text-lg font-bold flex items-center justify-center border border-gray-200`}
+        className={`w-full ${isSticky ? 'min-h-[3rem]' : 'min-h-[3rem]'} rounded-xl bg-gray-100 text-gray-600 text-sm font-semibold flex items-center justify-center border border-gray-200`}
       >
-        Event Ended
+        Event ended
       </div>
     );
   } else if (!user && !ended) {
@@ -93,9 +97,9 @@ export const EventRegistrationPanel: React.FC<EventRegistrationPanelProps> = ({
         <button
           type="button"
           onClick={onSignup}
-          className={`${PRIMARY_BTN} bg-gray-900 hover:bg-gray-800 hover:shadow-2xl`}
+          className={`${PRIMARY_BTN_BASE} ${primaryBtnSize} bg-gradient-to-r from-brand-blue-dark to-brand-blue-light hover:shadow-lg`}
         >
-          <Ticket className="h-7 w-7 shrink-0" aria-hidden />
+          <Ticket className="h-5 w-5 shrink-0" aria-hidden />
           Join to register
         </button>
         {!isSticky && (
@@ -118,7 +122,7 @@ export const EventRegistrationPanel: React.FC<EventRegistrationPanelProps> = ({
   } else if (registration?.status === 'pending') {
     body = (
       <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-sm text-amber-900">
-        <p className="font-semibold">Registration pending approval.</p>
+        <p className="font-semibold">Registration pending approval</p>
         <p className="mt-1 text-amber-800">We&apos;ll email details once confirmed.</p>
       </div>
     );
@@ -133,7 +137,7 @@ export const EventRegistrationPanel: React.FC<EventRegistrationPanelProps> = ({
   } else if (registration?.status === 'rejected') {
     body = (
       <div className="p-4 bg-red-50 rounded-xl border border-red-200 text-sm">
-        <p className="font-semibold text-red-900">Registration not approved.</p>
+        <p className="font-semibold text-red-900">Registration not approved</p>
         {registration.rejectionReason && <p className="mt-1 text-red-800">{registration.rejectionReason}</p>}
       </div>
     );
@@ -143,23 +147,23 @@ export const EventRegistrationPanel: React.FC<EventRegistrationPanelProps> = ({
         <p className="font-semibold text-gray-900">This event has ended.</p>
         <p className="mt-1">You were registered for this event.</p>
         {event.status === 'completed' && registration.checkedIn ? (
-          <p className="mt-2 text-gray-600">You can share feedback in the reviews section below.</p>
+          <p className="mt-2 text-gray-600">Share feedback in the reviews section below.</p>
         ) : null}
       </div>
     );
   } else if (registration?.status === 'approved') {
     body = (
       <div className="space-y-3">
-        <div className="flex items-center gap-2 p-3 bg-green-50 rounded-xl border border-green-200 text-green-900 font-semibold text-sm">
+        <div className="flex items-center gap-2 p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900 font-semibold text-sm">
           <CheckCircle className="h-5 w-5 shrink-0" />
           You&apos;re registered
         </div>
         {!isSticky && (
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col gap-2">
             <button
               type="button"
               onClick={onToggleTicket}
-              className="flex-1 min-h-[52px] rounded-xl border-2 border-gray-900 text-gray-900 font-semibold hover:bg-gray-50"
+              className="w-full min-h-[2.75rem] rounded-xl border border-gray-300 text-gray-900 font-semibold text-sm hover:bg-gray-50"
             >
               {showTicket ? 'Hide ticket' : 'View ticket'}
             </button>
@@ -167,9 +171,9 @@ export const EventRegistrationPanel: React.FC<EventRegistrationPanelProps> = ({
               href={calendarUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 min-h-[52px] inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800"
+              className="w-full min-h-[2.75rem] inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800"
             >
-              <CalendarPlus className="h-5 w-5" />
+              <CalendarPlus className="h-4 w-4" />
               Add to calendar
             </a>
           </div>
@@ -178,8 +182,8 @@ export const EventRegistrationPanel: React.FC<EventRegistrationPanelProps> = ({
     );
   } else if (ended) {
     body = (
-      <div className="w-full min-h-[52px] rounded-2xl bg-gray-100 text-gray-600 text-lg font-bold flex items-center justify-center border border-gray-200">
-        Event Ended
+      <div className="w-full min-h-[3rem] rounded-xl bg-gray-100 text-gray-600 text-sm font-semibold flex items-center justify-center border border-gray-200">
+        Event ended
       </div>
     );
   } else {
@@ -192,9 +196,10 @@ export const EventRegistrationPanel: React.FC<EventRegistrationPanelProps> = ({
 
   return (
     <div id="event-register" className={wrapperClass}>
+      <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Registration</p>
       {showOpenHint ? (
-        <p className="text-sm sm:text-base font-semibold text-gray-800 mb-3 text-center sm:text-left">
-          Registration is open — secure your spot below.
+        <p className="text-sm text-gray-700 mb-3 leading-snug">
+          Secure your spot — members only. Approval may be required.
         </p>
       ) : null}
       {!isSticky && error ? (
@@ -211,7 +216,7 @@ export const EventRegistrationPanel: React.FC<EventRegistrationPanelProps> = ({
       ) : null}
       {body}
       {!isSticky && !canRegister && user && !ended && registration?.status !== 'approved' ? (
-        <p className="text-sm text-gray-600 mt-3 text-center sm:text-left">{statusInfo.message}</p>
+        <p className="text-sm text-gray-600 mt-3">{statusInfo.message}</p>
       ) : null}
     </div>
   );
