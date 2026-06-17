@@ -21,6 +21,8 @@ import syncEventToHubspotHandler from './lib/server/api/sync-event-to-hubspot.js
 import syncAllEventsToHubspotHandler from './lib/server/api/sync-all-events-to-hubspot.js';
 import deleteEventFromHubspotHandler from './lib/server/api/delete-event-from-hubspot.js';
 import updateEventPrivateDetailsHandler from './lib/server/api/update-event-private-details.js';
+import uploadImageHandler from './lib/server/api/upload-image.js';
+import adminEmailConfigHandler from './lib/server/api/admin-email-config.js';
 
 // CJS handler (kept as CommonJS)
 import adminChatsHandler from './lib/server/api/admin/chats.js';
@@ -68,8 +70,8 @@ app.use((req, res, next) => {
   }
 });
 
-// Parse JSON bodies
-app.use(express.json());
+// Parse JSON bodies (raised limit for base64 image uploads)
+app.use(express.json({ limit: '10mb' }));
 
 // Log every request so you can see if the app is talking to this server
 app.use((req, res, next) => {
@@ -156,6 +158,16 @@ app.post('/api/update-event-private-details', (req, res) => {
   updateEventPrivateDetailsHandler(req, res);
 });
 
+app.post('/api/upload-image', (req, res) => {
+  console.log('Upload image API called:', req.body?.folder);
+  uploadImageHandler(req, res);
+});
+
+app.get('/api/admin/test/email-config', (req, res) => {
+  console.log('Admin email config API called');
+  adminEmailConfigHandler(req, res);
+});
+
 // Temporarily disabled APIs due to import issues
 // // System Test API
 // app.all('/api/system-test', (req, res) => {
@@ -203,8 +215,8 @@ app.listen(PORT, () => {
   console.log('  - POST http://localhost:3001/api/send-event-announcement  Mailchimp event campaign');
   console.log('  - POST http://localhost:3001/api/welcome-email            Mailchimp welcome (signup)');
   console.log('  - POST http://localhost:3001/api/sync-event-to-hubspot     HubSpot deal sync (event create/update)');
-  console.log('  - POST http://localhost:3001/api/delete-event-from-hubspot  HubSpot deal delete (event deletion)');
-  console.log('  - GET  http://localhost:3001/api/health              Health check');
+  console.log('  - POST http://localhost:3001/api/upload-image                 Cloudinary image upload');
+  console.log('  - GET  http://localhost:3001/api/admin/test/email-config     Email/HubSpot env flags');
   console.log('');
   console.log('Note: Some APIs temporarily disabled due to import issues');
   console.log('Note: Functions consolidated to stay within Vercel Hobby limit (12 functions)');

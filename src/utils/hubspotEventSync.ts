@@ -15,27 +15,38 @@ export type HubSpotIntegrationConfig = {
   hubspot: boolean;
   hubspotDealPipeline?: string;
   hubspotDealStage?: string;
+  loadError?: string;
 };
 
 /** Admin-only: env flags for HubSpot (no secrets). */
-export async function fetchHubSpotIntegrationConfig(): Promise<HubSpotIntegrationConfig | null> {
+export async function fetchHubSpotIntegrationConfig(): Promise<HubSpotIntegrationConfig> {
   const user = auth.currentUser;
-  if (!user) return null;
+  if (!user) {
+    return { hubspot: false, loadError: 'Sign in as an admin to check server configuration.' };
+  }
   try {
     const token = await getIdToken(user);
     const res = await fetch('/api/admin/test/email-config', {
       method: 'GET',
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) return null;
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        hubspot: false,
+        loadError: data.error || `Could not load server config (HTTP ${res.status}).`,
+      };
+    }
     return {
       hubspot: Boolean(data.hubspot),
       hubspotDealPipeline: data.hubspotDealPipeline,
       hubspotDealStage: data.hubspotDealStage,
     };
   } catch {
-    return null;
+    return {
+      hubspot: false,
+      loadError: 'Could not reach the API. Locally: run npm run dev:express in another terminal.',
+    };
   }
 }
 

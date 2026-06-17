@@ -8,7 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../firebase/config';
 import { EventService, generateSlug } from '../../services/eventService';
 import { uploadImageToLibrary } from '../../services/imageUploadService';
-import CropModal from '../../components/profile/CropModal';
+import CoverPhotoCropModal, { type CoverCrop } from '../../components/profile/CoverPhotoCropModal';
 import CropImage from '../../components/profile/CropImage';
 import AudienceSelector, { RecipientMode, AudienceSelection } from '../../components/admin/AudienceSelector';
 import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/admin/EmailRecipientAutocomplete';
@@ -29,7 +29,7 @@ const AddEvent: React.FC = () => {
     date: '',
     description: '',
     imageUrl: '',
-    imageCrop: null as { scale: number; panX: number; panY: number } | null,
+    imageCrop: null as CoverCrop | null,
     status: 'active' as const,
     chapter: '',
     eventFormat: 'in_person' as 'in_person' | 'virtual' | 'hybrid',
@@ -47,15 +47,19 @@ const AddEvent: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [announcementFailedReason, setAnnouncementFailedReason] = useState<string | null>(null);
+  const [announcementFailedHint, setAnnouncementFailedHint] = useState<string | null>(null);
   const [lastCreatedEvent, setLastCreatedEvent] = useState<{
     id: string;
     name: string;
     hubspotDealId?: string;
+    hubspotSyncError?: string;
+    hubspotSyncHint?: string;
   } | null>(null);
   const [previewSlug, setPreviewSlug] = useState('');
   const [imageUploading, setImageUploading] = useState(false);
   const [showImageCropModal, setShowImageCropModal] = useState(false);
   const [cropPreviewUrl, setCropPreviewUrl] = useState<string | null>(null);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const [audienceMode, setAudienceMode] = useState<RecipientMode>('all_users');
   const [audienceSelection, setAudienceSelection] = useState<AudienceSelection>({ mode: 'all_users' });
@@ -200,14 +204,19 @@ const AddEvent: React.FC = () => {
 
       let hubspotSynced = false;
       let hubspotDealId: string | undefined;
+      let hubspotSyncError: string | undefined;
+      let hubspotSyncHint: string | undefined;
       let announcementSent = false;
       let announcementError: string | null = null;
+      let announcementHint: string | null = null;
       const firebaseUser = auth.currentUser;
       if (firebaseUser) {
         const syncResult = await syncEventToHubSpot(eventId);
         hubspotSynced = syncResult.synced;
         hubspotDealId = syncResult.hubspotDealId;
         if (!syncResult.synced) {
+          hubspotSyncError = syncResult.error;
+          hubspotSyncHint = syncResult.hint;
           console.warn('[AddEvent] HubSpot deal sync failed:', syncResult.error);
         }
 
@@ -226,6 +235,12 @@ const AddEvent: React.FC = () => {
             if (!res.ok || data.error) {
               const detail = typeof data.detail === 'string' ? ` (${data.detail})` : '';
               announcementError = (data.error || `HTTP ${res.status}`) + detail;
+              announcementHint =
+                typeof data.hint === 'string'
+                  ? data.hint
+                  : res.status === 503
+                    ? 'Set MAILJET_API_KEY + MAILJET_SECRET_KEY or MAILCHIMP_API_KEY in Vercel, then redeploy.'
+                    : null;
               console.warn('[AddEvent] Announcement not sent:', announcementError);
             } else if (data.skipped) {
               announcementError =
@@ -238,15 +253,28 @@ const AddEvent: React.FC = () => {
           } catch (announceErr: unknown) {
             announcementError = announceErr instanceof Error ? announceErr.message : String(announceErr);
             if (announcementError?.includes('fetch') || announcementError?.includes('Failed to fetch') || announcementError?.includes('NetworkError')) {
-              announcementError = 'Could not reach API. Locally: run the API in another terminal (npm run dev:express). On production: check Vercel env vars.';
+              announcementError = 'Could not reach API.';
+              announcementHint = 'Locally: run npm run dev:express in another terminal (port 3001). Production: confirm Vercel env vars and redeploy.';
             }
             console.warn('[AddEvent] Announcement request failed:', announceErr);
           }
         }
       }
 
-      if (announcementError) setAnnouncementFailedReason(announcementError);
-      setLastCreatedEvent({ id: eventId, name: eventName, hubspotDealId });
+      if (announcementError) {
+        setAnnouncementFailedReason(announcementError);
+        setAnnouncementFailedHint(announcementHint);
+      } else {
+        setAnnouncementFailedReason(null);
+        setAnnouncementFailedHint(null);
+      }
+      setLastCreatedEvent({
+        id: eventId,
+        name: eventName,
+        hubspotDealId,
+        hubspotSyncError,
+        hubspotSyncHint,
+      });
       setSavedAt(Date.now());
       const hubspotNote = hubspotSynced
         ? ' Linked to HubSpot.'
@@ -380,9 +408,13 @@ const AddEvent: React.FC = () => {
                   <div className="text-sm text-amber-800">
                     <p className="font-medium">Email announcement did not send</p>
                     <p className="mt-1">{announcementFailedReason}</p>
-                    <p className="mt-2 text-amber-700">
-                      Locally: run the API in another terminal (<code className="bg-amber-100 px-1 rounded">npm run dev:express</code>). Production: set Mailchimp env vars in Vercel and ensure you are admin.
-                    </p>
+                    {announcementFailedHint ? (
+                      <p className="mt-2 text-amber-700">{announcementFailedHint}</p>
+                    ) : (
+                      <p className="mt-2 text-amber-700">
+                        Locally: run the API in another terminal (<code className="bg-amber-100 px-1 rounded">npm run dev:express</code>). Production: set Mailjet or Mandrill env vars in Vercel and ensure you are admin.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -395,6 +427,8 @@ const AddEvent: React.FC = () => {
               eventId={lastCreatedEvent.id}
               eventName={lastCreatedEvent.name}
               hubspotDealId={lastCreatedEvent.hubspotDealId}
+              initialSyncError={lastCreatedEvent.hubspotSyncError}
+              initialSyncHint={lastCreatedEvent.hubspotSyncHint}
               onHubspotDealIdChange={(dealId) =>
                 setLastCreatedEvent((prev) => (prev ? { ...prev, hubspotDealId: dealId } : prev))
               }
@@ -637,6 +671,7 @@ const AddEvent: React.FC = () => {
                   const file = e.target.files?.[0];
                   if (!file || !file.type.startsWith('image/')) return;
                   setError(null);
+                  setPendingImageFile(file);
                   setCropPreviewUrl(URL.createObjectURL(file));
                   setShowImageCropModal(true);
                   e.target.value = '';
@@ -692,29 +727,31 @@ const AddEvent: React.FC = () => {
             </div>
 
             {showImageCropModal && cropPreviewUrl && (
-              <CropModal
+              <CoverPhotoCropModal
                 imageUrl={cropPreviewUrl}
-                aspect={16 / 9}
-                cropShape="rect"
-                title="Crop event image"
-                onConfirm={async (croppedFile, _normalizedCrop) => {
+                aspectRatio="16/9"
+                title="Position event image"
+                onConfirm={async (_url, crop) => {
+                  if (!pendingImageFile) return;
                   setImageUploading(true);
                   setError(null);
                   try {
-                    const url = await uploadImageToLibrary('events', croppedFile);
-                    setFormData(prev => ({ ...prev, imageUrl: url, imageCrop: null }));
+                    const url = await uploadImageToLibrary('events', pendingImageFile);
+                    setFormData(prev => ({ ...prev, imageUrl: url, imageCrop: crop }));
                   } catch (err: any) {
                     setError(err.message || 'Image upload failed');
                   } finally {
                     setImageUploading(false);
                     URL.revokeObjectURL(cropPreviewUrl);
                     setCropPreviewUrl(null);
+                    setPendingImageFile(null);
                     setShowImageCropModal(false);
                   }
                 }}
                 onCancel={() => {
                   if (cropPreviewUrl) URL.revokeObjectURL(cropPreviewUrl);
                   setCropPreviewUrl(null);
+                  setPendingImageFile(null);
                   setShowImageCropModal(false);
                 }}
               />

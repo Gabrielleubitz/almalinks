@@ -51,6 +51,7 @@ import updateEventPrivateDetailsHandler from '../lib/server/api/update-event-pri
 import updateProfileHandler from '../lib/server/api/update-profile.js';
 import uploadProfileImageHandler from '../lib/server/api/upload-profile-image.js';
 import deleteProfileImageHandler from '../lib/server/api/delete-profile-image.js';
+import uploadImageHandler from '../lib/server/api/upload-image.js';
 import passwordResetHandler from '../lib/server/api/password-reset.js';
 import deleteHubspotApplicantHandler from '../lib/server/api/delete-hubspot-applicant.js';
 

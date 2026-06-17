@@ -12,6 +12,9 @@ interface HubSpotEventSyncPanelProps {
   eventId: string;
   eventName?: string;
   hubspotDealId?: string | null;
+  /** Shown when create/update already attempted sync and failed. */
+  initialSyncError?: string;
+  initialSyncHint?: string;
   /** Called when sync returns a new deal id (parent should refresh event). */
   onHubspotDealIdChange?: (dealId: string) => void;
   compact?: boolean;
@@ -22,26 +25,43 @@ const HubSpotEventSyncPanel: React.FC<HubSpotEventSyncPanelProps> = ({
   eventId,
   eventName,
   hubspotDealId: hubspotDealIdProp,
+  initialSyncError,
+  initialSyncHint,
   onHubspotDealIdChange,
   compact = false,
   className = '',
 }) => {
   const [config, setConfig] = useState<HubSpotIntegrationConfig | null>(null);
+  const [configLoading, setConfigLoading] = useState(true);
   const [localDealId, setLocalDealId] = useState(hubspotDealIdProp?.trim() || '');
   const [syncing, setSyncing] = useState(false);
   const [lastMessage, setLastMessage] = useState<string | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
   const [lastHint, setLastHint] = useState<string | null>(null);
-  const [lastOk, setLastOk] = useState<boolean | null>(null);
+  const [lastOk, setLastOk] = useState<boolean | null>(
+    initialSyncError ? false : null
+  );
 
   useEffect(() => {
     setLocalDealId(hubspotDealIdProp?.trim() || '');
   }, [hubspotDealIdProp, eventId]);
 
   useEffect(() => {
+    if (initialSyncError) {
+      setLastError(initialSyncError);
+      setLastHint(initialSyncHint || null);
+      setLastOk(false);
+    }
+  }, [initialSyncError, initialSyncHint, eventId]);
+
+  useEffect(() => {
     let cancelled = false;
+    setConfigLoading(true);
     fetchHubSpotIntegrationConfig().then((c) => {
-      if (!cancelled) setConfig(c);
+      if (!cancelled) {
+        setConfig(c);
+        setConfigLoading(false);
+      }
     });
     return () => {
       cancelled = true;
@@ -104,7 +124,13 @@ const HubSpotEventSyncPanel: React.FC<HubSpotEventSyncPanelProps> = ({
             <div className="flex flex-wrap gap-x-4 gap-y-1">
               <dt className="text-gray-500">Server token</dt>
               <dd className={tokenOk ? 'text-emerald-700 font-medium' : 'text-red-700 font-medium'}>
-                {config === null ? 'Checking…' : tokenOk ? 'Configured' : 'Missing — set HUBSPOT_ACCESS_TOKEN'}
+                {configLoading
+                  ? 'Checking…'
+                  : config?.loadError
+                    ? config.loadError
+                    : tokenOk
+                      ? 'Configured'
+                      : 'Missing — set HUBSPOT_ACCESS_TOKEN'}
               </dd>
             </div>
             {config?.hubspotDealPipeline ? (
