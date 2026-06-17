@@ -326,19 +326,13 @@ const EditEvent: React.FC = () => {
             : null,
       });
 
-      const becameCompleted =
-        originalEvent?.status !== 'completed' && formData.status === 'completed';
-      if (becameCompleted) {
-        triggerEventCompletedThankYouEmail(eventId).then((r) => {
-          if (!r.ok) console.warn('[EditEvent] Thank-you emails:', r.error);
-        });
-      }
-
-      // Private details + HubSpot sync: use server APIs (bypasses client Firestore rules)
       let hubspotStatus = '';
       let hubspotSyncAttempted = false;
       let hubspotSynced = false;
       let announcementStatus = '';
+      let thankYouStatus = '';
+      const becameCompleted =
+        originalEvent?.status !== 'completed' && formData.status === 'completed';
       const firebaseUser = auth.currentUser;
       if (firebaseUser) {
         const idToken = await getIdToken(firebaseUser);
@@ -402,6 +396,17 @@ const EditEvent: React.FC = () => {
         }
       }
 
+      if (becameCompleted) {
+        const thankYouResult = await triggerEventCompletedThankYouEmail(eventId);
+        if (thankYouResult.ok && !thankYouResult.skipped && (thankYouResult.sent ?? 0) > 0) {
+          thankYouStatus = ` Sent ${thankYouResult.sent} thank-you email${thankYouResult.sent === 1 ? '' : 's'}.`;
+        } else if (!thankYouResult.ok) {
+          thankYouStatus = ` Thank-you emails failed: ${thankYouResult.error || 'unknown error'}.`;
+        } else {
+          thankYouStatus = ` ${thankYouResult.message || 'No thank-you emails sent yet.'}`;
+        }
+      }
+
       const savedEventAudience =
         formData.status === 'active'
           ? {
@@ -444,10 +449,10 @@ const EditEvent: React.FC = () => {
       const syncFailed = hubspotSyncAttempted && !hubspotSynced;
       if (syncFailed) {
         setSuccess(
-          `Event "${formData.name}" saved.${announcementStatus} Use HubSpot sync below to retry — the event is not linked to a Deal yet.`
+          `Event "${formData.name}" saved.${announcementStatus}${thankYouStatus} Use HubSpot sync below to retry — the event is not linked to a Deal yet.`
         );
       } else {
-        setSuccess(`Event "${formData.name}" updated successfully!${hubspotStatus}${announcementStatus}`);
+        setSuccess(`Event "${formData.name}" updated successfully!${hubspotStatus}${announcementStatus}${thankYouStatus}`);
       }
       setSavedAt(Date.now());
 

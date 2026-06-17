@@ -24,6 +24,7 @@ const EventManagement: React.FC = () => {
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [sendingThankYou, setSendingThankYou] = useState<string | null>(null);
   const [deletingEvent, setDeletingEvent] = useState<string | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     eventId: string;
@@ -92,14 +93,38 @@ const EventManagement: React.FC = () => {
     [events]
   );
 
+  const formatThankYouResult = (result: Awaited<ReturnType<typeof triggerEventCompletedThankYouEmail>>) => {
+    if (!result.ok) return result.error || 'Failed to send thank-you emails.';
+    if (result.skipped) return result.message || 'Thank-you emails were skipped.';
+    if (typeof result.sent === 'number') {
+      const failedPart = result.failed ? ` (${result.failed} failed)` : '';
+      return `Sent ${result.sent} thank-you email${result.sent === 1 ? '' : 's'}${failedPart}.`;
+    }
+    return result.message || 'Thank-you emails processed.';
+  };
+
+  const handleSendThankYouEmails = async (eventId: string, forceResend = false) => {
+    setSendingThankYou(eventId);
+    try {
+      const result = await triggerEventCompletedThankYouEmail(eventId, { forceResend });
+      alert(formatThankYouResult(result));
+    } catch (error) {
+      console.error('❌ Error sending thank-you emails:', error);
+      alert('Failed to send thank-you emails. Please try again.');
+    } finally {
+      setSendingThankYou(null);
+    }
+  };
+
   const handleStatusUpdate = async (eventId: string, newStatus: EventData['status']) => {
     setUpdatingStatus(eventId);
     try {
       await EventService.updateEventStatus(eventId, newStatus);
       if (newStatus === 'completed') {
-        triggerEventCompletedThankYouEmail(eventId).then((r) => {
-          if (!r.ok) console.warn('[EventManagement] Thank-you emails:', r.error);
-        });
+        const thankYouResult = await triggerEventCompletedThankYouEmail(eventId);
+        if (!thankYouResult.ok || thankYouResult.skipped || (thankYouResult.sent ?? 0) === 0) {
+          alert(formatThankYouResult(thankYouResult));
+        }
       }
 
       // Update local state
@@ -809,6 +834,17 @@ const EventManagement: React.FC = () => {
                         <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                         <span>Updating...</span>
                       </div>
+                    )}
+                    {event.status === 'completed' && (
+                      <button
+                        type="button"
+                        onClick={() => handleSendThankYouEmails(event.id)}
+                        disabled={sendingThankYou === event.id}
+                        className="mt-3 w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 disabled:opacity-60"
+                      >
+                        <Mail className="w-4 h-4" />
+                        {sendingThankYou === event.id ? 'Sending thank-you emails...' : 'Send thank-you emails to checked-in attendees'}
+                      </button>
                     )}
                   </div>
 

@@ -23,6 +23,7 @@ import deleteEventFromHubspotHandler from './lib/server/api/delete-event-from-hu
 import updateEventPrivateDetailsHandler from './lib/server/api/update-event-private-details.js';
 import uploadImageHandler from './lib/server/api/upload-image.js';
 import adminEmailConfigHandler from './lib/server/api/admin-email-config.js';
+import eventCompletedThankYouEmailHandler from './lib/server/api/event-completed-thank-you-email.js';
 
 // CJS handler (kept as CommonJS)
 import adminChatsHandler from './lib/server/api/admin/chats.js';
@@ -114,6 +115,11 @@ app.post('/api/delete-user', (req, res) => {
 app.post('/api/send-event-announcement', (req, res) => {
   console.log('Send Event Announcement API called:', req.body?.eventId);
   sendEventAnnouncementHandler(req, res);
+});
+
+app.post('/api/event-completed-thank-you-email', (req, res) => {
+  console.log('Event completed thank-you email API called:', req.body?.eventId);
+  eventCompletedThankYouEmailHandler(req, res);
 });
 
 app.post('/api/welcome-email', (req, res) => {
@@ -213,6 +219,7 @@ app.listen(PORT, () => {
   console.log('  - ALL  http://localhost:3001/api/email-service       Consolidated email');
   console.log('  - POST http://localhost:3001/api/delete-user         Delete users');
   console.log('  - POST http://localhost:3001/api/send-event-announcement  Mailchimp event campaign');
+  console.log('  - POST http://localhost:3001/api/event-completed-thank-you-email  Post-event thank-you emails');
   console.log('  - POST http://localhost:3001/api/welcome-email            Mailchimp welcome (signup)');
   console.log('  - POST http://localhost:3001/api/sync-event-to-hubspot     HubSpot deal sync (event create/update)');
   console.log('  - POST http://localhost:3001/api/upload-image                 Cloudinary image upload');

@@ -57,17 +57,6 @@ const MembersPage: React.FC = () => {
     [searchParams, setSearchParams]
   );
 
-  const chapterCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const { id } of DIRECTORY_CHAPTER_FILTER_ORDER) {
-      counts.set(
-        id,
-        members.filter((m) => memberChapterMatchesFilter(m.chapter ?? null, id)).length
-      );
-    }
-    return counts;
-  }, [members]);
-
   const [sentRequestIds, setSentRequestIds] = useState<Set<string>>(new Set()); // Track which users we've sent requests to
   const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
   const [respondingRequestId, setRespondingRequestId] = useState<string | null>(null);
@@ -427,7 +416,7 @@ const MembersPage: React.FC = () => {
                     : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
                 }`}
               >
-                All ({members.length})
+                All
               </button>
               {DIRECTORY_CHAPTER_FILTER_ORDER.map(({ id, label }) => (
                 <button
@@ -441,7 +430,6 @@ const MembersPage: React.FC = () => {
                   }`}
                 >
                   {label}
-                  <span className="opacity-80"> ({chapterCounts.get(id) ?? 0})</span>
                 </button>
               ))}
               </div>

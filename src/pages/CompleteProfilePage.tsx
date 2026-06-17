@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import BackButton from '../components/ui/BackButton';
 import { User, Phone, Briefcase, ArrowRight, ArrowLeft, CheckCircle, ChevronDown, Building2, Linkedin } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
