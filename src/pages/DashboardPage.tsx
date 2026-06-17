@@ -10,7 +10,6 @@ import ConnectionsCard from '../components/dashboard/ConnectionsCard';
 import DashboardProfileView from '../components/dashboard/DashboardProfileView';
 import DashboardUpcomingEvents from '../components/dashboard/DashboardUpcomingEvents';
 import ProfilePictureUploader from '../components/profile/ProfilePictureUploader';
-import ImageWithCrop from '../components/profile/ImageWithCrop';
 import RichTextBioEditor from '../components/profile/RichTextBioEditor';
 import BioHtml from '../components/profile/BioHtml';
 import type { CropValue } from '../types/crop';

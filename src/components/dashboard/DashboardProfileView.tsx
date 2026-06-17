@@ -81,7 +81,6 @@ const DashboardProfileView: React.FC<DashboardProfileViewProps> = ({
             }
             shape="circle"
             alt=""
-            className="absolute inset-0 h-full w-full"
             urlIsCropped={true}
             fallback={
               <ProfileAvatarPlaceholder

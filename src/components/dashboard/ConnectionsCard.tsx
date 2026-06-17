@@ -476,7 +476,7 @@ const ConnectionsCard: React.FC<ConnectionsCardProps> = ({ compact = false, side
                       to={`/profile/${partner.uid}`}
                       className="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-gray-50 transition-colors group"
                     >
-                      <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-brand-dark">
+                      <div className="relative w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-brand-dark">
                         <ImageWithCrop
                           src={String(partner.profileImage || '')}
                           crop={null}
@@ -683,7 +683,7 @@ const ConnectionsCard: React.FC<ConnectionsCardProps> = ({ compact = false, side
                   <div className={compact ? 'p-3 flex flex-col h-full' : 'p-5 flex flex-col h-full'}>
                     {/* Header Section - Avatar and Name */}
                     <div className={compact ? 'flex items-start space-x-2 mb-2' : 'flex items-start space-x-3 mb-4'}>
-                      <div className={compact ? 'w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-brand-dark' : 'w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-brand-dark'}>
+                      <div className={compact ? 'relative w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-brand-dark' : 'relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-brand-dark'}>
                         <ImageWithCrop
                           src={String(partner.profileImage || '')}
                           crop={null}

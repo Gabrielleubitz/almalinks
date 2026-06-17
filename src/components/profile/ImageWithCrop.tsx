@@ -3,6 +3,9 @@
  * - No crop or normalized crop (stored URL is already cropped): render plain img.
  * - Legacy crop (scale/pan): render with CSS transform for backward compatibility.
  * - Invalid URLs or failed loads: render optional `fallback` (e.g. initials avatar).
+ *
+ * Circle avatars always render inside a relative w-full h-full frame so parents do not
+ * need position:relative (absolute children otherwise escape and cover the page).
  */
 import React, { useEffect, useState } from 'react';
 import { isLegacyCrop, type CropValue, type NormalizedCrop } from '../../types/crop';
@@ -20,6 +23,20 @@ interface ImageWithCropProps {
   onError?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
   /** Shown when URL is invalid or the image fails to load (404, blocked, etc.) */
   fallback?: React.ReactNode;
+}
+
+function CircleFrame({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`relative h-full w-full overflow-hidden ${className || ''}`.trim()}>
+      {children}
+    </div>
+  );
 }
 
 export default function ImageWithCrop({
@@ -51,20 +68,17 @@ export default function ImageWithCrop({
     onError?.(e);
   };
 
-  const baseClass = shape === 'circle'
-    ? 'absolute inset-0 w-full h-full object-cover'
-    : 'w-full h-full object-cover';
-  const wrapperClass = shape === 'circle'
-    ? `absolute inset-0 overflow-hidden ${className}`.trim()
-    : `overflow-hidden ${className}`.trim();
+  const imgClass = shape === 'circle' ? 'h-full w-full object-cover' : `h-full w-full object-cover ${className}`.trim();
+  const wrapCircle = (node: React.ReactNode) =>
+    shape === 'circle' ? <CircleFrame className={className}>{node}</CircleFrame> : node;
 
   const noCrop = !crop || (urlIsCropped && !isLegacyCrop(crop));
   if (noCrop) {
-    return (
+    return wrapCircle(
       <img
         src={src}
         alt={alt}
-        className={`${baseClass} ${className}`.trim()}
+        className={imgClass}
         onError={handleError}
         referrerPolicy="no-referrer"
         loading="lazy"
@@ -77,11 +91,11 @@ export default function ImageWithCrop({
     const { scale, panX, panY } = crop;
     const hasTransform = scale !== 1 || panX !== 0 || panY !== 0;
     if (!hasTransform) {
-      return (
+      return wrapCircle(
         <img
           src={src}
           alt={alt}
-          className={`${baseClass} ${className}`.trim()}
+          className={imgClass}
           onError={handleError}
           referrerPolicy="no-referrer"
           loading="lazy"
@@ -89,24 +103,22 @@ export default function ImageWithCrop({
         />
       );
     }
-    return (
-      <div className={wrapperClass}>
-        <div
-          className={shape === 'circle' ? 'absolute inset-0 origin-center' : 'w-full h-full origin-center'}
-          style={{
-            transform: `scale(${scale}) translate(${panX}%, ${panY}%)`,
-          }}
-        >
-          <img
-            src={src}
-            alt={alt}
-            className={shape === 'circle' ? 'absolute inset-0 w-full h-full object-cover' : 'w-full h-full object-cover'}
-            onError={handleError}
-            referrerPolicy="no-referrer"
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
+    return wrapCircle(
+      <div
+        className="absolute inset-0 origin-center"
+        style={{
+          transform: `scale(${scale}) translate(${panX}%, ${panY}%)`,
+        }}
+      >
+        <img
+          src={src}
+          alt={alt}
+          className="h-full w-full object-cover"
+          onError={handleError}
+          referrerPolicy="no-referrer"
+          loading="lazy"
+          decoding="async"
+        />
       </div>
     );
   }
@@ -114,11 +126,11 @@ export default function ImageWithCrop({
   const norm = crop as NormalizedCrop;
   const hasNormCrop = norm.width < 1 || norm.height < 1 || norm.x !== 0 || norm.y !== 0;
   if (!hasNormCrop && urlIsCropped) {
-    return (
+    return wrapCircle(
       <img
         src={src}
         alt={alt}
-        className={`${baseClass} ${className}`.trim()}
+        className={imgClass}
         onError={handleError}
         referrerPolicy="no-referrer"
         loading="lazy"
@@ -129,13 +141,12 @@ export default function ImageWithCrop({
 
   if (!urlIsCropped && hasNormCrop) {
     const objectPosition = `${norm.x * 50 + norm.width * 50}% ${norm.y * 50 + norm.height * 50}%`;
-    const objectFit = 'cover';
-    return (
+    return wrapCircle(
       <img
         src={src}
         alt={alt}
-        className={`${baseClass} ${className}`.trim()}
-        style={{ objectPosition, objectFit }}
+        className={imgClass}
+        style={{ objectPosition, objectFit: 'cover' }}
         onError={handleError}
         referrerPolicy="no-referrer"
         loading="lazy"
@@ -144,11 +155,11 @@ export default function ImageWithCrop({
     );
   }
 
-  return (
+  return wrapCircle(
     <img
       src={src}
       alt={alt}
-      className={`${baseClass} ${className}`.trim()}
+      className={imgClass}
       onError={handleError}
       referrerPolicy="no-referrer"
       loading="lazy"
