@@ -763,6 +763,22 @@ const EventManagement: React.FC = () => {
                         <button type="button" onClick={() => handleShowRegistrations(event)} className="text-blue-600 hover:text-blue-800 p-1.5 rounded font-medium flex items-center gap-1" title="Registrations & check-in">
                           <Users className="h-4 w-4" /><span className="hidden sm:inline">Registrations</span>
                         </button>
+                        {event.status === 'completed' && (
+                          <button
+                            type="button"
+                            onClick={() => handleSendThankYouEmails(event.id)}
+                            disabled={sendingThankYou === event.id}
+                            className="text-purple-700 hover:text-purple-900 p-1.5 rounded font-medium flex items-center gap-1 disabled:opacity-50"
+                            title="Send thank-you emails to checked-in attendees"
+                          >
+                            {sendingThankYou === event.id ? (
+                              <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Mail className="h-4 w-4" />
+                            )}
+                            <span className="hidden md:inline">Thank-you</span>
+                          </button>
+                        )}
                         <button type="button" onClick={() => handleDeleteClick(event)} disabled={deletingEvent === event.id} className="text-red-500 hover:text-red-700 p-1.5 rounded disabled:opacity-50" title="Delete">
                           {deletingEvent === event.id ? <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" /> : <Trash2 className="h-4 w-4" />}
                         </button>
