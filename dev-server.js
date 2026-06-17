@@ -23,6 +23,8 @@ import deleteEventFromHubspotHandler from './lib/server/api/delete-event-from-hu
 import updateEventPrivateDetailsHandler from './lib/server/api/update-event-private-details.js';
 import uploadImageHandler from './lib/server/api/upload-image.js';
 import adminEmailConfigHandler from './lib/server/api/admin-email-config.js';
+import adminEmailLogHandler from './lib/server/api/admin-email-log.js';
+import adminEmailCampaignsHandler from './lib/server/api/admin-email-campaigns.js';
 import eventCompletedThankYouEmailHandler from './lib/server/api/event-completed-thank-you-email.js';
 
 // CJS handler (kept as CommonJS)
@@ -174,6 +176,14 @@ app.get('/api/admin/test/email-config', (req, res) => {
   adminEmailConfigHandler(req, res);
 });
 
+app.get('/api/admin/email-log', (req, res) => {
+  adminEmailLogHandler(req, res);
+});
+
+app.get('/api/admin/email-campaigns', (req, res) => {
+  adminEmailCampaignsHandler(req, res);
+});
+
 // Temporarily disabled APIs due to import issues
 // // System Test API
 // app.all('/api/system-test', (req, res) => {
@@ -224,6 +234,8 @@ app.listen(PORT, () => {
   console.log('  - POST http://localhost:3001/api/sync-event-to-hubspot     HubSpot deal sync (event create/update)');
   console.log('  - POST http://localhost:3001/api/upload-image                 Cloudinary image upload');
   console.log('  - GET  http://localhost:3001/api/admin/test/email-config     Email/HubSpot env flags');
+  console.log('  - GET  http://localhost:3001/api/admin/email-log              Sent email log');
+  console.log('  - GET  http://localhost:3001/api/admin/email-campaigns        Group/bulk email campaigns');
   console.log('');
   console.log('Note: Some APIs temporarily disabled due to import issues');
   console.log('Note: Functions consolidated to stay within Vercel Hobby limit (12 functions)');

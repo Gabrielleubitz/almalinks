@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BackButton from '../../components/ui/BackButton';
-import { Mail, Send, ArrowLeft, AlertCircle, CheckCircle, Inbox, RefreshCw, Trash2, Download } from 'lucide-react';
+import { Mail, Send, ArrowLeft, AlertCircle, CheckCircle, Inbox, RefreshCw, Trash2, Download, Users, ChevronDown, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { sendAdminEmail } from '../../services/emailService';
 import EmailRecipientAutocomplete, { EmailRecipient } from '../../components/admin/EmailRecipientAutocomplete';
@@ -34,6 +34,24 @@ interface EmailLogEntry {
   template: string | null;
 }
 
+interface GroupEmailCampaign {
+  id: string;
+  mode: string;
+  modeLabel: string;
+  subject: string;
+  audienceReason: string | null;
+  sentAt: string | null;
+  recipientCount: number;
+  successCount: number;
+  errorCount: number;
+  status: string;
+  createdByEmail: string | null;
+  createdByName: string | null;
+  recipients: Array<{ email: string; name: string | null; userId: string | null }>;
+  recipientsTruncated: boolean;
+  errors: Array<{ email?: string; reason?: string }>;
+}
+
 const AdminEmail: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -41,6 +59,12 @@ const AdminEmail: React.FC = () => {
   const [emailLogItems, setEmailLogItems] = useState<EmailLogEntry[]>([]);
   const [emailLogTotalCount, setEmailLogTotalCount] = useState<number | null>(null);
   const [emailLogLoading, setEmailLogLoading] = useState(true);
+  const [groupCampaignItems, setGroupCampaignItems] = useState<GroupEmailCampaign[]>([]);
+  const [groupCampaignTotalCount, setGroupCampaignTotalCount] = useState<number | null>(null);
+  const [groupCampaignLoading, setGroupCampaignLoading] = useState(true);
+  const [groupCampaignFilter, setGroupCampaignFilter] = useState('');
+  const [showAllGroupCampaigns, setShowAllGroupCampaigns] = useState(false);
+  const [expandedCampaignId, setExpandedCampaignId] = useState<string | null>(null);
   const [emailLogFilter, setEmailLogFilter] = useState('');
   const [showAllSentEmails, setShowAllSentEmails] = useState(false);
   const [deletingEmailLogId, setDeletingEmailLogId] = useState<string | null>(null);
@@ -102,6 +126,32 @@ const AdminEmail: React.FC = () => {
       setEmailLogLoading(false);
     }
   }, []);
+
+  const fetchGroupEmailCampaigns = useCallback(async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+    setGroupCampaignLoading(true);
+    try {
+      const token = await currentUser.getIdToken();
+      const res = await fetch('/api/admin/email-campaigns?limit=50', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.items)) {
+        setGroupCampaignItems(data.items);
+        setGroupCampaignTotalCount(data.totalCount ?? null);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setGroupCampaignLoading(false);
+    }
+  }, []);
+
+  const refreshEmailHistory = useCallback(async () => {
+    await Promise.all([fetchEmailLog(), fetchGroupEmailCampaigns()]);
+  }, [fetchEmailLog, fetchGroupEmailCampaigns]);
 
   const deleteEmailLogEntry = async (logId: string) => {
     if (
@@ -173,8 +223,8 @@ const AdminEmail: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchEmailLog();
-  }, [fetchEmailLog]);
+    refreshEmailHistory();
+  }, [refreshEmailHistory]);
 
   useEffect(() => {
     let cancelled = false;
@@ -221,7 +271,7 @@ const AdminEmail: React.FC = () => {
       const data = await response.json().catch(() => ({}));
       if (data.ok) {
         setSuccess(`${label} sent to ${data.sentTo}`);
-        fetchEmailLog();
+        refreshEmailHistory();
       } else {
         const detail = typeof data.detail === 'string' ? ` ${data.detail}` : '';
         setError((data.error || 'Send failed') + detail);
@@ -320,7 +370,7 @@ const AdminEmail: React.FC = () => {
 
         if (result.success) {
           setSuccess(`Email sent successfully to ${recipientList.length} recipient(s)!`);
-          fetchEmailLog();
+          refreshEmailHistory();
           // Clear form on success
           setRecipients('');
           setRecipientObjects([]);
@@ -354,7 +404,7 @@ const AdminEmail: React.FC = () => {
         }
 
         setSuccess(`Email sent successfully! ${data.sent} sent, ${data.failed} failed out of ${data.total} recipients.`);
-        fetchEmailLog();
+        refreshEmailHistory();
         // Clear form on success
         setSubject('');
         setMessage('');
@@ -409,12 +459,12 @@ const AdminEmail: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={fetchEmailLog}
-                disabled={emailLogLoading}
+                onClick={refreshEmailHistory}
+                disabled={emailLogLoading || groupCampaignLoading}
                 className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 disabled:opacity-50"
                 title="Refresh"
               >
-                <RefreshCw className={`h-5 w-5 ${emailLogLoading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`h-5 w-5 ${emailLogLoading || groupCampaignLoading ? 'animate-spin' : ''}`} />
               </button>
             </div>
           </div>
@@ -506,6 +556,175 @@ const AdminEmail: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowAllSentEmails(false)}
+                      className="text-sm font-medium text-gray-600 hover:text-gray-800"
+                    >
+                      View less
+                    </button>
+                  ) : null}
+                </div>
+              </>
+            );
+          })()}
+        </div>
+
+        {/* Group / bulk email campaigns */}
+        <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <div className="flex items-center space-x-3">
+              <Users className="h-6 w-6 text-brand-light" />
+              <h2 className="text-xl font-bold text-gray-900">Group emails</h2>
+            </div>
+            <input
+              type="text"
+              placeholder="Search by subject, audience, or recipient..."
+              value={groupCampaignFilter}
+              onChange={(e) => setGroupCampaignFilter(e.target.value)}
+              className="flex-1 min-w-[180px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-light focus:border-transparent"
+            />
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            Bulk sends from the email panel — who received the message, how many were sent, and why that audience was chosen.
+          </p>
+          {groupCampaignTotalCount !== null && (
+            <p className="text-sm text-gray-600 mb-4">
+              <strong>{groupCampaignTotalCount}</strong> group send{groupCampaignTotalCount !== 1 ? 's' : ''} recorded
+            </p>
+          )}
+          {groupCampaignLoading ? (
+            <p className="text-sm text-gray-500">Loading…</p>
+          ) : (() => {
+            const term = groupCampaignFilter.trim().toLowerCase();
+            const filtered = term
+              ? groupCampaignItems.filter((row) => {
+                  const recipientText = row.recipients.map((r) => `${r.email} ${r.name || ''}`).join(' ');
+                  return (
+                    (row.subject && row.subject.toLowerCase().includes(term)) ||
+                    (row.audienceReason && row.audienceReason.toLowerCase().includes(term)) ||
+                    (row.modeLabel && row.modeLabel.toLowerCase().includes(term)) ||
+                    recipientText.toLowerCase().includes(term)
+                  );
+                })
+              : groupCampaignItems;
+            const displayItems = showAllGroupCampaigns ? filtered : filtered.slice(0, 8);
+            const hasMore = filtered.length > 8 && !showAllGroupCampaigns;
+
+            if (filtered.length === 0) {
+              return (
+                <p className="text-sm text-gray-500">
+                  {groupCampaignItems.length === 0
+                    ? 'No group emails recorded yet. Sends to multiple members or audiences appear here.'
+                    : 'No group emails match your search.'}
+                </p>
+              );
+            }
+
+            const statusClass = (status: string) => {
+              if (status === 'success') return 'bg-green-50 text-green-800';
+              if (status === 'failed') return 'bg-red-50 text-red-800';
+              if (status === 'partial') return 'bg-amber-50 text-amber-800';
+              return 'bg-gray-100 text-gray-700';
+            };
+
+            return (
+              <>
+                <div className="space-y-3">
+                  {displayItems.map((row) => {
+                    const expanded = expandedCampaignId === row.id;
+                    const sentBy = row.createdByName || row.createdByEmail || 'Admin';
+                    const why = row.audienceReason || row.modeLabel;
+                    return (
+                      <div key={row.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedCampaignId(expanded ? null : row.id)}
+                          className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <span className="font-semibold text-gray-900 truncate">{row.subject || '(No subject)'}</span>
+                                <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${statusClass(row.status)}`}>
+                                  {row.status}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-700">
+                                <span className="font-medium">{row.successCount}</span> of{' '}
+                                <span className="font-medium">{row.recipientCount}</span> sent
+                                {row.errorCount > 0 ? (
+                                  <span className="text-red-600"> · {row.errorCount} failed</span>
+                                ) : null}
+                              </p>
+                              <p className="text-xs text-gray-600 mt-1">
+                                <span className="font-medium text-gray-700">Why:</span> {why}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {row.sentAt ? new Date(row.sentAt).toLocaleString() : '—'} · Sent by {sentBy}
+                              </p>
+                            </div>
+                            {expanded ? (
+                              <ChevronDown className="h-5 w-5 text-gray-500 shrink-0 mt-1" />
+                            ) : (
+                              <ChevronRight className="h-5 w-5 text-gray-500 shrink-0 mt-1" />
+                            )}
+                          </div>
+                        </button>
+                        {expanded ? (
+                          <div className="px-4 py-3 border-t border-gray-200 bg-white">
+                            <p className="text-xs font-semibold text-gray-700 mb-2">Recipients</p>
+                            {row.recipients.length === 0 ? (
+                              <p className="text-sm text-gray-500">Recipient list was not stored for this send.</p>
+                            ) : (
+                              <ul className="max-h-48 overflow-y-auto text-sm text-gray-800 space-y-1">
+                                {row.recipients.map((recipient) => (
+                                  <li key={`${row.id}-${recipient.email}`} className="flex flex-wrap gap-x-2">
+                                    <span>{recipient.email}</span>
+                                    {recipient.name ? (
+                                      <span className="text-gray-500">({recipient.name})</span>
+                                    ) : null}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                            {row.recipientsTruncated ? (
+                              <p className="text-xs text-gray-500 mt-2">
+                                Showing first {row.recipients.length} of {row.recipientCount} recipients.
+                              </p>
+                            ) : null}
+                            {row.errors.length > 0 ? (
+                              <div className="mt-3 pt-3 border-t border-gray-100">
+                                <p className="text-xs font-semibold text-red-700 mb-1">Send errors</p>
+                                <ul className="text-xs text-red-700 space-y-1">
+                                  {row.errors.map((err, idx) => (
+                                    <li key={`${row.id}-err-${idx}`}>
+                                      {err.email || 'Unknown'}: {err.reason || 'failed'}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-sm text-gray-500">
+                    Showing {displayItems.length} of {filtered.length}
+                    {term ? ' matching' : ''}
+                  </span>
+                  {hasMore ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllGroupCampaigns(true)}
+                      className="text-sm font-medium text-brand-light hover:text-brand-dark"
+                    >
+                      View more
+                    </button>
+                  ) : filtered.length > 8 ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllGroupCampaigns(false)}
                       className="text-sm font-medium text-gray-600 hover:text-gray-800"
                     >
                       View less

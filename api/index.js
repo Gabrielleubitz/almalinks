@@ -33,6 +33,7 @@ import adminTestMailchimpHandler from '../lib/server/api/admin-test-mailchimp.js
 import adminEmailConfigHandler from '../lib/server/api/admin-email-config.js';
 import adminSendTemplateEmailHandler from '../lib/server/api/admin-send-template-email.js';
 import adminEmailLogHandler from '../lib/server/api/admin-email-log.js';
+import adminEmailCampaignsHandler from '../lib/server/api/admin-email-campaigns.js';
 import syncHubspotContactsHandler from '../lib/server/api/sync-hubspot-contacts.js';
 import removeHubspotUsersHandler from '../lib/server/api/remove-hubspot-users.js';
 import syncHubspotEventsHandler from '../lib/server/api/sync-hubspot-events.js';
@@ -192,6 +193,9 @@ export default async function handler(req, res) {
   }
   if (pathname === '/api/admin/email-log') {
     return adminEmailLogHandler(req, res);
+  }
+  if (pathname === '/api/admin/email-campaigns') {
+    return adminEmailCampaignsHandler(req, res);
   }
 
   const directHandler = routeTable.get(pathname);
