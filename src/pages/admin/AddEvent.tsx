@@ -18,6 +18,7 @@ import { EventDatetimeLocalDualPreview } from '../../components/EventDualTimezon
 import { ALMA_CHAPTER_SELECT_VALUES } from '../../utils/eventChapterTimezones';
 import HubSpotEventSyncPanel from '../../components/admin/HubSpotEventSyncPanel';
 import { syncEventToHubSpot } from '../../utils/hubspotEventSync';
+import { isAppAdminUser } from '../../utils/adminAccess';
 
 const AddEvent: React.FC = () => {
   const navigate = useNavigate();
@@ -124,8 +125,8 @@ const AddEvent: React.FC = () => {
       return;
     }
 
-    if (user?.role !== 'admin') {
-      setError('Admin access required. Your account does not have admin permissions. Contact an administrator to update your role in Firestore (users/{uid} must have role="admin").');
+    if (!isAppAdminUser(user)) {
+      setError('Admin access required. Your account does not have admin permissions. Contact an administrator to update your role in Firestore (users/{uid} must have role="admin" or admin=true).');
       return;
     }
 

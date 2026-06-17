@@ -25,10 +25,10 @@ const AuthWrapper: React.FC = () => {
       }
       
       // Then handle role-based navigation
-      if (user.role === 'admin') {
+      if (isAdmin) {
         console.log('👑 Redirecting admin to /admin');
         navigate('/admin', { replace: true });
-      } else if (user.role === 'member') {
+      } else if (user.role === 'member' || user.status === 'approved') {
         if (checkProfileComplete()) {
           console.log('👤 Redirecting member to /members');
           navigate('/members', { replace: true });

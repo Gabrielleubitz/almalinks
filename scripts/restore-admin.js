@@ -88,10 +88,10 @@ async function main() {
 
   if (snap.exists) {
     await userRef.set(
-      { role: 'admin', status: 'approved', updatedAt: now },
+      { role: 'admin', admin: true, status: 'approved', updatedAt: now },
       { merge: true }
     );
-    console.log('Updated users doc: role=admin, status=approved');
+    console.log('Updated users doc: role=admin, admin=true, status=approved');
   } else {
     await userRef.set({
       uid,
@@ -99,6 +99,7 @@ async function main() {
       name: email.split('@')[0],
       displayName: email.split('@')[0],
       role: 'admin',
+      admin: true,
       status: 'approved',
       profileVisibility: 'public',
       createdAt: now,

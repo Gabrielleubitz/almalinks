@@ -1,5 +1,6 @@
 import { UserProfile } from '../types/user';
 import { JoinRequestService } from '../services/joinRequestService';
+import { isAppAdminDoc } from './adminAccess';
 
 /**
  * Check if a user is approved (can access member features)
@@ -78,7 +79,7 @@ export function canAccessMemberFeaturesSync(
 ): boolean {
   if (!user) return false;
   // Admins can always access
-  if (user.role === 'admin') return true;
+  if (isAppAdminDoc(user)) return true;
   // Only approved members can access
   return user.status === 'approved';
 }

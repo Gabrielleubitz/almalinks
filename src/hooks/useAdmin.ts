@@ -2,19 +2,13 @@ import { useState, useEffect } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from './useAuth';
+import { isAppAdminDoc } from '../utils/adminAccess';
 
 /**
  * useAdmin Hook - Checks if the current user has admin privileges
- * 
- * SECURITY: Admin status is determined by the 'role' field in the user's Firestore document.
- * This role is set by administrators and stored securely in Firestore.
- * Firebase Custom Claims are also set server-side for additional security.
- * 
- * The role check is performed in this order:
- * 1. Check user.role from Firestore (already loaded by useAuth)
- * 2. Fallback to Firestore document if role not in user object
- * 
- * This ensures admin status is always verified against the database, not hardcoded values.
+ *
+ * Admin status: Firestore users/{uid}.role === 'admin' OR users/{uid}.admin === true
+ * (also mirrored in Firebase custom claims when updated via user-admin API).
  */
 export const useAdmin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -27,7 +21,7 @@ export const useAdmin = () => {
         setLoading(true);
         return;
       }
-      
+
       if (!user?.uid) {
         setIsAdmin(false);
         setLoading(false);
@@ -35,31 +29,26 @@ export const useAdmin = () => {
       }
 
       try {
-        // Primary check: Use role from user object (already loaded from Firestore by useAuth)
-        if (user.role === 'admin') {
+        if (isAppAdminDoc(user)) {
           setIsAdmin(true);
           setLoading(false);
           return;
         }
 
-        // Fallback: If role not in user object, check Firestore directly
-        // This is a security measure to ensure we always verify against the database
         const userDoc = await getDoc(doc(db, 'users', user.uid));
-        
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          const hasAdminRole = userData.role === 'admin';
-          
+          const hasAdmin = isAppAdminDoc(userData);
           if (import.meta.env.DEV) {
             console.log('🔍 Admin status check:', {
               uid: user.uid,
               email: user.email,
               role: userData.role,
-              isAdmin: hasAdminRole
+              admin: userData.admin,
+              isAdmin: hasAdmin,
             });
           }
-          
-          setIsAdmin(hasAdminRole);
+          setIsAdmin(hasAdmin);
         } else {
           setIsAdmin(false);
         }
@@ -71,12 +60,12 @@ export const useAdmin = () => {
       }
     };
 
-    checkAdminStatus();
+    void checkAdminStatus();
   }, [user, authLoading]);
 
   return {
     isAdmin,
     loading: loading || authLoading,
-    user
+    user,
   };
 };

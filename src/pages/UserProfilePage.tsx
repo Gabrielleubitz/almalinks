@@ -35,7 +35,7 @@ interface Connection {
 const UserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isAdmin } = useAuth();
   const [profile, setProfile] = useState<FilteredProfile | null>(null);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,7 +127,7 @@ const UserProfilePage: React.FC = () => {
       setConnecting(true);
       setConnectError(null);
 
-      if (currentUser.role === 'admin') {
+      if (isAdmin) {
         const { AdminConnectionService } = await import('../services/adminConnectionService');
         await AdminConnectionService.createAdminConnection(
           currentUser.uid,
@@ -281,7 +281,7 @@ const UserProfilePage: React.FC = () => {
               <ChevronLeft className="h-5 w-5 mr-0.5" />
               Back
             </button>
-            {(isOwner || currentUser?.role === 'admin') && (
+            {(isOwner || isAdmin) && (
               <div className="flex flex-wrap gap-2">
                 {isOwner && (
                   <button
@@ -293,7 +293,7 @@ const UserProfilePage: React.FC = () => {
                     Edit profile
                   </button>
                 )}
-                {currentUser?.role === 'admin' && !isOwner && userId && (
+                {isAdmin && !isOwner && userId && (
                   <button
                     type="button"
                     onClick={() => navigate(`/admin/users/${userId}/edit`)}

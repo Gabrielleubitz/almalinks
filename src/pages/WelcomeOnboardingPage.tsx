@@ -36,7 +36,7 @@ const capabilities = [
 
 const WelcomeOnboardingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, markOnboardingComplete, checkProfileComplete } = useAuth();
+  const { user, markOnboardingComplete, checkProfileComplete, isAdmin } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleGetStarted = async () => {
@@ -44,7 +44,7 @@ const WelcomeOnboardingPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       await markOnboardingComplete();
-      if (user.role === 'admin') {
+      if (isAdmin) {
         navigate('/admin', { replace: true });
       } else if (checkProfileComplete()) {
         navigate('/members', { replace: true });

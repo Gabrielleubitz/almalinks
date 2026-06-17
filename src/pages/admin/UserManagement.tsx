@@ -26,8 +26,9 @@ import {
   Download,
   Edit3
 } from 'lucide-react';
-import { collection, getDocs, doc, updateDoc, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, doc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import { isAppAdminDoc } from '../../utils/adminAccess';
 import { useAuth } from '../../hooks/useAuth';
 import UserConnectionModal from '../../components/admin/UserConnectionModal';
 import ConnectionManagementModal from '../../components/admin/ConnectionManagementModal';
@@ -47,6 +48,7 @@ interface UserData {
   name: string;
   displayName?: string;
   role: 'member' | 'admin';
+  admin?: boolean;
   createdAt?: any;
   joinedAt?: any; // when approved (use for "join date" / "Member since")
   profileImage?: string | null;
@@ -162,33 +164,46 @@ const UserManagement: React.FC = () => {
 
   const handleRoleChange = async (uid: string, newRole: string) => {
     if (!user?.uid) return;
-    
-    // Prevent changing your own role
+
     if (uid === user.uid) {
       showToast('You cannot change your own role', 'error');
       return;
     }
-    
+
     setUpdatingUser(uid);
-    
+
     try {
-      const userRef = doc(db, 'users', uid);
-      await updateDoc(userRef, { 
-        role: newRole
+      const response = await fetch('/api/user-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'updateUser',
+          adminId: user.uid,
+          targetUserId: uid,
+          updateData: {
+            role: newRole,
+            admin: newRole === 'admin',
+          },
+        }),
       });
-      
-      // Update local state
-      const updatedUsers = users.map(u => 
-        u.uid === uid ? { ...u, role: newRole as 'member' | 'admin' } : u
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || `Failed to update role (HTTP ${response.status})`);
+      }
+
+      const updatedUsers = users.map((u) =>
+        u.uid === uid
+          ? { ...u, role: newRole as 'member' | 'admin', admin: newRole === 'admin' }
+          : u
       );
       setUsers(updatedUsers);
-      
-      // Get user name for toast
-      const updatedUser = updatedUsers.find(u => u.uid === uid);
+
+      const updatedUser = updatedUsers.find((u) => u.uid === uid);
       showToast(`Role updated to ${newRole} for ${updatedUser?.name || 'user'}`, 'success');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error updating user role:', error);
-      showToast(error.message || 'Failed to update user role', 'error');
+      const message = error instanceof Error ? error.message : 'Failed to update user role';
+      showToast(message, 'error');
     } finally {
       setUpdatingUser(null);
     }
@@ -589,11 +604,11 @@ const UserManagement: React.FC = () => {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (userData.role !== 'admin') handleRoleChange(userData.uid, 'admin');
+                                if (!isAppAdminDoc(userData)) handleRoleChange(userData.uid, 'admin');
                               }}
                               disabled={updatingUser === userData.uid || userData.uid === user?.uid}
                               className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors min-h-[44px] sm:min-h-0 disabled:opacity-50 disabled:cursor-not-allowed ${
-                                userData.role === 'admin'
+                                isAppAdminDoc(userData)
                                   ? 'bg-purple-100 text-purple-800 ring-1 ring-purple-200'
                                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                               }`}

@@ -5,6 +5,7 @@ import { auth, db, retryOnNetworkFailure } from '../firebase/config';
 import type { CropValue } from '../types/crop';
 import { ActivityService } from '../services/activityService';
 import { isMemberProfileSetupComplete } from '../utils/memberLanding';
+import { isAppAdminUser } from '../utils/adminAccess';
 
 export interface AuthUser {
   uid: string;
@@ -13,6 +14,8 @@ export interface AuthUser {
   firstName?: string;
   lastName?: string;
   role?: string;
+  /** Legacy/alternate admin flag (Firestore users.admin === true). */
+  admin?: boolean;
   status?: string;
   phone?: string;
   company?: string;
@@ -125,6 +128,7 @@ export const useAuth = () => {
           firstName: userData.firstName ?? undefined,
           lastName: userData.lastName ?? undefined,
           role: userData.role || 'member',
+          admin: userData.admin === true,
           status: userData.status || 'approved', // Default to approved for existing users
           phone: userData.phone || '',
           company: userData.company || '',
@@ -540,7 +544,7 @@ export const useAuth = () => {
           }
           
           // Set initial admin view mode based on role
-          if (userProfile.role === 'admin') {
+          if (userProfile.role === 'admin' || userProfile.admin === true) {
             setAdminViewMode('admin');
           }
           
@@ -995,7 +999,7 @@ export const useAuth = () => {
   };
 
   // Computed values with explicit logging
-  const isAdmin = user?.role === 'admin' || (user as { admin?: boolean })?.admin === true;
+  const isAdmin = isAppAdminUser(user);
   const isMember = user?.role === 'member';
   const isPending = user?.status === 'pending';
   const isApproved = user?.status === 'approved';

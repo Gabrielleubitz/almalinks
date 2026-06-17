@@ -41,7 +41,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
   
   console.log('🔧 AdminUserEdit component loaded for userId:', userId);
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isAdmin } = useAuth();
   const { logAdminAction } = useActivityTracking();
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -202,8 +202,8 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       return;
     }
     
-    if (currentUser.role !== 'admin') {
-      console.log('❌ Access denied - user role:', currentUser.role, 'redirecting to /admin');
+    if (!isAdmin) {
+      console.log('❌ Access denied - user is not admin, redirecting to /admin');
       navigate('/admin');
       return;
     }
@@ -212,7 +212,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
     if (userId) {
       loadUserProfile();
     }
-  }, [userId, currentUser, navigate]);
+  }, [userId, currentUser, isAdmin, navigate]);
 
   const loadUserProfile = async (background = false) => {
     if (!userId) return;

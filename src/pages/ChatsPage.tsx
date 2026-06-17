@@ -12,7 +12,7 @@ import { CHATS_REDESIGN_PAUSED } from '../config/chatsFeature';
 
 const ChatsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [chats, setChats] = useState<ChatListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -128,7 +128,7 @@ const ChatsPage: React.FC = () => {
                 <Compass className="h-4 w-4" />
                 <span>Discover</span>
               </button>
-              {user.role === 'admin' && (
+              {isAdmin && (
                 <button
                   onClick={() => navigate('/admin/chats/create')}
                   className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-[#0B2B6B] hover:bg-[#1E56B3] rounded-lg transition-colors min-h-[44px] touch-manipulation"
@@ -138,7 +138,7 @@ const ChatsPage: React.FC = () => {
                 </button>
               )}
             </div>
-            ) : user.role === 'admin' ? (
+            ) : isAdmin ? (
               <button
                 type="button"
                 onClick={() => navigate('/admin/chats')}

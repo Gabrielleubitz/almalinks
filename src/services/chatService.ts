@@ -19,6 +19,7 @@ import {
   QueryConstraint
 } from 'firebase/firestore';
 import { db, retryOnNetworkFailure } from '../firebase/config';
+import { isAppAdminDoc } from '../utils/adminAccess';
 import { 
   ChatGroup, 
   ChatMember, 
@@ -1303,12 +1304,12 @@ export class ChatService {
     return !memberSnap.empty;
   }
 
-  /** Alma app admins (users.role === 'admin') can manage any chat without being a chat member. */
+  /** Alma app admins can manage any chat without being a chat member. */
   private static async isAppAdmin(userId: string): Promise<boolean> {
     try {
       const userDoc = await retryOnNetworkFailure(() => getDoc(doc(db, 'users', userId)));
       if (!userDoc.exists()) return false;
-      return userDoc.data()?.role === 'admin';
+      return isAppAdminDoc(userDoc.data());
     } catch {
       return false;
     }
