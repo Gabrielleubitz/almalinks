@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { apiRequest } from '../../utils/apiClient';
 import HubspotLogo from '../../assets/hubspot-logo.svg';
-import { DirectoryService } from '../../services/directoryService';
 
 type ResultType = 'sync' | 'deals' | 'events' | 'remove' | 'delete';
 interface LastResult {
@@ -121,6 +120,8 @@ const HubSpotImportPage: React.FC = () => {
   const [syncResult, setSyncResult] = useState<{ ok?: boolean; totalUpserted?: number; error?: string } | null>(null);
   const [rebuildingDirectory, setRebuildingDirectory] = useState(false);
   const [directoryRebuildResult, setDirectoryRebuildResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<{ ok: boolean; message: string; hint?: string } | null>(null);
   const [syncingDeals, setSyncingDeals] = useState(false);
   const [dealsResult, setDealsResult] = useState<Record<string, unknown> | null>(null);
   const [creatingFromDeals, setCreatingFromDeals] = useState(false);
@@ -274,12 +275,36 @@ const HubSpotImportPage: React.FC = () => {
     setLastResult({ type, ok, data, error });
   };
 
+  const testHubspotConnection = async () => {
+    setTestingConnection(true);
+    setConnectionStatus(null);
+    try {
+      const res = await apiRequest('/api/test-hubspot-connection', { method: 'GET' });
+      const data = await res.json().catch(() => ({})) as { ok?: boolean; connected?: boolean; message?: string; error?: string; hint?: string };
+      if (data.connected) {
+        setConnectionStatus({ ok: true, message: data.message || 'HubSpot connected.' });
+      } else {
+        setConnectionStatus({ ok: false, message: data.error || 'Connection failed.', hint: data.hint });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Test failed';
+      setConnectionStatus({ ok: false, message: msg });
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
   const rebuildMemberDirectory = async () => {
     setRebuildingDirectory(true);
     setDirectoryRebuildResult(null);
     try {
-      await DirectoryService.bulkUpdateDirectory(30);
-      setDirectoryRebuildResult({ ok: true, message: 'Member directory rebuilt — all profile pictures and fields updated.' });
+      const res = await apiRequest('/api/admin-rebuild-directory', { method: 'POST' });
+      const data = await res.json().catch(() => ({})) as { ok?: boolean; updated?: number; total?: number; errors?: number; error?: string };
+      if (data.ok) {
+        setDirectoryRebuildResult({ ok: true, message: `Directory rebuilt — ${data.updated} of ${data.total} members updated.` });
+      } else {
+        throw new Error(data.error || 'Rebuild failed');
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Rebuild failed';
       setDirectoryRebuildResult({ ok: false, message: msg });
@@ -311,8 +336,10 @@ const HubSpotImportPage: React.FC = () => {
           title: 'Contacts sync complete',
           sections: [{ lines: buildContactsSyncModalLines(data) }],
           footnote:
-            'Profile fields synced from HubSpot include photo URL, short bio (bio title), long bio, chapter, city, state, country, timezone, LinkedIn, and other properties stored on each user (see hubspotContactProperties).',
+            'Profile fields synced from HubSpot include photo URL, bio, chapter, city, country, LinkedIn, and more. Rebuilding member directory…',
         });
+        // Auto-rebuild directory after sync so pictures appear immediately
+        rebuildMemberDirectory();
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Request failed';
@@ -774,10 +801,34 @@ const HubSpotImportPage: React.FC = () => {
           </div>
         )}
 
+        {/* HubSpot connection status */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-5 flex flex-wrap items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-gray-900 text-sm">HubSpot connection</p>
+            {connectionStatus ? (
+              <p className={`text-sm mt-0.5 ${connectionStatus.ok ? 'text-green-700' : 'text-red-600'}`}>
+                {connectionStatus.message}
+                {connectionStatus.hint && <span className="block text-xs text-gray-500 mt-0.5">{connectionStatus.hint}</span>}
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500 mt-0.5">Click "Test connection" to verify your HubSpot token is valid before syncing.</p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={testHubspotConnection}
+            disabled={testingConnection}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            {testingConnection ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4 text-orange-500" />}
+            {testingConnection ? 'Testing…' : 'Test connection'}
+          </button>
+        </div>
+
         {/* Action cards grid */}
         <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 mb-4">
           <strong className="font-semibold">Large directories:</strong> syncing 500+ contacts can take several minutes. Keep this tab open until the{' '}
-          <strong>success summary</strong> appears — that confirms the run finished.
+          <strong>success summary</strong> appears — that confirms the run finished. The member directory is rebuilt automatically after sync.
         </p>
         <h2 className="text-base font-semibold text-gray-900 mb-4">Step-by-step</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
