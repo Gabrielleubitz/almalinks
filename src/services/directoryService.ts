@@ -14,6 +14,34 @@ import { db, retryOnNetworkFailure } from '../firebase/config';
 import { UserDirectoryEntry, DiscoverabilityLevel } from '../types/connection';
 import { PrivacyService } from './privacyService';
 
+const HUBSPOT_PICTURE_KEYS = [
+  'hs_avatar_filemanager_url',
+  'hs_avatar_url',
+  'picture',
+  'profile_picture',
+  'photo_url',
+  'profile_photo_url',
+  'avatar_url',
+  'facebook_avatar',
+];
+
+/**
+ * Resolve the best available profile image URL from a user doc,
+ * checking Firestore fields first then raw HubSpot property snapshot.
+ */
+function resolveProfileImageFromUserData(userData: Record<string, unknown>): string | null {
+  const direct = String(userData.profileImage || userData.avatarUrl || '').trim();
+  if (direct && direct !== 'null' && direct !== 'undefined') return direct;
+  const props = userData.hubspotContactProperties as Record<string, unknown> | undefined;
+  if (props && typeof props === 'object') {
+    for (const k of HUBSPOT_PICTURE_KEYS) {
+      const v = String(props[k] ?? '').trim();
+      if (v && v !== 'null' && v !== 'undefined' && v.startsWith('http')) return v;
+    }
+  }
+  return null;
+}
+
 export class DirectoryService {
   /**
    * Update or create user directory entry
@@ -44,7 +72,7 @@ export class DirectoryService {
         name: userData.displayName || userData.name || 'Unknown User',
         work: userData.work || 'Not specified',
         position: userData.position || '',
-        profileImage: userData.profileImage || null,
+        profileImage: resolveProfileImageFromUserData(userData as Record<string, unknown>),
         discoverability: userData.discoverability || 'event_only',
         lastActive: new Date(),
         eventIds,

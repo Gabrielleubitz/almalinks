@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { apiRequest } from '../../utils/apiClient';
 import HubspotLogo from '../../assets/hubspot-logo.svg';
+import { DirectoryService } from '../../services/directoryService';
 
 type ResultType = 'sync' | 'deals' | 'events' | 'remove' | 'delete';
 interface LastResult {
@@ -118,6 +119,8 @@ const HubSpotImportPage: React.FC = () => {
   const navigate = useNavigate();
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ ok?: boolean; totalUpserted?: number; error?: string } | null>(null);
+  const [rebuildingDirectory, setRebuildingDirectory] = useState(false);
+  const [directoryRebuildResult, setDirectoryRebuildResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [syncingDeals, setSyncingDeals] = useState(false);
   const [dealsResult, setDealsResult] = useState<Record<string, unknown> | null>(null);
   const [creatingFromDeals, setCreatingFromDeals] = useState(false);
@@ -269,6 +272,20 @@ const HubSpotImportPage: React.FC = () => {
 
   const setResult = (type: ResultType, ok: boolean, data: Record<string, unknown>, error?: string) => {
     setLastResult({ type, ok, data, error });
+  };
+
+  const rebuildMemberDirectory = async () => {
+    setRebuildingDirectory(true);
+    setDirectoryRebuildResult(null);
+    try {
+      await DirectoryService.bulkUpdateDirectory(30);
+      setDirectoryRebuildResult({ ok: true, message: 'Member directory rebuilt — all profile pictures and fields updated.' });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Rebuild failed';
+      setDirectoryRebuildResult({ ok: false, message: msg });
+    } finally {
+      setRebuildingDirectory(false);
+    }
   };
 
   const syncHubspotContacts = async () => {
@@ -812,6 +829,44 @@ const HubSpotImportPage: React.FC = () => {
               </div>
             );
           })}
+        </div>
+
+        {/* Rebuild member directory */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
+          <div className="flex items-start gap-3 mb-3">
+            <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-purple-50 text-purple-600">
+              <RefreshCw className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Rebuild member directory</h3>
+              <p className="text-sm text-gray-600 mt-0.5">
+                Re-indexes all members so the directory shows the latest profile pictures, names, and fields from Firestore (including pictures pulled from HubSpot). Run this after syncing contacts.
+              </p>
+            </div>
+          </div>
+          {directoryRebuildResult && (
+            <div className={`mb-3 p-3 rounded-lg text-sm ${directoryRebuildResult.ok ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'}`}>
+              {directoryRebuildResult.message}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={rebuildMemberDirectory}
+            disabled={rebuildingDirectory}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 disabled:opacity-50"
+          >
+            {rebuildingDirectory ? (
+              <>
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                <span>Rebuilding…</span>
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4" />
+                <span>Rebuild member directory</span>
+              </>
+            )}
+          </button>
         </div>
 
         {listError && (
