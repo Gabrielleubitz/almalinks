@@ -343,7 +343,7 @@ const DashboardPage: React.FC = () => {
       const formattedLinkedin = editFormData.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '');
       const formattedTwitter = editFormData.twitter.replace(/^(https?:\/\/)?(www\.)?(twitter\.com\/|x\.com\/)@?/i, '').replace(/^@/, '');
       const formattedWebsite = editFormData.website && !editFormData.website.startsWith('http') ? `https://${editFormData.website}` : editFormData.website;
-      const profilePayload = {
+      const profilePayload: Record<string, unknown> = {
         name: editFormData.name.trim(),
         fullName: editFormData.name.trim(),
         phone: formattedPhone,
@@ -360,6 +360,11 @@ const DashboardPage: React.FC = () => {
         twitter: formattedTwitter.trim(),
         skills: editFormData.skills,
       };
+      // Include picture URL so it gets pushed to HubSpot's 'picture' property
+      if (profileImageUrl) {
+        profilePayload.profileImage = profileImageUrl;
+        profilePayload.avatarUrl = profileImageUrl;
+      }
       const res = await apiRequest('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -369,11 +374,9 @@ const DashboardPage: React.FC = () => {
       if (!res.ok) {
         throw new Error((data as { error?: string }).error || 'Failed to save profile');
       }
-      if (profileImageUrl !== undefined || profileImageCrop !== undefined) {
-        await updateProfile({
-          profileImage: profileImageUrl,
-          profileImageCrop: profileImageCrop ?? undefined,
-        });
+      // Save crop metadata locally (not sent to HubSpot)
+      if (profileImageCrop !== undefined) {
+        await updateProfile({ profileImageCrop: profileImageCrop ?? undefined });
       }
       await reloadUserProfile();
       setLastSavedAt(Date.now());
@@ -475,10 +478,21 @@ const DashboardPage: React.FC = () => {
     setProfileImageCrop(crop ?? null);
     setImageUploadError(null);
     try {
-      await updateProfile({ profileImage: imageUrl, profileImageCrop: crop ?? undefined });
+      // Save to Firestore + push to HubSpot 'picture' property via the API
+      await apiRequest('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileImage: imageUrl, avatarUrl: imageUrl }),
+      });
+      // Save crop metadata locally only (not sent to HubSpot)
+      if (crop !== undefined) {
+        await updateProfile({ profileImageCrop: crop ?? undefined });
+      }
       setLastSavedAt(Date.now());
     } catch (e) {
-      console.error('Failed to save profile picture crop', e);
+      console.error('Failed to save profile picture', e);
+      // Fallback: save to Firestore directly
+      await updateProfile({ profileImage: imageUrl, profileImageCrop: crop ?? undefined }).catch(() => {});
     }
   };
 

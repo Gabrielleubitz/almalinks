@@ -472,6 +472,19 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
   const handleAvatarUpload = async (imageUrl: string, crop?: { scale: number; panX: number; panY: number }) => {
     setProfile(prev => prev ? { ...prev, avatarUrl: imageUrl, profileImage: imageUrl, profileImageCrop: crop ?? null } : null);
     setProfilePictureUploadError(null);
+    // Push the new picture URL to HubSpot immediately after upload
+    if (userId && auth.currentUser) {
+      try {
+        const idToken = await auth.currentUser.getIdToken();
+        await fetch('/api/admin-sync-user-hubspot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+          body: JSON.stringify({ adminId: auth.currentUser.uid, targetUserId: userId }),
+        });
+      } catch (e) {
+        console.warn('[AdminUserEdit] HubSpot picture sync failed (non-blocking):', e);
+      }
+    }
   };
 
   const handleAvatarError = (error: string) => {
