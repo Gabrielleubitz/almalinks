@@ -324,7 +324,9 @@ const HubSpotImportPage: React.FC = () => {
     try {
       const res = await apiRequest('/api/sync-hubspot-contacts', {
         method: 'POST',
-        body: JSON.stringify({ dedupeByEmail: true, fullResync: false }),
+        // dedupeByEmail=false: skip the expensive full-collection dedup scan on routine syncs.
+        // The dedup is only needed on first imports; skipping it saves hundreds of Firestore reads.
+        body: JSON.stringify({ dedupeByEmail: false, fullResync: false }),
       });
       const data = await res.json().catch(() => ({})) as HubspotContactsSyncSummary & Record<string, unknown>;
       setSyncResult(data);
@@ -336,10 +338,8 @@ const HubSpotImportPage: React.FC = () => {
           title: 'Contacts sync complete',
           sections: [{ lines: buildContactsSyncModalLines(data) }],
           footnote:
-            'Profile fields synced from HubSpot include photo URL, bio, chapter, city, country, LinkedIn, and more. Rebuilding member directory…',
+            'Profile fields synced from HubSpot include photo URL, bio, chapter, city, country, LinkedIn, and more. Click "Rebuild member directory" below to refresh the members grid.',
         });
-        // Auto-rebuild directory after sync so pictures appear immediately
-        rebuildMemberDirectory();
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Request failed';
@@ -1077,7 +1077,16 @@ const HubSpotImportPage: React.FC = () => {
                   {lastResult ? (lastResult.ok ? 'Last action completed' : 'Last action had an error') : 'No action run yet'}
                 </span>
                 {lastResult?.error && (
-                  <p className="text-sm text-red-600 mt-0.5">{lastResult.error}</p>
+                  <p className="text-sm text-red-600 mt-0.5">
+                    {lastResult.error}
+                    {(lastResult.error.includes('RESOURCE_EXHAUSTED') || lastResult.error.includes('Quota exceeded')) && (
+                      <span className="block mt-1 text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs">
+                        <strong>Firestore daily quota exceeded.</strong> This usually happens after many sync runs in one day.
+                        The quota resets at midnight Pacific Time (PT). You can also upgrade to the Firebase Blaze (pay-as-you-go)
+                        plan in the Firebase Console to avoid this limit.
+                      </span>
+                    )}
+                  </p>
                 )}
                 {lastResult?.ok && (
                   <p className="text-sm text-gray-600 mt-0.5">See details below (expand for full response).</p>
