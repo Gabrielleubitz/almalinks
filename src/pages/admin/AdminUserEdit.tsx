@@ -56,6 +56,9 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
 
   const [hubspotSyncBusy, setHubspotSyncBusy] = useState(false);
   const [hubspotSyncResult, setHubspotSyncResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  const [hubspotPullBusy, setHubspotPullBusy] = useState(false);
+  const [hubspotPullResult, setHubspotPullResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [formData, setFormData] = useState<UserProfileForm>({
     firstName: '',
     lastName: '',
@@ -168,6 +171,39 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       showToast(msg, 'error');
     } finally {
       setHubspotSyncBusy(false);
+    }
+  };
+
+  const handleHubspotPull = async () => {
+    if (!userId || !auth.currentUser) return;
+    setHubspotPullBusy(true);
+    setHubspotPullResult(null);
+    try {
+      const idToken = await auth.currentUser.getIdToken();
+      const res = await fetch('/api/admin-pull-user-hubspot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ adminId: auth.currentUser.uid, targetUserId: userId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Pull failed');
+      }
+      if (data.skipped) {
+        setHubspotPullResult({ ok: true, message: data.reason || 'No picture to pull.' });
+        showToast(data.reason || 'No picture to pull.', 'success');
+      } else {
+        setHubspotPullResult({ ok: true, message: 'Profile picture pulled from HubSpot.' });
+        showToast('Profile picture updated from HubSpot', 'success');
+        await loadUserProfile(true);
+      }
+      logAdminAction('Pulled profile picture from HubSpot', { targetUserId: userId });
+    } catch (err: any) {
+      const msg = err?.message || 'Pull failed';
+      setHubspotPullResult({ ok: false, message: msg });
+      showToast(msg, 'error');
+    } finally {
+      setHubspotPullBusy(false);
     }
   };
 
@@ -860,39 +896,75 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
               </div>
 
               {/* HubSpot sync */}
-              <div className="p-5 border border-gray-200 rounded-xl">
-                <h4 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4 text-orange-500" />
-                  Sync to HubSpot
-                </h4>
-                <p className="text-sm text-gray-600 mb-3">
-                  Push all profile fields (name, company, job title, city, country, LinkedIn, bio, etc.) from Firestore to HubSpot immediately.
-                </p>
+              <div className="p-5 border border-gray-200 rounded-xl space-y-4">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                    <RefreshCw className="h-4 w-4 text-orange-500" />
+                    HubSpot Sync
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Push profile fields to HubSpot, or pull the profile picture from HubSpot into Alma.
+                  </p>
+                </div>
 
-                {hubspotSyncResult && (
-                  <div className={`mb-3 p-3 rounded-lg text-sm ${hubspotSyncResult.ok ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'}`}>
-                    {hubspotSyncResult.message}
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={handleHubspotSync}
-                  disabled={hubspotSyncBusy}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 disabled:opacity-50"
-                >
-                  {hubspotSyncBusy ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Syncing…</span>
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4" />
-                      <span>Sync profile to HubSpot</span>
-                    </>
+                {/* Push to HubSpot */}
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase mb-2">Push profile → HubSpot</p>
+                  {hubspotSyncResult && (
+                    <div className={`mb-2 p-3 rounded-lg text-sm ${hubspotSyncResult.ok ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'}`}>
+                      {hubspotSyncResult.message}
+                    </div>
                   )}
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleHubspotSync}
+                    disabled={hubspotSyncBusy}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 disabled:opacity-50"
+                  >
+                    {hubspotSyncBusy ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Syncing…</span>
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4" />
+                        <span>Sync profile to HubSpot</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Pull picture from HubSpot */}
+                <div className="pt-3 border-t border-gray-100">
+                  <p className="text-xs font-medium text-gray-500 uppercase mb-2">Pull picture ← HubSpot</p>
+                  <p className="text-sm text-gray-500 mb-2">
+                    Fetches the <strong>picture</strong> property from HubSpot and sets it as the profile photo in Alma. Skipped if the member already has a custom uploaded photo.
+                  </p>
+                  {hubspotPullResult && (
+                    <div className={`mb-2 p-3 rounded-lg text-sm ${hubspotPullResult.ok ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'}`}>
+                      {hubspotPullResult.message}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleHubspotPull}
+                    disabled={hubspotPullBusy}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {hubspotPullBusy ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Pulling…</span>
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="h-4 w-4" />
+                        <span>Pull profile picture from HubSpot</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
