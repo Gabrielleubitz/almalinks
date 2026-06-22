@@ -7,8 +7,9 @@ import {
   effectiveEventAudienceIds,
   effectiveLocationAudienceLabels,
 } from '../../utils/eventAudienceUtils';
+import { ALMA_CHAPTER_SELECT_VALUES } from '../../utils/eventChapterTimezones';
 
-export type RecipientMode = 'individuals' | 'group' | 'event' | 'chat' | 'location' | 'all_users';
+export type RecipientMode = 'individuals' | 'group' | 'event' | 'chat' | 'location' | 'chapter' | 'all_users';
 
 export interface AudienceSelection {
   mode: RecipientMode;
@@ -23,6 +24,8 @@ export interface AudienceSelection {
   /** @deprecated use locations */
   location?: string;
   locations?: string[];
+  /** Chapter targeting — members whose chapter field matches one of these values */
+  chapters?: string[];
 }
 
 interface AudienceSelectorProps {
@@ -139,6 +142,14 @@ const AudienceSelector: React.FC<AudienceSelectorProps> = ({
   const selectedEventIds = effectiveEventAudienceIds(selection);
   const selectedChatIds = effectiveChatAudienceIds(selection);
   const selectedLocations = effectiveLocationAudienceLabels(selection);
+  const selectedChapters: string[] = Array.isArray(selection?.chapters) ? selection.chapters.filter(Boolean) : [];
+
+  const toggleChapter = (ch: string) => {
+    const next = new Set(selectedChapters);
+    if (next.has(ch)) next.delete(ch);
+    else next.add(ch);
+    onSelectionChange({ ...selection, chapters: Array.from(next) });
+  };
 
   const toggleEventId = (id: string) => {
     const next = new Set(selectedEventIds);
@@ -213,6 +224,7 @@ const AudienceSelector: React.FC<AudienceSelectorProps> = ({
           {!excludedModes.includes('event') && <option value="event">Event</option>}
           {!excludedModes.includes('chat') && <option value="chat">Chat</option>}
           {!excludedModes.includes('location') && <option value="location">Location</option>}
+          {!excludedModes.includes('chapter') && <option value="chapter">Chapter</option>}
           {!excludedModes.includes('all_users') && <option value="all_users">All users</option>}
         </select>
       </div>
@@ -400,6 +412,52 @@ const AudienceSelector: React.FC<AudienceSelectorProps> = ({
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {mode === 'chapter' && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Select chapters (one or more)
+          </label>
+          {selectedChapters.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {selectedChapters.map((ch) => (
+                <span
+                  key={ch}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-100 text-blue-900 text-xs"
+                >
+                  {ch}
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => toggleChapter(ch)}
+                    className="p-0.5 rounded hover:bg-blue-200 disabled:opacity-50"
+                    aria-label={`Remove ${ch}`}
+                  >
+                    <X className="h-3 w-3 shrink-0" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="max-h-52 overflow-y-auto border border-gray-200 rounded-xl p-2 space-y-1 bg-white">
+            {ALMA_CHAPTER_SELECT_VALUES.filter(Boolean).map((ch) => (
+              <label
+                key={ch}
+                className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer text-sm"
+              >
+                <input
+                  type="checkbox"
+                  className="rounded border-gray-300"
+                  checked={selectedChapters.includes(ch)}
+                  disabled={disabled}
+                  onChange={() => toggleChapter(ch)}
+                />
+                <span className="text-gray-800">{ch}</span>
+              </label>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -104,6 +104,10 @@ const UserManagement: React.FC = () => {
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [showAuditLogs, setShowAuditLogs] = useState(false);
   const [actionsDropdownUid, setActionsDropdownUid] = useState<string | null>(null);
+  const [showBatchPhotos, setShowBatchPhotos] = useState(false);
+  const [batchPhotoCsv, setBatchPhotoCsv] = useState('');
+  const [batchPhotoResults, setBatchPhotoResults] = useState<{ done: number; skipped: number; errors: string[] } | null>(null);
+  const [batchPhotoRunning, setBatchPhotoRunning] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -145,6 +149,31 @@ const UserManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBatchPhotoUpload = async () => {
+    const lines = batchPhotoCsv.split('\n').map(l => l.trim()).filter(Boolean);
+    if (!lines.length) return;
+    setBatchPhotoRunning(true);
+    setBatchPhotoResults(null);
+    let done = 0; let skipped = 0; const errors: string[] = [];
+    const { doc: fsDoc, setDoc: fsSetDoc } = await import('firebase/firestore');
+    for (const line of lines) {
+      const commaIdx = line.indexOf(',');
+      if (commaIdx === -1) { errors.push(`Bad row (no comma): ${line.slice(0,60)}`); continue; }
+      const email = line.slice(0, commaIdx).trim().toLowerCase();
+      const photoUrl = line.slice(commaIdx + 1).trim();
+      if (!email || !photoUrl) { errors.push(`Empty email or URL: ${line.slice(0,60)}`); continue; }
+      const match = users.find(u => u.email?.toLowerCase() === email);
+      if (!match) { skipped++; errors.push(`No member found for ${email}`); continue; }
+      try {
+        await fsSetDoc(fsDoc(db, 'users', match.uid), { profileImage: photoUrl, avatarUrl: photoUrl }, { merge: true });
+        setUsers(prev => prev.map(u => u.uid === match.uid ? { ...u, profileImage: photoUrl } : u));
+        done++;
+      } catch (e: any) { errors.push(`Failed for ${email}: ${e?.message}`); }
+    }
+    setBatchPhotoResults({ done, skipped, errors });
+    setBatchPhotoRunning(false);
   };
 
   const filterUsers = () => {
@@ -477,6 +506,40 @@ const UserManagement: React.FC = () => {
                   <span className="whitespace-nowrap">Bulk Import</span>
                 </button>
                 <button
+                  onClick={() => {
+                    const cols = ['name','email','company','work','position','chapter','city','country','phone','linkedinUsername','status','role'];
+                    const header = cols.join(',');
+                    const rows = users.map(u =>
+                      cols.map(c => {
+                        const v = (u as any)[c] ?? '';
+                        const s = String(v).replace(/"/g, '""');
+                        return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s}"` : s;
+                      }).join(',')
+                    );
+                    const csv = [header, ...rows].join('\n');
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `almalinks-members-${new Date().toISOString().slice(0,10)}.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="inline-flex items-center justify-center px-3 py-2.5 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium min-h-[44px] sm:min-h-0"
+                  title="Export all members to CSV (importable into Google Sheets)"
+                >
+                  <Download className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="whitespace-nowrap">Export CSV</span>
+                </button>
+                <button
+                  onClick={() => { setShowBatchPhotos(v => !v); setBatchPhotoResults(null); }}
+                  className="inline-flex items-center justify-center px-3 py-2.5 sm:py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium min-h-[44px] sm:min-h-0"
+                  title="Batch upload member photos by email"
+                >
+                  <UserIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="whitespace-nowrap">Batch Photos</span>
+                </button>
+                <button
                   onClick={() => setShowAuditLogs(true)}
                   className="inline-flex items-center justify-center px-3 py-2.5 sm:py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium min-h-[44px] sm:min-h-0"
                   title="View audit logs"
@@ -487,6 +550,43 @@ const UserManagement: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Batch Photo Upload Panel */}
+          {showBatchPhotos && (
+            <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-xl">
+              <h3 className="font-semibold text-purple-900 mb-2 text-sm">Batch Photo Upload</h3>
+              <p className="text-xs text-purple-700 mb-3">
+                Paste one row per line: <code className="bg-purple-100 px-1 rounded">email@example.com,https://photo-url.jpg</code>
+              </p>
+              <textarea
+                className="w-full border border-purple-300 rounded-lg p-3 text-sm font-mono resize-y min-h-[120px] bg-white"
+                placeholder={"jane@example.com,https://cdn.example.com/jane.jpg\njohn@example.com,https://cdn.example.com/john.jpg"}
+                value={batchPhotoCsv}
+                onChange={e => setBatchPhotoCsv(e.target.value)}
+              />
+              <div className="flex gap-3 mt-3 items-center">
+                <button
+                  onClick={handleBatchPhotoUpload}
+                  disabled={batchPhotoRunning || !batchPhotoCsv.trim()}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {batchPhotoRunning && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                  {batchPhotoRunning ? 'Uploading…' : 'Apply Photos'}
+                </button>
+                <button onClick={() => { setShowBatchPhotos(false); setBatchPhotoCsv(''); setBatchPhotoResults(null); }} className="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+              </div>
+              {batchPhotoResults && (
+                <div className="mt-3 text-sm">
+                  <p className="text-green-700 font-medium">✅ {batchPhotoResults.done} photos applied, {batchPhotoResults.skipped} skipped</p>
+                  {batchPhotoResults.errors.length > 0 && (
+                    <ul className="mt-1 text-red-600 text-xs space-y-0.5">
+                      {batchPhotoResults.errors.map((e, i) => <li key={i}>• {e}</li>)}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Search Input */}
           <div className="mb-4 sm:mb-6">

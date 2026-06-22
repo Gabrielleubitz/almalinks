@@ -302,6 +302,28 @@ export const useAuth = () => {
         if (profileData?.twitter !== undefined && profileData.twitter !== null) updatedData.twitter = profileData.twitter;
         if (profileData?.skills !== undefined && profileData.skills !== null) updatedData.skills = profileData.skills;
         
+        // Track first login — written once, never overwritten
+        if (!existingData.firstLoginAt) {
+          updatedData.firstLoginAt = serverTimestamp();
+          console.log('📅 Recording first login for', firebaseUser.uid);
+        }
+
+        // Track profile completion — set once when all key fields are present
+        if (!existingData.profileCompletedAt) {
+          const merged = { ...existingData, ...updatedData };
+          const isComplete = !!(
+            (merged.displayName || merged.name) &&
+            merged.phone &&
+            (merged.company || merged.organization) &&
+            (merged.bioTitle || merged.work) &&
+            (merged.linkedinUsername || merged.linkedin || merged.linkedinUrl)
+          );
+          if (isComplete) {
+            updatedData.profileCompletedAt = serverTimestamp();
+            console.log('✅ Profile marked as complete for', firebaseUser.uid);
+          }
+        }
+
         // Sanitize to remove any undefined values (safety check)
         const { sanitizeForFirestore } = await import('../utils/firestoreHelpers');
         const sanitizedData = sanitizeForFirestore(updatedData);

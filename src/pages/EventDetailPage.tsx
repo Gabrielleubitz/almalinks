@@ -265,6 +265,19 @@ const EventDetailPage: React.FC = () => {
       await checkRegistrationStatus(event.id);
       setSuccess("Registration pending approval. We'll email you the event details once confirmed.");
       setTimeout(() => setSuccess(null), 8000);
+
+      // Notify admins — non-blocking, fire-and-forget
+      fetch('/api/notify-event-registration', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId: event.id,
+          eventName: event.name,
+          userId: user.uid,
+          userName: user.displayName || '',
+          userEmail: user.email || '',
+        }),
+      }).catch(() => {/* non-blocking */});
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to register for event. Please try again.';
       setError(message);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { getIdToken } from 'firebase/auth';
-import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, UserCheck, CheckCircle, Search, List, LayoutGrid, UserPlus, RefreshCw } from 'lucide-react';
+import { Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, AlertTriangle, X, Mail, Phone, Briefcase, Download, Linkedin, ChevronDown, UserCheck, CheckCircle, Search, List, LayoutGrid, UserPlus, RefreshCw, Bell } from 'lucide-react';
 import BackButton from '../../components/ui/BackButton';
 import { EventService, EventData } from '../../services/eventService';
 import { UserService } from '../../services/userService';
@@ -58,6 +58,8 @@ const EventManagement: React.FC = () => {
   const [eventSyncStatus, setEventSyncStatus] = useState<
     Record<string, { ok: boolean; message: string; hint?: string }>
   >({});
+  const [sendingRsvpReminder, setSendingRsvpReminder] = useState<string | null>(null);
+  const [rsvpReminderResults, setRsvpReminderResults] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadEvents();
@@ -67,10 +69,57 @@ const EventManagement: React.FC = () => {
     try {
       const eventsData = await EventService.getAllEvents();
       setEvents(eventsData);
+
+      // Auto-mark events as completed if their date passed more than 24 hours ago
+      // and they're still set to 'active'. Non-blocking background operation.
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+      const toComplete = eventsData.filter(
+        (e) => e.status === 'active' && new Date(e.date).getTime() < cutoff
+      );
+      if (toComplete.length > 0) {
+        console.log(`[EventManagement] Auto-completing ${toComplete.length} past event(s)`);
+        for (const e of toComplete) {
+          EventService.updateEventStatus(e.id, 'completed').catch((err) =>
+            console.warn('[EventManagement] Auto-complete failed for', e.id, err?.message)
+          );
+        }
+        setEvents((prev) =>
+          prev.map((e) =>
+            toComplete.some((tc) => tc.id === e.id) ? { ...e, status: 'completed' } : e
+          )
+        );
+      }
     } catch (error) {
       console.error('❌ Error loading events:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendRsvpReminder = async (eventId: string, eventName: string) => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) return;
+    setSendingRsvpReminder(eventId);
+    try {
+      const idToken = await getIdToken(firebaseUser);
+      const res = await fetch('/api/send-rsvp-reminder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ eventId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        const msg = data.skipped
+          ? `Skipped: ${data.reason}`
+          : `Sent to ${data.sent} of ${data.total} registrant(s)`;
+        setRsvpReminderResults((prev) => ({ ...prev, [eventId]: msg }));
+      } else {
+        setRsvpReminderResults((prev) => ({ ...prev, [eventId]: `Failed: ${data.error || res.status}` }));
+      }
+    } catch (err) {
+      setRsvpReminderResults((prev) => ({ ...prev, [eventId]: 'Network error' }));
+    } finally {
+      setSendingRsvpReminder(null);
     }
   };
 
@@ -777,6 +826,22 @@ const EventManagement: React.FC = () => {
                               <Mail className="h-4 w-4" />
                             )}
                             <span className="hidden md:inline">Thank-you</span>
+                          </button>
+                        )}
+                        {event.status === 'active' && (
+                          <button
+                            type="button"
+                            onClick={() => handleSendRsvpReminder(event.id, event.name)}
+                            disabled={sendingRsvpReminder === event.id}
+                            className="text-amber-700 hover:text-amber-900 p-1.5 rounded font-medium flex items-center gap-1 disabled:opacity-50"
+                            title={rsvpReminderResults[event.id] || 'Send RSVP reminder to approved registrants'}
+                          >
+                            {sendingRsvpReminder === event.id ? (
+                              <div className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Bell className="h-4 w-4" />
+                            )}
+                            <span className="hidden md:inline">Remind</span>
                           </button>
                         )}
                         <button type="button" onClick={() => handleDeleteClick(event)} disabled={deletingEvent === event.id} className="text-red-500 hover:text-red-700 p-1.5 rounded disabled:opacity-50" title="Delete">

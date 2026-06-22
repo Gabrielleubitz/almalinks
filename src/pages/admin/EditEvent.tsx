@@ -372,6 +372,28 @@ const EditEvent: React.FC = () => {
           console.warn('[EditEvent] HubSpot deal sync failed:', syncResult.error);
         }
 
+        // Notify registered attendees if key event details changed (only for active events with registrants)
+        const wasAlreadyActive = originalEvent?.status === 'active' && formData.status === 'active';
+        if (wasAlreadyActive && originalEvent) {
+          const significantChanges: Record<string, { from: string; to: string }> = {};
+          if (originalEvent.date !== formData.date && formData.date)
+            significantChanges.date = { from: originalEvent.date || '', to: formData.date };
+          if ((originalEvent.location || '') !== (formData.location || '') && formData.location)
+            significantChanges.location = { from: originalEvent.location || '', to: formData.location };
+          if ((originalPrivateDetails?.meetingUrl || '') !== (formData.meetingUrl || '') && formData.meetingUrl)
+            significantChanges.meetingUrl = { from: originalPrivateDetails?.meetingUrl || '', to: formData.meetingUrl };
+          if ((originalPrivateDetails?.venueAddress || '') !== (formData.venueAddress || '') && formData.venueAddress)
+            significantChanges.venueAddress = { from: originalPrivateDetails?.venueAddress || '', to: formData.venueAddress };
+
+          if (Object.keys(significantChanges).length > 0) {
+            fetch('/api/notify-event-change', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+              body: JSON.stringify({ eventId, eventName: formData.name, changes: significantChanges }),
+            }).catch(() => {/* non-blocking */});
+          }
+        }
+
         // Send announcement only when event transitions into active.
         const becameActive = originalEvent?.status !== 'active' && formData.status === 'active';
         if (becameActive) {
