@@ -334,7 +334,7 @@ export const useAuth = () => {
         ...(profileData.firstName !== undefined && { firstName: profileData.firstName }),
         ...(profileData.lastName !== undefined && { lastName: profileData.lastName }),
         ...(profileData.phone && { phone: profileData.phone }),
-        ...(profileData.company && { company: profileData.company }),
+        ...(profileData.company && { company: profileData.company, organization: profileData.company }),
         ...(profileData.work && { work: profileData.work }),
         ...(profileData.linkedinUsername && { linkedinUsername: profileData.linkedinUsername }),
         ...(profileData.position && { position: profileData.position }),

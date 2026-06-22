@@ -4,6 +4,7 @@ import { Calendar, MapPin, ArrowRight, Clock, Users, RotateCcw, User, Mail, Phon
 import { EventService, EventData } from '../services/eventService';
 import { ConnectionService } from '../services/connectionService';
 import { useAuth } from '../hooks/useAuth';
+import { apiRequest } from '../utils/apiClient';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ConnectionsCard from '../components/dashboard/ConnectionsCard';
@@ -339,15 +340,14 @@ const DashboardPage: React.FC = () => {
       const formattedLinkedin = editFormData.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '');
       const formattedTwitter = editFormData.twitter.replace(/^(https?:\/\/)?(www\.)?(twitter\.com\/|x\.com\/)@?/i, '').replace(/^@/, '');
       const formattedWebsite = editFormData.website && !editFormData.website.startsWith('http') ? `https://${editFormData.website}` : editFormData.website;
-      await updateProfile({
+      const profilePayload = {
         name: editFormData.name.trim(),
+        fullName: editFormData.name.trim(),
         phone: formattedPhone,
         work: editFormData.work.trim(),
         company: editFormData.company.trim(),
         linkedinUsername: formattedLinkedin,
         position: editFormData.position,
-        profileImage: profileImageUrl,
-        profileImageCrop: profileImageCrop ?? undefined,
         bioTitle: editFormData.bioTitle.trim(),
         bio: editFormData.bio.trim(),
         city: editFormData.city.trim(),
@@ -355,8 +355,26 @@ const DashboardPage: React.FC = () => {
         timezone: editFormData.timezone,
         website: formattedWebsite,
         twitter: formattedTwitter.trim(),
-        skills: editFormData.skills
+        skills: editFormData.skills,
+      };
+      await updateProfile({
+        ...profilePayload,
+        profileImage: profileImageUrl,
+        profileImageCrop: profileImageCrop ?? undefined,
       });
+      try {
+        const res = await apiRequest('/api/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(profilePayload),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          console.warn('HubSpot sync after dashboard profile save failed (non-blocking):', (data as { error?: string }).error);
+        }
+      } catch (hubErr) {
+        console.warn('HubSpot sync after dashboard profile save failed (non-blocking):', hubErr);
+      }
       setLastSavedAt(Date.now());
     } catch (error: any) {
       console.error('❌ Error updating profile:', error);
