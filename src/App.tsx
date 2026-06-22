@@ -53,12 +53,14 @@ import ActivityTracker from './components/ActivityTracker';
 import OnboardingTour from './components/onboarding/OnboardingTour';
 import CommunityProtectedRoute from './community/components/CommunityProtectedRoute';
 import CommunityHomePage from './community/pages/CommunityHomePage';
+import HubSpotFormExclude from './components/HubSpotFormExclude';
 
 function App() {
   const { user, loading: authLoading } = useAuth();
 
   return (
     <Router>
+      <HubSpotFormExclude />
       <ActivityTracker />
       <TermsGate user={user} authLoading={authLoading} />
       <div className="min-h-screen flex flex-col">

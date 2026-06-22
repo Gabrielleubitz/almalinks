@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import BackButton from '../components/ui/BackButton';
 import { User, Phone, Briefcase, ArrowRight, ArrowLeft, CheckCircle, ChevronDown, Building2, Linkedin } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { hubspotDoNotCollectFormProps } from '../utils/hubspotForm';
 import { apiRequest } from '../utils/apiClient';
 import { extractLinkedInVanity } from '../utils/linkedInUrl';
 import logoSvg from '../assets/alma-links-logo.svg';
@@ -307,7 +308,7 @@ const CompleteProfilePage: React.FC = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" {...hubspotDoNotCollectFormProps}>
             {/* First Name */}
             <div>
               <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">

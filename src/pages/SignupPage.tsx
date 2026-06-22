@@ -7,7 +7,7 @@ import { extractLinkedInVanity } from '../utils/linkedInUrl';
 import logoSvg from '../assets/alma-links-logo.svg';
 import RichTextBioEditor from '../components/profile/RichTextBioEditor';
 import AlmaAuthCard from '../components/ui/AlmaAuthCard';
-import MultiSelectField from '../components/form/MultiSelectField';
+import { hubspotDoNotCollectFormProps } from '../utils/hubspotForm';
 import {
   SPECIALTY_OPTIONS,
   INDUSTRY_OPTIONS,
@@ -398,7 +398,7 @@ const SignupPage: React.FC = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" {...hubspotDoNotCollectFormProps}>
             {/* First Name */}
             <div>
               <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
