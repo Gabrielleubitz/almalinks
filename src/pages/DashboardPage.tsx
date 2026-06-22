@@ -113,9 +113,10 @@ const DashboardPage: React.FC = () => {
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveInFlightRef = useRef(false);
 
   const navigate = useNavigate();
-  const { user, isAdmin, isInUserView, switchToAdminView, updateProfile } = useAuth();
+  const { user, isAdmin, isInUserView, switchToAdminView, updateProfile, reloadUserProfile } = useAuth();
   const profileSectionRef = useRef<HTMLDivElement>(null);
 
   // Calculate profile completion percentage
@@ -322,21 +323,23 @@ const DashboardPage: React.FC = () => {
     }
   }, [events, user?.uid]);
 
-  // Auto-save: perform save without closing editor; sets lastSavedAt on success
-  const performSave = async () => {
-    if (!user) return;
-    if (!editFormData.name.trim()) { setProfileUpdateError('Name is required'); return; }
-    if (!editFormData.email.trim()) { setProfileUpdateError('Email is required'); return; }
-    if (!editFormData.phoneNumber.trim()) { setProfileUpdateError('Phone is required'); return; }
-    if (!editFormData.work.trim()) { setProfileUpdateError('Work information is required'); return; }
-    if (!editFormData.linkedinUsername.trim()) { setProfileUpdateError('LinkedIn username is required'); return; }
-    if (!editFormData.position) { setProfileUpdateError('Position is required'); return; }
+  // Auto-save: persist via PATCH /api/profile (Firestore + HubSpot), then refresh local user state.
+  const performSave = async (): Promise<boolean> => {
+    if (!user || saveInFlightRef.current) return false;
+    if (!editFormData.name.trim()) { setProfileUpdateError('Name is required'); return false; }
+    if (!editFormData.email.trim()) { setProfileUpdateError('Email is required'); return false; }
+    if (!editFormData.phoneNumber.trim()) { setProfileUpdateError('Phone is required'); return false; }
+    if (!editFormData.work.trim()) { setProfileUpdateError('Work information is required'); return false; }
+    if (!editFormData.linkedinUsername.trim()) { setProfileUpdateError('LinkedIn username is required'); return false; }
+    if (!editFormData.position) { setProfileUpdateError('Position is required'); return false; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(editFormData.email)) { setProfileUpdateError('Please enter a valid email address'); return; }
+    if (!emailRegex.test(editFormData.email)) { setProfileUpdateError('Please enter a valid email address'); return false; }
     try {
       const formattedPhone = formatPhoneNumber(selectedCountryCode, editFormData.phoneNumber);
+      saveInFlightRef.current = true;
       setProfileUpdateLoading(true);
       setProfileUpdateError(null);
+      setProfileUpdateSuccess(null);
       const formattedLinkedin = editFormData.linkedinUsername.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\//i, '').replace(/\/$/, '');
       const formattedTwitter = editFormData.twitter.replace(/^(https?:\/\/)?(www\.)?(twitter\.com\/|x\.com\/)@?/i, '').replace(/^@/, '');
       const formattedWebsite = editFormData.website && !editFormData.website.startsWith('http') ? `https://${editFormData.website}` : editFormData.website;
@@ -357,44 +360,55 @@ const DashboardPage: React.FC = () => {
         twitter: formattedTwitter.trim(),
         skills: editFormData.skills,
       };
-      await updateProfile({
-        ...profilePayload,
-        profileImage: profileImageUrl,
-        profileImageCrop: profileImageCrop ?? undefined,
+      const res = await apiRequest('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profilePayload),
       });
-      try {
-        const res = await apiRequest('/api/profile', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(profilePayload),
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          console.warn('HubSpot sync after dashboard profile save failed (non-blocking):', (data as { error?: string }).error);
-        }
-      } catch (hubErr) {
-        console.warn('HubSpot sync after dashboard profile save failed (non-blocking):', hubErr);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error((data as { error?: string }).error || 'Failed to save profile');
       }
+      if (profileImageUrl !== undefined || profileImageCrop !== undefined) {
+        await updateProfile({
+          profileImage: profileImageUrl,
+          profileImageCrop: profileImageCrop ?? undefined,
+        });
+      }
+      await reloadUserProfile();
       setLastSavedAt(Date.now());
+      setProfileUpdateSuccess('Profile saved');
+      return true;
     } catch (error: any) {
       console.error('❌ Error updating profile:', error);
       setProfileUpdateError(error.message || 'Failed to update profile. Please try again.');
+      return false;
     } finally {
+      saveInFlightRef.current = false;
       setProfileUpdateLoading(false);
     }
   };
 
-  const scheduleAutoSave = () => {
-    if (autoSaveDebounceRef.current) clearTimeout(autoSaveDebounceRef.current);
-    autoSaveDebounceRef.current = setTimeout(performSave, 1200);
-  };
-
-  const handleBlurSave = () => {
+  const flushPendingSave = async (): Promise<boolean> => {
     if (autoSaveDebounceRef.current) {
       clearTimeout(autoSaveDebounceRef.current);
       autoSaveDebounceRef.current = null;
     }
-    performSave();
+    return performSave();
+  };
+
+  const scheduleAutoSave = () => {
+    if (autoSaveDebounceRef.current) clearTimeout(autoSaveDebounceRef.current);
+    autoSaveDebounceRef.current = setTimeout(() => { void performSave(); }, 1200);
+  };
+
+  const handleBlurSave = () => {
+    void flushPendingSave();
+  };
+
+  const handleDoneEditing = async () => {
+    const saved = await flushPendingSave();
+    if (saved) setIsEditingProfile(false);
   };
 
   // Handle edit profile form changes
@@ -420,6 +434,10 @@ const DashboardPage: React.FC = () => {
 
   // Cancel editing profile
   const handleCancelEdit = () => {
+    if (autoSaveDebounceRef.current) {
+      clearTimeout(autoSaveDebounceRef.current);
+      autoSaveDebounceRef.current = null;
+    }
     setIsEditingProfile(false);
     setProfileUpdateError(null);
     setProfileUpdateSuccess(null);
@@ -1111,7 +1129,7 @@ const DashboardPage: React.FC = () => {
                                 </div>
                               </button>
                               <button
-                                onClick={() => setIsEditingProfile(false)}
+                                onClick={() => { void handleDoneEditing(); }}
                                 disabled={profileUpdateLoading}
                                 className="bg-gradient-to-r from-brand-blue-dark to-brand-blue-light text-white px-6 sm:px-8 py-3 rounded-xl hover:shadow-lg active:shadow-md transition-all duration-300 font-medium flex items-center justify-center sm:justify-start space-x-2 disabled:opacity-50 min-h-[44px] sm:min-h-0 touch-manipulation w-full sm:w-auto"
                               >

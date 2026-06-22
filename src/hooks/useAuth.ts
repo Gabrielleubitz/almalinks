@@ -330,7 +330,7 @@ export const useAuth = () => {
       const userDocRef = doc(db, 'users', user.uid);
       
       const updateData = {
-        ...(profileData.name && { name: profileData.name }),
+        ...(profileData.name && { name: profileData.name, displayName: profileData.name }),
         ...(profileData.firstName !== undefined && { firstName: profileData.firstName }),
         ...(profileData.lastName !== undefined && { lastName: profileData.lastName }),
         ...(profileData.phone && { phone: profileData.phone }),
@@ -359,6 +359,7 @@ export const useAuth = () => {
       setUser(prev => prev ? {
         ...prev,
         displayName: profileData.name || prev.displayName,
+        ...(profileData.name && { name: profileData.name }),
         ...(profileData.firstName !== undefined && { firstName: profileData.firstName }),
         ...(profileData.lastName !== undefined && { lastName: profileData.lastName }),
         phone: profileData.phone || prev.phone,
@@ -385,6 +386,13 @@ export const useAuth = () => {
       console.error('❌ Error updating profile:', error);
       throw error;
     }
+  };
+
+  const reloadUserProfile = async () => {
+    const uid = user?.uid || auth.currentUser?.uid;
+    if (!uid) return;
+    const userProfile = await getUserProfile(uid);
+    if (userProfile) setUser(userProfile);
   };
 
   const markOnboardingComplete = async () => {
@@ -1045,6 +1053,7 @@ export const useAuth = () => {
     roleLoading,
     checkProfileComplete,
     updateProfile: updateUserProfile,
+    reloadUserProfile,
     markOnboardingComplete,
     // Admin view mode functions
     adminViewMode,
