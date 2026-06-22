@@ -17,6 +17,7 @@ import {
   Camera,
   Trash2,
   Link,
+  RefreshCw,
 } from 'lucide-react';
 import { auth } from '../../firebase/config';
 import { useAuth } from '../../hooks/useAuth';
@@ -52,6 +53,9 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
   const [setupLinkBusy, setSetupLinkBusy] = useState(false);
   const [setupLinkSent, setSetupLinkSent] = useState(false);
   const [setupLinkError, setSetupLinkError] = useState<string | null>(null);
+
+  const [hubspotSyncBusy, setHubspotSyncBusy] = useState(false);
+  const [hubspotSyncResult, setHubspotSyncResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [formData, setFormData] = useState<UserProfileForm>({
     firstName: '',
     lastName: '',
@@ -137,6 +141,33 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       showToast('Temporary password copied to clipboard.', 'success');
     } catch (_) {
       showToast('Could not copy automatically. Select and copy manually.', 'error');
+    }
+  };
+
+  const handleHubspotSync = async () => {
+    if (!userId || !auth.currentUser) return;
+    setHubspotSyncBusy(true);
+    setHubspotSyncResult(null);
+    try {
+      const idToken = await auth.currentUser.getIdToken();
+      const res = await fetch('/api/admin-sync-user-hubspot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ adminId: auth.currentUser.uid, targetUserId: userId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.hubspotError || data.error || 'Sync failed');
+      }
+      setHubspotSyncResult({ ok: true, message: 'Profile synced to HubSpot successfully.' });
+      showToast('HubSpot sync complete', 'success');
+      logAdminAction('Force-synced member profile to HubSpot', { targetUserId: userId });
+    } catch (err: any) {
+      const msg = err?.message || 'Sync failed';
+      setHubspotSyncResult({ ok: false, message: msg });
+      showToast(msg, 'error');
+    } finally {
+      setHubspotSyncBusy(false);
     }
   };
 
@@ -823,6 +854,42 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
                     <>
                       <Link className="h-4 w-4" />
                       <span>Email setup link to member</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* HubSpot sync */}
+              <div className="p-5 border border-gray-200 rounded-xl">
+                <h4 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 text-orange-500" />
+                  Sync to HubSpot
+                </h4>
+                <p className="text-sm text-gray-600 mb-3">
+                  Push all profile fields (name, company, job title, city, country, LinkedIn, bio, etc.) from Firestore to HubSpot immediately.
+                </p>
+
+                {hubspotSyncResult && (
+                  <div className={`mb-3 p-3 rounded-lg text-sm ${hubspotSyncResult.ok ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'}`}>
+                    {hubspotSyncResult.message}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleHubspotSync}
+                  disabled={hubspotSyncBusy}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 disabled:opacity-50"
+                >
+                  {hubspotSyncBusy ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Syncing…</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4" />
+                      <span>Sync profile to HubSpot</span>
                     </>
                   )}
                 </button>
