@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import BackButton from '../../components/ui/BackButton';
 import { 
@@ -98,7 +98,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
     type: 'success'
   });
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
-  const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ visible: true, message, type });
@@ -340,24 +340,17 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
     }
   };
 
-  const scheduleAutoSave = () => {
-    if (autoSaveDebounceRef.current) clearTimeout(autoSaveDebounceRef.current);
-    autoSaveDebounceRef.current = setTimeout(performSave, 1200);
-  };
-
-  const handleBlurSave = () => {
-    if (autoSaveDebounceRef.current) {
-      clearTimeout(autoSaveDebounceRef.current);
-      autoSaveDebounceRef.current = null;
-    }
-    performSave();
+  const handleDiscardChanges = async () => {
+    await loadUserProfile(true);
+    setHasUnsavedChanges(false);
+    showToast('Changes discarded', 'success');
   };
 
   const updateFormData = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setTouchedFields(prev => new Set([...prev, field]));
     if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
-    scheduleAutoSave();
+    setHasUnsavedChanges(true);
   };
 
   const performSave = async () => {
@@ -457,6 +450,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       };
       setProfile(updatedProfile);
       setLastSavedAt(Date.now());
+      setHasUnsavedChanges(false);
       showToast('Profile updated', 'success');
       await loadUserProfile(true);
 
@@ -477,6 +471,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
   const handleAvatarUpload = async (imageUrl: string, crop?: { scale: number; panX: number; panY: number }) => {
     setProfile(prev => prev ? { ...prev, avatarUrl: imageUrl, profileImage: imageUrl, profileImageCrop: crop ?? null } : null);
     setProfilePictureUploadError(null);
+    setHasUnsavedChanges(true);
     // Push the new picture URL to HubSpot immediately after upload
     if (userId && auth.currentUser) {
       try {
@@ -502,6 +497,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
     try {
       await deleteProfilePicture(userId, (profile as any)?.profileImagePublicId ?? undefined);
       setProfile(prev => prev ? { ...prev, avatarUrl: undefined, profileImage: undefined, profileImagePublicId: undefined, profileImageCrop: undefined } : null);
+      setHasUnsavedChanges(true);
     } catch (error: any) {
       console.error('Error deleting avatar:', error);
       showToast('Failed to delete profile picture', 'error');
@@ -511,7 +507,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
   const handleCoverPhotoSuccess = (url: string) => {
     setProfile(prev => prev ? { ...prev, coverPhotoUrl: url } : null);
     setCoverPhotoUploadError(null);
-    scheduleAutoSave();
+    setHasUnsavedChanges(true);
   };
   const handleCoverPhotoError = (message: string) => {
     setCoverPhotoUploadError(message);
@@ -528,7 +524,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
   const handleCoverTemplateSelect = (url: string) => {
     setProfile(prev => prev ? { ...prev, coverPhotoUrl: url } : null);
     setCoverPhotoUploadError(null);
-    scheduleAutoSave();
+    setHasUnsavedChanges(true);
   };
 
   const getRoleIcon = (role: string) => {
@@ -639,7 +635,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
           <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Edit User Profile</h2>
-              <p className="text-gray-600 mt-1">Changes save automatically when you click away or after you stop typing.</p>
+              <p className="text-gray-600 mt-1">Make your changes, then click <strong>Save changes</strong> in the bar at the bottom.</p>
             </div>
             <div className="flex items-center gap-4">
               <SavedIndicator savedAt={lastSavedAt} saving={saving} />
@@ -726,7 +722,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
                 <button
                   key={role}
                   type="button"
-                  onClick={() => { setUserRole(role); scheduleAutoSave(); }}
+                  onClick={() => { setUserRole(role); setHasUnsavedChanges(true); }}
                   className={`p-3 rounded-xl border-2 transition-all duration-200 ${
                     userRole === role
                       ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -742,14 +738,8 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
             </div>
           </div>
 
-          {/* Form: save when focus leaves (click away) */}
-          <div
-            className="space-y-8"
-            onBlur={(e) => {
-              const related = e.relatedTarget as Node | null;
-              if (!related || !e.currentTarget.contains(related)) handleBlurSave();
-            }}
-          >
+          {/* Form: changes are saved via the floating Save bar */}
+          <div className="space-y-8">
             {/* Basic Information Section */}
             <div className="p-6 border border-gray-200 rounded-xl">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -988,7 +978,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
 
           </div>
 
-          {/* Done (Mobile) - changes auto-save */}
+          {/* Done (Mobile) */}
           <div className="mt-8 md:hidden flex flex-col gap-3">
             <SavedIndicator savedAt={lastSavedAt} saving={saving} />
             <button
@@ -999,8 +989,53 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
               <span>Done</span>
             </button>
           </div>
+
+          {/* Spacer so the floating save bar never covers content */}
+          {hasUnsavedChanges && <div className="h-28" aria-hidden="true" />}
         </div>
       </div>
+
+      {/* Floating save bar - follows the admin and appears only when there are unsaved changes */}
+      {hasUnsavedChanges && (
+        <div className="fixed inset-x-0 bottom-0 z-50 px-4 pb-4 pointer-events-none">
+          <div className="max-w-4xl mx-auto pointer-events-auto">
+            <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white/95 backdrop-blur shadow-2xl px-5 py-4">
+              <div className="flex items-center gap-2 text-sm text-gray-700">
+                <span className="h-2.5 w-2.5 rounded-full bg-amber-400 animate-pulse" />
+                <span className="font-medium">You have unsaved changes</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleDiscardChanges}
+                  disabled={saving}
+                  className="px-4 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Discard
+                </button>
+                <button
+                  type="button"
+                  onClick={performSave}
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-brand-dark text-white text-sm font-semibold hover:bg-brand-mid disabled:opacity-50"
+                >
+                  {saving ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Saving…</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-5 w-5" />
+                      <span>Save changes</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
