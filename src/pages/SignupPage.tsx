@@ -8,6 +8,7 @@ import logoSvg from '../assets/alma-links-logo.svg';
 import RichTextBioEditor from '../components/profile/RichTextBioEditor';
 import AlmaAuthCard from '../components/ui/AlmaAuthCard';
 import { hubspotDoNotCollectFormProps } from '../utils/hubspotForm';
+import MultiSelectField from '../components/form/MultiSelectField';
 import {
   SPECIALTY_OPTIONS,
   INDUSTRY_OPTIONS,
