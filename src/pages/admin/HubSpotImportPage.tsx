@@ -129,6 +129,7 @@ const HubSpotImportPage: React.FC = () => {
   const [removing, setRemoving] = useState(false);
   const [removeResult, setRemoveResult] = useState<Record<string, unknown> | null>(null);
   const [pullingAll, setPullingAll] = useState(false);
+  const [importing2026, setImporting2026] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
   const [deletingDeals, setDeletingDeals] = useState(false);
   const [deletingEventDeals, setDeletingEventDeals] = useState(false);
@@ -450,10 +451,14 @@ const HubSpotImportPage: React.FC = () => {
     setLastResult(null);
     setActionAlert(null);
     try {
-      const res = await apiRequest('/api/create-events-from-deals', { method: 'POST' });
+      const res = await apiRequest('/api/create-events-from-deals', {
+        method: 'POST',
+        body: JSON.stringify({ updateExisting: true }),
+      });
       const data = await res.json().catch(() => ({})) as Record<string, unknown> & {
         error?: string;
         created?: number;
+        updated?: number;
         skipped?: number;
         totalDeals?: number;
       };
@@ -463,10 +468,11 @@ const HubSpotImportPage: React.FC = () => {
       setResult('events', ok, data, errMsg);
       if (ok) {
         const created = typeof data.created === 'number' ? data.created : 0;
+        const updated = typeof data.updated === 'number' ? data.updated : 0;
         const skipped = typeof data.skipped === 'number' ? data.skipped : 0;
         setActionAlert({
           ok: true,
-          message: `Created ${created} past event${created === 1 ? '' : 's'} (${skipped} skipped — already on the site).`,
+          message: `Created ${created} event${created === 1 ? '' : 's'}, updated ${updated} (${skipped} skipped).`,
         });
         setSyncSuccessModal({
           title: 'Past events created',
@@ -475,7 +481,8 @@ const HubSpotImportPage: React.FC = () => {
               heading: 'Events from deals',
               lines: [
                 { label: 'Events created', value: String(created) },
-                { label: 'Skipped (already existed)', value: String(skipped) },
+                { label: 'Events updated', value: String(updated) },
+                { label: 'Skipped (no update)', value: String(skipped) },
                 {
                   label: 'Deals considered',
                   value: typeof data.totalDeals === 'number' ? String(data.totalDeals) : '—',
@@ -502,6 +509,95 @@ const HubSpotImportPage: React.FC = () => {
     }
   };
 
+  /** Pull all HubSpot deals with year=2026, then create/update matching past events on the site. */
+  const import2026Events = async () => {
+    setImporting2026(true);
+    setDealsResult(null);
+    setCreateFromDealsResult(null);
+    setLastResult(null);
+    setActionAlert(null);
+    try {
+      const dealsRes = await apiRequest('/api/sync-hubspot-deals', {
+        method: 'POST',
+        body: JSON.stringify({ year: '2026' }),
+      });
+      const dealsData = await dealsRes.json().catch(() => ({})) as Record<string, unknown> & {
+        error?: string;
+        totalUpserted?: number;
+      };
+      setDealsResult(dealsData);
+      const dealsOk = dealsRes.ok && !dealsData.error;
+
+      const eventsRes = await apiRequest('/api/create-events-from-deals', {
+        method: 'POST',
+        body: JSON.stringify({ year: '2026', updateExisting: true }),
+      });
+      const eventsData = await eventsRes.json().catch(() => ({})) as Record<string, unknown> & {
+        error?: string;
+        created?: number;
+        updated?: number;
+        skipped?: number;
+        filteredOut?: number;
+        warnings?: string[];
+      };
+      setCreateFromDealsResult(eventsData);
+      const eventsOk = eventsRes.ok && !eventsData.error;
+      const errMsg = dealsData.error || eventsData.error || (!dealsOk || !eventsOk ? 'Import failed' : undefined);
+
+      setLastResult({
+        type: 'events',
+        ok: dealsOk && eventsOk,
+        data: { deals: dealsData, events: eventsData },
+        error: errMsg,
+      });
+
+      if (dealsOk && eventsOk) {
+        await fetchDeals();
+        const dealCount = typeof dealsData.totalUpserted === 'number' ? dealsData.totalUpserted : 0;
+        const created = typeof eventsData.created === 'number' ? eventsData.created : 0;
+        const updated = typeof eventsData.updated === 'number' ? eventsData.updated : 0;
+        setActionAlert({
+          ok: true,
+          message: `2026 events: pulled ${dealCount} deal${dealCount === 1 ? '' : 's'} from HubSpot, created ${created}, updated ${updated} on the site.`,
+        });
+        setSyncSuccessModal({
+          title: '2026 events imported',
+          sections: [
+            {
+              heading: 'HubSpot deals (year 2026)',
+              lines: [{ label: 'Deals pulled from HubSpot', value: String(dealCount) }],
+            },
+            {
+              heading: 'Events on AlmaLinks',
+              lines: [
+                { label: 'New events created', value: String(created) },
+                { label: 'Existing events updated', value: String(updated) },
+                {
+                  label: 'Skipped',
+                  value: typeof eventsData.skipped === 'number' ? String(eventsData.skipped) : '0',
+                },
+              ],
+            },
+          ],
+          footnote: eventsData.warnings?.[0],
+        });
+      } else {
+        setActionAlert({
+          ok: false,
+          message: errMsg || '2026 event import failed. Test HubSpot connection, then try again.',
+        });
+      }
+      scrollToResults();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Request failed';
+      setActionAlert({ ok: false, message: msg });
+      setLastResult({ type: 'events', ok: false, data: {}, error: msg });
+      scrollToResults();
+    } finally {
+      setImporting2026(false);
+    }
+  };
+
   const pullAll = async () => {
     setPullingAll(true);
     setSyncResult(null);
@@ -520,7 +616,10 @@ const HubSpotImportPage: React.FC = () => {
       const dealsRes = await apiRequest('/api/sync-hubspot-deals', { method: 'POST' });
       const dealsData = await dealsRes.json().catch(() => ({})) as Record<string, unknown>;
       setDealsResult(dealsData);
-      const eventsRes = await apiRequest('/api/create-events-from-deals', { method: 'POST' });
+      const eventsRes = await apiRequest('/api/create-events-from-deals', {
+        method: 'POST',
+        body: JSON.stringify({ updateExisting: true }),
+      });
       const eventsData = await eventsRes.json().catch(() => ({})) as Record<string, unknown>;
       setCreateFromDealsResult(eventsData);
       const syncOk = syncRes.ok && syncData.ok !== false && !syncData.error;
@@ -674,7 +773,7 @@ const HubSpotImportPage: React.FC = () => {
     }
   };
 
-  const busy = syncing || syncingDeals || creatingFromDeals || removing || pullingAll || deletingAll || deletingDeals || deletingEventDeals || deletingUsersOnly;
+  const busy = syncing || syncingDeals || creatingFromDeals || removing || pullingAll || importing2026 || deletingAll || deletingDeals || deletingEventDeals || deletingUsersOnly;
 
   const actionCards: ActionCard[] = [
     {
@@ -816,6 +915,14 @@ const HubSpotImportPage: React.FC = () => {
           </div>
         )}
         <div className="flex flex-wrap gap-3 mb-2">
+          <button
+            onClick={import2026Events}
+            disabled={busy}
+            className="inline-flex items-center gap-2 px-5 py-3 bg-emerald-600 text-white rounded-xl font-medium shadow-sm hover:bg-emerald-700 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {importing2026 ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CalendarCheck className="h-4 w-4" />}
+            Import all 2026 events from HubSpot
+          </button>
           <button
             onClick={pullAll}
             disabled={busy}
