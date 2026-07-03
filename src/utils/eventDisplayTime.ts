@@ -55,7 +55,8 @@ function formatDateLineInZone(iso: string, timeZone: string): string {
   const dayNum = Number(
     new Intl.DateTimeFormat('en-US', { day: 'numeric', timeZone }).format(d)
   );
-  return `${weekday}, ${month} ${dayWithOrdinal(dayNum)}`;
+  const year = new Intl.DateTimeFormat('en-US', { year: 'numeric', timeZone }).format(d);
+  return `${weekday}, ${month} ${dayWithOrdinal(dayNum)}, ${year}`;
 }
 
 function formatTimeLineInZone(iso: string, timeZone: string): string {

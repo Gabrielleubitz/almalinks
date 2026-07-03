@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BackButton from '../../components/ui/BackButton';
 import {
@@ -142,6 +142,8 @@ const HubSpotImportPage: React.FC = () => {
     sections: { heading?: string; lines: { label: string; value: string }[] }[];
     footnote?: string;
   } | null>(null);
+  const [actionAlert, setActionAlert] = useState<{ ok: boolean; message: string } | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const [contacts, setContacts] = useState<HubSpotContact[]>([]);
   const [deals, setDeals] = useState<HubSpotDeal[]>([]);
@@ -275,6 +277,12 @@ const HubSpotImportPage: React.FC = () => {
     setLastResult({ type, ok, data, error });
   };
 
+  const scrollToResults = () => {
+    window.setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
   const testHubspotConnection = async () => {
     setTestingConnection(true);
     setConnectionStatus(null);
@@ -358,16 +366,44 @@ const HubSpotImportPage: React.FC = () => {
     setRemoveResult(null);
     setDeleteResult(null);
     setLastResult(null);
+    setActionAlert(null);
     try {
       const res = await apiRequest('/api/sync-hubspot-deals', { method: 'POST' });
-      const data = await res.json().catch(() => ({})) as Record<string, unknown>;
+      const data = await res.json().catch(() => ({})) as Record<string, unknown> & { error?: string; totalUpserted?: number };
       setDealsResult(data);
-      setResult('deals', res.ok && !(data as { error?: string }).error, data, (data as { error?: string }).error);
-      if (res.ok) fetchDeals();
+      const errMsg = data.error || (!res.ok ? `Request failed (${res.status})` : undefined);
+      const ok = res.ok && !data.error;
+      setResult('deals', ok, data, errMsg);
+      if (ok) {
+        const count = typeof data.totalUpserted === 'number' ? data.totalUpserted : 0;
+        setActionAlert({
+          ok: true,
+          message: `Imported ${count} deal${count === 1 ? '' : 's'} from HubSpot. Next: click “Create past events” to add them to the Events page.`,
+        });
+        setSyncSuccessModal({
+          title: 'Deals imported',
+          sections: [
+            {
+              heading: 'HubSpot deals',
+              lines: [{ label: 'Deals copied to AlmaLinks', value: String(count) }],
+            },
+          ],
+          footnote: 'Run “Create past events” to turn each deal into a completed event on the public Events page.',
+        });
+        await fetchDeals();
+      } else {
+        setActionAlert({
+          ok: false,
+          message: errMsg || 'Import deals failed. Test the HubSpot connection above, then try again.',
+        });
+      }
+      scrollToResults();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Request failed';
       setDealsResult({ ok: false, error: msg });
       setResult('deals', false, {}, msg);
+      setActionAlert({ ok: false, message: msg });
+      scrollToResults();
     } finally {
       setSyncingDeals(false);
     }
@@ -412,15 +448,55 @@ const HubSpotImportPage: React.FC = () => {
     setRemoveResult(null);
     setDeleteResult(null);
     setLastResult(null);
+    setActionAlert(null);
     try {
       const res = await apiRequest('/api/create-events-from-deals', { method: 'POST' });
-      const data = await res.json().catch(() => ({})) as Record<string, unknown>;
+      const data = await res.json().catch(() => ({})) as Record<string, unknown> & {
+        error?: string;
+        created?: number;
+        skipped?: number;
+        totalDeals?: number;
+      };
       setCreateFromDealsResult(data);
-      setResult('events', res.ok && !(data as { error?: string }).error, data, (data as { error?: string }).error);
+      const errMsg = data.error || (!res.ok ? `Request failed (${res.status})` : undefined);
+      const ok = res.ok && !data.error;
+      setResult('events', ok, data, errMsg);
+      if (ok) {
+        const created = typeof data.created === 'number' ? data.created : 0;
+        const skipped = typeof data.skipped === 'number' ? data.skipped : 0;
+        setActionAlert({
+          ok: true,
+          message: `Created ${created} past event${created === 1 ? '' : 's'} (${skipped} skipped — already on the site).`,
+        });
+        setSyncSuccessModal({
+          title: 'Past events created',
+          sections: [
+            {
+              heading: 'Events from deals',
+              lines: [
+                { label: 'Events created', value: String(created) },
+                { label: 'Skipped (already existed)', value: String(skipped) },
+                {
+                  label: 'Deals considered',
+                  value: typeof data.totalDeals === 'number' ? String(data.totalDeals) : '—',
+                },
+              ],
+            },
+          ],
+        });
+      } else {
+        setActionAlert({
+          ok: false,
+          message: errMsg || 'Create past events failed. Import deals first, then try again.',
+        });
+      }
+      scrollToResults();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Request failed';
       setCreateFromDealsResult({ ok: false, error: msg });
       setResult('events', false, {}, msg);
+      setActionAlert({ ok: false, message: msg });
+      scrollToResults();
     } finally {
       setCreatingFromDeals(false);
     }
@@ -714,6 +790,31 @@ const HubSpotImportPage: React.FC = () => {
         </div>
 
         {/* Primary actions: Pull all / Delete all */}
+        {actionAlert && (
+          <div
+            className={`mb-4 p-4 rounded-xl border flex items-start gap-3 ${
+              actionAlert.ok
+                ? 'bg-green-50 border-green-200 text-green-800'
+                : 'bg-red-50 border-red-200 text-red-800'
+            }`}
+            role="status"
+          >
+            {actionAlert.ok ? (
+              <CheckCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            ) : (
+              <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            )}
+            <p className="text-sm font-medium flex-1">{actionAlert.message}</p>
+            <button
+              type="button"
+              onClick={() => setActionAlert(null)}
+              className="p-1 rounded-lg hover:bg-black/5"
+              aria-label="Dismiss"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
         <div className="flex flex-wrap gap-3 mb-2">
           <button
             onClick={pullAll}
@@ -1057,7 +1158,7 @@ const HubSpotImportPage: React.FC = () => {
         </div>
 
         {/* Single results area */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div ref={resultsRef} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <button
             onClick={() => setShowResultJson(!showResultJson)}
             className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors"
