@@ -17,6 +17,7 @@ import {
   Linkedin
 } from 'lucide-react';
 import { TempPasswordService } from '../../services/tempPasswordService';
+import { apiRequest } from '../../utils/apiClient';
 
 interface UserCreationFormProps {
   isOpen: boolean;
@@ -137,7 +138,7 @@ const UserCreationForm: React.FC<UserCreationFormProps> = ({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/user-admin', {
+      const response = await apiRequest('/api/user-admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

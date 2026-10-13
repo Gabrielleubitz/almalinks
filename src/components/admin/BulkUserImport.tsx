@@ -13,6 +13,7 @@ import {
   Copy
 } from 'lucide-react';
 import { TempPasswordService } from '../../services/tempPasswordService';
+import { apiRequest } from '../../utils/apiClient';
 
 interface BulkUserImportProps {
   isOpen: boolean;
@@ -228,7 +229,7 @@ const BulkUserImport: React.FC<BulkUserImportProps> = ({
     setIsImporting(true);
 
     try {
-      const response = await fetch('/api/user-admin', {
+      const response = await apiRequest('/api/user-admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

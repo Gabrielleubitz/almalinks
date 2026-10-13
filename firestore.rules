@@ -20,15 +20,35 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Approved member: has a users doc that isn't pending/rejected (docs without status are legacy-approved,
+    // matching useAuth). Applicants only have a joinRequests doc, so they can't read member data.
+    function isApprovedMember() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('status', 'approved') == 'approved';
+    }
+
+    function isMember() {
+      return isApprovedMember() || isAdmin();
+    }
+
+    function onlyChanges(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
     // --- Users ---
-    // Profile created on signup (own uid) or when admin approves join request.
-    // Read: any authenticated user (so all members can see the Members directory).
-    // Update/delete: only owner or admin.
+    // Profile docs are created by an admin (approving a join request, or creating a user); applicants never write here.
+    // Read: approved members (Members directory) and the owner (PendingPage watches its own doc).
+    // Update: owner, but never their own role/admin/approval/badge fields; admin anything.
     // Delete: ONLY allowed for HubSpot-imported users (importedFrom == 'hubspot'). Protects native users from HubSpot admin page or any client delete.
     match /users/{userId} {
-      allow create: if (isAuthenticated() && request.auth.uid == userId) || isAdmin();
-      allow read: if isAuthenticated();
-      allow update: if isOwner(userId) || isAdmin();
+      allow create: if isAdmin();
+      allow read: if isOwner(userId) || isMember();
+      allow update: if isAdmin() || (
+        isOwner(userId) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(
+          ['role', 'admin', 'status', 'isTrustee', 'isMentor', 'importedFrom', 'approvedAt', 'approvedBy'])
+      );
       allow delete: if isAdmin() && resource.data.get('importedFrom', '') == 'hubspot';
     }
 
@@ -61,11 +81,14 @@ service cloud.firestore {
 
     // --- Events ---
     match /events/{eventId} {
-      allow read: if isAuthenticated();
+      allow read: if isMember();
       allow write: if isAdmin();
+      // Members may only file (or re-file) their own registration as pending; approval and check-in are admin-only.
       match /registrations/{regId} {
-        allow read: if isAuthenticated();
-        allow create, update: if isOwner(regId);
+        allow read: if isMember();
+        allow create, update: if isOwner(regId) && isApprovedMember()
+          && request.resource.data.get('status', '') == 'pending'
+          && request.resource.data.get('checkedIn', false) == false;
         allow read, write: if isAdmin();
       }
       // Sensitive details (location, meeting link, zoom, pictures). Admin or approved registrant.
@@ -118,7 +141,7 @@ service cloud.firestore {
 
     // --- User directory ---
     match /user_directory/{userId} {
-      allow read: if isAuthenticated();
+      allow read: if isMember();
       allow create, update: if isOwner(userId);
       allow read, write: if isAdmin();
     }
@@ -126,10 +149,9 @@ service cloud.firestore {
     // --- Announcements ---
     // Members may only update the reactions field (emoji toggles); create/delete and other updates are admin-only.
     match /announcements/{announcementId} {
-      allow read: if isAuthenticated();
+      allow read: if isMember();
       allow create, delete: if isAdmin();
-      allow update: if isAdmin()
-        || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']));
+      allow update: if isAdmin() || (isMember() && onlyChanges(['reactions']));
     }
 
     // --- Notifications (per-user; app creates for others) ---
@@ -137,7 +159,7 @@ service cloud.firestore {
       allow read, update: if isAuthenticated() && (
         resource.data.userId == request.auth.uid || isAdmin()
       );
-      allow create: if isAuthenticated();
+      allow create: if isMember();
       allow delete: if isAuthenticated() && (
         resource.data.userId == request.auth.uid || isAdmin()
       );
@@ -152,33 +174,36 @@ service cloud.firestore {
     }
 
     // --- Chats ---
+    // Chat settings and memberships are managed by admins; members only bump the last-message preview,
+    // mark their own membership read, and react to / read-receipt messages.
     match /chats/{chatId} {
-      allow read: if isAuthenticated();
+      allow read: if isMember();
       allow create: if isAdmin();
-      allow update: if isAuthenticated();
+      allow update: if isAdmin() || (isMember() && onlyChanges(['lastMessage', 'lastActivity']));
       allow delete: if isAdmin();
     }
 
     match /chat_members/{memberId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && (
-        request.resource.data.userId == request.auth.uid || isAdmin()
+      allow read: if isMember();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (
+        isMember() && resource.data.userId == request.auth.uid && onlyChanges(['lastRead', 'muted'])
       );
-      allow update: if isAuthenticated();
       allow delete: if isAuthenticated() && (
         resource.data.userId == request.auth.uid || isAdmin()
       );
     }
 
     match /chat_messages/{messageId} {
-      allow read: if isAuthenticated();
+      allow read: if isMember();
       // User messages: userId must be caller; system messages (userId null) allowed for admins (e.g. "X joined" from admin panel)
-      allow create: if isAuthenticated() && (
+      allow create: if isMember() && (
         request.resource.data.userId == request.auth.uid
         || (request.resource.data.userId == null && isAdmin())
       );
       allow update: if isAuthenticated() && (
         resource.data.userId == request.auth.uid || isAdmin()
+        || (isMember() && onlyChanges(['reactions', 'readBy', 'status']))
       );
       allow delete: if isAuthenticated() && (
         resource.data.userId == request.auth.uid || isAdmin()
@@ -186,8 +211,8 @@ service cloud.firestore {
     }
 
     match /chat_requests/{requestId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isMember();
+      allow create: if isMember() && request.resource.data.userId == request.auth.uid;
       allow update: if isAuthenticated() && (
         resource.data.userId == request.auth.uid || isAdmin()
       );

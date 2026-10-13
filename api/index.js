@@ -8,6 +8,7 @@ import '../lib/server/firebase-init.js';
 
 import url from 'url';
 import adminChatsHandler from '../lib/server/api/admin/chats.js';
+import { verifyAdminRequest, verifyUserRequest } from '../lib/server/admin-auth.js';
 
 // ESM handlers
 import userAdminHandler from '../lib/server/api/user-admin.js';
@@ -62,6 +63,7 @@ import deleteHubspotApplicantHandler from '../lib/server/api/delete-hubspot-appl
 import notifyEventRegistrationHandler from '../lib/server/api/notify-event-registration.js';
 import notifyEventChangeHandler from '../lib/server/api/notify-event-change.js';
 import sendRsvpReminderHandler from '../lib/server/api/send-rsvp-reminder.js';
+import chatManageHandler from '../lib/server/api/chat-manage.js';
 
 // Legacy connection/request endpoints (kept for compatibility with current frontend paths)
 import connectionsAdminCreateHandler from '../lib/server/api/legacy/api/connections/admin-create.js';
@@ -123,6 +125,7 @@ const routeTable = new Map([
   ['/api/upload-profile-image', uploadProfileImageHandler],
   ['/api/delete-profile-image', deleteProfileImageHandler],
   ['/api/upload-image', uploadImageHandler],
+  ['/api/chat-manage', chatManageHandler],
 
   // Connections workflow (current frontend paths)
   ['/api/connections/admin-create', connectionsAdminCreateHandler],
@@ -139,6 +142,21 @@ const routeTable = new Map([
   ['/api/api/connection-requests/incoming', connectionRequestsIncomingHandler],
 ]);
 
+// Endpoints whose handlers don't check the caller themselves.
+// Admin-only: arbitrary email sending, CRM deletes, diagnostics.
+const ADMIN_ONLY = new Set([
+  '/api/send-email',
+  '/api/email-service',
+  '/api/welcome-email',
+  '/api/notify-user-signup',
+  '/api/delete-hubspot-applicant',
+  '/api/test-mandrill',
+  '/api/admin-tools',
+  '/api/system-test',
+]);
+// Any signed-in user: notifications whose recipients are fixed server-side (the admins).
+const SIGNED_IN = new Set(['/api/notify-signup', '/api/notify-event-registration']);
+
 export default async function handler(req, res) {
   const parsed = url.parse(req.url || '', true);
   const pathname = parsed.pathname || '';
@@ -146,6 +164,13 @@ export default async function handler(req, res) {
   // Basic CORS / preflight support (individual handlers may also do this)
   if (req.method === 'OPTIONS') {
     return res.status(200).json({ ok: true });
+  }
+
+  if (ADMIN_ONLY.has(pathname) || SIGNED_IN.has(pathname)) {
+    const result = ADMIN_ONLY.has(pathname) ? await verifyAdminRequest(req) : await verifyUserRequest(req);
+    if (!result.ok) {
+      return res.status(result.status).json({ ok: false, success: false, error: result.error });
+    }
   }
 
   // Admin chat creation (ESM, static import so Vercel bundles it — dynamic import of ../lib failed on serverless)

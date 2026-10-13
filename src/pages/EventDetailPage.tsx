@@ -30,6 +30,7 @@ import {
   approvedEventVenueAddress,
 } from '../utils/eventPrivateLocation';
 import { isEventEnded } from '../utils/eventStatus';
+import { apiRequest } from '../utils/apiClient';
 
 const HOSTNAME_LABELS: Record<string, string> = {
   'zoom.us': 'Zoom',
@@ -267,7 +268,7 @@ const EventDetailPage: React.FC = () => {
       setTimeout(() => setSuccess(null), 8000);
 
       // Notify admins — non-blocking, fire-and-forget
-      fetch('/api/notify-event-registration', {
+      apiRequest('/api/notify-event-registration', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

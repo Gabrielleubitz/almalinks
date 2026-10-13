@@ -41,6 +41,7 @@ import { TrusteeMentorStar } from '../../components/common/TrusteeMentorStar';
 import { getTrusteeMentorFromHubspot } from '../../utils/hubspotMemberRoles';
 import { AdminUserAvatar } from '../../components/admin/AdminUserAvatar';
 import type { CropValue } from '../../types/crop';
+import { apiRequest } from '../../utils/apiClient';
 
 interface UserData {
   uid: string;
@@ -202,7 +203,7 @@ const UserManagement: React.FC = () => {
     setUpdatingUser(uid);
 
     try {
-      const response = await fetch('/api/user-admin', {
+      const response = await apiRequest('/api/user-admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -323,7 +324,7 @@ const UserManagement: React.FC = () => {
     try {
       // Call Netlify function to delete user
       // TODO: Convert to Vercel API
-      const response = await fetch('/api/delete-user', {
+      const response = await apiRequest('/api/delete-user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

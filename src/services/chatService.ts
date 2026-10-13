@@ -20,6 +20,7 @@ import {
 } from 'firebase/firestore';
 import { db, retryOnNetworkFailure } from '../firebase/config';
 import { isAppAdminDoc } from '../utils/adminAccess';
+import { apiRequest } from '../utils/apiClient';
 import { 
   ChatGroup, 
   ChatMember, 
@@ -600,6 +601,9 @@ export class ChatService {
    */
   static async approveJoinRequest(requestId: string, adminUserId: string): Promise<void> {
     try {
+      if (!(await this.isAppAdmin(adminUserId))) {
+        return await this.manageViaServer({ action: 'approve-request', requestId });
+      }
       const requestDoc = await getDoc(doc(db, 'chat_requests', requestId));
       if (!requestDoc.exists()) {
         throw new Error('Request not found');
@@ -678,6 +682,9 @@ export class ChatService {
    */
   static async rejectJoinRequest(requestId: string, adminUserId: string): Promise<void> {
     try {
+      if (!(await this.isAppAdmin(adminUserId))) {
+        return await this.manageViaServer({ action: 'reject-request', requestId });
+      }
       const requestDoc = await getDoc(doc(db, 'chat_requests', requestId));
       if (!requestDoc.exists()) {
         throw new Error('Request not found');
@@ -711,6 +718,9 @@ export class ChatService {
    */
   static async addMember(chatId: string, targetUserId: string, adminUserId: string): Promise<void> {
     try {
+      if (!(await this.isAppAdmin(adminUserId))) {
+        return await this.manageViaServer({ action: 'add-member', chatId, targetUserId });
+      }
       const canManage = await this.canManageChat(chatId, adminUserId);
       if (!canManage) {
         throw new Error('You do not have permission to manage this chat');
@@ -783,6 +793,9 @@ export class ChatService {
    */
   static async promoteMemberToAdmin(chatId: string, userId: string, adminUserId: string): Promise<void> {
     try {
+      if (!(await this.isAppAdmin(adminUserId))) {
+        return await this.manageViaServer({ action: 'promote', chatId, targetUserId: userId });
+      }
       const canManage = await this.canManageChat(chatId, adminUserId);
       if (!canManage) {
         throw new Error('You do not have permission to manage this chat');
@@ -819,6 +832,9 @@ export class ChatService {
    */
   static async demoteAdminToMember(chatId: string, userId: string, adminUserId: string): Promise<void> {
     try {
+      if (!(await this.isAppAdmin(adminUserId))) {
+        return await this.manageViaServer({ action: 'demote', chatId, targetUserId: userId });
+      }
       const canManage = await this.canManageChat(chatId, adminUserId);
       if (!canManage) {
         throw new Error('You do not have permission to manage this chat');
@@ -925,6 +941,11 @@ export class ChatService {
     try {
       // Verify admin permissions or self-removal
       const isSelfRemoval = targetUserId === adminUserId;
+      // Leaving (and removals by chat-level admins) run on the server: the "left the chat" system message
+      // can't be written by members under the Firestore rules.
+      if (isSelfRemoval || !(await this.isAppAdmin(adminUserId))) {
+        return await this.manageViaServer({ action: 'remove-member', chatId, targetUserId });
+      }
       if (!isSelfRemoval) {
         const canManage = await this.canManageChat(chatId, adminUserId);
         if (!canManage) {
@@ -994,6 +1015,9 @@ export class ChatService {
    */
   static async deleteChat(chatId: string, adminUserId: string): Promise<void> {
     try {
+      if (!(await this.isAppAdmin(adminUserId))) {
+        return await this.manageViaServer({ action: 'delete-chat', chatId });
+      }
       const canManage = await this.canManageChat(chatId, adminUserId);
       if (!canManage) {
         throw new Error('You do not have permission to delete this chat');
@@ -1051,6 +1075,10 @@ export class ChatService {
     adminUserId: string
   ): Promise<void> {
     try {
+      if (!(await this.isAppAdmin(adminUserId))) {
+        return await this.manageViaServer({ action: 'update-chat', chatId, updates });
+      }
+
       const canManage = await this.canManageChat(chatId, adminUserId);
       if (!canManage) {
         throw new Error('You do not have permission to manage this chat');
@@ -1312,6 +1340,15 @@ export class ChatService {
       return isAppAdminDoc(userDoc.data());
     } catch {
       return false;
+    }
+  }
+
+  /** Chat-management action run server-side (/api/chat-manage), for chat-level admins and leaving. */
+  private static async manageViaServer(body: Record<string, unknown>): Promise<void> {
+    const res = await apiRequest('/api/chat-manage', { method: 'POST', body: JSON.stringify(body) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || 'Something went wrong. Please try again.');
     }
   }
 

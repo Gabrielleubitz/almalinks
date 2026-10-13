@@ -34,6 +34,7 @@ import AboutYouStep from '../../components/signup/steps/AboutYouStep';
 import ContactLocationStep from '../../components/signup/steps/ContactLocationStep';
 import PrivacyStep from '../../components/signup/steps/PrivacyStep';
 import SavedIndicator from '../../components/ui/SavedIndicator';
+import { apiRequest } from '../../utils/apiClient';
 
 interface AdminUserEditProps {}
 
@@ -111,7 +112,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
     setTempPasswordError(null);
     setTempPassword(null);
     try {
-      const response = await fetch('/api/user-admin', {
+      const response = await apiRequest('/api/user-admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -231,7 +232,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       }
 
       // 2. Email the link using the existing reset-password email template
-      const emailRes = await fetch('/api/email-service', {
+      const emailRes = await apiRequest('/api/email-service', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -424,7 +425,7 @@ const AdminUserEdit: React.FC<AdminUserEditProps> = () => {
       }
       
       // Call the user update API
-      const response = await fetch('/api/user-admin', {
+      const response = await apiRequest('/api/user-admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

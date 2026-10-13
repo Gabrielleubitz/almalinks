@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db, retryOnNetworkFailure } from '../firebase/config';
 import { sanitizeForFirestore } from '../utils/firestoreHelpers';
+import { apiRequest } from '../utils/apiClient';
 
 export interface JoinRequest {
   uid: string;
@@ -289,7 +290,7 @@ export class JoinRequestService {
           
           console.log('📧 Sending admin notification for new signup:', { uid, name, email });
           
-          const notificationResponse = await fetch('/api/notify-signup', {
+          const notificationResponse = await apiRequest('/api/notify-signup', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -788,7 +789,7 @@ export class JoinRequestService {
         console.log('🔍 Request will be sent to:', endpointUrl);
       }
       
-      const response = await fetch(endpointUrl, {
+      const response = await apiRequest(endpointUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

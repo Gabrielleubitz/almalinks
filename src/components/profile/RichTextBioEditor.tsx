@@ -61,9 +61,7 @@ export const RichTextBioEditor: React.FC<RichTextBioEditorProps> = ({
     if (!el) return;
     let html = el.innerHTML;
     if (maxLength && stripHtml(html).length > maxLength) {
-      isInternalChange.current = true;
       el.innerHTML = value || '';
-      isInternalChange.current = false;
       return;
     }
     emitChange();

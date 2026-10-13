@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Download
 } from 'lucide-react';
+import { apiRequest } from '../../utils/apiClient';
 
 interface AuditLogViewerProps {
   isOpen: boolean;
@@ -58,7 +59,7 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({
     setError(null);
 
     try {
-      const response = await fetch('/api/user-admin', {
+      const response = await apiRequest('/api/user-admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

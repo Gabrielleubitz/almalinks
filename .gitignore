@@ -57,3 +57,4 @@ alma-links-*-firebase-adminsdk-*.json
 # Vercel build artifacts
 api/.vercel/
 api/node_modules/
+.migration/

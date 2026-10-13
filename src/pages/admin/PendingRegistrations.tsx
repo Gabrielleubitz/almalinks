@@ -18,6 +18,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useActivityTracking } from '../../hooks/useActivityTracking';
 import Toast from '../../components/ui/Toast';
 import { linkedInProfileHref } from '../../utils/linkedInUrl';
+import { apiRequest } from '../../utils/apiClient';
 
 interface UserData {
   uid: string;
@@ -500,7 +501,7 @@ const PendingRegistrations: React.FC = () => {
     const when = new Date().toISOString();
     const reasonOut = reason && reason.trim() ? reason.trim() : '(no reason provided)';
     try {
-      const response = await fetch('/api/email-service', {
+      const response = await apiRequest('/api/email-service', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -546,7 +547,7 @@ const PendingRegistrations: React.FC = () => {
 
       if (userToReject?.email) {
         try {
-          const hubspotRes = await fetch('/api/delete-hubspot-applicant', {
+          const hubspotRes = await apiRequest('/api/delete-hubspot-applicant', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: userToReject.email }),
@@ -625,7 +626,7 @@ const PendingRegistrations: React.FC = () => {
       }
 
       // Send welcome / acceptance email
-      const response = await fetch('/api/email-service', {
+      const response = await apiRequest('/api/email-service', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

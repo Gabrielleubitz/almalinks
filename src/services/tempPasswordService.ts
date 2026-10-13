@@ -1,6 +1,7 @@
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { updatePassword, signOut } from 'firebase/auth';
 import { db, auth } from '../firebase/config';
+import { apiRequest } from '../utils/apiClient';
 
 interface TempPasswordData {
   mustChangePassword?: boolean;
@@ -103,7 +104,7 @@ export class TempPasswordService {
         });
       }
       
-      const response = await fetch(url, {
+      const response = await apiRequest(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -173,7 +174,7 @@ export class TempPasswordService {
       if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
         const isDev = import.meta.env.DEV;
         const errorMsg = isDev
-          ? `Network error: Could not reach API server at ${url}. ` +
+          ? `Network error: Could not reach API server at /api/user-admin. ` +
             `Make sure 'vercel dev --listen 3000' is running. ` +
             `The Vite proxy forwards /api/* requests from localhost:5173 to localhost:3000.`
           : `Network error: Could not reach API server. Please check your connection and try again.`;
